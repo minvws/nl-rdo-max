@@ -1,0 +1,12 @@
+*.ipyc
+requirements.txt
+requirements-dev.txt
+.venv
+.vscode
+.idea
+*.pyc
+__pycache__
+.env
+*.key
+.coverage*
+*.egg-info

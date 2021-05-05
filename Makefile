@@ -1,0 +1,23 @@
+venv: .venv/touchfile ## Create virtual environment
+.venv/touchfile: requirements.txt
+	test -d .venv || python3.8 -m venv .venv
+	. .venv/bin/activate; pip install -U pip
+	. .venv/bin/activate; pip install -Ur requirements.txt
+	. .venv/bin/activate; pip install -Ur requirements-dev.txt
+	touch .venv/touchfile
+
+clean_venv: ## Remove virtual environment
+	@echo "Cleaning venv"
+	@rm -rf .venv
+
+pip-compile: ## synchronizes the .venv with the state of requirements.txt
+	. .venv/bin/activate && ${env} python3 -m piptools compile requirements.in
+	. .venv/bin/activate && ${env} python3 -m piptools compile requirements-dev.in
+
+pip-sync: ## synchronizes the .venv with the state of requirements.txt
+	. .venv/bin/activate && ${env} python3 -m piptools sync requirements.txt
+
+pip-sync-dev: ## synchronizes the .venv with the state of requirements.txt
+	. .venv/bin/activate && ${env} python3 -m piptools sync requirements.txt requirements-dev.txt
+
+

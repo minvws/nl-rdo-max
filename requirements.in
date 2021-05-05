@@ -1,0 +1,11 @@
+# Dependency management
+pip-tools
+
+# Django
+Django==3.2.1
+
+# Communication with services
+python3-saml==1.10.1
+zeep==4.0.0
+unidecode==1.1.2
+requests==2.25.1

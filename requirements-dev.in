@@ -1,0 +1,11 @@
+
+black
+pylint
+bandit
+mypy
+autoflake
+coverage
+coverage-badge
+pytest
+pytest-cov
+
