@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% load static %}
 
+{% block content %}
 {% if errors %}
   <div class="alert alert-danger" role="alert">
     <strong>Errors:</strong>
@@ -44,9 +45,22 @@
   {% else %}
     <div class="alert alert-danger" role="alert">You don't have any attributes</div>
   {% endif %}
-  <a href="{% url "index" %}?slo" class="btn btn-danger">Logout</a>
+  <button href="{% url "index" %}?slo" class="btn btn-danger">Logout</button>
 {% else %}
-  <a href="{% url "index" %}?sso" class="btn btn-primary">Login</a> <a href="{% url "index" %}?sso2" class="btn btn-info">Login and access to attrs page</a>
+<section class="auth">
+    <div class="column-2">
+        <div>
+            <a href="{% url "index" %}?sso2">
+                <img src="{% static 'assets/digid-logo.png' %}" style="height: 75px;" alt="Login and access to attrs">
+            </a>
+        </div>
+        <div>
+            <h1> Inloggen met DigiD </h1>
+            <p> Login met uw digid om toegang te geven tot gebruik van uw BSN. </p>
+        </div>
+    </div>
+</section>
+
 {% endif %}
 
 {% endblock %}

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html xml:lang="nl-NL" lang="nl-NL" class="no-js ">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" sizes="16x16" href="{{ request.scheme }}://{{ request.get_host }}{% static 'assets/icons/favicon.ico'%}"
+        type="image/x-icon" />
+    <link rel="icon" sizes="192x192" href="{{ request.scheme }}://{{ request.get_host }}{% static 'assets/icons/touch-icon.png'%}" />
+    <link rel="apple-touch-icon" href="{{ request.scheme }}://{{ request.get_host }}{% static 'assets/icons/apple-touch-icon.png'%}" />
+    <!--[if (gt IE 8)|!(IE)]><!-->
+
+    <link rel="stylesheet" href="{{ request.scheme }}://{{ request.get_host }}{% static 'manon/css/manon.min.css'%}" type="text/css" media="all" />
+
+    <title>Inge6</title>
+    {% block extra_head %} {% endblock %}
+</head>
+
+<body>
+    <header class="breadcrumbs">
+      <a href="" class="ro-logo">
+        <img src="{% static 'assets/ro-logo.svg' %}" alt="Rijksoverheid" />
+        Rijksoverheid
+      </a>
+
+      <nav>
+        <div>
+          <ul>
+              <li><a href="../index.html">Rijksoverheid Inge6</a></li>
+          </ul>
+        </div>
+      </nav>
+
+    </header>
+
+    <main>
+      <section class="hero">
+        <img src="{% static 'assets/kelly-sikkema-v9FQR4tbIq8-unsplash.jpg' %}" alt="Website ontwerpen op papier">
+        <div>
+          <h1>Voorbeeldpagina</h1>
+        </div>
+      </section>
+
+      <section class="bg-color-offset condensed">
+        <div class="column-3">
+          <nav>
+            <ul>
+              <li><a href="">Lorem ipsum</a></li>
+              <li><a href="">Dolor</a></li>
+              <li><a href="">Set amet</a></li>
+              <li><a href="">Adipiscing elit</a></li>
+            </ul>
+          </nav>
+          <nav>
+            <ul>
+              <li><a href="">Lorem ipsum</a></li>
+              <li><a href="">Dolor</a></li>
+              <li><a href="">Set amet</a></li>
+              <li><a href="">Adipiscing elit</a></li>
+            </ul>
+          </nav>
+          <nav>
+            <ul>
+              <li><a href="">Lorem ipsum</a></li>
+              <li><a href="">Dolor</a></li>
+              <li><a href="">Set amet</a></li>
+              <li><a href="">Adipiscing elit</a></li>
+            </ul>
+          </nav>
+        </div>
+      </section>
+
+      {% block content %}
+      {% endblock %}
+
+      <section>
+        <div>
+          <h1>Zie ook</h1>
+          <div class="column-3">
+            <nav>
+              <ul>
+                <li><a href="">Lorem ipsum</a></li>
+                <li><a href="">Dolor</a></li>
+                <li><a href="">Set amet</a></li>
+                <li><a href="">Adipiscing elit</a></li>
+              </ul>
+            </nav>
+            <nav>
+              <ul>
+                <li><a href="">Lorem ipsum</a></li>
+                <li><a href="">Dolor</a></li>
+                <li><a href="">Set amet</a></li>
+                <li><a href="">Adipiscing elit</a></li>
+              </ul>
+            </nav>
+            <nav>
+              <ul>
+                <li><a href="" rel="external">Lorem ipsum</a></li>
+                <li><a href="" rel="external">Dolor</a></li>
+                <li><a href="" rel="external">Set amet</a></li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </section>
+
+    </main>
+    <footer>
+      <div>
+        <h1>Manon - Rijksoverheid css framework</h1>
+        <nav>
+          <h1>Service</h1>
+          <ul>
+            <li><a href="../index.html">Over</a></li>
+            <li><a href="../test/index.html">Styling tests</a></li>
+            <li><a href="index.html">Online componenten bibliotheek</a></li>
+          </ul>
+        </nav>
+      </div>
+    </footer>
+  </body>
+
+</html>
