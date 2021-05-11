@@ -1,34 +1,30 @@
 {
     "security": {
-        "nameIdEncrypted": false,
-        "authnRequestsSigned": false,
-        "logoutRequestSigned": false,
+        "nameIdEncrypted": true,
+        "authnRequestsSigned": true,
+        "logoutRequestSigned": true,
         "logoutResponseSigned": false,
-        "signMetadata": false,
-        "wantMessagesSigned": false,
-        "wantAssertionsSigned": false,
-        "wantNameId" : true,
-        "wantNameIdEncrypted": false,
-        "wantAssertionsEncrypted": false,
+        "signMetadata": true,
+        "wantMessagesSigned": true,
+        "wantAssertionsSigned": true,
+        "wantNameId": true,
+        "wantNameIdEncrypted": true,
+        "wantAssertionsEncrypted": true,
         "allowSingleLabelDomains": false,
         "signatureAlgorithm": "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
         "digestAlgorithm": "http://www.w3.org/2001/04/xmlenc#sha256"
     },
     "contactPerson": {
         "technical": {
-            "givenName": "technical_name",
-            "emailAddress": "technical@example.com"
-        },
-        "support": {
-            "givenName": "support_name",
-            "emailAddress": "support@example.com"
+            "givenName": "Helpdesk",
+            "emailAddress": "helpdesk@rdobeheer.nl"
         }
     },
     "organization": {
         "en-US": {
-            "name": "sp_test",
-            "displayname": "SP test",
-            "url": "http://sp.example.com"
+            "name": "MinVWS",
+            "displayname": "Ministerie van Volksgezondheid, Welzijn en Sport",
+            "url": "https://www.rijksoverheid.nl/ministeries/ministerie-van-volksgezondheid-welzijn-en-sport"
         }
     }
 }

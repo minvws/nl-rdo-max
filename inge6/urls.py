@@ -16,9 +16,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from inge6.views import index
+from inge6 import views
 
 urlpatterns = [
-    path('', index, name="index"),
+    path('', views.index, name="index"),
+    path('login', views.login, name="login"),
     path('admin/', admin.site.urls),
 ]

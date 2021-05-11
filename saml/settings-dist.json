@@ -4,24 +4,14 @@
     "sp": {
         "entityId": "urn:nl-eid-gdi:1.0:DV:00000002003182447001:entities:9001",
         "assertionConsumerService": {
-            "url": "https://<sp_domain>/?acs", // https://login.dv.test/saml/sp/acs
+            "url": "https://<sp_domain>/?acs",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
         },
         "singleLogoutService": {
-            "url": "https://<sp_domain>/?sls", // https://login.dv.test/saml/sp/logout
+            "url": "https://<sp_domain>/?sls",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
         },
-        // If you need to specify requested attributes, set a
-        // attributeConsumingService. nameFormat, attributeValue and
-        // friendlyName can be ommited
         "attributeConsumingService": {
-            // OPTIONAL: only specifiy if SP requires this.
-            // index is an integer which identifies the attributeConsumingService used
-            // to the SP. OneLogin toolkit supports configuring only one attributeConsumingService
-            // but in certain cases the SP requires a different value.  Defaults to '1'.
-            // "index": '1',
-            //
-            // urn:nl-eidgdi:1.0:id:BSN
             "serviceName": "VaccinatieBewijsTest",
             "serviceDescription": "Test vaccinatie bewijzen inlogservice",
             "requestedAttributes": [
