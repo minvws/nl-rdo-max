@@ -5,18 +5,18 @@
         "entityId": "urn:nl-eid-gdi:1.0:DV:00000002003182447001:entities:9001",
         "assertionConsumerService": {
             "url": "https://<sp_domain>/?acs",
-            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
         },
         "singleLogoutService": {
             "url": "https://<sp_domain>/?sls",
-            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
         },
         "attributeConsumingService": {
-            "serviceName": "VaccinatieBewijsTest",
+            "serviceName": "CoronaCheck",
             "serviceDescription": "Test vaccinatie bewijzen inlogservice",
             "requestedAttributes": [
                 {
-                    "name": "urn:nl-eidgdi:1.0:id:BSN",
+                    "name": "urn:nl-eid-gdi:1.0:ServiceUUID",
                     "isRequired": true,
                     "nameFormat": "",
                     "friendlyName": "",
@@ -24,9 +24,7 @@
                 }
             ]
         },
-        "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
-        "x509cert": "",
-        "privateKey": ""
+        "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
     },
     "idp": {
         "entityId": "https://app.onelogin.com/saml/metadata/<onelogin_connector_id>",
