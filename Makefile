@@ -1,9 +1,8 @@
 venv: .venv/touchfile ## Create virtual environment
-.venv/touchfile: requirements.txt
+.venv/touchfile: 
 	test -d .venv || python3.8 -m venv .venv
 	. .venv/bin/activate; pip install -U pip
-	. .venv/bin/activate; pip install -Ur requirements.txt
-	. .venv/bin/activate; pip install -Ur requirements-dev.txt
+	. .venv/bin/activate; pip install pip-tools
 	touch .venv/touchfile
 
 clean_venv: ## Remove virtual environment

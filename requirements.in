@@ -1,8 +1,12 @@
 # Dependency management
 pip-tools
 
-# Django
-Django==3.2.1
+# fastapi
+fastapi
+uvicorn
+
+# fastapi optional dependencies
+itsdangerous
 
 # Communication with services
 python3-saml==1.10.1
