@@ -4,6 +4,7 @@ pip-tools
 # fastapi
 fastapi
 uvicorn
+redis
 
 # fastapi optional dependencies
 itsdangerous

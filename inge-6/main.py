@@ -1,4 +1,5 @@
 import os
+import uuid
 from typing import Optional, List, Dict
 
 import urllib.request
@@ -10,14 +11,17 @@ from fastapi.encoders import jsonable_encoder
 from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 
+import redis
+
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
 from . import config
 
 app = FastAPI()
-
 app.add_middleware(SessionMiddleware, secret_key="example")
+
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
 def init_saml_auth(req):
     auth = OneLogin_Saml2_Auth(req, custom_base_path=config.settings.saml_path)
@@ -52,60 +56,48 @@ def index(request: Request):
 
 
     if 'sso' in request.query_params:
-        # return redirect(auth.login())
-        # If AuthNRequest ID need to be stored in order to later validate it, do instead
         sso_built_url = auth.login()
         request.session['AuthNRequestID'] = auth.get_last_request_id()
-        return RedirectResponse(sso_built_url)
-    elif 'sso2' in request.args:
-        return_to = '%sattrs/' % url_data.hostname
-        return RedirectResponse(auth.login(return_to))
-    # elif 'slo' in request.args:
-    #     name_id = request.session.get('samlNameId', None)
-    #     session_index = request.session.get('samlSessionIndex', None)
-    #     name_id_format = request.session.get('samlNameIdFormat', None)
-    #     name_id_nq = request.session.get('samlNameIdNameQualifier', None)
-    #     name_id_spnq = request.session.get('samlNameIdSPNameQualifier', None)
+        # return RedirectResponse(sso_built_url)
 
-    #     return redirect(auth.logout(name_id=name_id, session_index=session_index, nq=name_id_nq, name_id_format=name_id_format, spnq=name_id_spnq))
-    elif 'acs' in request.args:
-        request_id = None
-        if 'AuthNRequestID' in session:
-            request_id = session['AuthNRequestID']
+        ## Here the mocking begins.
+        if "Referer" not in request.headers:
+            raise HTTPException(status_code=400, detail="Need referer header in order to process properly.")
 
-        auth.process_response(request_id=request_id)
-        errors = auth.get_errors()
-        not_auth_warn = not auth.is_authenticated()
-        if len(errors) == 0:
-            if 'AuthNRequestID' in session:
-                del session['AuthNRequestID']
-            session['samlUserdata'] = auth.get_attributes()
-            session['samlNameId'] = auth.get_nameid()
-            session['samlNameIdFormat'] = auth.get_nameid_format()
-            session['samlNameIdNameQualifier'] = auth.get_nameid_nq()
-            session['samlNameIdSPNameQualifier'] = auth.get_nameid_spnq()
-            session['samlSessionIndex'] = auth.get_session_index()
-            self_url = OneLogin_Saml2_Utils.get_self_url(req)
-            if 'RelayState' in request.form and self_url != request.form['RelayState']:
-                return redirect(auth.redirect_to(request.form['RelayState']))
-        elif auth.get_settings().is_debug_active():
-            error_reason = auth.get_last_error_reason()
-    # elif 'sls' in request.args:
-    #     request_id = None
-    #     if 'LogoutRequestID' in session:
-    #         request_id = session['LogoutRequestID']
-    #     dscb = lambda: session.clear()
-    #     url = auth.process_slo(request_id=request_id, delete_session_cb=dscb)
-    #     errors = auth.get_errors()
-    #     if len(errors) == 0:
-    #         if url is not None:
-    #             return redirect(url)
-    #         else:
-    #             success_slo = True
-    #     elif auth.get_settings().is_debug_active():
-    #         error_reason = auth.get_last_error_reason()
+        # Create token.
+        token = str(uuid.uuid4())
+        request.session['access_token'] = token
+        redis_client.set(token, request.session['AuthNRequestID'])
+        return RedirectResponse(request.headers["Referer"])
 
-    if 'samlUserdata' in session:
+        # resp = {
+        #     'token': token,
+        #     'AuthNRequest': request.session['AuthNRequestID']
+        # }
+
+        # json_compatible_item_data = jsonable_encoder(resp)
+        # return JSONResponse(content=json_compatible_item_data)
+
+    elif 'slo' in request.query_params:
+        if 'access_token' in request.session:
+            del request.session['AuthNRequestID']
+            redis_client.delete(request.session['access_token'])
+            return {"status_code": 200}
+
+        raise HTTPException(status_code=400, detail="No session exists")
+    elif 'acs' in request.query_params:
+
+        # Mock: get token back
+        if 'access_token' in request.session:
+            AuthNRequest = redis_client.get(request.session['access_token'])
+
+            if "Referer" not in request.headers:
+                raise HTTPException(status_code=400, detail="Need referer header in order to process properly.")
+            return RedirectResponse(request.headers["Referer"])
+
+        raise HTTPException(status_code=400, detail="No session is available to perform your request.")
+
+    if 'samlUserdata' in request.session:
         paint_logout = True
         if len(session['samlUserdata']) > 0:
             attributes = session['samlUserdata'].items()
@@ -115,17 +107,12 @@ def index(request: Request):
 
 @app.get('/attrs/')
 def attrs(request: Request):
-    paint_logout = False
-    attributes = False
-
-    if 'samlUserdata' in request.session:
-        paint_logout = True
-        if len(session['samlUserdata']) > 0:
-            attributes = session['samlUserdata'].items()
+    AuthNRequest = None
+    if 'access_token' in request.session:
+        AuthNRequest = redis_client.get(request.session['access_token'])
 
     resp = {
-        'paint_logout': paint_logout,
-        'attributes': attributes
+        'AuthNRequest': AuthNRequest
     }
 
     json_compatible_item_data = jsonable_encoder(resp)
@@ -144,6 +131,14 @@ def metadata(request: Request):
 
     raise HTTPException(status_code=500, detail=', '.join(errors))
 
+# @app.get("/value/{value_id}")
+# def get_value(value_id):
+#     return {value_id: redis_client.get(value_id)}
+
+# @app.post("/value/")
+# def set_value(name: str, value: str):
+#     redis_client.set(name, value)
+#     return {name: value}
 
 @app.get("/")
 def read_root(request: Request):
