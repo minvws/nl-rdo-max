@@ -1,9 +1,9 @@
 name: Create release package
 
 on:
- create:
-   tags:
-     - v*
+  create:
+    tags:
+      - v*
   push:
     branches: [ main, master, develop ]
 
