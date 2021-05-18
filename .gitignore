@@ -8,6 +8,8 @@ requirements-dev.txt
 __pycache__
 .env
 *.key
+*.crt
 .coverage*
 *.egg-info
 dump.rdb
+saml/settings.json
