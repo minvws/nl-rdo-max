@@ -1,5 +1,6 @@
 
 black
+uvicorn
 pylint
 bandit
 mypy

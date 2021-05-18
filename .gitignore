@@ -10,3 +10,4 @@ __pycache__
 *.key
 .coverage*
 *.egg-info
+dump.rdb
