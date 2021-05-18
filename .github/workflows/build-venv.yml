@@ -5,8 +5,7 @@ on:
     tags:
       - v*
   push:
-    branches: [ rebuild-venv ]
-
+    branches: [ main, develop ]
 
 jobs:
   build:
