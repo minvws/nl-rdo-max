@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 from redis import ResponseError
 
 from starlette.middleware.sessions import SessionMiddleware
-from fastapi import FastAPI, Request, HTTPException, status
+from fastapi import FastAPI, Request, HTTPException, status, Response
 
 from .service.tvs_access import TVSRequestHandler
 from .service.cache.redis_cache import redis_cache_service
@@ -40,7 +40,7 @@ def read_root(request: Request):
         "headers": request.headers,
         "query_params": request.query_params,
         "path_params": request.path_params,
-        "url": url_data.hostname,
+        "url": url_data.path,
     }
 
 @app.get("/heartbeat")

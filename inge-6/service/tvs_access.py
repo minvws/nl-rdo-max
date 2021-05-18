@@ -1,6 +1,5 @@
-# import os
-# import uuid
-# import urllib.request
+import uuid
+import logging
 
 from urllib.parse import urlparse
 
@@ -42,64 +41,40 @@ class TVSRequestHandler:
 
         req = self.prepare_fastapi_request(request, url_data)
         auth = self.init_saml_auth(req)
-        errors = []
-        error_reason = None
-        not_auth_warn = False
-        success_slo = False
-        attributes = False
-        paint_logout = False
-
 
         sso_built_url = auth.login()
         request.session['AuthNRequestID'] = auth.get_last_request_id()
         # return RedirectResponse(sso_built_url)
 
-        ## Here the mocking begins.
-        if "Referer" not in request.headers:
-            raise HTTPException(status_code=400, detail="Need referer header in order to process properly.")
-
-        # Create token.
-        token = self.redis_cache.gen_token()
-        request.session['access_token'] = token
-        self.redis_cache.set(token, request.session['AuthNRequestID'])
-        return RedirectResponse(request.headers["Referer"])
-
-        # resp = {
-        #     'token': token,
-        #     'AuthNRequest': request.session['AuthNRequestID']
-        # }
-
-        # json_compatible_item_data = jsonable_encoder(resp)
-        # return JSONResponse(content=json_compatible_item_data)
+        # ACS parts as well for mocking:
+        return RedirectResponse('/acs')
 
     def acs(self, request: Request):
         # Mock: get token back
-        if 'access_token' in request.session:
-            AuthNRequest = self.redis_cache.get(request.session['access_token'])
+        access_resource = self.redis_cache.gen_token()
+        # artifact = ...
+        # ResolveArtifact
+        # resolved_articat = ....
+        resolved_artifact = str(uuid.uuid4()) # Demo purposes
+        self.redis_cache.set(access_resource, resolved_artifact)
 
-            if "Referer" not in request.headers:
-                raise HTTPException(status_code=400, detail="Need referer header in order to process properly.")
-            return RedirectResponse(request.headers["Referer"])
+        content = {"access_resource": access_resource}
+        response = JSONResponse(content=content)
 
-        raise HTTPException(status_code=400, detail="No session is available to perform your request.")
-
-        if 'samlUserdata' in request.session:
-            paint_logout = True
-            if len(session['samlUserdata']) > 0:
-                attributes = session['samlUserdata'].items()
-
-        raise HTTPException(status_code=404, detail=', '.join(errors))
+        return response
 
     def attrs(self, request: Request):
-        AuthNRequest = None
-        if 'access_token' in request.session:
-            AuthNRequest = self.redis_cache.get(request.session['access_token'])
+        attributes = None
+        if 'access_resource' in request.session:
+            attributes = self.redis_cache.get(request.session['access_resource'])
+        else:
+            # return access resource token not found
+            raise HTTPException(status_code=404, details="access_resource not found")
 
-        resp = {
-            'AuthNRequest': AuthNRequest
-        }
+        if attributes is None:
+            raise HTTPException(status_code=404, details="resource not found")
 
-        json_compatible_item_data = jsonable_encoder(resp)
+        json_compatible_item_data = jsonable_encoder(attributes)
         return JSONResponse(content=json_compatible_item_data)
 
     def metadata(self, request: Request):
