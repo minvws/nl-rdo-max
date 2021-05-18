@@ -2,7 +2,7 @@ env = env PATH=${bin}:$$PATH
 
 venv: .venv/touchfile ## Create virtual environment
 .venv/touchfile:
-	test -d .venv || python3.8 -m venv .venv
+	test -d .venv || python3 -m venv .venv
 	. .venv/bin/activate; pip install -U pip
 	. .venv/bin/activate; pip install pip-tools
 	. .venv/bin/activate && ${env} python3 -m piptools compile requirements.in
