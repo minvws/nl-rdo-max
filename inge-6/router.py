@@ -7,19 +7,19 @@ from fastapi import APIRouter, Request, Response, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 
-from oic.oic.message import TokenErrorResponse, UserInfoErrorResponse, EndSessionRequest
+from oic.oic.message import TokenErrorResponse, UserInfoErrorResponse
 from pyop.access_token import AccessToken, BearerTokenError
-from pyop.exceptions import InvalidAuthenticationRequest, InvalidAccessToken, InvalidClientAuthentication, OAuthError, \
-                            InvalidSubjectIdentifier, InvalidClientRegistrationRequest
+from pyop.exceptions import InvalidAuthenticationRequest, InvalidAccessToken, InvalidClientAuthentication, OAuthError
+
 from pyop.util import should_fragment_encode
 
-from .service.tvs_access import TVSRequestHandler
+from .tvs_access import TVSRequestHandler
 from .config import settings
 from . import router
 
 tvs_request_handler = TVSRequestHandler()
 
-router = APIRouter(tags=['oidc'])
+router = APIRouter()
 
 @router.get('/authentication')
 def authentication_endpoint(request: Request):
@@ -44,10 +44,11 @@ def authentication_endpoint(request: Request):
     return RedirectResponse(response_url, status_code=303)
 
 @router.post('/token')
-def token_endpoint(request: Request):
+async def token_endpoint(request: Request):
     current_app = request.app
+    body = await request.body()
     try:
-        token_response = current_app.provider.handle_token_request(request.body().decode('utf-8'),
+        token_response = current_app.provider.handle_token_request(body.decode('utf-8'),
                                                                    request.headers)
         json_content = jsonable_encoder(token_response.to_dict())
         return JSONResponse(content=json_content)
@@ -66,10 +67,11 @@ def token_endpoint(request: Request):
         return response
 
 @router.post('/userinfo')
-def userinfo_endpoint(request: Request):
+async def userinfo_endpoint(request: Request):
     current_app  = request.app
+    body = await request.body()
     try:
-        response = current_app.provider.handle_userinfo_request(request.body().decode('utf-8'),
+        response = current_app.provider.handle_userinfo_request(body.decode('utf-8'),
                                                                 request.headers)
         json_content = jsonable_encoder(response.to_dict())
         return JSONResponse(content=json_content)
@@ -106,8 +108,8 @@ def heartbeat() -> Dict[str, bool]:
     errors = list()
 
     # Check reachability redis
-    if not redis_cache_service.redis_client.ping():
-        errors.append("CANNOT REACH REDIS CLIENT ON {}:{}".format(settings.redis_host, settings.redis_port))
+    # if not redis_cache_service.redis_client.ping():
+    #     errors.append("CANNOT REACH REDIS CLIENT ON {}:{}".format(settings.redis_host, settings.redis_port))
 
     # Check accessability cert and key path
     if not os.access(settings.cert_path, os.R_OK):

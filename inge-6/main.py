@@ -25,18 +25,12 @@ def init_oidc_provider(appw):
     token_endpoint = app.url_path_for('token_endpoint')
     userinfo_endpoint = app.url_path_for('userinfo_endpoint')
 
-    logging.debug(issuer)
-    # registration_endpoint = app.url_path_for('views.registration_endpoint')
-    # end_session_endpoint = app.url_path_for('views.end_session_endpoint')
-
     configuration_information = {
         'issuer': issuer,
         'authorization_endpoint': authentication_endpoint,
         'jwks_uri': jwks_uri,
         'token_endpoint': token_endpoint,
         'userinfo_endpoint': userinfo_endpoint,
-        # 'registration_endpoint': registration_endpoint,
-        # 'end_session_endpoint': end_session_endpoint,
         'scopes_supported': ['openid', 'profile'],
         'response_types_supported': ['code', 'code id_token', 'code token', 'code id_token token'],  # code and hybrid
         'response_modes_supported': ['query', 'fragment'],
@@ -71,5 +65,6 @@ async def startup_event():
     )
 
     validate_startup()
+
     app.provider = init_oidc_provider(app)
     app.logger = logging.getLogger(__package__)
