@@ -6,9 +6,17 @@ venv: .venv/touchfile ## Create virtual environment
 	. .venv/bin/activate; pip install -U pip
 	. .venv/bin/activate; pip install pip-tools
 	. .venv/bin/activate && ${env} python3 -m piptools compile requirements.in
-	. .venv/bin/activate && ${env} python3 -m piptools compile requirements-dev.in
-	. .venv/bin/activate && ${env} python3 -m piptools sync requirements.txt requirements-dev.txt
+	. .venv/bin/activate && ${env} python3 -m piptools sync requirements.txt
 	touch .venv/touchfile
+
+venv-dev: .venv/touchfile-dev ## Create virtual environment
+.venv-dev/touchfile:
+	test -d .venv-dev || python3 -m venv .venv-dev
+	. .venv/bin/activate; pip install -U pip
+	. .venv/bin/activate; pip install pip-tools
+	. .venv/bin/activate && ${env} python3 -m piptools compile requirements-dev.in
+	. .venv/bin/activate && ${env} python3 -m piptools sync requirements-dev.txt
+	touch .venv-dev/touchfile
 
 clean_venv: ## Remove virtual environment
 	@echo "Cleaning venv"
