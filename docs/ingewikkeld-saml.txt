@@ -1,0 +1,27 @@
+title ingewikkeld
+
+participant App
+participant Inge6
+participant IDPx
+participant RD(back)
+participant Inge4
+participant Cache
+
+
+App->Inge6:/login
+App<--Inge6:redirect(authn_request)
+
+note over App, IDPx:user does login
+IDPx-->App:artifact
+App->Inge6:redirect to /acs?(artifact)
+Inge6->RD(back): /resolve?artifact
+Inge6<--RD(back): resolved artifact
+
+note over Inge6:generate access_resource
+Inge6->Cache:store(access_resource, attributes)
+Inge6-->App:access_resource
+
+Inge4->Inge6:/get_attributes?access_resource
+Inge6->Cache:get(access_resource)
+Cache-->Inge6:attributes
+Inge6-->Inge4:attributes
