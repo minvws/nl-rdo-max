@@ -1,0 +1,40 @@
+name: Rebuild python virtual env
+
+on:
+  create:
+    tags:
+      - v*
+  push:
+    branches: [ rebuild-venv ]
+
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - uses: actions/checkout@v1
+
+      - name: prep
+        run: sudo mkdir -p /usr/local/inge6/current/
+      - name: prep chown
+        run: sudo chown `id -u`:`id -g` /usr/local/inge6/current/
+
+      - name: copy project to run location.
+        run: cp -r ./app ./tools ./resources ./requirements.txt ./run*.sh /usr/local/inge6/current/
+
+      - name: Create env
+        run: python3 -m venv /usr/local/inge6/current/.venv
+
+      - name: pip3 install
+        run: cd /usr/local/inge6/current; source .venv/bin/activate; pip install -U pip; pip install -r requirements.txt
+
+      - name: Create archive
+        run: cd /usr/local/inge6/current/; tar -czf /home/runner/work/inge6/inge6/inge6_venv_${{ env.RELEASE_VERSION }}.tar.gz .venv
+
+      - name: Upload venv tar
+        uses: actions/upload-artifact@v1
+        with:
+          name: inge6_venv_${{ env.RELEASE_VERSION }}
+          path: inge6_venv_${{ env.RELEASE_VERSION }}.tar.gz
