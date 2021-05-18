@@ -10,5 +10,7 @@ class Settings(BaseSettings):
     saml_path: str = os.path.join(BASE_DIR, 'saml')
     cert_path: str = os.path.join(BASE_DIR, 'saml/certs/sp.crt')
     key_path: str = os.path.join(BASE_DIR, 'saml/certs/sp.key')
+    redis_host: str = "localhost"
+    redis_port: str = "6379"
 
 settings = Settings()
