@@ -17,12 +17,21 @@ jobs:
 
       - name: install requirements
         run: sudo apt-get install libxmlsec1-dev
-        
+
+      - name: prep
+        run: sudo mkdir -p /var/www/html
+
+      - name: chown
+        run: sudo chown `id -u`:`id -g` /var/www/html
+
+      - name: Copy files
+        run: cp -r * /var/www/html
+
       - name: Create env
-        run: make venv
+        run: cd /var/www/html; make venv
 
       - name: Create archive
-        run: tar -czf inge6_venv_${{ env.RELEASE_VERSION }}.tar.gz .venv
+        run: cd /var/www/html; tar -czf ~/inge6_venv_${{ env.RELEASE_VERSION }}.tar.gz .venv
 
       - name: Upload venv tar
         uses: actions/upload-artifact@v1
