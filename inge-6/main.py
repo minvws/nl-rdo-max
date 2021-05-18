@@ -1,67 +1,56 @@
 import os.path
 import logging
 
-from urllib.parse import urlparse
-
-from redis import ResponseError
-
 from starlette.middleware.sessions import SessionMiddleware
-from fastapi import FastAPI, Request, HTTPException, status, Response
 
-from .service.tvs_access import TVSRequestHandler
-from .service.cache.redis_cache import redis_cache_service
+from fastapi import FastAPI
+from jwkest.jwk import RSAKey, rsa_load
+
+from pyop.authz_state import AuthorizationState
+from pyop.provider import Provider
+from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
+from pyop.userinfo import Userinfo
+
 from .config import settings
+from .router import router
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="example")
+app.include_router(router)
 
-tvs_request_handler = TVSRequestHandler()
+def init_oidc_provider(app, router):
+    issuer = app.url_path_for('read_root')
+    authentication_endpoint = app.url_path_for('authentication_endpoint')
+    # jwks_uri = app.url_path_for('views.jwks_uri')
+    token_endpoint = app.url_path_for('token_endpoint')
+    userinfo_endpoint = app.url_path_for('userinfo_endpoint')
+    # registration_endpoint = app.url_path_for('views.registration_endpoint')
+    # end_session_endpoint = app.url_path_for('views.end_session_endpoint')
 
-@app.get('/login')
-def index(request: Request):
-    return tvs_request_handler.login(request=request)
-
-@app.get('/acs')
-def acs(request: Request):
-    return tvs_request_handler.acs(request=request)
-
-@app.get('/attrs/')
-def attrs(request: Request):
-    return tvs_request_handler.attrs(request=request)
-
-@app.get('/metadata/')
-def metadata(request: Request):
-    return tvs_request_handler.metadata(request=request)
-
-@app.get("/")
-def read_root(request: Request):
-    url_data = urlparse(request.url._url)
-    return {
-        "headers": request.headers,
-        "query_params": request.query_params,
-        "path_params": request.path_params,
-        "url": url_data.path,
+    configuration_information = {
+        'issuer': issuer,
+        'authorization_endpoint': authentication_endpoint,
+        'token_endpoint': token_endpoint,
+        'userinfo_endpoint': userinfo_endpoint,
+        # 'registration_endpoint': registration_endpoint,
+        # 'end_session_endpoint': end_session_endpoint,
+        'scopes_supported': ['openid', 'profile'],
+        'response_types_supported': ['code', 'code id_token', 'code token', 'code id_token token'],  # code and hybrid
+        'response_modes_supported': ['query', 'fragment'],
+        'grant_types_supported': ['authorization_code', 'implicit'],
+        'subject_types_supported': ['pairwise'],
+        'token_endpoint_auth_methods_supported': ['client_secret_basic'],
+        'claims_parameter_supported': True
     }
 
-@app.get("/heartbeat")
-def heartbeat():
-    errors = list()
+    userinfo_db = Userinfo([])
+    signing_key = RSAKey(key=rsa_load('secrets/private_unencrypted.pem'), alg='RS256', )
+    provider = Provider(signing_key, configuration_information,
+                        AuthorizationState(HashBasedSubjectIdentifierFactory(settings.SUBJECT_ID_HASH_SALT)),
+                        {}, userinfo_db)
 
-    # Check reachability redis
-    if not redis_cache_service.redis_client.ping():
-        errors.append("CANNOT REACH REDIS CLIENT ON {}:{}".format(settings.redis_host, settings.redis_port))
+    return provider
 
-    # Check accessability cert and key path
-    if not os.access(settings.cert_path, os.R_OK):
-        errors.append("CANNOT ACCESS SAML CERT FILE")
-
-    if not os.access(settings.cert_path, os.R_OK):
-        errors.append("CANNOT ACCESS SAML KEY FILE")
-
-    if len(errors) != 0:
-        raise HTTPException(status_code=500, detail=',\n'.join(errors))
-
-    return
 
 def validate_startup():
     if not os.path.isfile(settings.cert_path):
@@ -79,3 +68,4 @@ async def startup_event():
     )
 
     validate_startup()
+    init_oidc_provider(app, router)
