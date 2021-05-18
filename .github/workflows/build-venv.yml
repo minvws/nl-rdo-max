@@ -19,19 +19,19 @@ jobs:
       - name: prep
         run: sudo mkdir -p /usr/local/inge6/current/
       - name: prep chown
-        run: sudo chown `id -u`:`id -g` /usr/local/inge6/current/
+        run: sudo chown `id -u`:`id -g` /usr/local/inge-6/current/
 
       - name: copy project to run location.
-        run: cp -r ./app ./tools ./resources ./requirements.txt ./run*.sh /usr/local/inge6/current/
+        run: cp -r ./app ./tools ./resources ./requirements.txt ./run*.sh /usr/local/inge-6/current/
 
       - name: Create env
-        run: python3 -m venv /usr/local/inge6/current/.venv
+        run: python3 -m venv /usr/local/inge-6/current/.venv
 
       - name: pip3 install
-        run: cd /usr/local/inge6/current; source .venv/bin/activate; pip install -U pip; pip install -r requirements.txt
+        run: cd /usr/local/inge-6/current; source .venv/bin/activate; pip install -U pip; pip install -r requirements.txt
 
       - name: Create archive
-        run: cd /usr/local/inge6/current/; tar -czf /home/runner/work/inge6/inge6/inge6_venv_${{ env.RELEASE_VERSION }}.tar.gz .venv
+        run: cd /usr/local/inge-6/current/; tar -czf /home/runner/work/inge-6/inge-6/inge6_venv_${{ env.RELEASE_VERSION }}.tar.gz .venv
 
       - name: Upload venv tar
         uses: actions/upload-artifact@v1
