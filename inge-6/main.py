@@ -18,18 +18,21 @@ app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="example")
 app.include_router(router)
 
-def init_oidc_provider(app, router):
-    issuer = app.url_path_for('read_root')
+def init_oidc_provider(appw):
+    issuer = "https://localhost:8006" # TODO: !!!
     authentication_endpoint = app.url_path_for('authentication_endpoint')
-    # jwks_uri = app.url_path_for('views.jwks_uri')
+    jwks_uri = app.url_path_for('jwks_uri')
     token_endpoint = app.url_path_for('token_endpoint')
     userinfo_endpoint = app.url_path_for('userinfo_endpoint')
+
+    logging.debug(issuer)
     # registration_endpoint = app.url_path_for('views.registration_endpoint')
     # end_session_endpoint = app.url_path_for('views.end_session_endpoint')
 
     configuration_information = {
         'issuer': issuer,
         'authorization_endpoint': authentication_endpoint,
+        'jwks_uri': jwks_uri,
         'token_endpoint': token_endpoint,
         'userinfo_endpoint': userinfo_endpoint,
         # 'registration_endpoint': registration_endpoint,
@@ -68,4 +71,5 @@ async def startup_event():
     )
 
     validate_startup()
-    init_oidc_provider(app, router)
+    app.provider = init_oidc_provider(app)
+    app.logger = logging.getLogger(__package__)
