@@ -4,6 +4,8 @@ on:
  create:
    tags:
      - v*
+  push:
+    branches: [ main, master, develop ]
 
 jobs:
   build:
