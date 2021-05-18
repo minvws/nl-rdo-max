@@ -25,7 +25,7 @@ jobs:
         run: sudo chown `id -u`:`id -g` /usr/local/inge-6/current/
 
       - name: copy project to run location.
-        run: echo $CWD ; ls -al ; echo cp -r ./app ./tools ./resources ./requirements.txt ./run*.sh /usr/local/inge-6/current/
+        run: echo $PWD ; ls -al ; echo cp -rv ./app ./tools ./resources ./requirements.txt ./run*.sh /usr/local/inge-6/current/
 
       - name: Create env
         run: python3 -m venv /usr/local/inge-6/current/.venv
