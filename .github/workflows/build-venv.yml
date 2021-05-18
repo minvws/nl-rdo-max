@@ -5,7 +5,7 @@ on:
     tags:
       - v*
   push:
-    branches: [ main, develop ]
+    branches: [ main, master, develop ]
 
 jobs:
   build:
