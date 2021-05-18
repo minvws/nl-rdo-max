@@ -59,9 +59,8 @@ class TVSRequestHandler:
         self.redis_cache.set(access_resource, resolved_artifact)
 
         content = {"access_resource": access_resource}
-        response = JSONResponse(content=content)
 
-        return response
+        return JSONResponse(content=content)
 
     def attrs(self, request: Request):
         attributes = None
