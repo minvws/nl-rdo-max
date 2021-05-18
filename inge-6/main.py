@@ -20,7 +20,7 @@ app.include_router(router)
 
 def init_oidc_provider(appw):
     issuer = "https://localhost:8006" # TODO: !!!
-    authentication_endpoint = app.url_path_for('authentication_endpoint')
+    authentication_endpoint = app.url_path_for('authorize')
     jwks_uri = app.url_path_for('jwks_uri')
     token_endpoint = app.url_path_for('token_endpoint')
     userinfo_endpoint = app.url_path_for('userinfo_endpoint')
@@ -40,11 +40,14 @@ def init_oidc_provider(appw):
         'claims_parameter_supported': True
     }
 
-    userinfo_db = Userinfo([])
+    userinfo_db = Userinfo(app.users)
     signing_key = RSAKey(key=rsa_load('secrets/private_unencrypted.pem'), alg='RS256', )
     provider = Provider(signing_key, configuration_information,
                         AuthorizationState(HashBasedSubjectIdentifierFactory(settings.SUBJECT_ID_HASH_SALT)),
-                        {}, userinfo_db)
+                        {'test_user': {
+                            'redirect_uris': ['http://10.48.118.250:8006/login-digid', 'http://10.48.118.250:8006/'],
+                            'response_types': ['id_token', 'id_token token']
+                        }}, userinfo_db)
 
     return provider
 
@@ -63,8 +66,8 @@ async def startup_event():
         # format='%(asctime)s %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p'
     )
-
     validate_startup()
 
+    app.users = {'test_user': {'name': 'Testing Name'}}
     app.provider = init_oidc_provider(app)
     app.logger = logging.getLogger(__package__)

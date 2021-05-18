@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 from fastapi.encoders import jsonable_encoder
 from fastapi import Request, Response, HTTPException
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
@@ -37,6 +37,10 @@ class TVSRequestHandler:
         }
 
     def login(self, request: Request):
+        id_token = request.query_params['id_token']
+        request.app.logger.debug("ID TOKEN: %s", id_token)
+        request.session['id_token'] = id_token
+
         url_data = urlparse(request.url._url)
 
         req = self.prepare_fastapi_request(request, url_data)
@@ -47,11 +51,23 @@ class TVSRequestHandler:
         # return RedirectResponse(sso_built_url)
 
         # ACS parts as well for mocking:
-        return RedirectResponse('/acs')
+        response = RedirectResponse('/digid-mock')
+        return response
+
+    def digid_mock(self, request: Request):
+        http_content = """
+        <html>
+        <a href='/acs' style='font-size:36; background-color:purple; display:box'>login</a>
+        </html>
+        """
+        return HTMLResponse(content=http_content, status_code=200)
 
     def acs(self, request: Request):
         # Mock: get token back
-        access_resource = self.redis_cache.gen_token()
+        access_resource = request.session['id_token']
+        request.app.logger.debug("ACCESS RESOURCE: %s", access_resource)
+
+        # id_token = ...
         # artifact = ...
         # ResolveArtifact
         # resolved_articat = ....

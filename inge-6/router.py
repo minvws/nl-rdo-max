@@ -21,12 +21,13 @@ tvs_request_handler = TVSRequestHandler()
 
 router = APIRouter()
 
-@router.get('/authentication')
-def authentication_endpoint(request: Request):
+@router.get('/authorize')
+async def authorize(request: Request):
      # parse authentication request
     current_app = request.app
+    body = request.query_params
     try:
-        encoded_url = urlencode(request.query_params)
+        encoded_url = urlencode(body)
         current_app.logger.debug(encoded_url)
         auth_req = current_app.provider.parse_authentication_request(encoded_url, request.headers)
     except InvalidAuthenticationRequest as e:
@@ -40,10 +41,24 @@ def authentication_endpoint(request: Request):
 
     # automagic authentication
     authn_response = current_app.provider.authorize(auth_req, 'test_user')
-    response_url = authn_response.request(auth_req['redirect_uri'], should_fragment_encode(auth_req))
+    response_url = authn_response.request(auth_req['redirect_uri'], False)
+
+    # SAML authorization, link to id_token in redis-cache
     return RedirectResponse(response_url, status_code=303)
 
-@router.post('/token')
+@router.get('/login-digid')
+def login_digid(request: Request):
+    return tvs_request_handler.login(request=request)
+
+@router.get('/digid-mock')
+def digid_mcok(request: Request):
+    return tvs_request_handler.digid_mock(request=request)
+
+@router.get('/acs')
+def assertion_consumer_service(request: Request):
+    return tvs_request_handler.acs(request=request)
+
+@router.post('/token?')
 async def token_endpoint(request: Request):
     current_app = request.app
     body = await request.body()
@@ -66,7 +81,7 @@ async def token_endpoint(request: Request):
         response.headers['Content-Type'] = 'application/json'
         return response
 
-@router.post('/userinfo')
+@router.post('/userinfo?')
 async def userinfo_endpoint(request: Request):
     current_app  = request.app
     body = await request.body()
@@ -94,16 +109,16 @@ def jwks_uri(request: Request):
     return JSONResponse(content=json_content)
 
 @router.get("/")
-def read_root(request: Request):
+async def read_root(request: Request):
     url_data = urlparse(request.url._url)
     return {
         "headers": request.headers,
         "query_params": request.query_params,
         "path_params": request.path_params,
-        "url": url_data.path,
+        "url": url_data.path
     }
 
-@router.get("/heartbeat")
+@router.get("/heartbeat?")
 def heartbeat() -> Dict[str, bool]:
     errors = list()
 
