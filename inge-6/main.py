@@ -55,47 +55,40 @@ def index(request: Request):
     paint_logout = False
 
 
-    if 'sso' in request.query_params:
-        sso_built_url = auth.login()
-        request.session['AuthNRequestID'] = auth.get_last_request_id()
-        # return RedirectResponse(sso_built_url)
+    sso_built_url = auth.login()
+    request.session['AuthNRequestID'] = auth.get_last_request_id()
+    # return RedirectResponse(sso_built_url)
 
-        ## Here the mocking begins.
+    ## Here the mocking begins.
+    if "Referer" not in request.headers:
+        raise HTTPException(status_code=400, detail="Need referer header in order to process properly.")
+
+    # Create token.
+    token = redis_client.acl_genpass()
+    request.session['access_token'] = token
+    redis_client.set(token, request.session['AuthNRequestID'])
+    return RedirectResponse(request.headers["Referer"])
+
+    # resp = {
+    #     'token': token,
+    #     'AuthNRequest': request.session['AuthNRequestID']
+    # }
+
+    # json_compatible_item_data = jsonable_encoder(resp)
+    # return JSONResponse(content=json_compatible_item_data)
+
+@app.get('/acs')
+def acs(request: Request):
+
+    # Mock: get token back
+    if 'access_token' in request.session:
+        AuthNRequest = redis_client.get(request.session['access_token'])
+
         if "Referer" not in request.headers:
             raise HTTPException(status_code=400, detail="Need referer header in order to process properly.")
-
-        # Create token.
-        token = str(uuid.uuid4())
-        request.session['access_token'] = token
-        redis_client.set(token, request.session['AuthNRequestID'])
         return RedirectResponse(request.headers["Referer"])
 
-        # resp = {
-        #     'token': token,
-        #     'AuthNRequest': request.session['AuthNRequestID']
-        # }
-
-        # json_compatible_item_data = jsonable_encoder(resp)
-        # return JSONResponse(content=json_compatible_item_data)
-
-    elif 'slo' in request.query_params:
-        if 'access_token' in request.session:
-            del request.session['AuthNRequestID']
-            redis_client.delete(request.session['access_token'])
-            return {"status_code": 200}
-
-        raise HTTPException(status_code=400, detail="No session exists")
-    elif 'acs' in request.query_params:
-
-        # Mock: get token back
-        if 'access_token' in request.session:
-            AuthNRequest = redis_client.get(request.session['access_token'])
-
-            if "Referer" not in request.headers:
-                raise HTTPException(status_code=400, detail="Need referer header in order to process properly.")
-            return RedirectResponse(request.headers["Referer"])
-
-        raise HTTPException(status_code=400, detail="No session is available to perform your request.")
+    raise HTTPException(status_code=400, detail="No session is available to perform your request.")
 
     if 'samlUserdata' in request.session:
         paint_logout = True
