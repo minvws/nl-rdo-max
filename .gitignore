@@ -13,3 +13,4 @@ __pycache__
 *.egg-info
 dump.rdb
 saml/settings.json
+inge6.conf
