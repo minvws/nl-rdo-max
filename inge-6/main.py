@@ -44,7 +44,7 @@ def init_oidc_provider(appw):
     userinfo_db = Userinfo(app.users)
     with open(settings.oidc.clients_file) as clients_file:
         clients = json.load(clients_file)
-    signing_key = RSAKey(key=rsa_load('secrets/private_unencrypted.pem'), alg='RS256', )
+    signing_key = RSAKey(key=rsa_load(settings.oidc.rsa_private_key), alg='RS256', )
     provider = Provider(signing_key, configuration_information,
                         AuthorizationState(HashBasedSubjectIdentifierFactory(settings.oidc.subject_id_hash_salt)),
                         clients, userinfo_db)
