@@ -41,22 +41,28 @@ async def authorize(request: Request):
 
     # automagic authentication
     authn_response = current_app.provider.authorize(auth_req, 'test_user')
-    response_url = authn_response.request(auth_req['redirect_uri'], False)
+    # response_url = authn_response.request(auth_req['redirect_uri'], False)
+    request.session['redirect-uri'] = auth_req['redirect_uri']
+    response_url = authn_response.request('/login-digid', False)
 
     # SAML authorization, link to id_token in redis-cache
     return RedirectResponse(response_url, status_code=303)
 
 @router.get('/login-digid')
 def login_digid(request: Request):
-    return tvs_request_handler.login(request=request)
+    return tvs_request_handler.login(request)
 
 @router.get('/digid-mock')
 def digid_mcok(request: Request):
-    return tvs_request_handler.digid_mock(request=request)
+    return tvs_request_handler.digid_mock(request)
 
 @router.get('/acs')
 def assertion_consumer_service(request: Request):
-    return tvs_request_handler.acs(request=request)
+    return tvs_request_handler.acs(request)
+
+@router.get('/attrs')
+def attrs(request: Request):
+    return tvs_request_handler.attrs(request)
 
 @router.post('/token?')
 async def token_endpoint(request: Request):

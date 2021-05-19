@@ -45,7 +45,11 @@ def init_oidc_provider(appw):
     provider = Provider(signing_key, configuration_information,
                         AuthorizationState(HashBasedSubjectIdentifierFactory(settings.SUBJECT_ID_HASH_SALT)),
                         {'test_user': {
-                            'redirect_uris': ['http://10.48.118.250:8006/login-digid', 'http://10.48.118.250:8006/'],
+                            'redirect_uris': [
+                                'http://10.48.118.250:8006/login-digid',
+                                'http://10.48.118.250:8006/',
+                                'http://10.48.118.250:8006/attrs',
+                                ],
                             'response_types': ['id_token', 'id_token token']
                         }}, userinfo_db)
 

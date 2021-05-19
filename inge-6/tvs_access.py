@@ -73,21 +73,18 @@ class TVSRequestHandler:
         # resolved_articat = ....
         resolved_artifact = str(uuid.uuid4()) # Demo purposes
         self.redis_cache.set(access_resource, resolved_artifact)
-
-        content = {"access_resource": access_resource}
-
-        return JSONResponse(content=content)
+        return RedirectResponse(request.session['redirect-uri'])
 
     def attrs(self, request: Request):
         attributes = None
-        if 'access_resource' in request.session:
-            attributes = self.redis_cache.get(request.session['access_resource'])
+        if 'id_token' in request.session:
+            attributes = self.redis_cache.get(request.session['id_token'])
         else:
-            # return access resource token not found
-            raise HTTPException(status_code=404, details="access_resource not found")
+            # Response redirect to /authorize?
+            raise HTTPException(status_code=405, details="Method not allowed, authorize first.")
 
         if attributes is None:
-            raise HTTPException(status_code=404, details="resource not found")
+            raise HTTPException(status_code=408, details="Resource expired.")
 
         json_compatible_item_data = jsonable_encoder(attributes)
         return JSONResponse(content=json_compatible_item_data)
