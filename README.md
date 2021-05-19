@@ -6,6 +6,8 @@ To run this service make sure you have the following files in place:
 3. Create a `saml/settings.json` from the `saml/settings-dist.json` having:
     - Attribute value as expected by the IdP
     - An assertionConsumerService URL representing your service url with a reference to the ACS
+4. For RSA signing of the OIDC cookies we need an RSA keypair. For now generate one, and put into
+the folder: secrets/private_unencrypted.pem
 
 Setup a redis server, and set the host and port in `inge-6/config.py`.
 
