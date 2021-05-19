@@ -9,7 +9,7 @@ class RedisCache:
     EXPIRES_IN_S = 60 * 15
 
     def __init__(self):
-        self.redis_client = redis.Redis(host=settings.redis_host, port=settings.redis_port, db=0)
+        self.redis_client = redis.Redis(host=settings.redis.host, port=settings.redis.port, db=0)
 
     def set(self, name: str, value: Any):
         serialized_value = pickle.dumps(value)

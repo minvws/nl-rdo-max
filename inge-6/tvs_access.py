@@ -10,7 +10,7 @@ from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
-from . import config
+from .config import settings
 from .cache.redis_cache import redis_cache_service
 
 class TVSRequestHandler:
@@ -19,7 +19,7 @@ class TVSRequestHandler:
         self.redis_cache = redis_cache_service
 
     def init_saml_auth(self, req):
-        auth = OneLogin_Saml2_Auth(req, custom_base_path=config.settings.saml_path)
+        auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
         return auth
 
     # TODO: Convert to fastapi standards.
@@ -93,9 +93,9 @@ class TVSRequestHandler:
         url_data = urlparse(request.url._url)
         req = self.prepare_fastapi_request(request, url_data)
         auth = self.init_saml_auth(req)
-        settings = auth.get_settings()
-        metadata = settings.get_sp_metadata()
-        errors = settings.validate_metadata(metadata)
+        saml_settings = auth.get_settings()
+        metadata = saml_settings.get_sp_metadata()
+        errors = saml_settings.validate_metadata(metadata)
 
         if len(errors) == 0:
             return Response(content=metadata, media_type="application/xml")

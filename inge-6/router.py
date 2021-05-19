@@ -18,7 +18,6 @@ from .config import settings
 from . import router
 
 tvs_request_handler = TVSRequestHandler()
-
 router = APIRouter()
 
 @router.get('/authorize')
@@ -130,13 +129,13 @@ def heartbeat() -> Dict[str, bool]:
 
     # Check reachability redis
     # if not redis_cache_service.redis_client.ping():
-    #     errors.append("CANNOT REACH REDIS CLIENT ON {}:{}".format(settings.redis_host, settings.redis_port))
+    #     errors.append("CANNOT REACH REDIS CLIENT ON {}:{}".format(settings.redis.host, settings.redis.port))
 
     # Check accessability cert and key path
-    if not os.access(settings.cert_path, os.R_OK):
+    if not os.access(settings.saml.cert_path, os.R_OK):
         errors.append("CANNOT ACCESS SAML CERT FILE")
 
-    if not os.access(settings.cert_path, os.R_OK):
+    if not os.access(settings.saml.cert_path, os.R_OK):
         errors.append("CANNOT ACCESS SAML KEY FILE")
 
     if len(errors) != 0:

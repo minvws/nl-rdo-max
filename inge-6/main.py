@@ -1,4 +1,5 @@
 import os.path
+import json
 import logging
 
 from starlette.middleware.sessions import SessionMiddleware
@@ -41,27 +42,22 @@ def init_oidc_provider(appw):
     }
 
     userinfo_db = Userinfo(app.users)
+    with open(settings.oidc.clients_file) as clients_file:
+        clients = json.load(clients_file)
     signing_key = RSAKey(key=rsa_load('secrets/private_unencrypted.pem'), alg='RS256', )
     provider = Provider(signing_key, configuration_information,
-                        AuthorizationState(HashBasedSubjectIdentifierFactory(settings.SUBJECT_ID_HASH_SALT)),
-                        {'test_user': {
-                            'redirect_uris': [
-                                'http://10.48.118.250:8006/login-digid',
-                                'http://10.48.118.250:8006/',
-                                'http://10.48.118.250:8006/attrs',
-                                ],
-                            'response_types': ['id_token', 'id_token token']
-                        }}, userinfo_db)
+                        AuthorizationState(HashBasedSubjectIdentifierFactory(settings.oidc.subject_id_hash_salt)),
+                        clients, userinfo_db)
 
     return provider
 
 
 def validate_startup():
-    if not os.path.isfile(settings.cert_path):
-        raise FileNotFoundError("File {} not found. Required for startup".format(settings.cert_path))
+    if not os.path.isfile(settings.saml.cert_path):
+        raise FileNotFoundError("File {} not found. Required for startup".format(settings.saml.cert_path))
 
-    if not os.path.isfile(settings.key_path):
-        raise FileNotFoundError("File {} not found. Required for startup".format(settings.key_path))
+    if not os.path.isfile(settings.saml.key_path):
+        raise FileNotFoundError("File {} not found. Required for startup".format(settings.saml.key_path))
 
 @app.on_event("startup")
 async def startup_event():
