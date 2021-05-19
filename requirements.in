@@ -1,5 +1,6 @@
-# Dependency management
-pip-tools
+# Dependency management. 
+# Already installed through env setup:
+# pip-tools
 
 # fastapi
 fastapi
