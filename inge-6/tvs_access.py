@@ -81,10 +81,10 @@ class TVSRequestHandler:
             attributes = self.redis_cache.get(request.session['id_token'])
         else:
             # Response redirect to /authorize?
-            raise HTTPException(status_code=405, details="Method not allowed, authorize first.")
+            raise HTTPException(status_code=405, detail="Method not allowed, authorize first.")
 
         if attributes is None:
-            raise HTTPException(status_code=408, details="Resource expired.")
+            raise HTTPException(status_code=408, detail="Resource expired.")
 
         json_compatible_item_data = jsonable_encoder(attributes)
         return JSONResponse(content=json_compatible_item_data)
