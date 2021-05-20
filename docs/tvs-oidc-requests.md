@@ -1,5 +1,4 @@
 # In this document the different types of requests are outlined:
-
 For each endpoint the parameters are documented. Please use as described.
 
 # `/authorize`

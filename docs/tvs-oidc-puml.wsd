@@ -1,0 +1,26 @@
+@startuml
+title tvs.cc.coroncheck.nl/authorize
+
+skinparam backgroundColor white
+skinparam participantBackgroundColor #EEEBDC
+skinparam noteBackgroundColor #EEE
+
+participant IDPx
+participant App
+
+App->Inge6:/authorize?redirect_uri
+Inge6->Inge6:/login-digid?id_token=XX
+
+App<--Inge6:redirect(authn_request IDPx, session=id_token)
+
+App->IDPx:redirect
+note over App, IDPx:user does login
+IDPx-->App:artifact
+App->Inge6:redirect to /acs?(artifact)
+
+Inge6->RD_BC:/resolve?artifact
+Inge6<--RD_BC:resolved artifact?attributes
+
+Inge6->Redis:store(id_token, attributes)
+Inge6->App:/redirect_uri
+@enduml
