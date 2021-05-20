@@ -84,7 +84,7 @@ class TVSRequestHandler:
             raise HTTPException(status_code=405, detail="Method not allowed, authorize first.")
 
         if attributes is None:
-            raise HTTPException(status_code=408, detail="Resource expired.")
+            raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )
 
         json_compatible_item_data = jsonable_encoder(attributes)
         return JSONResponse(content=json_compatible_item_data)
