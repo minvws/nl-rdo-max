@@ -38,7 +38,6 @@ class TVSRequestHandler:
 
     def login(self, request: Request):
         id_token = request.query_params['id_token']
-        request.app.logger.debug("ID TOKEN: %s", id_token)
         request.session['id_token'] = id_token
 
         url_data = urlparse(request.url._url)
