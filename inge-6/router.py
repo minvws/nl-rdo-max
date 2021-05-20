@@ -33,6 +33,10 @@ async def userinfo_endpoint(request: Request):
 def login_digid(request: Request):
     return tvs_request_handler.login(request)
 
+@router.get('/metadata')
+def metadata(request: Request):
+    return tvs_request_handler.metadata(request)
+
 @router.get('/digid-mock')
 def digid_mock(request: Request):
     return tvs_request_handler.digid_mock(request)
