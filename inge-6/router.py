@@ -46,9 +46,9 @@ def digid_mock(request: Request):
 def assertion_consumer_service(request: Request):
     return tvs_request_handler.acs(request)
 
-@router.get('/attrs')
-def attrs(request: Request):
-    return tvs_request_handler.attrs(request)
+@router.get('/bsn_attribute')
+def bsn_attribute(request: Request):
+    return tvs_request_handler.bsn_attribute(request)
 
 @router.get('/.well-known/openid-configuration')
 def provider_configuration(request: Request):

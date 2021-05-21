@@ -73,7 +73,7 @@ class TVSRequestHandler:
         self.redis_cache.set(access_token, resolved_artifact)
         return RedirectResponse(request.session['redirect-uri'])
 
-    def attrs(self, request: Request):
+    def bsn_attribute(self, request: Request):
         attributes = None
         if 'id_token' in request.session:
             attributes = self.redis_cache.get(request.session['id_token'])
