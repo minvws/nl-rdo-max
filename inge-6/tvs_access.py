@@ -37,9 +37,8 @@ class TVSRequestHandler:
         }
 
     def login(self, request: Request):
-        id_token = request.query_params['id_token']
-        request.session['id_token'] = id_token
-
+        # id_token = request.query_params['code']
+        # request.session['code'] = id_token
         url_data = urlparse(request.url._url)
 
         req = self.prepare_fastapi_request(request, url_data)
@@ -63,15 +62,15 @@ class TVSRequestHandler:
 
     def acs(self, request: Request):
         # Mock: get token back
-        access_resource = request.session['id_token']
-        request.app.logger.debug("ACCESS RESOURCE: %s", access_resource)
+        access_token = request.cookies.get('access_token')
+        request.app.logger.debug("ACCESS RESOURCE: %s", access_token)
 
         # id_token = ...
         # artifact = ...
         # ResolveArtifact
         # resolved_articat = ....
         resolved_artifact = str(uuid.uuid4()) # Demo purposes
-        self.redis_cache.set(access_resource, resolved_artifact)
+        self.redis_cache.set(access_token, resolved_artifact)
         return RedirectResponse(request.session['redirect-uri'])
 
     def attrs(self, request: Request):

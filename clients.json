@@ -1,8 +1,11 @@
 {
-    "test_user": {
+    "test_client": {
+        "client_secret": "secret",
         "redirect_uris": [
-            "http://10.48.118.250:8006/"
+            "http://10.48.118.250:8006/",
+            "http://10.48.118.250:8006/attrs",
+            "http://10.48.118.250:8006/accesstoken"
             ],
-        "response_types": ["id_token", "id_token token"]
+        "response_types": ["code"]
         }
 }

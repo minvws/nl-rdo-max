@@ -21,9 +21,10 @@ router = APIRouter()
 def authorize(request: Request):
     return authorization_handler.authorize(request)
 
-@router.post('/token?')
+@router.post('/accesstoken')
 async def token_endpoint(request: Request):
-    return authorization_handler.token_endpoint(request)
+    ''' Expect a request with a body containing the grant_type. Optional client_id + client_secret.'''
+    return await authorization_handler.token_endpoint(request)
 
 @router.post('/userinfo?')
 async def userinfo_endpoint(request: Request):
@@ -59,14 +60,16 @@ def jwks_uri(request: Request):
     json_content = jsonable_encoder(request.app.provider.jwks)
     return JSONResponse(content=json_content)
 
-@router.get("/")
+@router.post("/")
 async def read_root(request: Request):
     url_data = urlparse(request.url._url)
+    # json = await request.json()
     return {
         "headers": request.headers,
         "query_params": request.query_params,
         "path_params": request.path_params,
-        "url": url_data.path
+        "url": url_data.path,
+        # "json": json
     }
 
 @router.get("/heartbeat?")

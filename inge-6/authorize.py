@@ -1,5 +1,5 @@
 from typing import Dict
-from urllib.parse import urlencode
+from urllib.parse import urlencode, parse_qsl
 
 from fastapi import  Request, Response
 from fastapi.responses import RedirectResponse, JSONResponse
@@ -9,7 +9,14 @@ from oic.oic.message import TokenErrorResponse, UserInfoErrorResponse
 from pyop.access_token import AccessToken, BearerTokenError
 from pyop.exceptions import InvalidAuthenticationRequest, InvalidAccessToken, InvalidClientAuthentication, OAuthError
 
+from pyop.util import should_fragment_encode
+
+from .cache.redis_cache import redis_cache_service
+
 class AuthorizationHandler:
+
+    def __init__(self):
+        self.redis_cache = redis_cache_service
 
     def authorize(self, request: Request):
          # parse authentication request
@@ -17,6 +24,8 @@ class AuthorizationHandler:
         body = request.query_params
         try:
             auth_req = current_app.provider.parse_authentication_request(urlencode(body), request.headers)
+            code_challenge = body['code_challenge']
+            code_challenge_method = body['code_challenge_method']
         except InvalidAuthenticationRequest as e:
             current_app.logger.debug('received invalid authn request', exc_info=True)
             error_url = e.to_error_url()
@@ -28,19 +37,34 @@ class AuthorizationHandler:
 
         # automagic authentication
         authn_response = current_app.provider.authorize(auth_req, 'test_user')
-        # response_url = authn_response.request(auth_req['redirect_uri'], False)
-        request.session['redirect-uri'] = auth_req['redirect_uri']
-        response_url = authn_response.request('/login-digid', False)
+        # request.session['redirect-uri'] = auth_req['redirect_uri']
+
+        response_url = authn_response.request(auth_req['redirect_uri'], False)
+        # response_url = authn_response.request('/accesstoken', False)
+        # response_url = authn_rparse_qslponse.request('/login-digid', False)
 
         # SAML authorization, link to id_token in redis-cache
         return RedirectResponse(response_url, status_code=303)
 
-    async def token_endpoint(self, request: Request):
+    async def token_endpoint(self, request):
         current_app = request.app
         body = await request.body()
+        decoded_body = body.decode('utf-8')
+
+        token_request = dict(parse_qsl(decoded_body))
         try:
-            token_response = current_app.provider.handle_token_request(body.decode('utf-8'),
+            token_response = current_app.provider.handle_token_request(decoded_body,
                                                                     request.headers)
+
+            # store access_token, token_response in redis cache
+
+            # store access_token in session
+            response = RedirectResponse('/login-digid', status_code=303)
+            response.set_cookie(key='access_token', value=token_response)
+            request.session['redirect_uri'] = token_request['redirect_uri']
+
+            return response
+            # redirect to login-digid
             json_content = jsonable_encoder(token_response.to_dict())
             return JSONResponse(content=json_content)
         except InvalidClientAuthentication as e:
