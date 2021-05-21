@@ -4,11 +4,11 @@
     "sp": {
         "entityId": "urn:nl-eid-gdi:1.0:DV:00000002003182447001:entities:9001",
         "assertionConsumerService": {
-            "url": "https://<sp_domain>/?acs",
+            "url": "https://<sp_domain>/acs?",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
         },
         "singleLogoutService": {
-            "url": "https://<sp_domain>/?sls",
+            "url": "https://<sp_domain>/ssl",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
         },
         "attributeConsumingService": {
