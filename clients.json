@@ -1,10 +1,12 @@
 {
     "test_client": {
-        "client_secret": "secret",
+        "token_endpoint_auth_method": "none",
         "redirect_uris": [
             "http://10.48.118.250:8006/",
             "http://10.48.118.250:8006/attrs",
-            "http://10.48.118.250:8006/accesstoken"
+            "http://10.48.118.250:8006/accesstoken",
+            "http://localhost:8006/",
+            "http://localhost:8006/attrs"
             ],
         "response_types": ["code"]
         }
