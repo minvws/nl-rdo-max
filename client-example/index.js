@@ -1,131 +1,92 @@
 const { Issuer, generators } = require('openid-client');
+const express = require('express');
+const url = require('url');
+
 const passport = require('passport');
 const { OIDCStrategy } = require('passport-oidc-strategy');
 
+const app = express()
+const port = 3000
 
-baseUrl = "http://localhost:8006";
+// const baseUrl = "http://localhost:8006";
+const baseUrl = "https://10.48.118.250:8006";
 
-// const issuer = new Issuer({
-//   issuer: baseUrl,
-//   authorization_endpoint: baseUrl + '/authorize',
-//   token_endpoint: baseUrl + '/accesstoken',
-//   jwks_uri: baseUrl + '/jwks',
-//   userinfo_endpoint: baseUrl + '/userinfo'
-// });
+const clientBaseUrl = "https://e6c5ea473700.ngrok.io";
+const redirect_uri = clientBaseUrl + "/login";
+const finished_redirect_uri = clientBaseUrl + "/finished";
 
-// const client_id = 'test_client';
-// const client = new issuer.Client({
-//   client_id: client_id,
-//   redirect_uris: [baseUrl],
-//   response_types: ['code'],
-//   id_token_signed_response_alg: "RS256",
-//   token_endpoint_auth_method: "none"
-// });
+var authorizationUrl;
+var client;
+var code_verifier;
+var code_challenge;
 
-// client.pushedAuthorizationRequest({
-//   client_id: client_id
-// }).then( (authorizationRequestResponse) => {
-//   console.log(authorizationRequestResponse)
-// }, (error) => {
-//   console.log(error)
-// });
+app.get('/', (req, res) => {
+  // res.send('Hello World');
+  res.sendFile('index.html', {root: './'});
+});
 
-// const code_verifier = generators.codeVerifier();
-// // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
-// // it should be httpOnly (not readable by javascript) and encrypted.
+app.get('/finished', (req, res) => {
+  // res.send('Hello World');
+  res.send('Loop Done.');
+});
 
-// const code_challenge = generators.codeChallenge(code_verifier);
+app.get('/login', (req, res) => {
+  if ('code' in req.query ) {
+    // console.log(req);
+    const params = client.callbackParams(req);
 
-// client.authorizationUrl({
-//   scope: 'openid',
-//   resource: baseUrl + '/authorize',
-//   code_challenge,
-//   code_challenge_method: 'S256',
-// });
+    client.callback(redirect_uri, params, { code_verifier }) // => Promise
+      .then(function (tokenSet) {
+        console.log('received and validated tokens %j', tokenSet);
+        console.log('validated ID Token claims %j', tokenSet.claims());
+        // s = body.exp.toUTCString();
 
-// const params = client.callbackParams(req);
+        jsoned = JSON.stringify(tokenSet);
+        let buff = Buffer.from(jsoned, 'utf-8');
+        let text = buff.toString('base64');
+        res.cookie('access_token', tokenSet);
+        res.redirect(baseUrl + `/login-digid?redirect_uri=${finished_redirect_uri}&at=${text}`) // TODO: Token in redirect
+      }, (error) => {
+        console.log(error);
+      });
 
-// client.callback(baseUrl, params, { code_verifier }) // => Promise
-//   .then(function (tokenSet) {
-//     console.log('received and validated tokens %j', tokenSet);
-//     console.log('validated ID Token claims %j', tokenSet.claims());
-//   });
+  } else {
+    res.redirect(authorizationUrl);
+  }
+});
 
-// ././//////
+app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`);
+  discoverTvsDigiD();
+});
 
-// Issuer.discover(baseUrl + '/.well-known/openid-configuration') // => Promise
-//   .then( (issuer) => {
-//     console.log('Discovered issuer %s %O', issuer.issuer, issuer.metadata);
-//     const client = new issuer.Client({
-//       client_id: 'test_client',
-//       redirect_uris: [baseUrl],
-//       response_types: ['code'],
-//       id_token_signed_response_alg: "RS256",
-//       token_endpoint_auth_method: "none"
-//     });
+function discoverTvsDigiD() {
+  Issuer.discover(baseUrl + '/.well-known/openid-configuration') // => Promise
+    .then( (issuer) => {
+        console.log('Discovered issuer %s %O', issuer.issuer, issuer.metadata);
 
-//     const code_verifier = generators.codeVerifier();
-//     // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
-//     // it should be httpOnly (not readable by javascript) and encrypted.
-  
-//     const code_challenge = generators.codeChallenge(code_verifier);
-  
-//     client.authorizationUrl({
-//       scope: 'openid',
-//       resource: baseUrl + '/authorize',
-//       code_challenge,
-//       code_challenge_method: 'S256',
-//     });
-  
-//     const params = client.callbackParams(req);
-  
-//     client.callback(baseUrl, params, { code_verifier }) // => Promise
-//       .then(function (tokenSet) {
-//         console.log('received and validated tokens %j', tokenSet);
-//         console.log('validated ID Token claims %j', tokenSet.claims());
-//       });
-//   }, (error) => {
-//     throw error;
-//   });
+        client = new issuer.Client({
+          client_id: 'test_client',
+          redirect_uris: [redirect_uri],
+          response_types: ['code'],
+          id_token_signed_response_alg: "RS256",
+          token_endpoint_auth_method: "none"
+        });
 
-// const tvsDigiDIssuer = new Issuer({
-//   issuer: baseUrl,
-//   authorization_endpoint: baseUrl + '/authorize',
-//   token_endpoint: baseUrl + '/acesstoken',
-//   userinfo_endpoint: baseUrl + '/userinfo',
-//   jwks_uri: baseUrl + '/jwks'
-// });
+        // !!!! CARE: EXAMPLE DOES NOT IMPLEMENT THIS SECURITY ASPECT:
+        // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
+        // it should be httpOnly (not readable by javascript) and encrypted.
+        code_verifier = generators.codeVerifier();
 
-(async () => {
-  const tvsDigiDIssuer = await Issuer.discover(baseUrl + '/.well-known/openid-configuration')
-  
-  // const tvsDigiDClient = new tvsDigiDIssuer.Client({
-  //   client_id: 'test_client',
-  //   token_endpoint_auth_method: 'none'
-  // });
-  
-  // const tvsDigidParams = {
-  //   redirect_uri: 'http://localhost:8006/',
-  //   scope: 'openid'
-  // };
-  
-  // const passReqToCallback = true;
-  
-  // passport.use('tvsDigiD', new OIDCStrategy({ client: tvsDigiDClient, params: tvsDigidParams, passReqToCallback: passReqToCallback }, (req, tokenset, userinfo, done) => {
-  //   console.log('tokenset', tokenset);
-  //   console.log('access_token', tokenset.access_token);
-  //   console.log('id_token', tokenset.id_token);
-  //   console.log('claims', tokenset.claims);
-  //   console.log('userinfo', userinfo);
-   
-  //   // I don't have this in my code, I'm just interested in seeing the console output right now before incorporating the user model.
-  //   /*
-  //   models.User.findOne({ id: tokenset.claims.sub }, function (err, user) {
-  //     if (err) return done(err);
-  //     return done(null, user);
-  //   });*/
-  
-  //   return done(err);
-  
-  // }));
-})();
+        code_challenge = generators.codeChallenge(code_verifier);
+
+        authorizationUrl = client.authorizationUrl({
+          scope: 'openid',
+          resource: baseUrl + '/authorize',
+          code_challenge,
+          code_challenge_method: 'S256',
+        });
+      }, (error) => {
+        console.log(error);
+      });
+}
