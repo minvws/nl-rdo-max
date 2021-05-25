@@ -1,0 +1,23 @@
+{
+  "name": "client-example",
+  "version": "1.0.0",
+  "description": "OpenID Connect client for communication with TVS-DigiD",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Max Vasterd",
+  "license": "ISC",
+  "dependencies": {
+    "got": "^11.8.2",
+    "openid-client": "^4.7.3",
+    "passport": "^0.4.1",
+    "passport-azure-ad": "^4.3.0",
+    "passport-idaas-openidconnect": "^2.0.3",
+    "passport-oidc-strategy": "^0.1.1",
+    "passport-openid": "^0.4.0",
+    "passport-openidconnect": "^0.0.2",
+    "request": "^2.88.2"
+  }
+}
