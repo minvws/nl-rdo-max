@@ -2,6 +2,8 @@ import os.path
 import json
 import logging
 
+import uvicorn
+
 from starlette.middleware.sessions import SessionMiddleware
 
 from fastapi import FastAPI
@@ -34,7 +36,7 @@ app.add_middleware(SessionMiddleware, secret_key="example")
 app.include_router(router)
 
 def init_oidc_provider(appw):
-    issuer = "https://localhost:8006" # TODO: !!!
+    issuer = "https://10.48.118.250:8006" # TODO: !!!
     authentication_endpoint = app.url_path_for('authorize')
     jwks_uri = app.url_path_for('jwks_uri')
     token_endpoint = app.url_path_for('token_endpoint')
@@ -42,16 +44,16 @@ def init_oidc_provider(appw):
 
     configuration_information = {
         'issuer': issuer,
-        'authorization_endpoint': authentication_endpoint,
-        'jwks_uri': jwks_uri,
-        'token_endpoint': token_endpoint,
-        'userinfo_endpoint': userinfo_endpoint,
+        'authorization_endpoint': issuer + authentication_endpoint,
+        'jwks_uri': issuer + jwks_uri,
+        'token_endpoint': issuer + token_endpoint,
+        'userinfo_endpoint': issuer + userinfo_endpoint,
         'scopes_supported': ['openid', 'profile'],
         'response_types_supported': ['code', 'code id_token', 'code token', 'code id_token token'],  # code and hybrid
         'response_modes_supported': ['query', 'fragment'],
         'grant_types_supported': ['authorization_code', 'implicit'],
         'subject_types_supported': ['pairwise'],
-        'token_endpoint_auth_methods_supported': ['client_secret_basic'],
+        'token_endpoint_auth_methods_supported': ['none'],
         'claims_parameter_supported': True
     }
 
@@ -85,3 +87,14 @@ async def startup_event():
     app.users = {'test_user': {'name': 'Testing Name'}}
     app.provider = init_oidc_provider(app)
     app.logger = logging.getLogger(__package__)
+
+
+if __name__ == "__main__":
+    uvicorn.run(
+        'inge-6.main:app',
+        host=settings.host,
+        port=int(settings.port),
+        reload=settings.debug == "True",
+        ssl_keyfile=settings.ssl.base_dir + '/' + settings.ssl.key_file,
+        ssl_certfile=settings.ssl.base_dir + '/' + settings.ssl.cert_file
+    )

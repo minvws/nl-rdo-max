@@ -61,12 +61,14 @@ class AuthorizationHandler:
             token_response = current_app.provider.handle_token_request(decoded_body,
                                                                     request.headers)
 
+            json_content = jsonable_encoder(token_response.to_dict())
+            return JSONResponse(content=json_content)
             # store access_token in cookie
-            response = RedirectResponse('/login-digid', status_code=303)
-            response.set_cookie(key='access_token', value=token_response)
+            # response = RedirectResponse('/login-digid', status_code=303)
+            # response.set_cookie(key='access_token', value=token_response)
 
-            request.session['redirect_uri'] = token_request['redirect_uri']
-            return response
+            # request.session['redirect_uri'] = token_request['redirect_uri']
+            # return response
         except InvalidClientAuthentication as e:
             current_app.logger.debug('invalid client authentication at token endpoint', exc_info=True)
             error_resp = TokenErrorResponse(error='invalid_client', error_description=str(e))

@@ -1,5 +1,7 @@
 import uuid
 import logging
+import base64
+import json
 
 from urllib.parse import urlparse
 
@@ -46,32 +48,39 @@ class TVSRequestHandler:
 
         sso_built_url = auth.login()
         request.session['AuthNRequestID'] = auth.get_last_request_id()
+        request.session['redirect_uri'] = request.query_params['redirect_uri']
+        request.app.logger.debug('*****%s', request.query_params['redirect_uri'])
         # return RedirectResponse(sso_built_url)
 
+        access_token = request.query_params['at']
         # ACS parts as well for mocking:
-        response = RedirectResponse('/digid-mock')
+        response = RedirectResponse('/digid-mock?at=' + access_token)
         return response
 
     def digid_mock(self, request: Request):
-        http_content = """
+        access_token = request.query_params['at']
+        http_content = f"""
         <html>
-        <a href='/acs' style='font-size:36; background-color:purple; display:box'>login</a>
+        <h1> DIGID MOCK </h1>
+        {access_token}
+        <a href='/acs?at={access_token}' style='font-size:36; background-color:purple; display:box'>login</a>
         </html>
         """
         return HTMLResponse(content=http_content, status_code=200)
 
     def acs(self, request: Request):
         # Mock: get token back
-        access_token = request.cookies.get('access_token')
+        at = request.query_params['at']
+        request.app.logger.debug("BASE64 ACCESS RESOURCE: %s", at)
+        access_token = base64.b64decode(at).decode()
         request.app.logger.debug("ACCESS RESOURCE: %s", access_token)
-
         # id_token = ...
         # artifact = ...
         # ResolveArtifact
         # resolved_articat = ....
         resolved_artifact = str(uuid.uuid4()) # Demo purposes
         self.redis_cache.set(access_token, resolved_artifact)
-        return RedirectResponse(request.session['redirect-uri'])
+        return RedirectResponse(request.session['redirect_uri'])
 
     def bsn_attribute(self, request: Request):
         attributes = None

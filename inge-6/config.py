@@ -16,6 +16,8 @@ class Settings(configparser.ConfigParser):
             return self._section[name]
 
     def __getattr__(self, name):
+        if name in self._defaults:
+            return self._defaults[name]
         if name in self._sections:
             return self.SettingSection(self._sections[name])
         raise AttributeError("Attribute {} not found".format(name))
