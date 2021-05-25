@@ -5,6 +5,7 @@ import logging
 from starlette.middleware.sessions import SessionMiddleware
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from jwkest.jwk import RSAKey, rsa_load
 
 from pyop.authz_state import AuthorizationState
@@ -15,8 +16,21 @@ from pyop.userinfo import Userinfo
 from .config import settings
 from .router import router
 
+# origins = [
+#     ""
+# ]
+
 app = FastAPI()
+
 app.add_middleware(SessionMiddleware, secret_key="example")
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
 app.include_router(router)
 
 def init_oidc_provider(appw):
