@@ -1,5 +1,13 @@
 [DEFAULT]
 app_name = "CoronaCheck TVS - Digid login"
+debug = True
+host = 0.0.0.0
+port = 8006
+
+[ssl]
+base_dir = secrets/ssl
+cert_file = certs/apache-selfsigned.crt
+key_file = private/apache-selfsigned.key
 
 [oidc]
 clients_file = clients.json
