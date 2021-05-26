@@ -67,7 +67,7 @@ class TVSRequestHandler:
         request.session['redirect_uri'] = request.query_params['redirect_uri']
         request.app.logger.debug('*****%s', request.query_params['redirect_uri'])
 
-        if settings.mock_digid == False:
+        if settings.mock_digid.lower() == "false":
             return RedirectResponse(sso_built_url)
 
         access_token = request.query_params['at']
