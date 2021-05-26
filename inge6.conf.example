@@ -3,6 +3,7 @@ app_name = "CoronaCheck TVS - Digid login"
 debug = True
 host = 0.0.0.0
 port = 8006
+mock_digid = False
 
 [ssl]
 base_dir = secrets/ssl
