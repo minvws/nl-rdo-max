@@ -90,11 +90,17 @@ async def startup_event():
 
 
 if __name__ == "__main__":
+    run_kwargs = {
+        'host': settings.host,
+        'port': int(settings.port),
+        'reload': settings.debug == "True",
+    }
+
+    if settings.use_ssl:
+        run_kwargs['ssl_keyfile'] = settings.ssl.base_dir + '/' + settings.ssl.key_file,
+        run_kwargs['ssl_certfile'] = settings.ssl.base_dir + '/' + settings.ssl.cert_file
+
     uvicorn.run(
-        'inge-6.main:app',
-        host=settings.host,
-        port=int(settings.port),
-        reload=settings.debug == "True",
-        ssl_keyfile=settings.ssl.base_dir + '/' + settings.ssl.key_file,
-        ssl_certfile=settings.ssl.base_dir + '/' + settings.ssl.cert_file
-    )
+                'inge-6.main:app',
+                **run_kwargs
+            )
