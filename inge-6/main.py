@@ -35,8 +35,8 @@ app.add_middleware(SessionMiddleware, secret_key="example")
 
 app.include_router(router)
 
-def init_oidc_provider(appw):
-    issuer = "https://10.48.118.250:8006" # TODO: !!!
+def init_oidc_provider(app):
+    issuer = settings.issuer # TODO: !!!
     authentication_endpoint = app.url_path_for('authorize')
     jwks_uri = app.url_path_for('jwks_uri')
     token_endpoint = app.url_path_for('token_endpoint')
