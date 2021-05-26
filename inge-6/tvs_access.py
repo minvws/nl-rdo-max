@@ -24,7 +24,7 @@ class TVSRequestHandler:
     def __init__(self):
         self.redis_cache = redis_cache_service
 
-    def init_saml_auth(self, req):
+    def _create_idp_sp_settings(self):
         idp_data = OneLogin_Saml2_IdPMetadataParser.parse_remote(
             'https://pp2.toegang.overheid.nl/kvs/rd/metadata',
             required_sso_binding=OneLogin_Saml2_Constants.BINDING_HTTP_POST,
@@ -36,15 +36,20 @@ class TVSRequestHandler:
             'sp':  base_settings.get_sp_data(),
         }
         merged_settings = OneLogin_Saml2_IdPMetadataParser.merge_settings(
-                                                                        sp_settings,
-                                                                        idp_data
-                                                                        )
+                                                                    sp_settings,
+                                                                    idp_data
+                                                                )
 
+        # Append the advanced settings to the file.
         advanced_filename = base_settings.get_base_path() + 'advanced_settings.json'
         if exists(advanced_filename):
             with open(advanced_filename, 'r') as json_data:
                 merged_settings.update(json.loads(json_data.read()))  # Merge settings
 
+        return merged_settings
+
+    def init_saml_auth(self, req):
+        merged_settings = self._create_idp_sp_settings()
         auth = OneLogin_Saml2_Auth(req, merged_settings, custom_base_path=settings.saml.base_dir)
         return auth
 
