@@ -15,3 +15,4 @@ dump.rdb
 saml/settings.json
 inge6.conf
 node_modules
+out/
