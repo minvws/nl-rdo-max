@@ -96,7 +96,7 @@ if __name__ == "__main__":
         'reload': settings.debug == "True",
     }
 
-    if settings.use_ssl:
+    if hasattr(settings, 'use_custom_ssl') and settings.use_custom_ssl.lower() == 'true':
         run_kwargs['ssl_keyfile'] = settings.ssl.base_dir + '/' + settings.ssl.key_file,
         run_kwargs['ssl_certfile'] = settings.ssl.base_dir + '/' + settings.ssl.cert_file
 
