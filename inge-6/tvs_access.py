@@ -1,5 +1,6 @@
 import uuid
-import logging
+from os.path import exists
+
 import base64
 import json
 
@@ -29,15 +30,22 @@ class TVSRequestHandler:
             required_sso_binding=OneLogin_Saml2_Constants.BINDING_HTTP_POST,
             required_slo_binding=OneLogin_Saml2_Constants.BINDING_HTTP_POST,
         )
-        # auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
-        sp_settings = OneLogin_Saml2_Settings(custom_base_path=settings.saml.base_dir, sp_validation_only=True)
-        merged_settings_dict = {
-            'sp': sp_settings.get_sp_data()
-        }
-        merged_settings_dict['idp'] = idp_data['idp']
 
-        saml_settings = OneLogin_Saml2_Settings(merged_settings_dict)
-        auth = OneLogin_Saml2_Auth(req, saml_settings)
+        base_settings = OneLogin_Saml2_Settings(custom_base_path=settings.saml.base_dir, sp_validation_only=True)
+        sp_settings = {
+            'sp':  base_settings.get_sp_data(),
+        }
+        merged_settings = OneLogin_Saml2_IdPMetadataParser.merge_settings(
+                                                                        sp_settings,
+                                                                        idp_data
+                                                                        )
+
+        advanced_filename = base_settings.get_base_path() + 'advanced_settings.json'
+        if exists(advanced_filename):
+            with open(advanced_filename, 'r') as json_data:
+                merged_settings.update(json.loads(json_data.read()))  # Merge settings
+
+        auth = OneLogin_Saml2_Auth(req, merged_settings, custom_base_path=settings.saml.base_dir)
         return auth
 
     # TODO: Convert to fastapi standards.
