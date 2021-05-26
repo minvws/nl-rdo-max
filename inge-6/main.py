@@ -97,7 +97,7 @@ if __name__ == "__main__":
     }
 
     if hasattr(settings, 'use_ssl') and settings.use_ssl.lower() == 'true':
-        run_kwargs['ssl_keyfile'] = settings.ssl.base_dir + '/' + settings.ssl.key_file,
+        run_kwargs['ssl_keyfile'] = settings.ssl.base_dir + '/' + settings.ssl.key_file
         run_kwargs['ssl_certfile'] = settings.ssl.base_dir + '/' + settings.ssl.cert_file
 
     uvicorn.run(

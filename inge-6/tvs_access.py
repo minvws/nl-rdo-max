@@ -11,6 +11,9 @@ from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
+from onelogin.saml2.constants import OneLogin_Saml2_Constants
+from onelogin.saml2.settings import OneLogin_Saml2_Settings
+from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 
 from .config import settings
 from .cache.redis_cache import redis_cache_service
@@ -21,7 +24,20 @@ class TVSRequestHandler:
         self.redis_cache = redis_cache_service
 
     def init_saml_auth(self, req):
-        auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
+        idp_data = OneLogin_Saml2_IdPMetadataParser.parse_remote(
+            'https://pp2.toegang.overheid.nl/kvs/rd/metadata',
+            required_sso_binding=OneLogin_Saml2_Constants.BINDING_HTTP_POST,
+            required_slo_binding=OneLogin_Saml2_Constants.BINDING_HTTP_POST,
+        )
+        # auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
+        sp_settings = OneLogin_Saml2_Settings(custom_base_path=settings.saml.base_dir, sp_validation_only=True)
+        merged_settings_dict = {
+            'sp': sp_settings.get_sp_data()
+        }
+        merged_settings_dict['idp'] = idp_data['idp']
+
+        saml_settings = OneLogin_Saml2_Settings(merged_settings_dict)
+        auth = OneLogin_Saml2_Auth(req, saml_settings)
         return auth
 
     # TODO: Convert to fastapi standards.
@@ -50,7 +66,9 @@ class TVSRequestHandler:
         request.session['AuthNRequestID'] = auth.get_last_request_id()
         request.session['redirect_uri'] = request.query_params['redirect_uri']
         request.app.logger.debug('*****%s', request.query_params['redirect_uri'])
-        # return RedirectResponse(sso_built_url)
+
+        if settings.mock_digid == False:
+            return RedirectResponse(sso_built_url)
 
         access_token = request.query_params['at']
         # ACS parts as well for mocking:

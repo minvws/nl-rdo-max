@@ -11,6 +11,7 @@ from pyop.exceptions import InvalidAuthenticationRequest, InvalidAccessToken, In
 
 from pyop.util import should_fragment_encode
 
+from .config import settings
 from .cache.redis_cache import redis_cache_service
 
 class AuthorizationHandler:
