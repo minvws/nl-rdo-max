@@ -9,7 +9,7 @@ To run this service make sure you have the following files in place:
 4. For RSA signing of the OIDC cookies we need an RSA keypair. For now generate one, and put into
 the folder: secrets/private_unencrypted.pem
 5. Add your domain to the response_uris list in the clients.json.
-6. Salt: TODO:
+6. Have ssl certificates in your secrets/ssl/private and /certs folder, and point to them in the config file.
 
 Setup a redis server, and set the host and port in `inge-6/config.py`.
 
