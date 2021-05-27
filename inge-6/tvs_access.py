@@ -139,10 +139,12 @@ class TVSRequestHandler:
         # return response
 
     def digid_mock(self, request: Request):
+        code = request.query_params['code']
+        redirect_uri = request.query_params['redirect_uri']
         http_content = f"""
         <html>
         <h1> DIGID MOCK </h1>
-        <a href='/acs' style='font-size:36; background-color:purple; display:box'>login</a>
+        <a href='{redirect_uri}?code={code}' style='font-size:36; background-color:purple; display:box'>login</a>
         </html>
         """
         return HTMLResponse(content=http_content, status_code=200)

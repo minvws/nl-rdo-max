@@ -46,18 +46,10 @@ class AuthorizationHandler:
 
         # automagic authentication
         authn_response = current_app.provider.authorize(auth_req, 'test_user')
-        # request.session['redirect-uri'] = auth_req['redirect_uri']
+        response_url = authn_response.request('/digid-mock', False)
+        redirect_uri = auth_req['redirect_uri']
 
-        # return RedirectResponse('/login-digid')
-        # current_app.logger.debug()
-        return HTMLResponse(content=self.tvs_handler.login(request))
-
-        response_url = authn_response.request(auth_req['redirect_uri'], False)
-        # response_url = authn_response.request('/accesstoken', False)
-        # response_url = authn_rparse_qslponse.request('/login-digid', False)
-
-        # SAML authorization, link to id_token in redis-cache
-        return RedirectResponse(response_url, status_code=303)
+        return RedirectResponse(response_url + f"&redirect_uri={redirect_uri}", status_code=303)
 
     async def token_endpoint(self, request):
         current_app = request.app
