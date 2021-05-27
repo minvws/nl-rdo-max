@@ -74,7 +74,7 @@ class TVSRequestHandler:
         authn_request = auth.authn_request_class(auth.get_settings(), **authn_kwargs)
 
         url = auth.get_sso_url()
-        data = authn_request.get_request(False, False)
+        data = authn_request.get_request()
 
         saml_request = OneLogin_Saml2_Utils.b64encode(
             OneLogin_Saml2_Utils.add_sign(
