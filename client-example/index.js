@@ -11,6 +11,10 @@ const baseUrl = "https://10.48.118.250:8006";
 
 const clientBaseUrl = "https://e039d10f9c39.ngrok.io";
 const redirect_uri = clientBaseUrl + "/login";
+const redirect_uris = [
+  clientBaseUrl + "/login",
+  "http://10.48.118.250:3000" + "/login",
+]
 const finished_redirect_uri = clientBaseUrl + "/finished";
 
 var authorizationUrl;
@@ -25,7 +29,16 @@ app.get('/', (req, res) => {
 
 app.get('/finished', (req, res) => {
   // res.send('Hello World');
-  res.send('Loop Done.');
+  at = req.query.at
+
+  const buff = Buffer.from(at, 'base64');
+  const jsoned = buff.toString('utf-8');
+
+  html = `
+    <h1> Successfully achieved token: </h1>
+    <pre>${jsoned}</pre>
+  `
+  res.send(html)
 });
 
 app.get('/login', (req, res) => {
@@ -37,14 +50,12 @@ app.get('/login', (req, res) => {
       .then(function (tokenSet) {
         console.log('received and validated tokens %j', tokenSet);
         console.log('validated ID Token claims %j', tokenSet.claims());
-        // s = body.exp.toUTCString();
 
-        jsoned = JSON.stringify(tokenSet);
+        jsoned = JSON.stringify(tokenSet, null, 2);
         let buff = Buffer.from(jsoned, 'utf-8');
         let text = buff.toString('base64');
-        res.cookie('access_token', text);
-        res.redirect(baseUrl + `/login-digid?redirect_uri=${finished_redirect_uri}&at=${text}`) // TODO: Token in redirect
-        // res.redirect(baseUrl + '/login-digid') // TODO: Token in redirect
+        console.log(tokenSet.claims());
+        res.redirect('/finished?at=' + text)
       }, (error) => {
         console.log(error);
       });
@@ -66,7 +77,7 @@ function discoverTvsDigiD() {
 
         client = new issuer.Client({
           client_id: 'test_client',
-          redirect_uris: [redirect_uri],
+          redirect_uris: redirect_uris,
           response_types: ['code'],
           id_token_signed_response_alg: "RS256",
           token_endpoint_auth_method: "none"
