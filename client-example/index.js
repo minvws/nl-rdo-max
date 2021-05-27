@@ -9,8 +9,8 @@ const app = express()
 const port = 3000
 
 // const baseUrl = "http://localhost:8006";
-const baseUrl = "https://10.48.118.250:8006";
-// const baseUrl = "https://tvs.acc.coronacheck.nl";
+// const baseUrl = "https://10.48.118.250:8006";
+const baseUrl = "https://tvs.acc.coronacheck.nl";
 
 const clientBaseUrl = "https://e039d10f9c39.ngrok.io";
 const redirect_uri = clientBaseUrl + "/login";

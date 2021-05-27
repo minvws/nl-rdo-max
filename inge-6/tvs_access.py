@@ -124,7 +124,7 @@ class TVSRequestHandler:
         auth = self.init_saml_auth(req)
         # print(auth.get_settings().get_security_data())
 
-        sso_built_url_post, parameters = self._login_post(auth, return_to='https://e039d10f9c39.ngrok.io')
+        sso_built_url_post, parameters = self._login_post(auth, return_to='https://e039d10f9c39.ngrok.io', force_authn=True)
         # print(parameters)
 
         # request.session['AuthNRequestID'] = auth.get_last_request_id()

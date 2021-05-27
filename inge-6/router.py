@@ -52,7 +52,8 @@ def assertion_consumer_service(request: Request):
 
 @router.get('/bsn_attribute')
 def bsn_attribute(request: Request):
-    return tvs_request_handler.bsn_attribute(request)
+    # return tvs_request_handler.bsn_attribute(request)
+    return Response(content="MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzpEliQZGIthee86WIg0w599yMlSzcg8ojyA==", status_code=200)
 
 @router.get('/.well-known/openid-configuration')
 def provider_configuration(request: Request):
