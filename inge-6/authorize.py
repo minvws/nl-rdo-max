@@ -1,8 +1,10 @@
 from typing import Dict
-from urllib.parse import urlencode, parse_qsl
+import base64
+import json
+from urllib.parse import urlencode, quote_plus
 
 from fastapi import  Request, Response
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
 from oic.oic.message import TokenErrorResponse, UserInfoErrorResponse
@@ -13,11 +15,13 @@ from pyop.util import should_fragment_encode
 
 from .config import settings
 from .cache.redis_cache import redis_cache_service
+from .tvs_access import TVSRequestHandler
 
 class AuthorizationHandler:
 
     def __init__(self):
         self.redis_cache = redis_cache_service
+        self.tvs_handler = TVSRequestHandler()
 
     def authorize(self, request: Request):
         # TODO: Assume scope parameter: scope=openid if not exists?
@@ -44,6 +48,10 @@ class AuthorizationHandler:
         authn_response = current_app.provider.authorize(auth_req, 'test_user')
         # request.session['redirect-uri'] = auth_req['redirect_uri']
 
+        # return RedirectResponse('/login-digid')
+        # current_app.logger.debug()
+        return HTMLResponse(content=self.tvs_handler.login(request))
+
         response_url = authn_response.request(auth_req['redirect_uri'], False)
         # response_url = authn_response.request('/accesstoken', False)
         # response_url = authn_rparse_qslponse.request('/login-digid', False)
@@ -54,22 +62,27 @@ class AuthorizationHandler:
     async def token_endpoint(self, request):
         current_app = request.app
         body = await request.body()
-        decoded_body = body.decode('utf-8')
-        current_app.logger.debug(decoded_body)
 
-        token_request = dict(parse_qsl(decoded_body))
         try:
-            token_response = current_app.provider.handle_token_request(decoded_body,
+            token_response = current_app.provider.handle_token_request(body.decode('utf-8'),
                                                                     request.headers)
 
-            json_content = jsonable_encoder(token_response.to_dict())
-            return JSONResponse(content=json_content)
+            json_content_resp = jsonable_encoder(token_response.to_dict())
+            # json_content = json.dumps(token_response.to_dict()).encode()
+            # base64_content = base64.b64encode(json_content)
+
+            # return JSONResponse(content=json_content)
             # store access_token in cookie
             # response = RedirectResponse('/login-digid', status_code=303)
             # response.set_cookie(key='access_token', value=token_response)
-
             # request.session['redirect_uri'] = token_request['redirect_uri']
-            # return response
+
+            # request.session['access_token'] = base64_content.decode()
+            # return RedirectResponse('/login-digid', status_code=200)
+            res = JSONResponse(content=json_content_resp)
+            # red_url = '/login-digid'
+            # res.headers["location"] = quote_plus(str(red_url), safe=":/%#?&=@[]!$&'()*+,;")
+            return res
         except InvalidClientAuthentication as e:
             current_app.logger.debug('invalid client authentication at token endpoint', exc_info=True)
             error_resp = TokenErrorResponse(error='invalid_client', error_description=str(e))

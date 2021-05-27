@@ -4,6 +4,9 @@ from os.path import exists
 import base64
 import json
 
+from os.path import dirname, join
+from jinja2 import Template
+
 from urllib.parse import urlparse
 
 from fastapi.encoders import jsonable_encoder
@@ -58,8 +61,8 @@ class TVSRequestHandler:
         # If server is behind proxys or balancers use the HTTP_X_FORWARDED fields
         return {
             'https': 'on' if request.url.scheme == 'https' else 'off',
-            'http_host': request.client.host,
-            'server_port': url_data.port,
+            'http_host': settings.issuer,
+            'server_port': 443, # configbaar
             'script_name': url_data.path,
             'get_data': request.query_params,
             # Uncomment if using ADFS as IdP, https://github.com/onelogin/python-saml/pull/144
@@ -67,53 +70,100 @@ class TVSRequestHandler:
             'post_data': request.body
         }
 
+    def _login_post(self, auth, return_to=None, **authn_kwargs):
+        authn_request = auth.authn_request_class(auth.get_settings(), **authn_kwargs)
+
+        url = auth.get_sso_url()
+        data = authn_request.get_request(False, False)
+
+        saml_request = OneLogin_Saml2_Utils.b64encode(
+            OneLogin_Saml2_Utils.add_sign(
+                data,
+                auth.get_settings().get_sp_key(), auth.get_settings().get_sp_cert(),
+                sign_algorithm=OneLogin_Saml2_Constants.RSA_SHA256,
+                digest_algorithm=OneLogin_Saml2_Constants.SHA256,),
+        )
+        # logger.debug(
+        #     "Returning form-data to the user for a AuthNRequest to %s with SAMLRequest %s",
+        #     url, OneLogin_Saml2_Utils.b64decode(saml_request).decode('utf-8')
+        # )
+        parameters = {'SAMLRequest': saml_request}
+
+        if return_to is not None:
+            parameters['RelayState'] = return_to
+        else:
+            parameters['RelayState'] = OneLogin_Saml2_Utils.get_self_url_no_query(data)
+
+        return url, parameters
+        template_text = template_file.read()
+        template = Template(template_text)
+
+    def _create_post_form(self, url, parameters):
+        # Return HTML form
+        template_file = open(settings.saml.base_dir + '/templates/authn_request.html')
+        template_text = template_file.read()
+        template = Template(template_text)
+
+        context = {
+            'sso_url': url,
+            'saml_request': parameters['SAMLRequest'],
+            'relay_state': parameters['RelayState']
+        }
+
+        html = template.render(context)
+
+        return html
+
     def login(self, request: Request):
+        # print(request)
         # id_token = request.query_params['code']
         # request.session['code'] = id_token
         url_data = urlparse(request.url._url)
 
         req = self.prepare_fastapi_request(request, url_data)
         auth = self.init_saml_auth(req)
+        # print(auth.get_settings().get_security_data())
 
-        sso_built_url = auth.login()
-        request.session['AuthNRequestID'] = auth.get_last_request_id()
-        request.session['redirect_uri'] = request.query_params['redirect_uri']
-        request.app.logger.debug('*****%s', request.query_params['redirect_uri'])
+        sso_built_url_post, parameters = self._login_post(auth, return_to='https://e039d10f9c39.ngrok.io')
+        # print(parameters)
 
-        if settings.mock_digid.lower() == "false":
-            return RedirectResponse(sso_built_url)
+        # request.session['AuthNRequestID'] = auth.get_last_request_id()
+        # request.session['redirect_uri'] = request.query_params['redirect_uri']
 
-        access_token = request.query_params['at']
+        # if settings.mock_digid.lower() == "false":
+        return self._create_post_form(sso_built_url_post, parameters)
+
+        # access_token = request.query_params['at']
         # ACS parts as well for mocking:
-        response = RedirectResponse('/digid-mock?at=' + access_token)
-        return response
+        # response = RedirectResponse('/digid-mock')
+        # return response
 
     def digid_mock(self, request: Request):
-        access_token = request.query_params['at']
         http_content = f"""
         <html>
         <h1> DIGID MOCK </h1>
-        {access_token}
-        <a href='/acs?at={access_token}' style='font-size:36; background-color:purple; display:box'>login</a>
+        <a href='/acs' style='font-size:36; background-color:purple; display:box'>login</a>
         </html>
         """
         return HTMLResponse(content=http_content, status_code=200)
 
     def acs(self, request: Request):
         # Mock: get token back
-        at = request.query_params['at']
-        request.app.logger.debug("BASE64 ACCESS RESOURCE: %s", at)
-        access_token = base64.b64decode(at).decode()
-        request.app.logger.debug("ACCESS RESOURCE: %s", access_token)
+        # at = request.session['access_token']
+        # request.app.logger.debug("BASE64 ACCESS RESOURCE: %s", at)
+        # validate access_token ...
         # id_token = ...
         # artifact = ...
         # ResolveArtifact
         # resolved_articat = ....
+        # Decrypt ...
+        # Encrypt ...
         resolved_artifact = str(uuid.uuid4()) # Demo purposes
-        self.redis_cache.set(access_token, resolved_artifact)
+        self.redis_cache.set(at, resolved_artifact)
         return RedirectResponse(request.session['redirect_uri'])
 
     def bsn_attribute(self, request: Request):
+        # TODO: get at from query param, decode retrieve from redis return.
         attributes = None
         if 'id_token' in request.session:
             attributes = self.redis_cache.get(request.session['id_token'])

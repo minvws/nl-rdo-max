@@ -10,8 +10,9 @@ const port = 3000
 
 // const baseUrl = "http://localhost:8006";
 const baseUrl = "https://10.48.118.250:8006";
+// const baseUrl = "https://tvs.acc.coronacheck.nl";
 
-const clientBaseUrl = "https://e6c5ea473700.ngrok.io";
+const clientBaseUrl = "https://e039d10f9c39.ngrok.io";
 const redirect_uri = clientBaseUrl + "/login";
 const finished_redirect_uri = clientBaseUrl + "/finished";
 
@@ -44,8 +45,9 @@ app.get('/login', (req, res) => {
         jsoned = JSON.stringify(tokenSet);
         let buff = Buffer.from(jsoned, 'utf-8');
         let text = buff.toString('base64');
-        res.cookie('access_token', tokenSet);
+        res.cookie('access_token', text);
         res.redirect(baseUrl + `/login-digid?redirect_uri=${finished_redirect_uri}&at=${text}`) // TODO: Token in redirect
+        // res.redirect(baseUrl + '/login-digid') // TODO: Token in redirect
       }, (error) => {
         console.log(error);
       });

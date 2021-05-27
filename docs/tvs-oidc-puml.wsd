@@ -8,18 +8,10 @@ skinparam noteBackgroundColor #EEE
 participant IDPx
 participant App
 
-App->Inge6:/authorize?redirect_uri_1
-App<--Inge6:/redirect_uri_1?code=XXX
+App->Inge6:/authorize?redirect_uri
+App<--Inge6:/authenticate_request?code=XXX
 
-note over App, Inge6:client/app does login
-App->Inge6:/accesstoken.body[client, code=XXX, redirect_uri]
-
-Inge6->App:JSONResponse(access_token)
-App->App:remember[access_token]
-App->Inge6:/login-digid?at=access_token&redirect_uri=redirect_uri_fin
-Inge6->App:Redirect(/IDPx)
-
-App->IDPx:redirect
+App->IDPx:redirect to TVS
 note over App, IDPx:user does login
 IDPx-->App:artifact
 App->Inge6:redirect to /acs?(artifact)
@@ -27,6 +19,19 @@ App->Inge6:redirect to /acs?(artifact)
 Inge6->RD_BC:/resolve?artifact
 Inge6<--RD_BC:resolved artifact?attributes
 
-Inge6->Redis:store(get_cookie[h(token)], attributes)
-Inge6->App:/redirect_uri_fin
+Inge6->Redis:store(get_cookie[token.id_token], attributes)
+
+Inge6->App:/redirect_uri
+
+' note over App, Inge6:client/app does login
+App->Inge6:/accesstoken.body[client, code=XXX, redirect_uri]
+
+Inge6->App:JSONResponse(access_token)
+
+' App->App:remember[access_token]
+' App->Inge6:/login-digid?at=access_token
+' Inge6->App:Redirect(/IDPx)
+
+' Inge6->App:/redirect_uri_fin
+' App->App:remember[access_token]
 @enduml

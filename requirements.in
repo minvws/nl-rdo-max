@@ -1,4 +1,4 @@
-# Dependency management. 
+# Dependency management.
 # Already installed through env setup:
 # pip-tools
 
@@ -6,6 +6,7 @@
 fastapi
 redis
 pyop
+jinja2
 
 # fastapi optional dependencies
 itsdangerous
