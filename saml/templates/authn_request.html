@@ -1,12 +1,8 @@
 <html>
-  <body>
+   <body onload="document.forms['SAMLForm'].submit()">
     <form method="POST" id="SAMLForm" action="{{ sso_url }}">
       <input type="hidden" name="SAMLRequest" value="{{ saml_request }}" />
       <input type="hidden" name="RelayState" value="{{ relay_state }}" />
     </form>
-    <script type="text/javascript">
-        console.log(document.forms["SAMLForm"]);
-        document.forms["SAMLForm"].submit();
-    </script>
   </body>
 </html>
