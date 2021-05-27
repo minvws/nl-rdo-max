@@ -1,0 +1,26 @@
+<samlp:AuthnRequest AssertionConsumerServiceIndex="0" Destination="https://digid.nl/saml/idp/request_authentication" ForceAuthn="false" ID="AuthnRequest-0-6f7eaa04797bc3731668b2d1307b076d" IssueInstant="2021-05-26T20:19:37.465Z" ProviderName="GGD GHOR" Version="2.0" xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol">
+    <saml:Issuer>https://secure.ggdghor.nl/digid/metadata</saml:Issuer>
+    <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <ds:SignedInfo>
+            <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+            <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" />
+            <ds:Reference URI="#AuthnRequest-0-6f7eaa04797bc3731668b2d1307b076d">
+                <ds:Transforms>
+                    <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+                    <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+                </ds:Transforms>
+                <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
+                <ds:DigestValue>5yGHNFFvRC48siZytFHaQ9t6nxtgrq9jOkTPzAy+8Bo=</ds:DigestValue>
+            </ds:Reference>
+        </ds:SignedInfo>
+        <ds:SignatureValue>UEuzLoikESOOQqre5uvAaM4kbPuJy+Y3iagFnKAJzN0jU8fdKcXyTvDdjNazBZwAsKNrcJLRweCO59n1HL2BGE1U7fzYN4Sqej6112XPCM7m/6muRnRj24xTT/3wGxppGS5kvnPKWNRWLmFeD2HVjoYmukFwBrmkebA2CPlWiEObrxDxWFqaEt6seRdV8P/DLrpkfOwbGEOm60EF8GJBuaeqQcOISHRasajjf7lvZbpozhBc0WG+G/1MS90+5iL9qz8dzyRnSVrRiY1/RtS4RyOh6pJthdO3FEsenDVCMIWB+9SXwXNzDWWn6zxFoL2Zp+vafO7U0KJfJIHJkeGN7g==</ds:SignatureValue>
+        <ds:KeyInfo>
+            <ds:X509Data>
+                <ds:X509Certificate>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</ds:X509Certificate>
+            </ds:X509Data>
+        </ds:KeyInfo>
+    </ds:Signature>
+    <samlp:RequestedAuthnContext Comparison="minimum">
+        <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract</saml:AuthnContextClassRef>
+    </samlp:RequestedAuthnContext>
+</samlp:AuthnRequest>
