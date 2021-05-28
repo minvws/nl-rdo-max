@@ -21,6 +21,7 @@ from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 
 from .config import settings
 from .cache.redis_cache import redis_cache_service
+from .saml_request_builder.authn_request import AuthNRequest
 
 class TVSRequestHandler:
 
@@ -76,18 +77,8 @@ class TVSRequestHandler:
         url = auth.get_sso_url()
         data = authn_request.get_request(False, False)
 
-        saml_request = OneLogin_Saml2_Utils.b64encode(
-            OneLogin_Saml2_Utils.add_sign(
-                data,
-                auth.get_settings().get_sp_key(), auth.get_settings().get_sp_cert(),
-                sign_algorithm=OneLogin_Saml2_Constants.RSA_SHA256,
-                digest_algorithm=OneLogin_Saml2_Constants.SHA256,),
-        )
-        # logger.debug(
-        #     "Returning form-data to the user for a AuthNRequest to %s with SAMLRequest %s",
-        #     url, OneLogin_Saml2_Utils.b64decode(saml_request).decode('utf-8')
-        # )
-        parameters = {'SAMLRequest': saml_request}
+        saml_request = AuthNRequest()
+        parameters = {'SAMLRequest': saml_request.get_base64_string()}
 
         if return_to is not None:
             parameters['RelayState'] = return_to
@@ -95,8 +86,6 @@ class TVSRequestHandler:
             parameters['RelayState'] = OneLogin_Saml2_Utils.get_self_url_no_query(data)
 
         return url, parameters
-        template_text = template_file.read()
-        template = Template(template_text)
 
     def _create_post_form(self, url, parameters):
         # Return HTML form
