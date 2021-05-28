@@ -6,8 +6,8 @@ const app = express()
 const port = 3000
 
 // const baseUrl = "http://localhost:8006";
-const baseUrl = "https://10.48.118.250:8006";
-// const baseUrl = "https://tvs.acc.coronacheck.nl";
+// const baseUrl = "https://10.48.118.250:8006";
+const baseUrl = "https://tvs-connect.acc.coronacheck.nl";
 
 const clientBaseUrl = "https://e039d10f9c39.ngrok.io";
 const redirect_uri = clientBaseUrl + "/login";
@@ -77,7 +77,7 @@ function discoverTvsDigiD() {
 
         client = new issuer.Client({
           client_id: 'test_client',
-          redirect_uris: redirect_uris,
+          redirect_uris: [redirect_uri],
           response_types: ['code'],
           id_token_signed_response_alg: "RS256",
           token_endpoint_auth_method: "none"
