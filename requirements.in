@@ -7,6 +7,8 @@ fastapi
 redis
 pyop
 jinja2
+lxml
+xmlsec
 
 # fastapi optional dependencies
 itsdangerous
