@@ -6,8 +6,8 @@ const app = express()
 const port = 3000
 
 // const baseUrl = "http://localhost:8006";
-// const baseUrl = "https://10.48.118.250:8006";
-const baseUrl = "https://tvs-connect.acc.coronacheck.nl";
+const baseUrl = "https://10.48.118.250:8006";
+// const baseUrl = "https://tvs-connect.acc.coronacheck.nl";
 
 const clientBaseUrl = "https://e039d10f9c39.ngrok.io";
 const redirect_uri = clientBaseUrl + "/login";
@@ -21,6 +21,7 @@ var authorizationUrl;
 var client;
 var code_verifier;
 var code_challenge;
+var state;
 
 app.get('/', (req, res) => {
   // res.send('Hello World');
@@ -45,8 +46,8 @@ app.get('/login', (req, res) => {
   if ('code' in req.query ) {
     // console.log(req);
     const params = client.callbackParams(req);
-
-    client.callback(redirect_uri, params, { code_verifier }) // => Promise
+    console.log(params);
+    client.callback(redirect_uri, params, { code_verifier, state }) // => Promise
       .then(function (tokenSet) {
         console.log('received and validated tokens %j', tokenSet);
         console.log('validated ID Token claims %j', tokenSet.claims());
@@ -87,12 +88,14 @@ function discoverTvsDigiD() {
         // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
         // it should be httpOnly (not readable by javascript) and encrypted.
         code_verifier = generators.codeVerifier();
+        state = generators.state()
 
         code_challenge = generators.codeChallenge(code_verifier);
 
         authorizationUrl = client.authorizationUrl({
           scope: 'openid',
           resource: baseUrl + '/authorize',
+          state: state,
           code_challenge,
           code_challenge_method: 'S256',
         });
