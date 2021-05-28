@@ -48,8 +48,9 @@ class AuthorizationHandler:
         authn_response = current_app.provider.authorize(auth_req, 'test_user')
         response_url = authn_response.request('/digid-mock', False)
         redirect_uri = auth_req['redirect_uri']
+        state = request.query_params['state']
 
-        return RedirectResponse(response_url + f"&redirect_uri={redirect_uri}", status_code=303)
+        return RedirectResponse(response_url + f"&redirect_uri={redirect_uri}&state={state}", status_code=303)
 
     async def token_endpoint(self, request):
         current_app = request.app

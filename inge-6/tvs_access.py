@@ -141,16 +141,18 @@ class TVSRequestHandler:
     def digid_mock(self, request: Request):
         code = request.query_params['code']
         redirect_uri = request.query_params['redirect_uri']
+        state = request.query_params['state']
         http_content = f"""
         <html>
         <h1> DIGID MOCK </h1>
-        <a href='{redirect_uri}?code={code}' style='font-size:36; background-color:purple; display:box'>login</a>
+        <a href='{redirect_uri}?code={code}&state={state}' style='font-size:36; background-color:purple; display:box'>login</a>
         </html>
         """
         return HTMLResponse(content=http_content, status_code=200)
 
     def acs(self, request: Request):
         # Mock: get token back
+        at = "test-access-token"
         # at = request.session['access_token']
         # request.app.logger.debug("BASE64 ACCESS RESOURCE: %s", at)
         # validate access_token ...
