@@ -76,7 +76,7 @@ class TVSRequestHandler:
 
         saml_request = AuthNRequest()
         parameters = {
-            'SAMLRequest': saml_request.get_base64_string(),
+            'SAMLRequest': saml_request.get_base64_string().decode(),
             'RelayState': return_to
             }
 
@@ -93,7 +93,6 @@ class TVSRequestHandler:
             'saml_request': parameters['SAMLRequest'],
             'relay_state': parameters['RelayState']
         }
-        print(parameters)
         html = template.render(context)
 
         return html
