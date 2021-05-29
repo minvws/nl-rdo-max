@@ -133,7 +133,7 @@ class TVSRequestHandler:
 
     def acs(self, request: Request):
         # Mock: get token back
-        # at = request.session['access_token']
+        at = request.session['access_token']
         # request.app.logger.debug("BASE64 ACCESS RESOURCE: %s", at)
         # validate access_token ...
         # id_token = ...
