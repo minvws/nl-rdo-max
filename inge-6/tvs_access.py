@@ -71,25 +71,20 @@ class TVSRequestHandler:
             'post_data': request.body
         }
 
-    def _login_post(self, auth, return_to=None, **authn_kwargs):
-        authn_request = auth.authn_request_class(auth.get_settings(), **authn_kwargs)
-
+    def _login_post(self, auth, return_to):
         url = auth.get_sso_url()
-        data = authn_request.get_request(False, False)
 
         saml_request = AuthNRequest()
-        parameters = {'SAMLRequest': saml_request.get_base64_string()}
-
-        if return_to is not None:
-            parameters['RelayState'] = return_to
-        else:
-            parameters['RelayState'] = OneLogin_Saml2_Utils.get_self_url_no_query(data)
+        parameters = {
+            'SAMLRequest': saml_request.get_base64_string(),
+            'RelayState': return_to
+            }
 
         return url, parameters
 
     def _create_post_form(self, url, parameters):
         # Return HTML form
-        template_file = open(settings.saml.base_dir + '/templates/authn_request.html')
+        template_file = open(settings.saml.base_dir + '/templates/html/authn_request.html')
         template_text = template_file.read()
         template = Template(template_text)
 
@@ -98,7 +93,7 @@ class TVSRequestHandler:
             'saml_request': parameters['SAMLRequest'],
             'relay_state': parameters['RelayState']
         }
-
+        print(parameters)
         html = template.render(context)
 
         return html
@@ -113,7 +108,8 @@ class TVSRequestHandler:
         auth = self.init_saml_auth(req)
         # print(auth.get_settings().get_security_data())
 
-        sso_built_url_post, parameters = self._login_post(auth, return_to='https://e039d10f9c39.ngrok.io', force_authn=True)
+        return_to = url_data.netloc + url_data.path
+        sso_built_url_post, parameters = self._login_post(auth, return_to=return_to)
         # print(parameters)
 
         # request.session['AuthNRequestID'] = auth.get_last_request_id()

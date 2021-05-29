@@ -1,11 +1,12 @@
 from lxml import etree
 import secrets
 
+from ..config import settings
 from .saml_request import SamlRequest
 
 
 class ArtifactResolveRequest(SamlRequest):
-    TEMPLATE_PATH = '../saml/templates/xml/artifactresolve_request.xml'
+    TEMPLATE_PATH = settings.saml.artifactresolve_request_template
 
     def __init__(self, artifact_code) -> None:
         super().__init__()

@@ -3,9 +3,11 @@ import base64
 import secrets
 from lxml import etree
 
+from ..config import settings
+
 class SamlRequest:
-    KEY_PATH = '../saml/certs/sp.key'
-    CERT_PATH = '../saml/certs/sp.crt'
+    KEY_PATH = settings.saml.key_path
+    CERT_PATH = settings.saml.cert_path
 
     def __init__(self):
         self.__id = "_" + secrets.token_hex(41) # total length 42.

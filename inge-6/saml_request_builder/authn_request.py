@@ -1,12 +1,11 @@
 from lxml import etree
 import secrets
 
+from ..config import settings
 from .saml_request import SamlRequest
 
-# from ..config import settings
-
 class AuthNRequest(SamlRequest):
-    TEMPLATE_PATH = '../saml/templates/xml/authn_request.xml'
+    TEMPLATE_PATH = settings.saml.authn_request_template
 
     def __init__(self) -> None:
         super().__init__()
