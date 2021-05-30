@@ -5,6 +5,7 @@
 # fastapi
 fastapi
 redis
+redis-collections
 pyop
 jinja2
 pynacl

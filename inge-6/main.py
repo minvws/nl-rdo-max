@@ -4,6 +4,8 @@ import logging
 
 import uvicorn
 
+from redis_collections import Dict as RDict
+
 from starlette.middleware.sessions import SessionMiddleware
 
 from fastapi import FastAPI
@@ -61,8 +63,17 @@ def init_oidc_provider(app):
     with open(settings.oidc.clients_file) as clients_file:
         clients = json.load(clients_file)
     signing_key = RSAKey(key=rsa_load(settings.oidc.rsa_private_key), alg='RS256', )
+
+    authz_state = AuthorizationState(
+        HashBasedSubjectIdentifierFactory(settings.oidc.subject_id_hash_salt),
+        authorization_code_db=RDict(key=settings.redis.code_namespace),
+        access_token_db=RDict(key=settings.redis.token_namespace),
+        refresh_token_db=RDict(settings.redis.refresh_token_namespace),
+        subject_identifier_db=RDict(key=settings.redis.sub_id_namespace)
+    )
+
     provider = Provider(signing_key, configuration_information,
-                        AuthorizationState(HashBasedSubjectIdentifierFactory(settings.oidc.subject_id_hash_salt)),
+                        authz_state,
                         clients, userinfo_db)
 
     return provider
