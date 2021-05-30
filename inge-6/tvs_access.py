@@ -200,7 +200,8 @@ class TVSRequestHandler:
             raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )
 
         decoded_json = base64.b64decode(attributes).decode()
-        return JSONResponse(content=decoded_json)
+
+        return JSONResponse(content=json.loads(decoded_json))
 
     def metadata(self, request: Request):
         url_data = urlparse(request.url._url)
