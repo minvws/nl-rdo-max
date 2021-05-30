@@ -158,7 +158,7 @@ class TVSRequestHandler:
         <h1> DIGID MOCK </h1>
         <form method="GET" action="/acs">
             <label for="bsn">BSN Value:</label><br>
-            <input type="text" id="bsn" name="bsn"><br>
+            <input type="text" id="bsn" value="900212640" name="bsn"><br>
             <input type="hidden" name="code" value="{code}">
             <input type="hidden" name="state" value="{state}">
             <input type="hidden" name="redirect_uri" value="{redirect_uri}">
