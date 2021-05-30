@@ -68,7 +68,7 @@ def init_oidc_provider(app):
         HashBasedSubjectIdentifierFactory(settings.oidc.subject_id_hash_salt),
         authorization_code_db=RDict(key=settings.redis.code_namespace),
         access_token_db=RDict(key=settings.redis.token_namespace),
-        refresh_token_db=RDict(settings.redis.refresh_token_namespace),
+        refresh_token_db=RDict(key=settings.redis.refresh_token_namespace),
         subject_identifier_db=RDict(key=settings.redis.sub_id_namespace)
     )
 
