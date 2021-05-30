@@ -14,7 +14,8 @@ Inge6->App:Redirect(mockdigid/login?code=XXX)
 App->mockdigid:/login?code=XXX
 note over mockdigid: fake digid-login
 
-mockdigid->App:/redirect_uri?code=XXX
+mockdigid->Inge6:/acs?bsn
+Inge6->App:/redirect_uri?code=XXX
 
 App->Inge6:/accesstoken.body[client, code=XXX, redirect_uri]
 Inge6->App:JSONResponse(access_token)

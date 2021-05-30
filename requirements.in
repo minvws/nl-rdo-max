@@ -7,6 +7,8 @@ fastapi
 redis
 pyop
 jinja2
+pynacl
+python-multipart
 
 # fastapi optional dependencies
 itsdangerous

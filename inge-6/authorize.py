@@ -1,3 +1,5 @@
+from urllib.parse import parse_qs, urlparse
+
 from typing import Dict
 import base64
 import json
@@ -55,27 +57,19 @@ class AuthorizationHandler:
     async def token_endpoint(self, request):
         current_app = request.app
         body = await request.body()
+        code = parse_qs(body.decode())['code'][0]
+        bsn = self.redis_cache.get(code)
 
         try:
             token_response = current_app.provider.handle_token_request(body.decode('utf-8'),
                                                                     request.headers)
 
+            # token_base64_dump = base64.b64encode(json.dumps(token_response.to_dict()).encode()).decode()
+            print('EXPECTED KEY: ', token_response['id_token'])
+            self.redis_cache.set(token_response['id_token'], bsn)
+
             json_content_resp = jsonable_encoder(token_response.to_dict())
-            # json_content = json.dumps(token_response.to_dict()).encode()
-            # base64_content = base64.b64encode(json_content)
-
-            # return JSONResponse(content=json_content)
-            # store access_token in cookie
-            # response = RedirectResponse('/login-digid', status_code=303)
-            # response.set_cookie(key='access_token', value=token_response)
-            # request.session['redirect_uri'] = token_request['redirect_uri']
-
-            # request.session['access_token'] = base64_content.decode()
-            # return RedirectResponse('/login-digid', status_code=200)
-            res = JSONResponse(content=json_content_resp)
-            # red_url = '/login-digid'
-            # res.headers["location"] = quote_plus(str(red_url), safe=":/%#?&=@[]!$&'()*+,;")
-            return res
+            return JSONResponse(content=json_content_resp)
         except InvalidClientAuthentication as e:
             current_app.logger.debug('invalid client authentication at token endpoint', exc_info=True)
             error_resp = TokenErrorResponse(error='invalid_client', error_description=str(e))

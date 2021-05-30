@@ -1,4 +1,5 @@
 const { Issuer, generators } = require('openid-client');
+const https = require('https')
 const express = require('express');
 const url = require('url');
 
@@ -7,6 +8,7 @@ const port = 3000
 
 // const baseUrl = "http://localhost:8006";
 const baseUrl = "https://10.48.118.250:8006";
+const host = "10.48.118.250";
 // const baseUrl = "https://tvs-connect.acc.coronacheck.nl";
 
 const clientBaseUrl = "https://e039d10f9c39.ngrok.io";
@@ -35,11 +37,39 @@ app.get('/finished', (req, res) => {
   const buff = Buffer.from(at, 'base64');
   const jsoned = buff.toString('utf-8');
 
-  html = `
-    <h1> Successfully achieved token: </h1>
-    <pre>${jsoned}</pre>
-  `
-  res.send(html)
+  parsed_json = JSON.parse(jsoned)
+
+  const new_req = https.request({
+    hostname: host,
+    port: 8006,
+    path: '/bsn_attribute',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': parsed_json.id_token.length
+    }
+  }, new_res => {
+    console.log(`statusCode: ${new_res.statusCode}`)
+
+    new_res.on('data', d => {
+      process.stdout.write(d)
+
+      html = `
+      <h1> Successfully achieved token: </h1>
+      <pre>${jsoned}</pre>
+      <p>${d}</p>
+      `
+      res.send(html)
+    })
+  })
+
+  new_req.on('error', error => {
+    console.error(error)
+  })
+
+  new_req.write(parsed_json.id_token)
+  new_req.end()
+
 });
 
 app.get('/login', (req, res) => {
@@ -52,10 +82,10 @@ app.get('/login', (req, res) => {
         console.log('received and validated tokens %j', tokenSet);
         console.log('validated ID Token claims %j', tokenSet.claims());
 
-        jsoned = JSON.stringify(tokenSet, null, 2);
+        jsoned = JSON.stringify(tokenSet);
         let buff = Buffer.from(jsoned, 'utf-8');
         let text = buff.toString('base64');
-        console.log(tokenSet.claims());
+
         res.redirect('/finished?at=' + text)
       }, (error) => {
         console.log(error);
