@@ -1,5 +1,6 @@
 from os.path import exists
 
+import requests
 import base64
 import json
 
@@ -21,13 +22,15 @@ from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 from .config import settings
 from .bsn_encrypt import BSNEncrypt
 from .cache.redis_cache import redis_cache_service
-from .saml_request_builder.authn_request import AuthNRequest
+from .saml_request_builder import AuthNRequest, ArtifactResolveRequest
+from .saml_response_parser import IdPMetadataParser
 
 class TVSRequestHandler:
 
     def __init__(self):
         self.redis_cache = redis_cache_service
         self._bsn_encrypt = BSNEncrypt()
+        self.idp_metadata = IdPMetadataParser()
 
     def _create_idp_sp_settings(self):
         idp_data = OneLogin_Saml2_IdPMetadataParser.parse_remote(
@@ -133,29 +136,18 @@ class TVSRequestHandler:
         return HTMLResponse(content=http_content, status_code=200)
 
     def acs(self, request: Request):
-        # Mock: get token back
-        redirect_uri = request.query_params['redirect_uri']
-        code = request.query_params['code']
-        state = request.query_params['state']
-        bsn = request.query_params['bsn']
+        relay_state = request.query_params['RelayState']
+        artifact = request.query_params['SAMLart']
+        resolve_artifact_req = ArtifactResolveRequest(artifact)
+        # relay_state = ...
+        url = self.idp_metadata.get_artifact_rs['location']
+        headers = {'content-type': 'text/xml'}
+        resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req)
+        # resolved_articat = ....
+        # Decrypt ...
+        # Encrypt ...
 
-        self.redis_cache.set(code,self._bsn_encrypt._symm_encrypt_bsn(bsn).decode())
-
-        redirect_uri += f'?code={code}&state={state}'
-        return RedirectResponse(redirect_uri)
-
-        # at = request.session['access_token']
-        # # request.app.logger.debug("BASE64 ACCESS RESOURCE: %s", at)
-        # # validate access_token ...
-        # # id_token = ...
-        # # artifact = ...
-        # # ResolveArtifact
-        # # resolved_articat = ....
-        # # Decrypt ...
-        # # Encrypt ...
-        # resolved_artifact = str(uuid.uuid4()) # Demo purposes
-        # self.redis_cache.set(at, resolved_artifact)
-        # return RedirectResponse(request.session['redirect_uri'])
+        return RedirectResponse(request.session['redirect_uri'])
 
     def disable_access_token(self, b64_id_token):
         pass
@@ -184,6 +176,8 @@ class TVSRequestHandler:
         saml_settings = auth.get_settings()
         metadata = saml_settings.get_sp_metadata()
         errors = saml_settings.validate_metadata(metadata)
+
+        print(saml_settings.get_idp_data())
 
         if len(errors) == 0:
             return Response(content=metadata, media_type="application/xml")

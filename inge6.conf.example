@@ -28,6 +28,7 @@ base_dir = saml
 cert_path = saml/certs/sp.crt
 key_path = saml/certs/sp.key
 
+idp_path = saml/metadata/idp_metadata.xml
 authn_request_template = saml/templates/xml/authn_request.xml
 artifactresolve_request_template = saml/templates/xml/artifactresolve_request.xml
 
