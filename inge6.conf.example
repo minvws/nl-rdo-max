@@ -9,6 +9,10 @@ debug = True
 use_ssl = True
 mock_digid = False
 
+[bsn]
+i6_priv_key =
+i4_pub_key =
+
 [ssl]
 base_dir = secrets/ssl
 cert_file = certs/apache-selfsigned.crt
@@ -24,6 +28,14 @@ base_dir = saml
 cert_path = saml/certs/sp.crt
 key_path = saml/certs/sp.key
 
+authn_request_template = saml/templates/xml/authn_request.xml
+artifactresolve_request_template = saml/templates/xml/artifactresolve_request.xml
+
 [redis]
 host = localhost
 port = 6379
+
+token_namespace = tvs_token
+refresh_token_namespace = tvs_refresh_token
+sub_id_namespace = tvs_sub_id
+code_namespace = tvs_auth_code

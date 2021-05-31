@@ -7,9 +7,6 @@ from os.path import dirname, join
 from jinja2 import Template
 
 from urllib.parse import urlparse
-import nacl.utils
-from nacl.public import PrivateKey, Box, PublicKey
-from nacl.encoding import Base64Encoder
 
 from fastapi.encoders import jsonable_encoder
 from fastapi import Request, Response, HTTPException
@@ -22,22 +19,15 @@ from onelogin.saml2.settings import OneLogin_Saml2_Settings
 from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 
 from .config import settings
+from .bsn_encrypt import BSNEncrypt
 from .cache.redis_cache import redis_cache_service
 from .saml_request_builder.authn_request import AuthNRequest
 
 class TVSRequestHandler:
-    I6_PRIV_KEY = settings.bsn.i6_priv_keyfile
-    I4_PUB_KEY = settings.bsn.i4_pub_keyfile
 
     def __init__(self):
         self.redis_cache = redis_cache_service
-        with open(self.I6_PRIV_KEY, 'r') as i6_priv_file:
-            i6_priv_key = PrivateKey(i6_priv_file.read(), encoder=Base64Encoder)
-
-        with open(self.I4_PUB_KEY, 'r') as i4_pub_file:
-            i4_pub_key = PublicKey(i4_pub_file.read(), encoder=Base64Encoder)
-
-        self.box = Box(i6_priv_key, i4_pub_key)
+        self._bsn_encrypt = BSNEncrypt()
 
     def _create_idp_sp_settings(self):
         idp_data = OneLogin_Saml2_IdPMetadataParser.parse_remote(
@@ -109,14 +99,10 @@ class TVSRequestHandler:
         return html
 
     def login(self, request: Request):
-        # print(request)
-        # id_token = request.query_params['code']
-        # request.session['code'] = id_token
         url_data = urlparse(request.url._url)
 
         req = self.prepare_fastapi_request(request, url_data)
         auth = self.init_saml_auth(req)
-        # print(auth.get_settings().get_security_data())
 
         return_to = url_data.netloc + url_data.path
         sso_built_url_post, parameters = self._login_post(auth, return_to=return_to)
@@ -125,13 +111,7 @@ class TVSRequestHandler:
         # request.session['AuthNRequestID'] = auth.get_last_request_id()
         # request.session['redirect_uri'] = request.query_params['redirect_uri']
 
-        # if settings.mock_digid.lower() == "false":
         return self._create_post_form(sso_built_url_post, parameters)
-
-        # access_token = request.query_params['at']
-        # ACS parts as well for mocking:
-        # response = RedirectResponse('/digid-mock')
-        # return response
 
     def digid_mock(self, request: Request):
         code = request.query_params['code']
@@ -154,50 +134,48 @@ class TVSRequestHandler:
 
     def acs(self, request: Request):
         # Mock: get token back
-        at = request.session['access_token']
-        # request.app.logger.debug("BASE64 ACCESS RESOURCE: %s", at)
-        # validate access_token ...
-        # id_token = ...
-        # artifact = ...
-        # ResolveArtifact
-        # resolved_articat = ....
-        # Decrypt ...
-        # Encrypt ...
-        resolved_artifact = str(uuid.uuid4()) # Demo purposes
-        self.redis_cache.set(at, resolved_artifact)
-        return RedirectResponse(request.session['redirect_uri'])
+        redirect_uri = request.query_params['redirect_uri']
+        code = request.query_params['code']
+        state = request.query_params['state']
+        bsn = request.query_params['bsn']
 
-    def bsn_attribute(self, request: Request):
-        # TODO: get at from query param, decode retrieve from redis return.
-        attributes = None
-        if 'id_token' in request.session:
-            attributes = self.redis_cache.get(request.session['id_token'])
-        else:
-            # Response redirect to /authorize?
-            raise HTTPException(status_code=405, detail="Method not allowed, authorize first.")
+        self.redis_cache.set(code,self._bsn_encrypt._symm_encrypt_bsn(bsn).decode())
 
-    def _encrypt_encode_bsn(self, bsn):
-        encrypted_bsn, nonce = self._encrypt_bsn(bsn)
-        payload = {
-            'bsn': Base64Encoder.encode(encrypted_bsn).decode(),
-            'nonce': Base64Encoder.encode(nonce).decode()
-        }
-        return base64.b64encode(json.dumps(payload).encode())
+        redirect_uri += f'?code={code}&state={state}'
+        return RedirectResponse(redirect_uri)
 
-    def _encrypt_bsn(self, bsn):
-        nonce = nacl.utils.random(Box.NONCE_SIZE)
-        encrypted_bsn = self.box.encrypt(bsn.encode(), nonce=nonce, encoder=Base64Encoder)
-        return encrypted_bsn, nonce
+        # at = request.session['access_token']
+        # # request.app.logger.debug("BASE64 ACCESS RESOURCE: %s", at)
+        # # validate access_token ...
+        # # id_token = ...
+        # # artifact = ...
+        # # ResolveArtifact
+        # # resolved_articat = ....
+        # # Decrypt ...
+        # # Encrypt ...
+        # resolved_artifact = str(uuid.uuid4()) # Demo purposes
+        # self.redis_cache.set(at, resolved_artifact)
+        # return RedirectResponse(request.session['redirect_uri'])
+
+    def disable_access_token(self, b64_id_token):
+        pass
 
     async def bsn_attribute(self, request: Request):
-        id_token = await request.body()
-        attributes = self.redis_cache.get(id_token.decode())
+        access_token = await request.json()
+
+        b64_id_token = base64.b64encode(access_token['id_token'].encode())
+
+        attributes = self.redis_cache.get(b64_id_token.decode())
         if attributes is None:
             raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )
 
         decoded_json = base64.b64decode(attributes).decode()
+        bsn_dict = json.loads(decoded_json)
+        bsn = self._bsn_encrypt._symm_decrypt_bsn(bsn_dict)
+        encrypted_bsn = self._bsn_encrypt._pub_encrypt_bsn(bsn, access_token['access_token'])
 
-        return JSONResponse(content=json.loads(decoded_json))
+        jsonified_encrypted_bsn = jsonable_encoder(encrypted_bsn)
+        return JSONResponse(content=jsonified_encrypted_bsn)
 
     def metadata(self, request: Request):
         url_data = urlparse(request.url._url)

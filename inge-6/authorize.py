@@ -64,9 +64,8 @@ class AuthorizationHandler:
             token_response = current_app.provider.handle_token_request(body.decode('utf-8'),
                                                                     request.headers)
 
-            # token_base64_dump = base64.b64encode(json.dumps(token_response.to_dict()).encode()).decode()
-            print('EXPECTED KEY: ', token_response['id_token'])
-            self.redis_cache.set(token_response['id_token'], bsn)
+            access_key = base64.b64encode(token_response['id_token'].encode()).decode()
+            self.redis_cache.set(access_key, bsn)
 
             json_content_resp = jsonable_encoder(token_response.to_dict())
             return JSONResponse(content=json_content_resp)

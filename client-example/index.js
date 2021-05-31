@@ -6,10 +6,10 @@ const url = require('url');
 const app = express()
 const port = 3000
 
-// const baseUrl = "http://localhost:8006";
-const baseUrl = "https://10.48.118.250:8006";
 const host = "10.48.118.250";
-// const baseUrl = "https://tvs-connect.acc.coronacheck.nl";
+const baseUrl = `https://${host}:8006`;
+// const host = "tvs-connect.coronacheck.nl";
+// const baseUrl = `https://${host}`;
 
 const clientBaseUrl = "https://e039d10f9c39.ngrok.io";
 const redirect_uri = clientBaseUrl + "/login";
@@ -39,6 +39,12 @@ app.get('/finished', (req, res) => {
 
   parsed_json = JSON.parse(jsoned)
 
+  // console.log(jsoned)
+  // id_token = parsed_json.id_token
+  // const id_token_buff = Buffer.from(id_token, 'utf-8')
+  // const b64_id_token = id_token_buff.toString('base64')
+  // console.log(b64_id_token, id_token)
+
   const new_req = https.request({
     hostname: host,
     port: 8006,
@@ -46,7 +52,7 @@ app.get('/finished', (req, res) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Content-Length': parsed_json.id_token.length
+      'Content-Length': jsoned.length
     }
   }, new_res => {
     console.log(`statusCode: ${new_res.statusCode}`)
@@ -67,7 +73,7 @@ app.get('/finished', (req, res) => {
     console.error(error)
   })
 
-  new_req.write(parsed_json.id_token)
+  new_req.write(jsoned)
   new_req.end()
 
 });
