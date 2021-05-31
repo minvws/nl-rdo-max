@@ -1,3 +1,4 @@
+from os import access
 from os.path import exists
 
 import base64
@@ -7,10 +8,12 @@ from os.path import dirname, join
 from jinja2 import Template
 
 from urllib.parse import urlparse
+from jwkest.jwt import JWT
 
 from fastapi.encoders import jsonable_encoder
 from fastapi import Request, Response, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
+from fastapi.security.utils import get_authorization_scheme_param
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
@@ -155,22 +158,41 @@ class TVSRequestHandler:
         return RedirectResponse(redirect_uri)
 
     def disable_access_token(self, b64_id_token):
-        pass
+        self.redis_cache.delete(b64_id_token.decode())
 
-    async def bsn_attribute(self, request: Request):
-        access_token = await request.json()
-
-        b64_id_token = base64.b64encode(access_token['id_token'].encode())
-
-        attributes = self.redis_cache.get(b64_id_token.decode())
-        if attributes is None:
-            raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )
-
+    def repack_bsn_attribute(self, attributes, nonce):
         decoded_json = base64.b64decode(attributes).decode()
         bsn_dict = json.loads(decoded_json)
         bsn = self._bsn_encrypt._symm_decrypt_bsn(bsn_dict)
-        encrypted_bsn = self._bsn_encrypt._pub_encrypt_bsn(bsn, access_token['access_token'])
+        return self._bsn_encrypt._pub_encrypt_bsn(bsn, nonce)
 
+    def _jwt_payload(self, jwt: str) -> dict:
+        jwt_token = JWT().unpack(jwt)
+        return json.loads(jwt_token.part[1].decode())
+
+    def _validate_jwt_token(self, jwt):
+        return True
+
+    async def bsn_attribute(self, request: Request):
+        #Parse JWT token
+        authorization: str = request.headers.get("Authorization")
+        scheme, id_token = get_authorization_scheme_param(authorization)
+
+        if not scheme == 'Bearer' or not self._validate_jwt_token(id_token):
+            raise HTTPException(status_code=401, detail="Not authorized")
+
+        payload = self._jwt_payload(id_token)
+        at_hash = payload['at_hash']
+        print(at_hash)
+
+        b64_id_token = base64.b64encode(id_token.encode())
+        attributes = self.redis_cache.get(b64_id_token.decode())
+        self.disable_access_token(b64_id_token)
+
+        if attributes is None:
+            raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )
+
+        encrypted_bsn = self.repack_bsn_attribute(attributes, at_hash)
         jsonified_encrypted_bsn = jsonable_encoder(encrypted_bsn)
         return JSONResponse(content=jsonified_encrypted_bsn)
 

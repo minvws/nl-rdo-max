@@ -18,6 +18,9 @@ class RedisCache:
         serialized_value = get_redis_client().get(self.KEY_PREFIX + name)
         return pickle.loads(serialized_value) if serialized_value else None
 
+    def delete(self, name):
+        get_redis_client().delete(self.KEY_PREFIX + name)
+
     def gen_token(self):
         return get_redis_client().acl_genpass()
 
