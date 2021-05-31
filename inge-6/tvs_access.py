@@ -1,4 +1,3 @@
-import uuid
 from os.path import exists
 
 import base64
@@ -8,6 +7,9 @@ from os.path import dirname, join
 from jinja2 import Template
 
 from urllib.parse import urlparse
+import nacl.utils
+from nacl.public import PrivateKey, Box, PublicKey
+from nacl.encoding import Base64Encoder
 
 from fastapi.encoders import jsonable_encoder
 from fastapi import Request, Response, HTTPException
@@ -24,9 +26,18 @@ from .cache.redis_cache import redis_cache_service
 from .saml_request_builder.authn_request import AuthNRequest
 
 class TVSRequestHandler:
+    I6_PRIV_KEY = settings.bsn.i6_priv_keyfile
+    I4_PUB_KEY = settings.bsn.i4_pub_keyfile
 
     def __init__(self):
         self.redis_cache = redis_cache_service
+        with open(self.I6_PRIV_KEY, 'r') as i6_priv_file:
+            i6_priv_key = PrivateKey(i6_priv_file.read(), encoder=Base64Encoder)
+
+        with open(self.I4_PUB_KEY, 'r') as i4_pub_file:
+            i4_pub_key = PublicKey(i4_pub_file.read(), encoder=Base64Encoder)
+
+        self.box = Box(i6_priv_key, i4_pub_key)
 
     def _create_idp_sp_settings(self):
         idp_data = OneLogin_Saml2_IdPMetadataParser.parse_remote(
@@ -123,10 +134,20 @@ class TVSRequestHandler:
         # return response
 
     def digid_mock(self, request: Request):
+        code = request.query_params['code']
+        redirect_uri = request.query_params['redirect_uri']
+        state = request.query_params['state']
         http_content = f"""
         <html>
         <h1> DIGID MOCK </h1>
-        <a href='/acs' style='font-size:36; background-color:purple; display:box'>login</a>
+        <form method="GET" action="/acs">
+            <label for="bsn">BSN Value:</label><br>
+            <input type="text" id="bsn" value="900212640" name="bsn"><br>
+            <input type="hidden" name="code" value="{code}">
+            <input type="hidden" name="state" value="{state}">
+            <input type="hidden" name="redirect_uri" value="{redirect_uri}">
+            <input type="submit" value="Login">
+        </form>
         </html>
         """
         return HTMLResponse(content=http_content, status_code=200)
@@ -155,11 +176,28 @@ class TVSRequestHandler:
             # Response redirect to /authorize?
             raise HTTPException(status_code=405, detail="Method not allowed, authorize first.")
 
+    def _encrypt_encode_bsn(self, bsn):
+        encrypted_bsn, nonce = self._encrypt_bsn(bsn)
+        payload = {
+            'bsn': Base64Encoder.encode(encrypted_bsn).decode(),
+            'nonce': Base64Encoder.encode(nonce).decode()
+        }
+        return base64.b64encode(json.dumps(payload).encode())
+
+    def _encrypt_bsn(self, bsn):
+        nonce = nacl.utils.random(Box.NONCE_SIZE)
+        encrypted_bsn = self.box.encrypt(bsn.encode(), nonce=nonce, encoder=Base64Encoder)
+        return encrypted_bsn, nonce
+
+    async def bsn_attribute(self, request: Request):
+        id_token = await request.body()
+        attributes = self.redis_cache.get(id_token.decode())
         if attributes is None:
             raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )
 
-        json_compatible_item_data = jsonable_encoder(attributes)
-        return JSONResponse(content=json_compatible_item_data)
+        decoded_json = base64.b64decode(attributes).decode()
+
+        return JSONResponse(content=json.loads(decoded_json))
 
     def metadata(self, request: Request):
         url_data = urlparse(request.url._url)

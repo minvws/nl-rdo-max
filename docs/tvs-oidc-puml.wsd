@@ -5,33 +5,18 @@ skinparam backgroundColor white
 skinparam participantBackgroundColor #EEEBDC
 skinparam noteBackgroundColor #EEE
 
-participant IDPx
+participant mockdigid
 participant App
 
 App->Inge6:/authorize?redirect_uri
-App<--Inge6:/authenticate_request?code=XXX
+Inge6->App:Redirect(mockdigid/login?code=XXX)
 
-App->IDPx:redirect to TVS
-note over App, IDPx:user does login
-IDPx-->App:artifact
-App->Inge6:redirect to /acs?(artifact)
+App->mockdigid:/login?code=XXX
+note over mockdigid: fake digid-login
 
-Inge6->RD_BC:/resolve?artifact
-Inge6<--RD_BC:resolved artifact?attributes
+mockdigid->Inge6:/acs?bsn
+Inge6->App:/redirect_uri?code=XXX
 
-Inge6->Redis:store(get_cookie[token.id_token], attributes)
-
-Inge6->App:/redirect_uri
-
-' note over App, Inge6:client/app does login
 App->Inge6:/accesstoken.body[client, code=XXX, redirect_uri]
-
 Inge6->App:JSONResponse(access_token)
-
-' App->App:remember[access_token]
-' App->Inge6:/login-digid?at=access_token
-' Inge6->App:Redirect(/IDPx)
-
-' Inge6->App:/redirect_uri_fin
-' App->App:remember[access_token]
 @enduml

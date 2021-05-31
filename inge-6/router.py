@@ -2,7 +2,7 @@ import os
 from typing import Dict
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, Request, Response, HTTPException
+from fastapi import APIRouter, Request, Response, HTTPException, Form
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 
@@ -50,10 +50,10 @@ def assertion_consumer_service(request: Request):
     ## TODO: Check valid token.
     return tvs_request_handler.acs(request)
 
-@router.get('/bsn_attribute')
-def bsn_attribute(request: Request):
-    # return tvs_request_handler.bsn_attribute(request)
-    return Response(content="MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzpEliQZGIthee86WIg0w599yMlSzcg8ojyA==", status_code=200)
+@router.post('/bsn_attribute')
+async def bsn_attribute(request: Request):
+    return await tvs_request_handler.bsn_attribute(request)
+    # return Response(content="MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzpEliQZGIthee86WIg0w599yMlSzcg8ojyA==", status_code=200)
 
 @router.get('/.well-known/openid-configuration')
 def provider_configuration(request: Request):

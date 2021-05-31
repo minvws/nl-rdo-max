@@ -5,10 +5,13 @@
 # fastapi
 fastapi
 redis
+redis-collections
 pyop
 jinja2
 lxml
 xmlsec
+pynacl
+python-multipart
 
 # fastapi optional dependencies
 itsdangerous

@@ -1,4 +1,5 @@
 const { Issuer, generators } = require('openid-client');
+const https = require('https')
 const express = require('express');
 const url = require('url');
 
@@ -7,16 +8,22 @@ const port = 3000
 
 // const baseUrl = "http://localhost:8006";
 const baseUrl = "https://10.48.118.250:8006";
-// const baseUrl = "https://tvs.acc.coronacheck.nl";
+const host = "10.48.118.250";
+// const baseUrl = "https://tvs-connect.acc.coronacheck.nl";
 
 const clientBaseUrl = "https://e039d10f9c39.ngrok.io";
 const redirect_uri = clientBaseUrl + "/login";
+const redirect_uris = [
+  clientBaseUrl + "/login",
+  "http://10.48.118.250:3000" + "/login",
+]
 const finished_redirect_uri = clientBaseUrl + "/finished";
 
 var authorizationUrl;
 var client;
 var code_verifier;
 var code_challenge;
+var state;
 
 app.get('/', (req, res) => {
   // res.send('Hello World');
@@ -25,26 +32,61 @@ app.get('/', (req, res) => {
 
 app.get('/finished', (req, res) => {
   // res.send('Hello World');
-  res.send('Loop Done.');
+  at = req.query.at
+
+  const buff = Buffer.from(at, 'base64');
+  const jsoned = buff.toString('utf-8');
+
+  parsed_json = JSON.parse(jsoned)
+
+  const new_req = https.request({
+    hostname: host,
+    port: 8006,
+    path: '/bsn_attribute',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': parsed_json.id_token.length
+    }
+  }, new_res => {
+    console.log(`statusCode: ${new_res.statusCode}`)
+
+    new_res.on('data', d => {
+      process.stdout.write(d)
+
+      html = `
+      <h1> Successfully achieved token: </h1>
+      <pre>${jsoned}</pre>
+      <p>${d}</p>
+      `
+      res.send(html)
+    })
+  })
+
+  new_req.on('error', error => {
+    console.error(error)
+  })
+
+  new_req.write(parsed_json.id_token)
+  new_req.end()
+
 });
 
 app.get('/login', (req, res) => {
   if ('code' in req.query ) {
     // console.log(req);
     const params = client.callbackParams(req);
-
-    client.callback(redirect_uri, params, { code_verifier }) // => Promise
+    console.log(params);
+    client.callback(redirect_uri, params, { code_verifier, state }) // => Promise
       .then(function (tokenSet) {
         console.log('received and validated tokens %j', tokenSet);
         console.log('validated ID Token claims %j', tokenSet.claims());
-        // s = body.exp.toUTCString();
 
         jsoned = JSON.stringify(tokenSet);
         let buff = Buffer.from(jsoned, 'utf-8');
         let text = buff.toString('base64');
-        res.cookie('access_token', text);
-        res.redirect(baseUrl + `/login-digid?redirect_uri=${finished_redirect_uri}&at=${text}`) // TODO: Token in redirect
-        // res.redirect(baseUrl + '/login-digid') // TODO: Token in redirect
+
+        res.redirect('/finished?at=' + text)
       }, (error) => {
         console.log(error);
       });
@@ -76,12 +118,14 @@ function discoverTvsDigiD() {
         // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
         // it should be httpOnly (not readable by javascript) and encrypted.
         code_verifier = generators.codeVerifier();
+        state = generators.state()
 
         code_challenge = generators.codeChallenge(code_verifier);
 
         authorizationUrl = client.authorizationUrl({
           scope: 'openid',
           resource: baseUrl + '/authorize',
+          state: state,
           code_challenge,
           code_challenge_method: 'S256',
         });
