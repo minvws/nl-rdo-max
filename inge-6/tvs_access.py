@@ -25,16 +25,13 @@ from .config import settings
 from .cache.redis_cache import redis_cache_service
 
 class TVSRequestHandler:
-    I6_PRIV_KEY = settings.bsn.i6_priv_keyfile
-    I4_PUB_KEY = settings.bsn.i4_pub_keyfile
+    I6_PRIV_KEY = settings.bsn.i6_priv_key
+    I4_PUB_KEY = settings.bsn.i4_pub_key
 
     def __init__(self):
         self.redis_cache = redis_cache_service
-        with open(self.I6_PRIV_KEY, 'r') as i6_priv_file:
-            i6_priv_key = PrivateKey(i6_priv_file.read(), encoder=Base64Encoder)
-
-        with open(self.I4_PUB_KEY, 'r') as i4_pub_file:
-            i4_pub_key = PublicKey(i4_pub_file.read(), encoder=Base64Encoder)
+        i6_priv_key = PrivateKey(self.I6_PRIV_KEY, encoder=Base64Encoder)
+        i4_pub_key = PublicKey(self.I4_PUB_KEY, encoder=Base64Encoder)
 
         self.box = Box(i6_priv_key, i4_pub_key)
 
