@@ -35,6 +35,6 @@ class BSNEncrypt:
         return self.secret_box.decrypt(ciphertext, nonce=nonce)
 
     def _pub_encrypt_bsn(self, bsn, access_token_value):
-        nonce = access_token_value[:Box.NONCE_SIZE].encode()
+        nonce = base64.b64decode(access_token_value)
         encrypted_bsn = self.box.encrypt(bsn, nonce=nonce, encoder=Base64Encoder)
         return base64.b64encode(encrypted_bsn)
