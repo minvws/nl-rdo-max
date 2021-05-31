@@ -1,6 +1,7 @@
 import xmlsec
 import base64
 import secrets
+from datetime import datetime
 from lxml import etree
 
 from ..config import settings
@@ -11,6 +12,9 @@ class SamlRequest:
 
     def __init__(self):
         self.__id = "_" + secrets.token_hex(41) # total length 42.
+
+    def _add_root_issue_instant(self, root):
+        root.attrib['IssueInstant'] = datetime.utcnow().isoformat().split('.')[0] + 'Z'
 
     def _add_root_id(self, root):
         root.attrib['ID'] = self.__id

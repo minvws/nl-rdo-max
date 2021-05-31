@@ -12,6 +12,7 @@ class AuthNRequest(SamlRequest):
         self.template = etree.parse(self.TEMPLATE_PATH).getroot()
 
         self._add_root_id(self.template)
+        self._add_root_issue_instant(self.template)
         self._add_reference()
         self._add_certs()
         self._sign()
