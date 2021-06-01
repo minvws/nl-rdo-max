@@ -55,7 +55,8 @@ app.get('/finished', (req, res) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Content-Length': jsoned.length
+      'Content-Length': jsoned.length,
+      'Authorization': `Bearer ${parsed_json.id_token}`
     }
   }, new_res => {
     console.log(`statusCode: ${new_res.statusCode}`)
