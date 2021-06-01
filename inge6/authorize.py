@@ -59,13 +59,12 @@ class AuthorizationHandler:
         self.redis_cache.hset(randstate, 'auth_req', value)
 
     def _verify_code_verifier(self, cc_cm, code_verifier):
-        return True
         code_challenge_method = cc_cm['code_challenge_method']
         if not code_challenge_method == 'S256':
             return False
 
-        code_challenge = base64.urlsafe_b64encode(nacl.hash.sha256(code_verifier.encode())).decode()
-        print(code_verifier, code_challenge, cc_cm['code_challenge'])
+        verifier_hash = nacl.hash.sha256(code_verifier.encode())
+        code_challenge = base64.urlsafe_b64encode(verifier_hash).decode().replace('=','')
         return code_challenge == cc_cm['code_challenge']
 
     async def token_endpoint(self, request):

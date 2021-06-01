@@ -77,7 +77,7 @@ app.get('/finished', (req, res) => {
     console.error(error)
   })
 
-  new_req.write()
+  new_req.write('')
   new_req.end()
 
 });
@@ -114,10 +114,10 @@ app.listen(port, () => {
 function generate_code_challenge() {
   const random = (bytes = 32) => base64url(randomBytes(bytes));
   const code_verifier = random();
-  const code_challenge_1 = createHash('sha256').update(code_verifier).digest();
+  const code_challenge_1 = createHash('sha256').update(code_verifier).digest('hex');
   const code_challenge = base64url(code_challenge_1);
   // console.log(code_verifier, code_challenge)
-  console.log(code_verifier, code_challenge_1, code_challenge);
+  // console.log(code_verifier, code_challenge_1, code_challenge);
   return {
     code_verifier: code_verifier,
     code_challenge: code_challenge
@@ -140,13 +140,15 @@ function discoverTvsDigiD() {
         // !!!! CARE: EXAMPLE DOES NOT IMPLEMENT THIS SECURITY ASPECT:
         // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
         // it should be httpOnly (not readable by javascript) and encrypted.
-        code_verifier = generators.codeVerifier();
+        // code_verifier = generators.codeVerifier();
         state = generators.state()
 
-        code_challenge = generators.codeChallenge(code_verifier);
+        // code_challenge = generators.codeChallenge(code_verifier);
         // console.log(code_challenge, code_verifier)
         // console.log(g)
-        generate_code_challenge()
+        challenge = generate_code_challenge()
+        code_verifier = challenge.code_verifier
+        code_challenge = challenge.code_challenge
 
         authorizationUrl = client.authorizationUrl({
           scope: 'openid',
