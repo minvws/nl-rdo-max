@@ -1,11 +1,12 @@
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs
 
-from typing import Dict
 import base64
-import json
-from urllib.parse import urlencode, quote_plus
+import uuid
+from urllib.parse import urlencode
 
-from fastapi import  Request, Response
+import nacl.hash
+
+from fastapi import  Request, Response, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
@@ -27,16 +28,12 @@ class AuthorizationHandler:
 
     def authorize(self, request: Request):
         # TODO: Assume scope parameter: scope=openid if not exists?
-
-         # parse authentication request
         current_app = request.app
-        body = request.query_params
         try:
-            auth_req = current_app.provider.parse_authentication_request(urlencode(body), request.headers)
+            auth_req = current_app.provider.parse_authentication_request(urlencode(request.query_params), request.headers)
 
-            # TODO: Custom implement?
-            code_challenge = body['code_challenge']
-            code_challenge_method = body['code_challenge_method']
+            if not auth_req['redirect_uri'] == settings.oidc.redirect_uri:
+                raise HTTPException(status_code=400, detail="Bad Request: redirect uri is not as expected")
         except InvalidAuthenticationRequest as e:
             current_app.logger.debug('received invalid authn request', exc_info=True)
             error_url = e.to_error_url()
@@ -46,26 +43,50 @@ class AuthorizationHandler:
                 # show error to user
                 return Response(content='Something went wrong: {}'.format(str(e)), status_code=400)
 
-        # automagic authentication
-        authn_response = current_app.provider.authorize(auth_req, 'test_user')
-        response_url = authn_response.request('/digid-mock', False)
-        redirect_uri = auth_req['redirect_uri']
-        state = request.query_params['state']
+        code_challenge = request.query_params['code_challenge']
+        code_challenge_method = request.query_params['code_challenge_method']
+        print("***", code_challenge)
+        randstate = str(uuid.uuid4())
+        self._cache_auth_req(randstate, auth_req, code_challenge, code_challenge_method)
+        return HTMLResponse(content=self.tvs_handler.login(request, randstate))
 
-        return RedirectResponse(response_url + f"&redirect_uri={redirect_uri}&state={state}", status_code=303)
+    def _cache_auth_req(self, randstate, auth_req, code_challenge, code_challenge_method):
+        value = {
+            'auth_req': auth_req,
+            'code_challenge': code_challenge,
+            'code_challenge_method': code_challenge_method
+        }
+        self.redis_cache.hset(randstate, 'auth_req', value)
+
+    def _verify_code_verifier(self, cc_cm, code_verifier):
+        return True
+        code_challenge_method = cc_cm['code_challenge_method']
+        if not code_challenge_method == 'S256':
+            return False
+
+        code_challenge = base64.urlsafe_b64encode(nacl.hash.sha256(code_verifier.encode())).decode()
+        print(code_verifier, code_challenge, cc_cm['code_challenge'])
+        return code_challenge == cc_cm['code_challenge']
 
     async def token_endpoint(self, request):
         current_app = request.app
         body = await request.body()
         code = parse_qs(body.decode())['code'][0]
-        bsn = self.redis_cache.get(code)
+        code_verifier = parse_qs(body.decode())['code_verifier'][0]
+        cc_cm = self.redis_cache.hget(code, 'cc_cm')
+
+        if not self._verify_code_verifier(cc_cm, code_verifier):
+            raise HTTPException(400, detail='Bad request. code verifier not recognized')
+
+        artifact = self.redis_cache.hget(code, 'arti')
+        encrypted_bsn = self.tvs_handler.resolve_artifact(artifact)
 
         try:
             token_response = current_app.provider.handle_token_request(body.decode('utf-8'),
                                                                     request.headers)
 
             access_key = base64.b64encode(token_response['id_token'].encode()).decode()
-            self.redis_cache.set(access_key, bsn)
+            self.redis_cache.set(access_key, encrypted_bsn)
 
             json_content_resp = jsonable_encoder(token_response.to_dict())
             return JSONResponse(content=json_content_resp)

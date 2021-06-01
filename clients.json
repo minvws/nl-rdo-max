@@ -4,7 +4,7 @@
         "redirect_uris": [
                 "http://localhost:3000/login",
                 "http://10.48.118.250:3000/login",
-                "https://e039d10f9c39.ngrok.io/login"
+                "https://54c0a6a90e9b.ngrok.io/login"
             ],
         "response_types": ["code"]
         }

@@ -41,9 +41,9 @@ def login_digid(request: Request):
 def metadata(request: Request):
     return tvs_request_handler.metadata(request)
 
-@router.get('/digid-mock')
-def digid_mock(request: Request):
-    return tvs_request_handler.digid_mock(request)
+@router.post('/digid-mock')
+async def digid_mock(request: Request):
+    return await tvs_request_handler.digid_mock(request)
 
 @router.get('/acs')
 def assertion_consumer_service(request: Request):

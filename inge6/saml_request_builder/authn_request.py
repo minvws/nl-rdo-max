@@ -6,16 +6,17 @@ from .saml_request import SamlRequest
 
 class AuthNRequest(SamlRequest):
     TEMPLATE_PATH = settings.saml.authn_request_template
+    # TEMPLATE_PATH = '../saml/templates/xml/authn_request.xml'
 
     def __init__(self) -> None:
         super().__init__()
-        self.template = etree.parse(self.TEMPLATE_PATH).getroot()
+        self.root = etree.parse(self.TEMPLATE_PATH).getroot()
 
-        self._add_root_id(self.template)
-        self._add_root_issue_instant(self.template)
+        self._add_root_id(self.root)
+        self._add_root_issue_instant(self.root)
         self._add_reference()
         self._add_certs()
-        self._sign()
+        self._sign(self.root)
 
 if __name__ == "__main__":
     test = AuthNRequest()

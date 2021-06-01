@@ -118,6 +118,6 @@ if __name__ == "__main__":
         run_kwargs['ssl_certfile'] = settings.ssl.base_dir + '/' + settings.ssl.cert_file
 
     uvicorn.run(
-                'inge-6.main:app',
+                'inge6.main:app',
                 **run_kwargs
             )

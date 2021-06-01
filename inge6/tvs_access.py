@@ -2,6 +2,7 @@ from os.path import exists
 
 import requests
 import base64
+import uuid
 import json
 
 from os.path import dirname, join
@@ -19,6 +20,7 @@ from onelogin.saml2.constants import OneLogin_Saml2_Constants
 from onelogin.saml2.settings import OneLogin_Saml2_Settings
 from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 
+from inge6.saml_request_builder import authn_request
 from .config import settings
 from .bsn_encrypt import BSNEncrypt
 from .cache.redis_cache import redis_cache_service
@@ -75,13 +77,13 @@ class TVSRequestHandler:
             'post_data': request.body
         }
 
-    def _login_post(self, auth, return_to):
+    def _login_post(self, auth, relay_state):
         url = auth.get_sso_url()
 
         saml_request = AuthNRequest()
         parameters = {
             'SAMLRequest': saml_request.get_base64_string().decode(),
-            'RelayState': return_to
+            'RelayState': relay_state
             }
 
         return url, parameters
@@ -101,34 +103,30 @@ class TVSRequestHandler:
 
         return html
 
-    def login(self, request: Request):
+    def login(self, request: Request, code: str):
         url_data = urlparse(request.url._url)
 
         req = self.prepare_fastapi_request(request, url_data)
         auth = self.init_saml_auth(req)
 
-        return_to = url_data.netloc + url_data.path
-        sso_built_url_post, parameters = self._login_post(auth, return_to=return_to)
-        # print(parameters)
+        sso_built_url_post, parameters = self._login_post(auth, relay_state=code)
 
-        # request.session['AuthNRequestID'] = auth.get_last_request_id()
-        # request.session['redirect_uri'] = request.query_params['redirect_uri']
+        # return self._create_post_form(sso_built_url_post, parameters)
+        return self._create_post_form('/digid-mock', parameters)
 
-        return self._create_post_form(sso_built_url_post, parameters)
-
-    def digid_mock(self, request: Request):
-        code = request.query_params['code']
-        redirect_uri = request.query_params['redirect_uri']
-        state = request.query_params['state']
+    async def digid_mock(self, request: Request):
+        body = await request.form()
+        # authn_request = body['SAMLRequest']
+        relay_state = body['RelayState']
+        artifact = str(uuid.uuid4())
         http_content = f"""
         <html>
         <h1> DIGID MOCK </h1>
         <form method="GET" action="/acs">
             <label for="bsn">BSN Value:</label><br>
             <input type="text" id="bsn" value="900212640" name="bsn"><br>
-            <input type="hidden" name="code" value="{code}">
-            <input type="hidden" name="state" value="{state}">
-            <input type="hidden" name="redirect_uri" value="{redirect_uri}">
+            <input type="hidden" name="SAMLArt" value="{artifact}">
+            <input type="hidden" name="RelayState" value="{relay_state}">
             <input type="submit" value="Login">
         </form>
         </html>
@@ -136,18 +134,39 @@ class TVSRequestHandler:
         return HTMLResponse(content=http_content, status_code=200)
 
     def acs(self, request: Request):
-        relay_state = request.query_params['RelayState']
-        artifact = request.query_params['SAMLart']
-        resolve_artifact_req = ArtifactResolveRequest(artifact)
-        # relay_state = ...
-        url = self.idp_metadata.get_artifact_rs['location']
-        headers = {'content-type': 'text/xml'}
-        resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req)
+        state = request.query_params['RelayState']
+        artifact = request.query_params['SAMLArt']
+
+        auth_req_dict = self.redis_cache.hget(state, 'auth_req')
+        auth_req = auth_req_dict['auth_req']
+
+        authn_response = request.app.provider.authorize(auth_req, 'test_user')
+        response_url = authn_response.request(settings.oidc.redirect_uri, False)
+        code = authn_response['code']
+
+        self.redis_cache.hset(code, 'arti', artifact)
+        self._store_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
+        return RedirectResponse(response_url, status_code=303)
+
+    def _store_code_challenge(self, code, code_challenge, code_challenge_method):
+        value = {
+            'code_challenge': code_challenge,
+            'code_challenge_method': code_challenge_method
+        }
+        self.redis_cache.hset(code, 'cc_cm', value)
+
+    def resolve_artifact(self, artifact):
+        # resolve_artifact_req = ArtifactResolveRequest(artifact).get_xml_soap_wrapper()
+        # url = self.idp_metadata.get_artifact_rs['location']
+        # headers = {
+        #     'SOAPAction' : '"https://artifact-pp2.toegang.overheid.nl/kvs/rd/resolve_artifact"',
+        #     'content-type': 'text/xml'
+        #     }
+        # resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=('saml/certs/sp.crt', 'saml/certs/sp.key'))
         # resolved_articat = ....
         # Decrypt ...
         # Encrypt ...
-
-        return RedirectResponse(request.session['redirect_uri'])
+        return self._bsn_encrypt._symm_encrypt_bsn(artifact)
 
     def disable_access_token(self, b64_id_token):
         pass
@@ -161,9 +180,14 @@ class TVSRequestHandler:
         if attributes is None:
             raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )
 
+        print(attributes)
+        print(attributes.decode())
+        print(base64.b64decode(attributes))
+
         decoded_json = base64.b64decode(attributes).decode()
         bsn_dict = json.loads(decoded_json)
         bsn = self._bsn_encrypt._symm_decrypt_bsn(bsn_dict)
+        print(bsn)
         encrypted_bsn = self._bsn_encrypt._pub_encrypt_bsn(bsn, access_token['access_token'])
 
         jsonified_encrypted_bsn = jsonable_encoder(encrypted_bsn)

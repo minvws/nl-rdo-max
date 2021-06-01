@@ -5,18 +5,36 @@ skinparam backgroundColor white
 skinparam participantBackgroundColor #EEEBDC
 skinparam noteBackgroundColor #EEE
 
-participant mockdigid
+participant RD_BC
+participant IDPx
 participant App
 
-App->Inge6:/authorize?redirect_uri
-Inge6->App:Redirect(mockdigid/login?code=XXX)
+App->Inge6:/authorize?redirect_uri&code_challenge&code_method=h
+Inge6->Redis:store(randstate, {code_challenge,code_method,state,nonce})
+Inge6-->App:HTMLResponse(form: AuthnRequest + RelayState=randstate, onload(submit))
 
-App->mockdigid:/login?code=XXX
-note over mockdigid: fake digid-login
+App->IDPx:post(AuthnRequest, Relaystate)
+note over App, IDPx:user does login
+IDPx-->App:redirect(/acs?SAMLArt=artifact)
+App->Inge6:/acs?SAMLArt=artifact&RelayState=randstate
 
-mockdigid->Inge6:/acs?bsn
-Inge6->App:/redirect_uri?code=XXX
+Inge6<->Redis:get(randstate)
+Inge6->Redis:delete(randstate)
 
-App->Inge6:/accesstoken.body[client, code=XXX, redirect_uri]
-Inge6->App:JSONResponse(access_token)
+Inge6->Redis:store(arti:code, artifact)
+Inge6-->App:/redirect_uri?code=code
+
+note over App: Logged in, now: get accesstoken
+App->Inge6:/accesstoken.body[client_id, code=XXX, redirect_uri, code_verifier]
+Redis<->Inge6:get(cc_cm:code)
+Inge6->Inge6:validate code_verifier
+
+Redis<->Inge6:get(arti:code)
+Inge6->RD_BC:/resolve?artifact
+Inge6<--RD_BC:resolved artifact?attributes
+
+Inge6->Redis:store(get_cookie[h(token)], attributes)
+
+Inge6-->App:JSONResponse(access_token)
+App->App:remember[access_token]
 @enduml
