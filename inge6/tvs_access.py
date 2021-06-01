@@ -172,7 +172,8 @@ class TVSRequestHandler:
         return self._bsn_encrypt._symm_encrypt_bsn(artifact)
 
     def disable_access_token(self, b64_id_token):
-        self.redis_cache.delete(b64_id_token.decode())
+        # TODO
+        self.redis_cache.delete(b64_id_token.decode(), '')
 
     def repack_bsn_attribute(self, attributes, nonce):
         decoded_json = base64.b64decode(attributes).decode()
@@ -185,6 +186,7 @@ class TVSRequestHandler:
         return json.loads(jwt_token.part[1].decode())
 
     def _validate_jwt_token(self, jwt):
+        # TODO
         return True
 
     async def bsn_attribute(self, request: Request):
@@ -206,20 +208,7 @@ class TVSRequestHandler:
         if attributes is None:
             raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )
 
-<<<<<<< HEAD:inge6/tvs_access.py
-        print(attributes)
-        print(attributes.decode())
-        print(base64.b64decode(attributes))
-
-        decoded_json = base64.b64decode(attributes).decode()
-        bsn_dict = json.loads(decoded_json)
-        bsn = self._bsn_encrypt._symm_decrypt_bsn(bsn_dict)
-        print(bsn)
-        encrypted_bsn = self._bsn_encrypt._pub_encrypt_bsn(bsn, access_token['access_token'])
-
-=======
         encrypted_bsn = self.repack_bsn_attribute(attributes, at_hash)
->>>>>>> master:inge-6/tvs_access.py
         jsonified_encrypted_bsn = jsonable_encoder(encrypted_bsn)
         return JSONResponse(content=jsonified_encrypted_bsn)
 
