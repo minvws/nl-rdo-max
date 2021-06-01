@@ -114,8 +114,10 @@ class TVSRequestHandler:
 
         sso_built_url_post, parameters = self._login_post(auth, relay_state=code)
 
-        # return self._create_post_form(sso_built_url_post, parameters)
-        return self._create_post_form('/digid-mock', parameters)
+        if settings.mock_digid.lower() == "true":
+            return self._create_post_form('/digid-mock', parameters)
+
+        return self._create_post_form(sso_built_url_post, parameters)
 
     async def digid_mock(self, request: Request):
         body = await request.form()
@@ -125,7 +127,7 @@ class TVSRequestHandler:
         http_content = f"""
         <html>
         <h1> DIGID MOCK </h1>
-        <form method="GET" action="/acs">
+        <form method="GET" action="/digid-mock-catch">
             <label for="bsn">BSN Value:</label><br>
             <input type="text" id="bsn" value="900212640" name="bsn"><br>
             <input type="hidden" name="SAMLArt" value="{artifact}">
@@ -135,6 +137,12 @@ class TVSRequestHandler:
         </html>
         """
         return HTMLResponse(content=http_content, status_code=200)
+
+    def digid_mock_catch(self, request: Request):
+        bsn = request.query_params['bsn']
+        relay_state = request.query_params['RelayState']
+        response_uri = '/acs' + f'?SAMLArt={bsn}&RelayState={relay_state}'
+        return RedirectResponse(response_uri, status_code=303)
 
     def acs(self, request: Request):
         state = request.query_params['RelayState']
@@ -159,17 +167,21 @@ class TVSRequestHandler:
         self.redis_cache.hset(code, 'cc_cm', value)
 
     def resolve_artifact(self, artifact):
-        # resolve_artifact_req = ArtifactResolveRequest(artifact).get_xml_soap_wrapper()
-        # url = self.idp_metadata.get_artifact_rs['location']
-        # headers = {
-        #     'SOAPAction' : '"https://artifact-pp2.toegang.overheid.nl/kvs/rd/resolve_artifact"',
-        #     'content-type': 'text/xml'
-        #     }
-        # resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=('saml/certs/sp.crt', 'saml/certs/sp.key'))
+
+        if settings.mock_digid.lower() == "true":
+            return self._bsn_encrypt._symm_encrypt_bsn(artifact)
+
+        resolve_artifact_req = ArtifactResolveRequest(artifact).get_xml_soap_wrapper()
+        url = self.idp_metadata.get_artifact_rs['location']
+        headers = {
+            'SOAPAction' : '"https://artifact-pp2.toegang.overheid.nl/kvs/rd/resolve_artifact"',
+            'content-type': 'text/xml'
+            }
+        resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=('saml/certs/sp.crt', 'saml/certs/sp.key'))
         # resolved_articat = ....
         # Decrypt ...
         # Encrypt ...
-        return self._bsn_encrypt._symm_encrypt_bsn(artifact)
+        return resolved_artifact
 
     def disable_access_token(self, b64_id_token):
         # TODO
@@ -199,7 +211,6 @@ class TVSRequestHandler:
 
         payload = self._jwt_payload(id_token)
         at_hash = payload['at_hash']
-        print(at_hash)
 
         b64_id_token = base64.b64encode(id_token.encode())
         attributes = self.redis_cache.get(b64_id_token.decode())
@@ -219,8 +230,6 @@ class TVSRequestHandler:
         saml_settings = auth.get_settings()
         metadata = saml_settings.get_sp_metadata()
         errors = saml_settings.validate_metadata(metadata)
-
-        print(saml_settings.get_idp_data())
 
         if len(errors) == 0:
             return Response(content=metadata, media_type="application/xml")

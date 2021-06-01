@@ -45,7 +45,7 @@ class AuthorizationHandler:
 
         code_challenge = request.query_params['code_challenge']
         code_challenge_method = request.query_params['code_challenge_method']
-        print("***", code_challenge)
+
         randstate = str(uuid.uuid4())
         self._cache_auth_req(randstate, auth_req, code_challenge, code_challenge_method)
         return HTMLResponse(content=self.tvs_handler.login(request, randstate))

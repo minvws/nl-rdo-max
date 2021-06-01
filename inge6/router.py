@@ -45,6 +45,10 @@ def metadata(request: Request):
 async def digid_mock(request: Request):
     return await tvs_request_handler.digid_mock(request)
 
+@router.get('/digid-mock-catch')
+def digid_mock_catch(request: Request):
+    return tvs_request_handler.digid_mock_catch(request)
+
 @router.get('/acs')
 def assertion_consumer_service(request: Request):
     ## TODO: Check valid token.

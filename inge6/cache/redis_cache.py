@@ -13,6 +13,11 @@ class RedisCache:
     KEY_PREFIX = 'TVS:'
     EXPIRES_IN_S = 60 * 15
 
+    def __init__(self):
+        # TODO: !!
+        # get_redis_client().expire(settings.oidc.tvs_token_namespace, self.EXPIRES_IN_S)
+        pass
+
     def _serialize(self, value):
         return pickle.dumps(value)
         if not isinstance(value, NOT_SERIALIZE_TYPES):
@@ -37,6 +42,7 @@ class RedisCache:
     def hset(self, namespace: str, key: str, value: Any):
         serialized_value = self._serialize(value)
         get_redis_client().hset(namespace, key, serialized_value)
+        get_redis_client().expire(name=namespace, time=self.EXPIRES_IN_S)
 
     def hget(self, namespace, key):
         value = get_redis_client().hget(namespace, key)
