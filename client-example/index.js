@@ -1,4 +1,7 @@
 const { Issuer, generators } = require('openid-client');
+const { createHash, randomBytes } = require('crypto');
+const base64url = require('base64url')
+
 const https = require('https')
 const express = require('express');
 const url = require('url');
@@ -11,7 +14,7 @@ const baseUrl = `https://${host}:8006`;
 // const host = "tvs-connect.coronacheck.nl";
 // const baseUrl = `https://${host}`;
 
-const clientBaseUrl = "https://e039d10f9c39.ngrok.io";
+const clientBaseUrl = "https://54c0a6a90e9b.ngrok.io";
 const redirect_uri = clientBaseUrl + "/login";
 const redirect_uris = [
   clientBaseUrl + "/login",
@@ -73,7 +76,7 @@ app.get('/finished', (req, res) => {
     console.error(error)
   })
 
-  new_req.write(jsoned)
+  new_req.write()
   new_req.end()
 
 });
@@ -107,6 +110,19 @@ app.listen(port, () => {
   discoverTvsDigiD();
 });
 
+function generate_code_challenge() {
+  const random = (bytes = 32) => base64url(randomBytes(bytes));
+  const code_verifier = random();
+  const code_challenge_1 = createHash('sha256').update(code_verifier).digest();
+  const code_challenge = base64url(code_challenge_1);
+  // console.log(code_verifier, code_challenge)
+  console.log(code_verifier, code_challenge_1, code_challenge);
+  return {
+    code_verifier: code_verifier,
+    code_challenge: code_challenge
+  }
+}
+
 function discoverTvsDigiD() {
   Issuer.discover(baseUrl + '/.well-known/openid-configuration') // => Promise
     .then( (issuer) => {
@@ -127,6 +143,9 @@ function discoverTvsDigiD() {
         state = generators.state()
 
         code_challenge = generators.codeChallenge(code_verifier);
+        // console.log(code_challenge, code_verifier)
+        // console.log(g)
+        generate_code_challenge()
 
         authorizationUrl = client.authorizationUrl({
           scope: 'openid',
