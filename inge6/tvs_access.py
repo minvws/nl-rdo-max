@@ -130,7 +130,7 @@ class TVSRequestHandler:
             <input type="hidden" name="RelayState" value="{relay_state}">
             <input type="submit" value="Login">
         </form>
-        <a href='/login-digid?force_digid&state={state}' style='font-size:36; background-color:purple; display:box'>Actual BSN</a>
+        <a href='/login-digid?force_digid&state={state}' style='font-size:36; background-color:purple; display:box'>Actual DgiD</a>
         </html>
         """
         return HTMLResponse(content=http_content, status_code=200)
