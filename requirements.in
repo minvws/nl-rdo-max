@@ -6,7 +6,7 @@
 fastapi
 redis
 redis-collections
-pyop
+pyop==3.1.1
 jinja2
 lxml
 xmlsec

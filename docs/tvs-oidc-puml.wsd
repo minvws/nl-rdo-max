@@ -19,7 +19,6 @@ IDPx-->App:redirect(/acs?SAMLArt=artifact)
 App->Inge6:/acs?SAMLArt=artifact&RelayState=randstate
 
 Inge6<->Redis:get(randstate)
-Inge6->Redis:delete(randstate)
 
 Inge6->Redis:store(arti:code, artifact)
 Inge6-->App:/redirect_uri?code=code
