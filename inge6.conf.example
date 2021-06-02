@@ -22,6 +22,7 @@ key_file = private/apache-selfsigned.key
 [oidc]
 clients_file = clients.json
 rsa_private_key = secrets/private_unencrypted.pem
+subject_id_hash_salt = somesalt
 
 [saml]
 base_dir = saml
