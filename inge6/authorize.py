@@ -1,7 +1,6 @@
 from urllib.parse import parse_qs
 
 import base64
-import uuid
 from urllib.parse import urlencode
 
 import nacl.hash
@@ -13,8 +12,6 @@ from fastapi.encoders import jsonable_encoder
 from oic.oic.message import TokenErrorResponse, UserInfoErrorResponse
 from pyop.access_token import AccessToken, BearerTokenError
 from pyop.exceptions import InvalidAuthenticationRequest, InvalidAccessToken, InvalidClientAuthentication, OAuthError
-
-from pyop.util import should_fragment_encode
 
 from .config import settings
 from .cache.redis_cache import redis_cache_service
