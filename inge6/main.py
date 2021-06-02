@@ -65,10 +65,10 @@ def init_oidc_provider(app):
         clients = json.load(clients_file)
     signing_key = RSAKey(key=rsa_load(settings.oidc.rsa_private_key), alg='RS256', )
 
-    authorization_code_db = RDict([('init_key', 'init_value')], key=settings.redis.code_namespace, redis=get_redis_client())
-    access_token_db = RDict([('init_key', 'init_value')], key=settings.redis.token_namespace, redis=get_redis_client())
-    refresh_token_db = RDict([('init_key', 'init_value')], key=settings.redis.refresh_token_namespace, redis=get_redis_client())
-    subject_identifier_db = RDict([('init_key', 'init_value')], key=settings.redis.sub_id_namespace, redis=get_redis_client())
+    authorization_code_db = RDict(key=settings.redis.code_namespace, redis=get_redis_client())
+    access_token_db = RDict(key=settings.redis.token_namespace, redis=get_redis_client())
+    refresh_token_db = RDict(key=settings.redis.refresh_token_namespace, redis=get_redis_client())
+    subject_identifier_db = RDict(key=settings.redis.sub_id_namespace, redis=get_redis_client())
 
     authz_state = AuthorizationState(
         HashBasedSubjectIdentifierFactory(settings.oidc.subject_id_hash_salt),
