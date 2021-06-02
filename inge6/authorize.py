@@ -31,9 +31,6 @@ class AuthorizationHandler:
         current_app = request.app
         try:
             auth_req = current_app.provider.parse_authentication_request(urlencode(request.query_params), request.headers)
-
-            if not auth_req['redirect_uri'] == settings.oidc.redirect_uri:
-                raise HTTPException(status_code=400, detail="Bad Request: redirect uri is not as expected")
         except InvalidAuthenticationRequest as e:
             current_app.logger.debug('received invalid authn request', exc_info=True)
             error_url = e.to_error_url()
@@ -46,7 +43,7 @@ class AuthorizationHandler:
         code_challenge = request.query_params['code_challenge']
         code_challenge_method = request.query_params['code_challenge_method']
 
-        randstate = str(uuid.uuid4())
+        randstate = self.redis_cache.gen_token()
         self._cache_auth_req(randstate, auth_req, code_challenge, code_challenge_method)
         return HTMLResponse(content=self.tvs_handler.login(request, randstate))
 

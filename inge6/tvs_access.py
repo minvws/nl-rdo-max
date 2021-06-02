@@ -152,7 +152,7 @@ class TVSRequestHandler:
         auth_req = auth_req_dict['auth_req']
 
         authn_response = request.app.provider.authorize(auth_req, 'test_user')
-        response_url = authn_response.request(settings.oidc.redirect_uri, False)
+        response_url = authn_response.request(auth_req['redirect_uri'], False)
         code = authn_response['code']
 
         self.redis_cache.hset(code, 'arti', artifact)
