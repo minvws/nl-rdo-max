@@ -7,11 +7,12 @@ port = 8006
 
 debug = True
 use_ssl = True
-mock_digid = False
+mock_digid = True
 
 [bsn]
 i6_priv_key =
 i4_pub_key =
+symm_key =
 
 [ssl]
 base_dir = secrets/ssl
@@ -21,7 +22,6 @@ key_file = private/apache-selfsigned.key
 [oidc]
 clients_file = clients.json
 rsa_private_key = secrets/private_unencrypted.pem
-subject_id_hash_salt = somesalt
 
 [saml]
 base_dir = saml
@@ -35,6 +35,7 @@ artifactresolve_request_template = saml/templates/xml/artifactresolve_request.xm
 [redis]
 host = localhost
 port = 6379
+expires_in_s = 900
 
 token_namespace = tvs_token
 refresh_token_namespace = tvs_refresh_token
