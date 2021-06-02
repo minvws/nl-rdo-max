@@ -1,4 +1,3 @@
-from os import access
 from os.path import exists
 
 import requests
@@ -6,7 +5,6 @@ import base64
 import uuid
 import json
 
-from os.path import dirname, join
 from jinja2 import Template
 
 from urllib.parse import urlparse
@@ -18,17 +16,15 @@ from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from fastapi.security.utils import get_authorization_scheme_param
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
-from onelogin.saml2.utils import OneLogin_Saml2_Utils
 from onelogin.saml2.constants import OneLogin_Saml2_Constants
 from onelogin.saml2.settings import OneLogin_Saml2_Settings
 from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 
-from inge6.saml_request_builder import authn_request
 from .config import settings
 from .bsn_encrypt import BSNEncrypt
 from .cache.redis_cache import redis_cache_service
-from .saml_request_builder import AuthNRequest, ArtifactResolveRequest
-from .saml_response_parser import IdPMetadataParser
+from .saml.request_builder import AuthNRequest, ArtifactResolveRequest
+from .saml.response_parser import IdPMetadataParser, ArtifactResponseParser
 
 class TVSRequestHandler:
 
@@ -68,7 +64,7 @@ class TVSRequestHandler:
 
     # TODO: Convert to fastapi standards.
     def prepare_fastapi_request(self, request, url_data):
-        # If server is behind proxys or balancers use the HTTP_X_FORWARDED fields
+        # If server is behinan uit dat het advies tot vragen en onrust zal leiden bij mensen die een prikafspraak voor het Janssen-vaccin hebben staan. "Afspraken vallen uit omdat ze verzet moeten worden, de callcenters wordd proxys or balancers use the HTTP_X_FORWARDED fields
         return {
             'https': 'on' if request.url.scheme == 'https' else 'off',
             'http_host': settings.issuer,
@@ -130,7 +126,7 @@ class TVSRequestHandler:
         <form method="GET" action="/digid-mock-catch">
             <label for="bsn">BSN Value:</label><br>
             <input type="text" id="bsn" value="900212640" name="bsn"><br>
-            <input type="hidden" name="SAMLArt" value="{artifact}">
+            <input type="hidden" name="SAMLart" value="{artifact}">
             <input type="hidden" name="RelayState" value="{relay_state}">
             <input type="submit" value="Login">
         </form>
@@ -141,12 +137,12 @@ class TVSRequestHandler:
     def digid_mock_catch(self, request: Request):
         bsn = request.query_params['bsn']
         relay_state = request.query_params['RelayState']
-        response_uri = '/acs' + f'?SAMLArt={bsn}&RelayState={relay_state}'
+        response_uri = '/acs' + f'?SAMLart={bsn}&RelayState={relay_state}'
         return RedirectResponse(response_uri, status_code=303)
 
     def acs(self, request: Request):
         state = request.query_params['RelayState']
-        artifact = request.query_params['SAMLArt']
+        artifact = request.query_params['SAMLart']
 
         auth_req_dict = self.redis_cache.hget(state, 'auth_req')
         auth_req = auth_req_dict['auth_req']
@@ -178,10 +174,9 @@ class TVSRequestHandler:
             'content-type': 'text/xml'
             }
         resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=('saml/certs/sp.crt', 'saml/certs/sp.key'))
-        # resolved_articat = ....
-        # Decrypt ...
-        # Encrypt ...
-        return resolved_artifact
+        bsn = ArtifactResponseParser(resolved_artifact).get_bsn()
+        encrypted_bsn = self._bsn_encrypt._symm_encrypt_bsn(bsn)
+        return encrypted_bsn
 
     def disable_access_token(self, b64_id_token):
         # TODO
