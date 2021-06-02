@@ -123,14 +123,16 @@ class TVSRequestHandler:
         http_content = f"""
         <html>
         <h1> DigiD MOCK </h1>
-        <form method="GET" action="/digid-mock-catch">
-            <label for="bsn">BSN Value:</label><br>
-            <input type="text" id="bsn" value="900212640" name="bsn"><br>
-            <input type="hidden" name="SAMLart" value="{artifact}">
-            <input type="hidden" name="RelayState" value="{relay_state}">
-            <input type="submit" value="Login">
-        </form>
-        <a href='/login-digid?force_digid&state={state}' style='font-size:36; background-color:purple; display:box'>Actual DigiD</a>
+        <div style='font-size:36;'>
+            <form method="GET" action="/digid-mock-catch">
+                <label style='height:200px; width:400px' for="bsn">BSN Value:</label><br>
+                <input style='height:200px; width:400px; font-size:36pt' type="text" id="bsn" value="900212640" name="bsn"><br>
+                <input type="hidden" name="SAMLart" value="{artifact}">
+                <input type="hidden" name="RelayState" value="{relay_state}">
+                <input style='height:100px; width:400px' type="submit" value="Login">
+            </form>
+        </div>
+        <a href='/login-digid?force_digid&state={state}' style='font-size:55; background-color:purple; display:box'>Actual DigiD</a>
         </html>
         """
         return HTMLResponse(content=http_content, status_code=200)
