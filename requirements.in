@@ -7,7 +7,7 @@ fastapi
 redis
 redis-collections
 pyop==3.1.1
-pycrypto
+pycryptodome
 jinja2
 lxml
 xmlsec

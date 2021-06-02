@@ -4,13 +4,11 @@ import secrets
 from datetime import datetime
 from lxml import etree
 
-from ..config import settings
+from ...config import settings
 
 class SamlRequest:
     KEY_PATH = settings.saml.key_path
     CERT_PATH = settings.saml.cert_path
-    # KEY_PATH = '../saml/certs/sp.key'
-    # CERT_PATH = '../saml/certs/sp.crt'
 
     def __init__(self):
         self.__id = "_" + secrets.token_hex(41) # total length 42.

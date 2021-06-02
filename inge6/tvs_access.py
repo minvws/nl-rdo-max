@@ -167,14 +167,14 @@ class TVSRequestHandler:
         if settings.mock_digid.lower() == "true":
             return self._bsn_encrypt._symm_encrypt_bsn(artifact)
 
-        resolve_artifact_req = ArtifactResolveRequest(artifact).get_xml_soap_wrapper()
-        url = self.idp_metadata.get_artifact_rs['location']
+        resolve_artifact_req = ArtifactResolveRequest(artifact).get_xml()
+        url = self.idp_metadata.get_artifact_rs()['location']
         headers = {
             'SOAPAction' : '"https://artifact-pp2.toegang.overheid.nl/kvs/rd/resolve_artifact"',
             'content-type': 'text/xml'
             }
         resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=('saml/certs/sp.crt', 'saml/certs/sp.key'))
-        bsn = ArtifactResponseParser(resolved_artifact).get_bsn()
+        bsn = ArtifactResponseParser(resolved_artifact.text).get_bsn()
         encrypted_bsn = self._bsn_encrypt._symm_encrypt_bsn(bsn)
         return encrypted_bsn
 

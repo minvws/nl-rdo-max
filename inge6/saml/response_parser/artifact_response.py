@@ -1,16 +1,15 @@
 from Crypto.Cipher import AES
 from lxml import etree
-import xml.etree.ElementTree as ET
 
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
 from ...config import settings
 
 class ArtifactResponseParser():
-    PRIV_KEY_PATH: settings.saml.key_path
+    PRIV_KEY_PATH = settings.saml.key_path
 
     def __init__(self, xml_response):
-        self.root = ET.fromstring(xml_response)
+        self.root = etree.fromstring(xml_response).getroottree().getroot()
         with open(self.PRIV_KEY_PATH, 'r') as priv_key_file:
             self.key = priv_key_file.read()
 
@@ -33,5 +32,5 @@ class ArtifactResponseParser():
     def get_bsn(self):
         aes_key = self._decrypt_enc_key()
         bsn_element_raw = self._decrypt_enc_data(aes_key)
-        bsn_element = ET.fromstring(bsn_element_raw.decode())
+        bsn_element = etree.fromstring(bsn_element_raw.decode())
         return bsn_element.text
