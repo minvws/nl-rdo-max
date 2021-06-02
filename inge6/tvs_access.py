@@ -102,22 +102,22 @@ class TVSRequestHandler:
 
         return html
 
-    def login(self, request: Request, code: str):
+    def login(self, request: Request, randstate: str):
         url_data = urlparse(request.url._url)
 
         req = self.prepare_fastapi_request(request, url_data)
         auth = self.init_saml_auth(req)
 
-        sso_built_url_post, parameters = self._login_post(auth, relay_state=code)
+        sso_built_url_post, parameters = self._login_post(auth, relay_state=randstate)
 
-        if settings.mock_digid.lower() == "true":
-            return self._create_post_form('/digid-mock', parameters)
+        if settings.mock_digid.lower() == "true" and not 'force_digid' in request.query_params:
+            return self._create_post_form(f'/digid-mock?state={randstate}', parameters)
 
         return self._create_post_form(sso_built_url_post, parameters)
 
     async def digid_mock(self, request: Request):
         body = await request.form()
-        # authn_request = body['SAMLRequest']
+        state = request.query_params['state']
         relay_state = body['RelayState']
         artifact = str(uuid.uuid4())
         http_content = f"""
@@ -130,6 +130,7 @@ class TVSRequestHandler:
             <input type="hidden" name="RelayState" value="{relay_state}">
             <input type="submit" value="Login">
         </form>
+        <a href='/login-digid?force_digid&state={state}' style='font-size:36; background-color:purple; display:box'>Actual BSN</a>
         </html>
         """
         return HTMLResponse(content=http_content, status_code=200)

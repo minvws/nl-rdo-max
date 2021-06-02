@@ -3,7 +3,7 @@ from typing import Dict
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
 from .tvs_access import TVSRequestHandler
@@ -35,7 +35,8 @@ async def userinfo_endpoint(request: Request):
 @router.get('/login-digid')
 def login_digid(request: Request):
     ## TODO: Check valid token.
-    return tvs_request_handler.login(request)
+    state = request.query_params['state']
+    return HTMLResponse(content=tvs_request_handler.login(request, state))
 
 @router.get('/metadata')
 def metadata(request: Request):
