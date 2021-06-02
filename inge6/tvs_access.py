@@ -122,7 +122,7 @@ class TVSRequestHandler:
         artifact = str(uuid.uuid4())
         http_content = f"""
         <html>
-        <h1> DIGID MOCK </h1>
+        <h1> DigiD MOCK </h1>
         <form method="GET" action="/digid-mock-catch">
             <label for="bsn">BSN Value:</label><br>
             <input type="text" id="bsn" value="900212640" name="bsn"><br>
