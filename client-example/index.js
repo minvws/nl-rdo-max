@@ -29,24 +29,16 @@ var code_challenge;
 var state;
 
 app.get('/', (req, res) => {
-  // res.send('Hello World');
   res.sendFile('index.html', {root: './'});
 });
 
 app.get('/finished', (req, res) => {
-  // res.send('Hello World');
   at = req.query.at
 
   const buff = Buffer.from(at, 'base64');
   const jsoned = buff.toString('utf-8');
 
   parsed_json = JSON.parse(jsoned)
-
-  // console.log(jsoned)
-  // id_token = parsed_json.id_token
-  // const id_token_buff = Buffer.from(id_token, 'utf-8')
-  // const b64_id_token = id_token_buff.toString('base64')
-  // console.log(b64_id_token, id_token)
 
   const new_req = https.request({
     hostname: host,
@@ -55,7 +47,7 @@ app.get('/finished', (req, res) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Content-Length': jsoned.length,
+      'Content-Length': 0,
       'Authorization': `Bearer ${parsed_json.id_token}`
     }
   }, new_res => {
