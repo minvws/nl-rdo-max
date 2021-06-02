@@ -1,3 +1,5 @@
+import base64
+
 from Crypto.Cipher import AES
 from lxml import etree
 
@@ -23,8 +25,9 @@ class ArtifactResponseParser():
 
     def _decrypt_enc_data(self, aes_key: bytes) -> bytes:
         encrypted_ciphervalue = self.root.find('.//xenc:EncryptedData//xenc:CipherValue', {'xenc': 'http://www.w3.org/2001/04/xmlenc#'}).text
-        iv = encrypted_ciphervalue[:16]
-        enc_data = encrypted_ciphervalue[:16]
+        b64decoded_data = base64.b64decode(encrypted_ciphervalue.encode())
+        iv = b64decoded_data[:16]
+        enc_data = b64decoded_data[16:]
         cipher = AES.new(aes_key, AES.MODE_CBC, iv=iv)
         plaintext = cipher.decrypt(enc_data)
         return self._remove_padding(plaintext)
