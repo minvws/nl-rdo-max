@@ -1,6 +1,6 @@
 from lxml import etree
 
-from ..config import settings
+from ...config import settings
 
 class IdPMetadataParser:
     IDP_PATH = settings.saml.idp_path
