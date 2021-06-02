@@ -18,7 +18,7 @@ jobs:
         run: ls -alR
 
       - name: Create tar
-        run: tar -czf inge6_${{ env.RELEASE_VERSION }}.tar.gz ./inge-6 ./saml ./*.sh
+        run: tar -czf inge6_${{ env.RELEASE_VERSION }}.tar.gz ./inge6 ./saml ./*.sh
 
       - name: Upload release tar
         uses: actions/upload-artifact@v1
