@@ -11,7 +11,7 @@ class ArtifactResolveRequest(SamlRequest):
     def __init__(self, artifact_code) -> None:
         super().__init__()
         self.template = etree.parse(self.TEMPLATE_PATH).getroot()
-        self.root = self.root.find('.//samlp:ArtifactResolve', {'samlp': "urn:oasis:names:tc:SAML:2.0:protocol"})
+        self.root = self.template.find('.//samlp:ArtifactResolve', {'samlp': "urn:oasis:names:tc:SAML:2.0:protocol"})
 
         self._add_root_id(self.root)
         self._add_root_issue_instant(self.root)
@@ -24,6 +24,8 @@ class ArtifactResolveRequest(SamlRequest):
         artifact = self.root.find('.//samlp:Artifact', {'samlp': "urn:oasis:names:tc:SAML:2.0:protocol"})
         artifact.text = artifact_code
 
+    def get_xml(self) -> bytes:
+        return etree.tostring(self.template)
 
 if __name__ == "__main__":
     test = ArtifactResolveRequest("AAQAAC++9v4UQ3mOG7AEGSVSddlO0YmaRCGk1jkVRoStga0sICMv4wAAAAA=")
