@@ -121,3 +121,5 @@ class SPMetadata(SAMLRequest):
             errors.append('Invalid Signature')
 
         return errors
+
+sp_metadata = SPMetadata()

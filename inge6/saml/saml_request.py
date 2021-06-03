@@ -77,12 +77,3 @@ class ArtifactResolveRequest(SAMLRequest):
 
     def get_xml(self) -> bytes:
         return etree.tostring(self.template)
-
-if __name__ == "__main__":
-    test = AuthNRequest()
-    print(test.get_xml().decode())
-    print(test.get_base64_string().decode())
-
-    test = ArtifactResolveRequest("AAQAAC++9v4UQ3mOG7AEGSVSddlO0YmaRCGk1jkVRoStga0sICMv4wAAAAA=")
-    print(test.get_xml().decode())
-    print(test.get_base64_string().decode())

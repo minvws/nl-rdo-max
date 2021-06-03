@@ -38,3 +38,5 @@ class BSNEncrypt:
         nonce = (access_token_value + 'CC').encode()
         encrypted_bsn = self.box.encrypt(bsn, nonce=nonce, encoder=Base64Encoder)
         return encrypted_bsn
+
+bsn_encrypt = BSNEncrypt()

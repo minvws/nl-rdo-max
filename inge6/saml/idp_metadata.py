@@ -34,8 +34,4 @@ class IdPMetadataParser:
     def get_xml(self) -> bytes:
         return etree.tostring(self.template)
 
-if __name__ == "__main__":
-    idp_metadata = IdPMetadataParser()
-    # print(idp_metadata.get_xml())
-    print(idp_metadata.get_artifact_rs())
-    print(idp_metadata.get_sso())
+idp_metadata = IdPMetadataParser()
