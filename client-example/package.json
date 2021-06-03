@@ -13,6 +13,7 @@
     "express": "^4.17.1",
     "got": "^11.8.2",
     "openid-client": "^4.7.3",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "base64url": "^3.0.1"
   }
 }

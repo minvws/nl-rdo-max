@@ -11,6 +11,7 @@ __pycache__
 *.crt
 .coverage*
 *.egg-info
+*.pytest_cache*
 dump.rdb
 saml/settings.json
 inge6.conf

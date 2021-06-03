@@ -24,7 +24,8 @@ from .config import settings
 from .bsn_encrypt import BSNEncrypt
 from .cache.redis_cache import redis_cache_service
 from .saml.request_builder import AuthNRequest, ArtifactResolveRequest
-from .saml.response_parser import IdPMetadataParser, ArtifactResponseParser
+from .saml.response_parser import ArtifactResponseParser
+from .saml.metadata import IdPMetadataParser
 
 class TVSRequestHandler:
 

@@ -1,3 +1,6 @@
+# System summary
+
+
 # Setup
 
 To run this service make sure you have the following files in place:
@@ -15,7 +18,7 @@ Setup a redis server, and set the host and port in `inge-6/config.py`.
 
 Next, with the appropriate host and port, run in your environment:
 ```bash
-uvicorn inge-6.main:app --host 0.0.0.0 --port 8006
+$ sh run_server.sh
 ```
 
 

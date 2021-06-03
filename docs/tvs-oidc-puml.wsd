@@ -1,5 +1,5 @@
 @startuml
-title tvs.cc.coroncheck.nl/authorize
+title tvs-connect.acc.coroncheck.nl
 
 skinparam backgroundColor white
 skinparam participantBackgroundColor #EEEBDC
