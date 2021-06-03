@@ -1,0 +1,123 @@
+import base64
+from inge6.saml.utils import has_valid_signature
+import json
+from os import error
+
+from OpenSSL.crypto import load_certificate, FILETYPE_PEM
+
+from lxml import etree
+
+from .saml_request import SAMLRequest
+from .constants import NAMESPACES
+from .utils import has_valid_signature
+from ..config import settings
+
+####
+# TODO:
+# root.cacheDuration?
+#
+####
+
+class SPMetadata(SAMLRequest):
+    TEMPLATE_PATH = settings.saml.sp_template
+    SETTINGS_PATH = 'saml/settings.json'
+
+    DEFAULT_SLS = settings.issuer + '/sls'
+    DEFAULT_ACS = settings.issuer + '/acs'
+
+    def __init__(self) -> None:
+        super().__init__()
+        with open(self.SETTINGS_PATH, 'r') as settings_file:
+            self.settings_dict = json.loads(settings_file.read())
+
+        self.root = etree.parse(self.TEMPLATE_PATH).getroot()
+
+        with open(self.CERT_PATH, 'r') as cert_file:
+            self.cert_data = cert_file.read()
+
+        self._add_root_id(self.root)
+        self._add_reference()
+        self._add_service_locs()
+        self._add_attribute_value()
+        self._add_certs()
+        self._add_keyname()
+        self._sign(self.root)
+
+    def _add_certs(self):
+        X509_elems = self.root.findall('.//ds:X509Certificate', NAMESPACES)
+
+        for elem in X509_elems:
+            elem.text = base64.b64encode(self.cert_data.encode())
+
+    def _add_keyname(self):
+        cert = load_certificate(FILETYPE_PEM, self.cert_data)
+        sha1_fingerprint = cert.digest("sha1").upper()
+        keyname_elem = self.root.find('.//ds:KeyInfo/ds:KeyName', NAMESPACES)
+        keyname_elem.text = sha1_fingerprint
+
+    def _add_service_locs(self):
+        sls_elem = self.root.find('.//md:SingleLogoutService', NAMESPACES)
+        acs_elem = self.root.find('.//md:AssertionConsumerService', NAMESPACES)
+
+        sls_loc = self._from_settings('sp.SingleLogoutService.url', self.DEFAULT_SLS)
+        acs_loc = self._from_settings('sp.assertionConsumerService.url', self.DEFAULT_ACS)
+
+        sls_elem.attrib['Location'] = sls_loc
+        acs_elem.attrib['Location'] = acs_loc
+
+    def _from_settings(self, selector, default = None):
+        key_hierarchy = selector.split('.')
+        value = self.settings_dict
+        for key in key_hierarchy:
+            try:
+                value = value[key]
+            except KeyError as _:
+                return default
+        return value
+
+    def _add_attribute_value(self):
+        attr_value_elem = self.root.find('.//md:AttributeConsumingService//saml:AttributeValue', NAMESPACES)
+
+        try:
+            attr_value_elem.text = self.settings_dict['sp']['attributeConsumingService']['requestedAttributes'][0]['attributeValue'][0]
+        except KeyError as key_error:
+            raise KeyError('key does not exist. please check your settings.json') from key_error
+
+    def _valid_signature(self):
+        return has_valid_signature(self.root)
+
+    def _contains_keyname(self):
+        return self.root.find('.//ds:KeyInfo/ds:KeyName', NAMESPACES) is not None
+
+    def _has_correct_bindings(self):
+        correct_bindings = True
+        sls_elem = self.root.find('.//md:SingleLogoutService', NAMESPACES)
+        acs_elem = self.root.find('.//md:AssertionConsumerService', NAMESPACES)
+
+        if sls_elem is not None:
+            correct_bindings = correct_bindings and sls_elem.attrib['Binding'] == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+
+        # Required element.
+        correct_bindings = correct_bindings and acs_elem.attrib['Binding'] == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+
+        return correct_bindings
+
+    def validate(self):
+        errors = []
+
+        if self.root.tag != '{%s}EntityDescriptor' % NAMESPACES['md']:
+            errors.append('Root is not an EntityDescriptor')
+
+        if len(self.root.findall('.//md:SPSSODescriptor', NAMESPACES)) != 1:
+            errors.append('Only one SPSSO Descriptor allowed')
+
+        if not self._has_correct_bindings():
+            errors.append('Incorrect bindings for SPSSO services')
+
+        if not self._contains_keyname():
+            errors.append('Does not contain a keyname in KeyDescriptor')
+
+        if not self._valid_signature():
+            errors.append('Invalid Signature')
+
+        return errors
