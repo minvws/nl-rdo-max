@@ -1,1 +1,0 @@
-from .idp_metadata_parser import IdPMetadataParser

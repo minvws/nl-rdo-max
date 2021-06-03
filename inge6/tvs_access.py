@@ -23,9 +23,7 @@ from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 from .config import settings
 from .bsn_encrypt import BSNEncrypt
 from .cache.redis_cache import redis_cache_service
-from .saml.request_builder import AuthNRequest, ArtifactResolveRequest
-from .saml.response_parser import ArtifactResponseParser
-from .saml.metadata import IdPMetadataParser
+from .saml import AuthNRequest, ArtifactResolveRequest, ArtifactResponseParser, IdPMetadataParser, SPMetadata
 
 class TVSRequestHandler:
 
@@ -33,6 +31,7 @@ class TVSRequestHandler:
         self.redis_cache = redis_cache_service
         self._bsn_encrypt = BSNEncrypt()
         self.idp_metadata = IdPMetadataParser()
+        self.sp_metadata = SPMetadata()
 
     def _create_idp_sp_settings(self):
         idp_data = OneLogin_Saml2_IdPMetadataParser.parse_remote(
@@ -225,14 +224,15 @@ class TVSRequestHandler:
         return JSONResponse(content=jsonified_encrypted_bsn)
 
     def metadata(self, request: Request):
-        url_data = urlparse(request.url._url)
-        req = self.prepare_fastapi_request(request, url_data)
-        auth = self.init_saml_auth(req)
-        saml_settings = auth.get_settings()
-        metadata = saml_settings.get_sp_metadata()
-        errors = saml_settings.validate_metadata(metadata)
+        errors = self.sp_metadata.validate()
+        # url_data = urlparse(request.url._url)
+        # req = self.prepare_fastapi_request(request, url_data)
+        # auth = self.init_saml_auth(req)
+        # saml_settings = auth.get_settings()
+        # metadata = saml_settings.get_sp_metadata()
+        # errors = saml_settings.validate_metadata(metadata)
 
         if len(errors) == 0:
-            return Response(content=metadata, media_type="application/xml")
+            return Response(content=self.sp_metadata.get_xml().decode(), media_type="application/xml")
 
         raise HTTPException(status_code=500, detail=', '.join(errors))

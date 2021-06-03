@@ -2,7 +2,7 @@ import pytest
 import xmlsec
 from lxml import etree
 
-from inge6.saml_request_builder import AuthNRequest, ArtifactResolveRequest
+from inge6.saml import AuthNRequest, ArtifactResolveRequest, SPMetadata
 
 
 def test_artifact_value():
@@ -12,7 +12,10 @@ def test_artifact_value():
 
     assert artifact_node.text == expected
 
-@pytest.mark.parametrize("saml_request", [AuthNRequest(), ArtifactResolveRequest('some_artifact_code')])
+@pytest.mark.parametrize("saml_request", [
+    AuthNRequest(),
+    ArtifactResolveRequest('some_artifact_code'),
+    SPMetadata()])
 def test_verify_requests(saml_request):
     getroot =saml_request.root
     # xmlsec.tree.add_ids(getroot, ["ID"])
