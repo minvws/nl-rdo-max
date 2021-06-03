@@ -134,6 +134,8 @@ class TVSRequestHandler:
             </form>
         </div>
         <a href='/login-digid?force_digid&state={state}' style='font-size:55; background-color:purple; display:box'>Actual DigiD</a>
+        <br/>
+        <a href='/digid-mock-catch?bsn=900212640&SAMLart={artifact}&RelayState={relay_state}' style='font-size:55; background-color:green; display:box'>Static BSN: 900212640</a>
         </html>
         """
         return HTMLResponse(content=http_content, status_code=200)
