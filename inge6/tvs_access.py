@@ -113,7 +113,7 @@ def _store_code_challenge(code, code_challenge, code_challenge_method):
 def resolve_artifact(artifact):
 
     if settings.mock_digid.lower() == "true":
-        return bsn_encrypt._symm_encrypt_bsn(artifact)
+        return bsn_encrypt.symm_encrypt_bsn(artifact)
 
     resolve_artifact_req = ArtifactResolveRequest(artifact).get_xml()
     url = idp_metadata.get_artifact_rs()['location']
@@ -123,22 +123,18 @@ def resolve_artifact(artifact):
         }
     resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=('saml/certs/sp.crt', 'saml/certs/sp.key'))
     bsn = ArtifactResponseParser(resolved_artifact.text).get_bsn()
-    encrypted_bsn = bsn_encrypt._symm_encrypt_bsn(bsn)
+    encrypted_bsn = bsn_encrypt.symm_encrypt_bsn(bsn)
     return encrypted_bsn
 
 def disable_access_token(b64_id_token):
     # TODO
     redis_cache.delete(b64_id_token.decode(), '')
 
-def repack_bsn_attribute(attributes, nonce):
+def repack_bsn_attribute(attributes):
     decoded_json = base64.b64decode(attributes).decode()
     bsn_dict = json.loads(decoded_json)
-    bsn = bsn_encrypt._symm_decrypt_bsn(bsn_dict)
-    return bsn_encrypt._pub_encrypt_bsn(bsn, nonce)
-
-def _jwt_payload(jwt: str) -> dict:
-    jwt_token = JWT().unpack(jwt)
-    return json.loads(jwt_token.part[1].decode())
+    bsn = bsn_encrypt.symm_decrypt_bsn(bsn_dict)
+    return bsn_encrypt.pub_encrypt_bsn(bsn)
 
 def _validate_jwt_token(jwt):
     # TODO
@@ -152,9 +148,6 @@ def bsn_attribute(request: Request):
     if not scheme == 'Bearer' or not _validate_jwt_token(id_token):
         raise HTTPException(status_code=401, detail="Not authorized")
 
-    payload = _jwt_payload(id_token)
-    at_hash = payload['at_hash']
-
     b64_id_token = base64.b64encode(id_token.encode())
     attributes = redis_cache.get(b64_id_token.decode())
     disable_access_token(b64_id_token)
@@ -162,7 +155,7 @@ def bsn_attribute(request: Request):
     if attributes is None:
         raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )
 
-    encrypted_bsn = repack_bsn_attribute(attributes, at_hash)
+    encrypted_bsn = repack_bsn_attribute(attributes)
     jsonified_encrypted_bsn = jsonable_encoder(encrypted_bsn)
     return JSONResponse(content=jsonified_encrypted_bsn)
 
