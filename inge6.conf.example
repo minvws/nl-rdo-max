@@ -1,6 +1,7 @@
 [DEFAULT]
 app_name = "CoronaCheck TVS - Digid login"
 issuer = https://10.48.118.250:8006
+environment = development
 
 host = 0.0.0.0
 port = 8006
