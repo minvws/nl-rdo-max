@@ -102,6 +102,10 @@ class SPMetadata(SAMLRequest):
 
         return correct_bindings
 
+    def _add_prefix_service_desc(self):
+        service_desc_elem = self.root.find('.//md:ServiceDescription', NAMESPACES)
+        service_desc_elem.text = settings.environment + ' ' + service_desc_elem.text
+
     def validate(self):
         errors = []
 
