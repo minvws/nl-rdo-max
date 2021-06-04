@@ -41,8 +41,8 @@ def assertion_consumer_service(request: Request):
     return tvs_request_handler.acs(request)
 
 @router.post('/bsn_attribute')
-async def bsn_attribute(request: Request):
-    return await tvs_request_handler.bsn_attribute(request)
+def bsn_attribute(request: Request):
+    return tvs_request_handler.bsn_attribute(request)
 
 @router.get('/.well-known/openid-configuration')
 def provider_configuration(request: Request):

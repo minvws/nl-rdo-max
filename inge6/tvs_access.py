@@ -144,7 +144,7 @@ def _validate_jwt_token(jwt):
     # TODO
     return True
 
-async def bsn_attribute(request: Request):
+def bsn_attribute(request: Request):
     #Parse JWT token
     authorization: str = request.headers.get("Authorization")
     scheme, id_token = get_authorization_scheme_param(authorization)

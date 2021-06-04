@@ -20,7 +20,7 @@ class Settings(configparser.ConfigParser):
         raise AttributeError("Attribute {} not found".format(name))
 
 settings = Settings()
-# def init_settings(filename: str ="inge6.conf"):
+
 filename = "inge6.conf"
 path = str(BASE_DIR) + '/' + filename
 with open(path) as conf_file:
