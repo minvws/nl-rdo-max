@@ -30,8 +30,12 @@ cert_path = saml/certs/sp.crt
 key_path = saml/certs/sp.key
 
 idp_path = saml/metadata/idp_metadata.xml
+
+sp_template = saml/templates/xml/sp_metadata.xml
 authn_request_template = saml/templates/xml/authn_request.xml
 artifactresolve_request_template = saml/templates/xml/artifactresolve_request.xml
+
+authn_request_html_template = saml/templates/html/authn_request.html
 
 [redis]
 host = localhost
