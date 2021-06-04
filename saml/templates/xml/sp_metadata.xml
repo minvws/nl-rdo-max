@@ -32,7 +32,7 @@
         <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact" Location="https://tvs-connect.acc.coronacheck.nl/acs" index="1" />
         <md:AttributeConsumingService index="1">
             <md:ServiceName xml:lang="en">CoronaCheck</md:ServiceName>
-            <md:ServiceDescription xml:lang="en">vaccinatie bewijzen inlogservice</md:ServiceDescription>
+            <md:ServiceDescription xml:lang="en">Coronacheck Inlogservice</md:ServiceDescription>
             <md:RequestedAttribute Name="urn:nl-eid-gdi:1.0:ServiceUUID" isRequired="true">
                 <saml:AttributeValue xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"></saml:AttributeValue>
             </md:RequestedAttribute>

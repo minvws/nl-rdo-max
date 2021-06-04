@@ -41,6 +41,7 @@ class SPMetadata(SAMLRequest):
         self._add_attribute_value()
         self._add_certs()
         self._add_keyname()
+        self._add_prefix_service_desc()
         self._sign(self.root)
 
     def _add_certs(self):
@@ -104,7 +105,7 @@ class SPMetadata(SAMLRequest):
 
     def _add_prefix_service_desc(self):
         service_desc_elem = self.root.find('.//md:ServiceDescription', NAMESPACES)
-        service_desc_elem.text = settings.environment + ' ' + service_desc_elem.text
+        service_desc_elem.text = settings.environment.capitalize() + ' ' + service_desc_elem.text
 
     def validate(self):
         errors = []
