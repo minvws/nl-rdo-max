@@ -1,4 +1,13 @@
+# pylint: disable=c-extension-no-member
 import xmlsec
+
+def get_loc_bind(element):
+    location = element.get('Location')
+    binding = element.get('Binding')
+    return {
+        'location': location,
+        'binding': binding
+    }
 
 def has_valid_signature(root, cert_path='saml/certs/sp.crt'):
     signature_node = xmlsec.tree.find_node(root, xmlsec.constants.NodeSignature)

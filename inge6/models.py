@@ -1,13 +1,14 @@
+# pylint: disable=too-few-public-methods
 from enum import Enum
 
 from fastapi import Form
 from pydantic import BaseModel
 
 class ResponseType(str, Enum):
-    code = "code"
+    CODE: str = "code"
 
-    def __str__(self):
-        return self.code
+    def __str__(self) -> str: # pylint: disable=invalid-str-returned
+        return self.CODE.value
 
 class AuthorizeRequest(BaseModel):
     client_id: str
@@ -41,4 +42,3 @@ class AccesstokenRequest(BaseModel):
                 grant_type=grant_type,
                 redirect_uri=redirect_uri
         )
-

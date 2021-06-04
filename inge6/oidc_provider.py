@@ -13,7 +13,7 @@ from .cache import get_redis_client
 _PROVIDER = None
 
 def get_oidc_provider(app = None):
-    global _PROVIDER
+    global _PROVIDER # pylint: disable=global-statement
     if _PROVIDER is None:
         if app is None:
             raise Exception("app cannot be None on first call.")

@@ -1,3 +1,4 @@
+# pylint: disable=c-extension-no-member
 import base64
 
 from Crypto.Cipher import AES
@@ -7,6 +8,10 @@ from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
 from ..config import settings
 
+def remove_padding(enc_data):
+    return enc_data[:-enc_data[-1]]
+
+# pylint: disable=too-few-public-methods
 class ArtifactResponseParser():
     PRIV_KEY_PATH = settings.saml.key_path
 
@@ -20,17 +25,14 @@ class ArtifactResponseParser():
         aes_key = OneLogin_Saml2_Utils.decrypt_element(encrypted_key_el, self.key, debug=True)
         return aes_key
 
-    def _remove_padding(self, enc_data):
-        return enc_data[:-enc_data[-1]]
-
     def _decrypt_enc_data(self, aes_key: bytes) -> bytes:
         encrypted_ciphervalue = self.root.find('.//xenc:EncryptedData//xenc:CipherValue', {'xenc': 'http://www.w3.org/2001/04/xmlenc#'}).text
         b64decoded_data = base64.b64decode(encrypted_ciphervalue.encode())
-        iv = b64decoded_data[:16]
+        init_vector = b64decoded_data[:16]
         enc_data = b64decoded_data[16:]
-        cipher = AES.new(aes_key, AES.MODE_CBC, iv=iv)
+        cipher = AES.new(aes_key, AES.MODE_CBC, iv=init_vector)
         plaintext = cipher.decrypt(enc_data)
-        return self._remove_padding(plaintext)
+        return remove_padding(plaintext)
 
     def get_bsn(self):
         aes_key = self._decrypt_enc_key()

@@ -3,7 +3,10 @@ import configparser
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+CONFIG_FILE_NAME = "inge6.conf"
+CONFIG_FILE_PATH = str(BASE_DIR) + '/' + CONFIG_FILE_NAME
 
+# pylint: disable=too-many-ancestors, too-few-public-methods
 class Settings(configparser.ConfigParser):
     class SettingSection:
         def __init__(self, section: dict):
@@ -21,8 +24,5 @@ class Settings(configparser.ConfigParser):
 
 settings = Settings()
 
-filename = "inge6.conf"
-path = str(BASE_DIR) + '/' + filename
-with open(path) as conf_file:
+with open(CONFIG_FILE_PATH) as conf_file:
     settings.read_file(conf_file)
-

@@ -1,27 +1,26 @@
-from inge6.oidc_provider import get_oidc_provider
 import os
+
 from typing import Dict, Optional
-from urllib.parse import urlencode
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, Form, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
 from . import tvs_access as tvs_request_handler
 from . import authorize as authorization_handler
-from . import router
 
 from .config import settings
-from .models import AccesstokenRequest, AuthorizeRequest
+from .models import AuthorizeRequest
+from .oidc_provider import get_oidc_provider
 
 from .cache import get_redis_client
 
 router = APIRouter()
 
 @router.get('/authorize')
-def authorize(request: Request, authorize: AuthorizeRequest = Depends()):
-    return authorization_handler.authorize(authorize, request.headers)
+def authorize(request: Request, authorize_req: AuthorizeRequest = Depends()):
+    return authorization_handler.authorize(authorize_req, request.headers)
 
 @router.post('/accesstoken')
 async def token_endpoint(request: Request):
@@ -33,8 +32,8 @@ async def userinfo_endpoint(request: Request):
     return authorization_handler.userinfo_endpoint(request)
 
 @router.get('/metadata')
-def metadata(request: Request):
-    return tvs_request_handler.metadata(request)
+def metadata():
+    return tvs_request_handler.metadata()
 
 @router.get('/acs')
 def assertion_consumer_service(request: Request):
@@ -45,18 +44,18 @@ def bsn_attribute(request: Request):
     return tvs_request_handler.bsn_attribute(request)
 
 @router.get('/.well-known/openid-configuration')
-def provider_configuration(request: Request):
+def provider_configuration():
     json_content = jsonable_encoder(get_oidc_provider().provider_configuration.to_dict())
     return JSONResponse(content=json_content)
 
 @router.get('/jwks')
-def jwks_uri(request: Request):
+def jwks_uri():
     json_content = jsonable_encoder(get_oidc_provider().jwks)
     return JSONResponse(content=json_content)
 
 @router.get("/")
 async def read_root(request: Request):
-    url_data = urlparse(request.url._url)
+    url_data = urlparse(request.url._url) # pylint: disable=protected-access
     # json = await request.json()
     return {
         "headers": request.headers,

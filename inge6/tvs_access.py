@@ -1,15 +1,11 @@
-from inge6.oidc_provider import get_oidc_provider
-from os.path import exists
-from typing import Optional
-
-import requests
 import base64
 import uuid
 import json
+from typing import Optional
+
+import requests
 
 from jinja2 import Template
-
-from jwkest.jwt import JWT
 
 from fastapi.encoders import jsonable_encoder
 from fastapi import Request, Response, HTTPException
@@ -37,8 +33,9 @@ def _login_post(relay_state):
     return url, parameters
 
 def _create_post_form(url, parameters):
-    template_file = open(settings.saml.authn_request_html_template)
-    template_text = template_file.read()
+    with open(settings.saml.authn_request_html_template) as template_file:
+        template_text = template_file.read()
+
     template = Template(template_text)
 
     context = {
@@ -145,7 +142,7 @@ def bsn_attribute(request: Request):
     authorization: str = request.headers.get("Authorization")
     scheme, id_token = get_authorization_scheme_param(authorization)
 
-    if not scheme == 'Bearer' or not _validate_jwt_token(id_token):
+    if scheme != 'Bearer' or not _validate_jwt_token(id_token):
         raise HTTPException(status_code=401, detail="Not authorized")
 
     b64_id_token = base64.b64encode(id_token.encode())
@@ -159,7 +156,7 @@ def bsn_attribute(request: Request):
     jsonified_encrypted_bsn = jsonable_encoder(encrypted_bsn)
     return JSONResponse(content=jsonified_encrypted_bsn)
 
-def metadata(request: Request):
+def metadata():
     errors = sp_metadata.validate()
 
     if len(errors) == 0:

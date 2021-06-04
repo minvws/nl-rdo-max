@@ -10,24 +10,26 @@ from fastapi.encoders import jsonable_encoder
 
 from oic.oic.message import TokenErrorResponse, UserInfoErrorResponse
 from pyop.access_token import AccessToken, BearerTokenError
-from pyop.exceptions import InvalidAuthenticationRequest, InvalidAccessToken, InvalidClientAuthentication, OAuthError
+from pyop.exceptions import (
+    InvalidAuthenticationRequest, InvalidAccessToken,
+    InvalidClientAuthentication, OAuthError
+)
 
 from . import tvs_access
-from .models import AuthorizeRequest, AccesstokenRequest
+from .models import AuthorizeRequest
 from .oidc_provider import get_oidc_provider
 from .cache import redis_cache
 
 def authorize(authorization_request: AuthorizeRequest, headers):
     try:
         auth_req = get_oidc_provider().parse_authentication_request(urlencode(authorization_request.dict()), headers)
-    except InvalidAuthenticationRequest as e:
+    except InvalidAuthenticationRequest as invalid_auth_req:
         logging.getLogger().debug('received invalid authn request', exc_info=True)
-        error_url = e.to_error_url()
+        error_url = invalid_auth_req.to_error_url()
         if error_url:
             return RedirectResponse(error_url, status_code=303)
-        else:
-            # show error to user
-            return Response(content='Something went wrong: {}'.format(str(e)), status_code=400)
+
+        return Response(content='Something went wrong: {}'.format(str(invalid_auth_req)), status_code=400)
 
     randstate = redis_cache.gen_token()
     _cache_auth_req(randstate, auth_req, authorization_request)
@@ -72,21 +74,21 @@ async def token_endpoint(request):
 
         json_content_resp = jsonable_encoder(token_response.to_dict())
         return JSONResponse(content=json_content_resp)
-    except InvalidClientAuthentication as e:
+    except InvalidClientAuthentication as invalid_client_auth:
         logging.getLogger().debug('invalid client authentication at token endpoint', exc_info=True)
-        error_resp = TokenErrorResponse(error='invalid_client', error_description=str(e))
+        error_resp = TokenErrorResponse(error='invalid_client', error_description=str(invalid_client_auth))
         response = Response(error_resp.to_json(), status_code=401)
         response.headers['Content-Type'] = 'application/json'
         response.headers['WWW-Authenticate'] = 'Basic'
         return response
-    except OAuthError as e:
-        logging.getLogger().debug('invalid request: %s', str(e), exc_info=True)
-        error_resp = TokenErrorResponse(error=e.oauth_error, error_description=str(e))
+    except OAuthError as oauth_error:
+        logging.getLogger().debug('invalid request: %s', str(oauth_error), exc_info=True)
+        error_resp = TokenErrorResponse(error=oauth_error.oauth_error, error_description=str(oauth_error))
         response = Response(error_resp.to_json(), status_code=400)
         response.headers['Content-Type'] = 'application/json'
         return response
 
-async def userinfo_endpoint(self, request: Request):
+async def userinfo_endpoint(request: Request):
     provider  = request.app.state.provider
     body = await request.body()
     try:
@@ -94,8 +96,8 @@ async def userinfo_endpoint(self, request: Request):
                                                                 request.headers)
         json_content = jsonable_encoder(response.to_dict())
         return JSONResponse(content=json_content)
-    except (BearerTokenError, InvalidAccessToken) as e:
-        error_resp = UserInfoErrorResponse(error='invalid_token', error_description=str(e))
+    except (BearerTokenError, InvalidAccessToken) as no_access_err:
+        error_resp = UserInfoErrorResponse(error='invalid_token', error_description=str(no_access_err))
         response = Response(error_resp.to_json(), status_code=401)
         response.headers['WWW-Authenticate'] = AccessToken.BEARER_TOKEN_TYPE
         response.headers['Content-Type'] = 'application/json'
