@@ -44,8 +44,10 @@ jobs:
           sudo apt-get install libxmlsec1-dev pkg-config
           python -m pip install --upgrade pip setuptools wheel
           make venv
-      - name: Setup config
-        run: cp inge6.conf.example inge6.conf
+      - name: Setup config and settings
+        run: |
+          cp inge6.conf.example inge6.conf
+          cp saml/settings-dist.json saml/settings.json
       - name: Create EC keypair
         run: |
           mkdir -p secrets
