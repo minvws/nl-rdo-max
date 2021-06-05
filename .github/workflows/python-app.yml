@@ -59,16 +59,3 @@ jobs:
           openssl req -new -x509 -key saml/certs/sp.key -out saml/certs/sp.crt -days 360 -subj "/C=US/ST=SCA/L=SCA/O=Oracle/OU=Java/CN=test cert"
       - name: Test with unittest
         run: make test
-      - name: Make Coverage Badge
-        run: |
-          make badges
-      - name: Copy code coverage to reporting server
-        # This uploads _two_ files because it looks like this software doesn't understand one and is not tested for it.
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.reporting_ssh_host }}
-          username: ${{ secrets.reporting_ssh_user }}
-          key: ${{ secrets.reporting_ssh_key }}
-          port: "22"
-          source: "zeiko_code_coverage.svg,README.md"
-          target: "~/html/badges/"
