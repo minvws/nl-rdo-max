@@ -21,6 +21,7 @@ jobs:
           python-version: 3.8
       - name: Install dependencies
         run: |
+          sudo apt-get install libxmlsec1-dev pkg-config
           python -m pip install --upgrade pip setuptools wheel
           make venv
       - name: Lint with pylint
