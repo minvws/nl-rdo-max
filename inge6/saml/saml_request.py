@@ -50,6 +50,10 @@ class SAMLRequest:
     def get_base64_string(self) -> str:
         return base64.b64encode(self.get_xml())
 
+    @property
+    def saml_elem(self):
+        return self.root
+
 class AuthNRequest(SAMLRequest):
     TEMPLATE_PATH = settings.saml.authn_request_template
 
@@ -75,3 +79,7 @@ class ArtifactResolveRequest(SAMLRequest):
         add_certs(self.saml_resolve_req, self.CERT_PATH)
         add_artifact(self.saml_resolve_req, artifact_code)
         sign(self.saml_resolve_req, self.KEY_PATH)
+
+    @property
+    def saml_elem(self):
+        return self.saml_resolve_req

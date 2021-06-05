@@ -2,7 +2,8 @@ import pytest
 import xmlsec
 from lxml import etree
 
-from inge6.saml import AuthNRequest, ArtifactResolveRequest, SPMetadata
+from inge6.saml import AuthNRequest, ArtifactResolveRequest
+from inge6.saml.sp_metadata import SPMetadata
 
 
 def test_artifact_value():
@@ -17,7 +18,7 @@ def test_artifact_value():
     ArtifactResolveRequest('some_artifact_code'),
     SPMetadata()])
 def test_verify_requests(saml_request):
-    getroot =saml_request.root
+    getroot =saml_request.saml_elem
     # xmlsec.tree.add_ids(getroot, ["ID"])
     signature_node = xmlsec.tree.find_node(getroot, xmlsec.constants.NodeSignature)
     # Create a digital signature context (no key manager is needed).
