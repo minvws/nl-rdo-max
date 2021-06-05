@@ -8,6 +8,7 @@ venv: .venv/touchfile ## Create virtual environment
 	. .venv/bin/activate && ${env} python3 -m piptools compile requirements.in
 	. .venv/bin/activate && ${env} python3 -m piptools compile requirements-dev.in
 	. .venv/bin/activate && ${env} python3 -m piptools sync requirements.txt requirements-dev.txt
+	. .venv/bin/activate && ${env} pip install -e .
 	touch .venv/touchfile
 
 clean_venv: ## Remove virtual environment
@@ -29,7 +30,7 @@ pip-sync-dev: ## synchronizes the .venv with the state of requirements.txt
 lint:
 	. .venv/bin/activate && ${env} pylint inge6
 
-bandit:
+audit:
 	. .venv/bin/activate && ${env} bandit inge6
 
 test:
