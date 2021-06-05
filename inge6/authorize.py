@@ -1,4 +1,5 @@
 
+from inge6.saml.exceptions import UserNotAuthenticated
 import logging
 import base64
 from urllib.parse import urlencode, parse_qs
@@ -63,9 +64,9 @@ async def token_endpoint(request):
         raise HTTPException(400, detail='Bad request. code verifier not recognized')
 
     artifact = redis_cache.hget(code, 'arti')
-    encrypted_bsn = tvs_access.resolve_artifact(artifact)
 
     try:
+        encrypted_bsn = tvs_access.resolve_artifact(artifact)
         token_response = get_oidc_provider().handle_token_request(body.decode('utf-8'),
                                                                   request.headers)
 
@@ -74,6 +75,15 @@ async def token_endpoint(request):
 
         json_content_resp = jsonable_encoder(token_response.to_dict())
         return JSONResponse(content=json_content_resp)
+    except UserNotAuthenticated as user_not_authenticated:
+        logging.getLogger().debug('invalid client authentication at token endpoint', exc_info=True)
+        error_resp = {
+            'error': str(user_not_authenticated),
+            'error_description': user_not_authenticated.oauth_error
+        }
+        response = JSONResponse(jsonable_encoder(error_resp), status_code=400)
+        response.headers['WWW-Authenticate'] = 'Basic'
+        return response
     except InvalidClientAuthentication as invalid_client_auth:
         logging.getLogger().debug('invalid client authentication at token endpoint', exc_info=True)
         error_resp = TokenErrorResponse(error='invalid_client', error_description=str(invalid_client_auth))

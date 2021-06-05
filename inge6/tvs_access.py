@@ -1,7 +1,8 @@
 import base64
+from os import stat
 import uuid
 import json
-from typing import Optional
+from typing import Optional, Union, Tuple
 
 import requests
 
@@ -107,7 +108,7 @@ def _store_code_challenge(code, code_challenge, code_challenge_method):
     }
     redis_cache.hset(code, 'cc_cm', value)
 
-def resolve_artifact(artifact):
+def resolve_artifact(artifact) -> bytes:
 
     if settings.mock_digid.lower() == "true":
         return bsn_encrypt.symm_encrypt_bsn(artifact)
@@ -117,11 +118,14 @@ def resolve_artifact(artifact):
     headers = {
         'SOAPAction' : '"https://artifact-pp2.toegang.overheid.nl/kvs/rd/resolve_artifact"',
         'content-type': 'text/xml'
-        }
+    }
     resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=('saml/certs/sp.crt', 'saml/certs/sp.key'))
-    bsn = ArtifactResponseParser(resolved_artifact.text).get_bsn()
+    artifact_response = ArtifactResponseParser(resolved_artifact.text)
+    artifact_response.raise_for_status()
+
+    bsn = artifact_response.get_bsn()
     encrypted_bsn = bsn_encrypt.symm_encrypt_bsn(bsn)
-    return encrypted_bsn
+    return encrypted_bsn, True
 
 def disable_access_token(b64_id_token):
     redis_cache.delete('', b64_id_token.decode())

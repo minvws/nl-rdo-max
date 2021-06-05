@@ -1,15 +1,19 @@
 # pylint: disable=c-extension-no-member
 from lxml import etree
+import xmlsec
 
-from .utils import get_loc_bind
+from .utils import get_loc_bind, has_valid_signature
+from .constants import NAMESPACES
 from ..config import settings
 
 class IdPMetadataParser:
     IDP_PATH = settings.saml.idp_path
-    # IDP_PATH = "../saml/metadata/idp_metadata.xml"
 
     def __init__(self) -> None:
         self.template = etree.parse(self.IDP_PATH).getroot()
+        valid_sign = has_valid_signature(self.template, cert_data=self.get_cert_pem_data())
+        if not valid_sign:
+            raise xmlsec.VerificationError("Signature is invalid")
 
     def _validate_md(self):
         raise NotImplementedError("WIP")
@@ -20,6 +24,9 @@ class IdPMetadataParser:
     def get_artifact_rs(self):
         resolution_service = self.find_in_md('ArtifactResolutionService')
         return get_loc_bind(resolution_service)
+
+    def get_cert_pem_data(self):
+        return f"""-----BEGIN CERTIFICATE-----\n{self.template.find('.//md:IDPSSODescriptor//dsig:X509Certificate', NAMESPACES).text}-----END CERTIFICATE-----"""
 
     def get_sso(self):
         sso = self.find_in_md('SingleSignOnService')

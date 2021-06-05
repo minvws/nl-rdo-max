@@ -2,5 +2,8 @@
 NAMESPACES = {
     'ds': 'http://www.w3.org/2000/09/xmldsig#',
     'md': 'urn:oasis:names:tc:SAML:2.0:metadata',
-    'saml': 'urn:oasis:names:tc:SAML:2.0:assertion'
+    'saml': 'urn:oasis:names:tc:SAML:2.0:assertion',
+    'samlp': 'urn:oasis:names:tc:SAML:2.0:protocol',
+    'saml2': 'urn:oasis:names:tc:SAML:2.0:assertion',
+    'dsig': 'http://www.w3.org/2000/09/xmldsig#'
 }
