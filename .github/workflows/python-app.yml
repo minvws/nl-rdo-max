@@ -49,12 +49,12 @@ jobs:
           cp inge6.conf.example inge6.conf
           cp saml/settings-dist.json saml/settings.json
       - name: Create EC keypair
+        # JWT Signing keys
+        # SAML keys
         run: |
           mkdir -p secrets
-        # JWT Signing keys
           openssl genrsa -des3 -out secrets/private_encrypted.pem 2048
           openssl rsa -in secrets/private_encrypted.pem -outform PEM -pubout -out secrets/public.pem
-        # SAML keys
           openssl genrsa -des3 -out saml/certs/sp.key 2048
           openssl rsa -in saml/certs/sp.key -outform PEM -pubout -out saml/certs/sp.crt
       - name: Test with unittest
