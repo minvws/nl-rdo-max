@@ -8,9 +8,8 @@ import requests
 from jinja2 import Template
 import jwt
 
-from fastapi.encoders import jsonable_encoder
 from fastapi import Request, Response, HTTPException
-from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.security.utils import get_authorization_scheme_param
 
 from .config import settings

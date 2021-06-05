@@ -21,6 +21,7 @@ jobs:
           python-version: 3.8
       - name: Install dependencies
         run: |
+          sudo apt-get update
           sudo apt-get install libxmlsec1-dev pkg-config
           python -m pip install --upgrade pip setuptools wheel
           make venv
@@ -40,7 +41,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          python -m pip install --upgrade pip
+          sudo apt-get install libxmlsec1-dev pkg-config
+          python -m pip install --upgrade pip setuptools wheel
+          make venv
       - name: Create EC keypair
         run: |
           mkdir -p secrets
