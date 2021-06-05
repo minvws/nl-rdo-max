@@ -41,7 +41,7 @@ class SAMLRequest:
     CERT_PATH = settings.saml.cert_path
 
     def __init__(self, root):
-        self.__id = "_" + secrets.token_hex(41) # total length 42.
+        self._id_hash = "_" + secrets.token_hex(41) # total length 42.
         self.root = root
 
     def get_xml(self) -> bytes:
@@ -56,9 +56,9 @@ class AuthNRequest(SAMLRequest):
     def __init__(self) -> None:
         super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())
 
-        add_root_id(self.root, self.__id)
+        add_root_id(self.root, self._id_hash)
         add_root_issue_instant(self.root)
-        add_reference(self.root, self.__id)
+        add_reference(self.root, self._id_hash)
         add_certs(self.root, self.CERT_PATH)
         sign(self.root, self.KEY_PATH)
 
@@ -69,9 +69,9 @@ class ArtifactResolveRequest(SAMLRequest):
         super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())
         self.saml_resolve_req = self.root.find('.//samlp:ArtifactResolve', {'samlp': "urn:oasis:names:tc:SAML:2.0:protocol"})
 
-        add_root_id(self.saml_resolve_req, self.__id)
+        add_root_id(self.saml_resolve_req, self._id_hash)
         add_root_issue_instant(self.saml_resolve_req)
-        add_reference(self.saml_resolve_req, self.__id)
+        add_reference(self.saml_resolve_req, self._id_hash)
         add_certs(self.saml_resolve_req, self.CERT_PATH)
         add_artifact(self.saml_resolve_req, artifact_code)
         sign(self.saml_resolve_req, self.KEY_PATH)

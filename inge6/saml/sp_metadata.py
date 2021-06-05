@@ -37,8 +37,8 @@ class SPMetadata(SAMLRequest):
         with open(self.CERT_PATH, 'r') as cert_file:
             self.cert_data = cert_file.read()
 
-        add_root_id(self.root, self.__id)
-        add_reference(self.root, self.__id)
+        add_root_id(self.root, self._id_hash)
+        add_reference(self.root, self._id_hash)
         add_certs(self.root, self.cert_data)
 
         self._add_service_locs()

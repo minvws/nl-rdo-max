@@ -6,6 +6,7 @@ from typing import Optional
 import requests
 
 from jinja2 import Template
+import jwt
 
 from fastapi.encoders import jsonable_encoder
 from fastapi import Request, Response, HTTPException
@@ -92,7 +93,7 @@ def acs(request: Request):
     auth_req_dict = redis_cache.hget(state, 'auth_req')
     auth_req = auth_req_dict['auth_req']
 
-    authn_response = get_oidc_provider().authorize(auth_req, 'test_user')
+    authn_response = get_oidc_provider().authorize(auth_req, 'inge4')
     response_url = authn_response.request(auth_req['redirect_uri'], False)
     code = authn_response['code']
 
@@ -124,8 +125,7 @@ def resolve_artifact(artifact):
     return encrypted_bsn
 
 def disable_access_token(b64_id_token):
-    # TODO
-    redis_cache.delete(b64_id_token.decode(), '')
+    redis_cache.delete('', b64_id_token.decode())
 
 def repack_bsn_attribute(attributes):
     decoded_json = base64.b64decode(attributes).decode()
@@ -133,9 +133,12 @@ def repack_bsn_attribute(attributes):
     bsn = bsn_encrypt.symm_decrypt_bsn(bsn_dict)
     return bsn_encrypt.pub_encrypt_bsn(bsn)
 
-def _validate_jwt_token(jwt):
-    # TODO
-    return True
+
+def _validate_jwt_token(id_token: str):
+    with open('secrets/public.pem') as rsa_priv_key:
+        key = rsa_priv_key.read()
+
+    return jwt.decode(id_token, key=key, algorithms=['RS256'], audience=['test_client'])
 
 def bsn_attribute(request: Request):
     #Parse JWT token
@@ -153,8 +156,7 @@ def bsn_attribute(request: Request):
         raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )
 
     encrypted_bsn = repack_bsn_attribute(attributes)
-    jsonified_encrypted_bsn = jsonable_encoder(encrypted_bsn)
-    return JSONResponse(content=jsonified_encrypted_bsn)
+    return Response(content=encrypted_bsn, status_code=200)
 
 def metadata():
     errors = sp_metadata.validate()

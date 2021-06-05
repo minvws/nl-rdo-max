@@ -42,8 +42,7 @@ def hget(namespace, key):
     return deserialized_value
 
 def delete(namespace, key):
-    # TODO
-    pass
+    get_redis_client().delete(namespace + key)
 
 def gen_token():
     return get_redis_client().acl_genpass()
