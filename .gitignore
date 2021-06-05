@@ -17,3 +17,4 @@ saml/settings.json
 inge6.conf
 node_modules
 out/
+http_cache.sqlite
