@@ -23,7 +23,7 @@ def test_verify_requests(saml_request):
     signature_node = xmlsec.tree.find_node(getroot, xmlsec.constants.NodeSignature)
     # Create a digital signature context (no key manager is needed).
     ctx = xmlsec.SignatureContext()
-    key = xmlsec.Key.from_file('saml/certs/mycert.pem', xmlsec.constants.KeyDataFormatCertPem)
+    key = xmlsec.Key.from_file('saml/certs/sp.crt', xmlsec.constants.KeyDataFormatCertPem)
     # Set the key on the context.
     ctx.key = key
     ctx.register_id(getroot)
