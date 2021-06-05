@@ -31,3 +31,6 @@ lint:
 
 bandit:
 	. .venv/bin/activate && ${env} bandit inge6
+
+test:
+	. .venv/bin/activate && ${env} pytest tests
