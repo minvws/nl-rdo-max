@@ -53,10 +53,10 @@ jobs:
         # SAML keys
         run: |
           mkdir -p secrets
-          openssl genrsa -des3 -out secrets/private_encrypted.pem 2048
-          openssl rsa -in secrets/private_encrypted.pem -outform PEM -pubout -out secrets/public.pem
-          openssl genrsa -des3 -out saml/certs/sp.key 2048
-          openssl rsa -in saml/certs/sp.key -outform PEM -pubout -out saml/certs/sp.crt
+          openssl genrsa -out secrets/private_encrypted.pem 2048
+          openssl rsa -in secrets/private_encrypted.pem -pubout -out secrets/public.pem
+          openssl genrsa -out saml/certs/sp.key 2048
+          openssl rsa -in saml/certs/sp.key -pubout -out saml/certs/sp.crt
       - name: Test with unittest
         run: make test
       - name: Make Coverage Badge
