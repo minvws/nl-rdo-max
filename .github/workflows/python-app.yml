@@ -51,8 +51,12 @@ jobs:
       - name: Create EC keypair
         run: |
           mkdir -p secrets
-          php -r '$keypair = sodium_crypto_box_keypair(); file_put_contents("secrets/public.pem", base64_encode(sodium_crypto_box_publickey($keypair))); file_put_contents("secrets/private_unencrypted.pem", base64_encode(sodium_crypto_box_secretkey($keypair)));'
-          php -r '$keypair = sodium_crypto_box_keypair(); file_put_contents("saml/certs/sp.crt", base64_encode(sodium_crypto_box_publickey($keypair))); file_put_contents("secrets/sp.key", base64_encode(sodium_crypto_box_secretkey($keypair)));'
+        # JWT Signing keys
+          openssl genrsa -des3 -out secrets/private_encrypted.pem 2048
+          openssl rsa -in secrets/private_encrypted.pem -outform PEM -pubout -out secrets/public.pem
+        # SAML keys
+          openssl genrsa -des3 -out saml/certs/sp.key 2048
+          openssl rsa -in saml/certs/sp.key -outform PEM -pubout -out saml/certs/sp.crt
       - name: Test with unittest
         run: make test
       - name: Make Coverage Badge
