@@ -26,4 +26,8 @@ pip-sync: ## synchronizes the .venv with the state of requirements.txt
 pip-sync-dev: ## synchronizes the .venv with the state of requirements.txt
 	. .venv/bin/activate && ${env} python3 -m piptools sync requirements.txt requirements-dev.txt
 
+lint:
+	. .venv/bin/activate && ${env} pylint inge6
 
+bandit:
+	. .venv/bin/activate && ${env} bandit inge6
