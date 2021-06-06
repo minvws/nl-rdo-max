@@ -37,7 +37,7 @@ class ArtifactResponseParser():
         return top_level_status_elem.attrib['Value']
 
     def get_second_level_status(self):
-        second_level_elem = self.root.find('.//samlp:ArtifactResponse/Response', NAMESPACES)
+        second_level_elem = self.root.find('.//samlp:ArtifactResponse/samlp:Response', NAMESPACES)
         second_level_status = second_level_elem.find('./samlp:Status/samlp:StatusCode', NAMESPACES)
         return second_level_status.attrib['Value']
 
@@ -54,7 +54,6 @@ class ArtifactResponseParser():
         return status
 
     def _get_artifact_response_elem(self):
-        # print(etree.tostring(self.root.find('.//samlp:ArtifactResponse', NAMESPACES)))
         return self.root.find('.//samlp:ArtifactResponse', NAMESPACES)
 
     def _get_assertion_elem(self):

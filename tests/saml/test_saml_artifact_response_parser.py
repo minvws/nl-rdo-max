@@ -1,5 +1,6 @@
 import pytest
 
+from inge6.saml.exceptions import UserNotAuthenticated
 from inge6.saml import ArtifactResponseParser, artifact_response
 
 """
@@ -26,3 +27,10 @@ def test_artifact_response_parser_verify():
 
     ArtifactResponseParser(art_resp_resource)
     assert True
+
+def test_artifact_response_parser_authnfailed():
+    with open('tests/resources/artifact_resolve_response_authnfailed.xml') as resp_ex_f:
+        art_resp_resource = resp_ex_f.read()
+
+    with pytest.raises(UserNotAuthenticated):
+        ArtifactResponseParser(art_resp_resource, verify=False).raise_for_status()
