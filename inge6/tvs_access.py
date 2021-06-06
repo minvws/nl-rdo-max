@@ -135,7 +135,7 @@ def resolve_artifact(artifact) -> bytes:
 
     bsn = artifact_response.get_bsn()
     encrypted_bsn = bsn_encrypt.symm_encrypt_bsn(bsn)
-    return encrypted_bsn, True
+    return encrypted_bsn
 
 def disable_access_token(b64_id_token):
     redis_cache.delete('', b64_id_token.decode())
