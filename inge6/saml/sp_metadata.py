@@ -50,9 +50,9 @@ class SPMetadata(SAMLRequest):
 
     def _add_keyname(self):
         cert = load_certificate(FILETYPE_PEM, self.cert_data)
-        sha1_fingerprint = cert.digest("sha256").decode().replace(":", "").lower()
+        sha256_fingerprint = cert.digest("sha256").decode().replace(":", "").lower()
         keyname_elem = self.root.find('.//ds:KeyInfo/ds:KeyName', NAMESPACES)
-        keyname_elem.text = sha1_fingerprint
+        keyname_elem.text = sha256_fingerprint
 
     def _add_service_locs(self):
         sls_elem = self.root.find('.//md:SingleLogoutService', NAMESPACES)
