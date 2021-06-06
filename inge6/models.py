@@ -14,6 +14,7 @@ class AuthorizeRequest(BaseModel):
     client_id: str
     redirect_uri: str
     response_type: ResponseType
+    nonce: str
     scope: str
     state: str
     code_challenge: str

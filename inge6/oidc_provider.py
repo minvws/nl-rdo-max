@@ -42,7 +42,7 @@ def _init_oidc_provider(app):
         'claims_parameter_supported': True
     }
 
-    userinfo_db = Userinfo({'inge4': {'name': 'inge4'}})
+    userinfo_db = Userinfo({'test_client': {'name': 'test_client'}})
     with open(settings.oidc.clients_file) as clients_file:
         clients = json.load(clients_file)
 

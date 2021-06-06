@@ -102,7 +102,7 @@ def acs(request: Request):
     auth_req_dict = redis_cache.hget(state, 'auth_req')
     auth_req = auth_req_dict['auth_req']
 
-    authn_response = get_oidc_provider().authorize(auth_req, 'inge4')
+    authn_response = get_oidc_provider().authorize(auth_req, 'test_client')
     response_url = authn_response.request(auth_req['redirect_uri'], False)
     code = authn_response['code']
 
