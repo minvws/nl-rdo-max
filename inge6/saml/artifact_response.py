@@ -16,7 +16,7 @@ from .idp_metadata import idp_metadata
 def remove_padding(enc_data):
     return enc_data[:-enc_data[-1]]
 
-SUCCESS = "Success"
+SUCCESS = "success"
 
 CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
 
@@ -32,14 +32,17 @@ class ArtifactResponseParser():
         if verify:
             self.verify_signatures()
 
-    def get_top_level_status(self):
+    def get_top_level_status_elem(self):
         top_level_status_elem = self.root.find('.//samlp:ArtifactResponse/samlp:Status/samlp:StatusCode', NAMESPACES)
-        return top_level_status_elem.attrib['Value']
+        return top_level_status_elem
 
     def get_second_level_status(self):
-        second_level_elem = self.root.find('.//samlp:ArtifactResponse/Response', NAMESPACES)
-        second_level_status = second_level_elem.find('./samlp:Status/samlp:StatusCode', NAMESPACES)
-        return second_level_status.attrib['Value']
+        top_level = self.root.find('.//samlp:Response//samlp:StatusCode')
+        if top_level.attrib['Value'].split(':')[-1].lower() != SUCCESS:
+            second_level = top_level.find('./samlp:StatusCode', NAMESPACES)
+            return second_level.attrib['Value']
+
+        return top_level.attrib['Value']
 
     def get_status(self):
         status = self.get_second_level_status()
@@ -48,13 +51,12 @@ class ArtifactResponseParser():
 
     def raise_for_status(self):
         status = self.get_status()
-        if status != SUCCESS:
+        if status != 'saml_' + SUCCESS:
             raise UserNotAuthenticated("User authentication flow failed", error=status)
 
         return status
 
     def _get_artifact_response_elem(self):
-        # print(etree.tostring(self.root.find('.//samlp:ArtifactResponse', NAMESPACES)))
         return self.root.find('.//samlp:ArtifactResponse', NAMESPACES)
 
     def _get_assertion_elem(self):
