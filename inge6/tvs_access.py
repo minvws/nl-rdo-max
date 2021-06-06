@@ -14,7 +14,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.security.utils import get_authorization_scheme_param
 
 from .config import settings
-from .cache import redis_cache
+from .cache import get_redis_client, redis_cache
 from .bsn_encrypt import bsn_encrypt
 from .oidc_provider import get_oidc_provider
 from .saml import (
@@ -83,12 +83,15 @@ async def digid_mock(request: Request):
 def digid_mock_catch(request: Request):
     bsn = request.query_params['bsn']
     relay_state = request.query_params['RelayState']
-    response_uri = '/acs' + f'?SAMLart={bsn}&RelayState={relay_state}'
+    response_uri = '/acs' + f'?SAMLart={bsn}&RelayState={relay_state}&mocking=1'
     return RedirectResponse(response_uri, status_code=303)
 
 def acs(request: Request):
     state = request.query_params['RelayState']
     artifact = request.query_params['SAMLart']
+
+    if 'mocking' in request.query_params:
+        get_redis_client().set('DIGID_MOCK' + artifact, 'true')
 
     auth_req_dict = redis_cache.hget(state, 'auth_req')
     auth_req = auth_req_dict['auth_req']
@@ -110,7 +113,8 @@ def _store_code_challenge(code, code_challenge, code_challenge_method):
 
 def resolve_artifact(artifact) -> bytes:
 
-    if settings.mock_digid.lower() == "true":
+    digid_mock = get_redis_client().get('DIGID_MOCK' + artifact)
+    if settings.mock_digid.lower() == "true" and digid_mock is not None:
         return bsn_encrypt.symm_encrypt_bsn(artifact)
 
     resolve_artifact_req = ArtifactResolveRequest(artifact).get_xml()
