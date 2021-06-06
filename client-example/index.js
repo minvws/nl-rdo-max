@@ -66,7 +66,11 @@ app.get('/finished', (req, res) => {
   })
 
   new_req.on('error', error => {
-    console.error(error)
+    html = `
+    <h1> Failed to achieve bsn: </h1>
+    <pre>${error}</pre>
+    `
+    res.send(html)
   })
 
   new_req.write('')
@@ -90,7 +94,13 @@ app.get('/login', (req, res) => {
 
         res.redirect('/finished?at=' + text)
       }, (error) => {
-        console.log(error);
+        console.log(error)
+        html = `
+        <h1> Failed to achieve token: </h1>
+        <pre>${error}</pre>
+        <a href='/'> Try again </a>
+        `
+        res.send(html)
       });
 
   } else {

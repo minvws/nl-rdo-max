@@ -1,0 +1,61 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Python application
+
+on:
+  push:
+    branches: [ develop, master ]
+  pull_request:
+    branches: [ develop, master ]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxmlsec1-dev pkg-config
+          python -m pip install --upgrade pip setuptools wheel
+          make venv
+      - name: Lint with pylint
+        run: make lint
+      - name: Audit with bandid
+        run: make audit
+  tests:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxmlsec1-dev pkg-config
+          python -m pip install --upgrade pip setuptools wheel
+          make venv
+      - name: Setup config and settings
+        run: |
+          cp inge6.conf.example inge6.conf
+          cp saml/settings-dist.json saml/settings.json
+      - name: Create EC keypair
+        # JWT Signing keys
+        # SAML keys
+        run: |
+          mkdir -p secrets
+          openssl genrsa -out secrets/private_encrypted.pem 2048
+          openssl rsa -in secrets/private_encrypted.pem -pubout -out secrets/public.pem
+          openssl genrsa -out saml/certs/sp.key 2048
+          openssl req -new -x509 -key saml/certs/sp.key -out saml/certs/sp.crt -days 360 -subj "/C=US/ST=SCA/L=SCA/O=Oracle/OU=Java/CN=test cert"
+      - name: Test with unittest
+        run: make test

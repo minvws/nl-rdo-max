@@ -2,6 +2,7 @@
 from redis import StrictRedis
 from ..config import settings
 
+# pylint: disable=global-statement
 _REDIS_CLIENT = None
 
 def get_redis_client():

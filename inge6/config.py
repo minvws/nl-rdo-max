@@ -1,12 +1,12 @@
-import os
 import configparser
 
 from pathlib import Path
 
-from pydantic import BaseSettings
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+CONFIG_FILE_NAME = "inge6.conf"
+CONFIG_FILE_PATH = str(BASE_DIR) + '/' + CONFIG_FILE_NAME
 
+# pylint: disable=too-many-ancestors, too-few-public-methods
 class Settings(configparser.ConfigParser):
     class SettingSection:
         def __init__(self, section: dict):
@@ -23,9 +23,6 @@ class Settings(configparser.ConfigParser):
         raise AttributeError("Attribute {} not found".format(name))
 
 settings = Settings()
-# def init_settings(filename: str ="inge6.conf"):
-filename = "inge6.conf"
-path = str(BASE_DIR) + '/' + filename
-with open(path) as conf_file:
-    settings.read_file(conf_file)
 
+with open(CONFIG_FILE_PATH) as conf_file:
+    settings.read_file(conf_file)

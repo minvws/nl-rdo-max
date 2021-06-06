@@ -1,27 +1,26 @@
 import os
-from typing import Dict
+
+from typing import Dict, Optional
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
-from .tvs_access import TVSRequestHandler
-from .authorize import AuthorizationHandler
-from .cache.redis_cache import redis_cache_service
-from .config import settings
-from . import router
+from . import tvs_access as tvs_request_handler
+from . import authorize as authorization_handler
 
-tvs_request_handler = TVSRequestHandler()
-authorization_handler = AuthorizationHandler()
+from .config import settings
+from .models import AuthorizeRequest
+from .oidc_provider import get_oidc_provider
+
+from .cache import get_redis_client
 
 router = APIRouter()
 
-# TODO: Support GET and POST methods. Serializing the request parameters or Form.
 @router.get('/authorize')
-def authorize(request: Request):
-    # TODO: Only allow scope=openid, enforce if missing?
-    return authorization_handler.authorize(request)
+def authorize(request: Request, authorize_req: AuthorizeRequest = Depends()):
+    return authorization_handler.authorize(authorize_req, request.headers)
 
 @router.post('/accesstoken')
 async def token_endpoint(request: Request):
@@ -32,47 +31,31 @@ async def token_endpoint(request: Request):
 async def userinfo_endpoint(request: Request):
     return authorization_handler.userinfo_endpoint(request)
 
-@router.get('/login-digid')
-def login_digid(request: Request):
-    ## TODO: Check valid token.
-    state = request.query_params['state']
-    return HTMLResponse(content=tvs_request_handler.login(request, state))
-
 @router.get('/metadata')
-def metadata(request: Request):
-    return tvs_request_handler.metadata(request)
-
-@router.post('/digid-mock')
-async def digid_mock(request: Request):
-    return await tvs_request_handler.digid_mock(request)
-
-@router.get('/digid-mock-catch')
-def digid_mock_catch(request: Request):
-    return tvs_request_handler.digid_mock_catch(request)
+def metadata():
+    return tvs_request_handler.metadata()
 
 @router.get('/acs')
 def assertion_consumer_service(request: Request):
-    ## TODO: Check valid token.
     return tvs_request_handler.acs(request)
 
 @router.post('/bsn_attribute')
-async def bsn_attribute(request: Request):
-    return await tvs_request_handler.bsn_attribute(request)
-    # return Response(content="MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzpEliQZGIthee86WIg0w599yMlSzcg8ojyA==", status_code=200)
+def bsn_attribute(request: Request):
+    return tvs_request_handler.bsn_attribute(request)
 
 @router.get('/.well-known/openid-configuration')
-def provider_configuration(request: Request):
-    json_content = jsonable_encoder(request.app.provider.provider_configuration.to_dict())
+def provider_configuration():
+    json_content = jsonable_encoder(get_oidc_provider().provider_configuration.to_dict())
     return JSONResponse(content=json_content)
 
 @router.get('/jwks')
-def jwks_uri(request: Request):
-    json_content = jsonable_encoder(request.app.provider.jwks)
+def jwks_uri():
+    json_content = jsonable_encoder(get_oidc_provider().jwks)
     return JSONResponse(content=json_content)
 
 @router.get("/")
 async def read_root(request: Request):
-    url_data = urlparse(request.url._url)
+    url_data = urlparse(request.url._url) # pylint: disable=protected-access
     # json = await request.json()
     return {
         "headers": request.headers,
@@ -87,7 +70,7 @@ def heartbeat() -> Dict[str, bool]:
     errors = list()
 
     # Check reachability redis
-    if not redis_cache_service.redis_client.ping():
+    if not get_redis_client().ping():
         errors.append("CANNOT REACH REDIS CLIENT ON {}:{}".format(settings.redis.host, settings.redis.port))
 
     # Check accessability cert and key path
@@ -101,3 +84,22 @@ def heartbeat() -> Dict[str, bool]:
         raise HTTPException(status_code=500, detail=',\n'.join(errors))
 
     return {"running": True}
+
+
+## MOCK ENDPOINTS:
+
+@router.get('/login-digid')
+def login_digid(state: str, force_digid: Optional[bool] = None):
+    return HTMLResponse(content=tvs_request_handler.login(state, force_digid))
+
+@router.post('/digid-mock')
+async def digid_mock(request: Request):
+    return await tvs_request_handler.digid_mock(request)
+
+@router.post('/digid-mock-catch')
+async def digid_mock_catch(request: Request):
+    return await tvs_request_handler.digid_mock_catch(request, 'POST')
+
+@router.get('/digid-mock-catch')
+async def digid_mock_catch(request: Request):
+    return await tvs_request_handler.digid_mock_catch(request, 'GET')

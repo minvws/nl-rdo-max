@@ -4,38 +4,20 @@
     "sp": {
         "entityId": "urn:nl-eid-gdi:1.0:DV:00000002003182447001:entities:9001",
         "assertionConsumerService": {
-            "url": "https://<sp_domain>/acs?",
+            "url": "https://10.48.118.250:8006/acs",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
-        },
-        "singleLogoutService": {
-            "url": "https://<sp_domain>/ssl",
-            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
         },
         "attributeConsumingService": {
             "serviceName": "CoronaCheck",
             "serviceDescription": "Test vaccinatie bewijzen inlogservice",
             "requestedAttributes": [
                 {
+                    "index": 1,
                     "name": "urn:nl-eid-gdi:1.0:ServiceUUID",
                     "isRequired": true,
-                    "nameFormat": "",
-                    "friendlyName": "",
-                    "attributeValue": []
+                    "attributeValue": ["c282ff81-005f-86cb-e053-0c069d0ae01a"]
                 }
             ]
-        },
-        "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
-    },
-    "idp": {
-        "entityId": "https://app.onelogin.com/saml/metadata/<onelogin_connector_id>",
-        "singleSignOnService": {
-            "url": "https://app.onelogin.com/trust/saml2/http-post/sso/<onelogin_connector_id>",
-            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
-        },
-        "singleLogoutService": {
-            "url": "https://app.onelogin.com/trust/saml2/http-redirect/slo/<onelogin_connector_id>",
-            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
-        },
-        "x509cert": "<onelogin_connector_cert>"
+        }
     }
 }

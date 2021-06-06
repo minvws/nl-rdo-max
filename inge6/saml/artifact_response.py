@@ -1,4 +1,6 @@
+# pylint: disable=c-extension-no-member
 import base64
+import re
 
 from Crypto.Cipher import AES
 from lxml import etree
@@ -6,31 +8,86 @@ from lxml import etree
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
 from ..config import settings
+from .utils import has_valid_signature
+from .constants import NAMESPACES
+from .exceptions import UserNotAuthenticated
+from .idp_metadata import idp_metadata
 
+def remove_padding(enc_data):
+    return enc_data[:-enc_data[-1]]
+
+SUCCESS = "Success"
+
+CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
+
+# pylint: disable=too-few-public-methods
 class ArtifactResponseParser():
     PRIV_KEY_PATH = settings.saml.key_path
 
-    def __init__(self, xml_response):
+    def __init__(self, xml_response, verify=True):
         self.root = etree.fromstring(xml_response).getroottree().getroot()
         with open(self.PRIV_KEY_PATH, 'r') as priv_key_file:
             self.key = priv_key_file.read()
+
+        if verify:
+            self.verify_signatures()
+
+    def get_top_level_status(self):
+        top_level_status_elem = self.root.find('.//samlp:ArtifactResponse/samlp:Status/samlp:StatusCode', NAMESPACES)
+        return top_level_status_elem.attrib['Value']
+
+    def get_second_level_status(self):
+        second_level_elem = self.root.find('.//samlp:ArtifactResponse/Response', NAMESPACES)
+        second_level_status = second_level_elem.find('./samlp:Status/samlp:StatusCode', NAMESPACES)
+        return second_level_status.attrib['Value']
+
+    def get_status(self):
+        status = self.get_second_level_status()
+        status = status.split(':')[-1]
+        return 'saml_' + CAMEL_TO_SNAKE_RE.sub('_', status).lower()
+
+    def raise_for_status(self):
+        status = self.get_status()
+        if status != SUCCESS:
+            raise UserNotAuthenticated("User authentication flow failed", error=status)
+
+        return status
+
+    def _get_artifact_response_elem(self):
+        # print(etree.tostring(self.root.find('.//samlp:ArtifactResponse', NAMESPACES)))
+        return self.root.find('.//samlp:ArtifactResponse', NAMESPACES)
+
+    def _get_assertion_elem(self):
+        return self._get_artifact_response_elem().find('.//saml:Assertion', NAMESPACES)
+
+    def _get_advice_elem(self):
+        return self._get_assertion_elem().find('.//saml2:Assertion', NAMESPACES)
+
+    def verify_signatures(self):
+        signature_verify_elems = [
+            self._get_artifact_response_elem(),
+            self._get_assertion_elem(),
+            # self._get_advice_elem()
+        ]
+
+        for elem in signature_verify_elems:
+            is_valid = has_valid_signature(elem, cert_data=idp_metadata.get_cert_pem_data())
+            if not is_valid:
+                raise Exception("NOO")
 
     def _decrypt_enc_key(self) -> bytes:
         encrypted_key_el = self.root.find('.//xenc:EncryptedKey', {'xenc': 'http://www.w3.org/2001/04/xmlenc#'})
         aes_key = OneLogin_Saml2_Utils.decrypt_element(encrypted_key_el, self.key, debug=True)
         return aes_key
 
-    def _remove_padding(self, enc_data):
-        return enc_data[:-enc_data[-1]]
-
     def _decrypt_enc_data(self, aes_key: bytes) -> bytes:
         encrypted_ciphervalue = self.root.find('.//xenc:EncryptedData//xenc:CipherValue', {'xenc': 'http://www.w3.org/2001/04/xmlenc#'}).text
         b64decoded_data = base64.b64decode(encrypted_ciphervalue.encode())
-        iv = b64decoded_data[:16]
+        init_vector = b64decoded_data[:16]
         enc_data = b64decoded_data[16:]
-        cipher = AES.new(aes_key, AES.MODE_CBC, iv=iv)
+        cipher = AES.new(aes_key, AES.MODE_CBC, iv=init_vector)
         plaintext = cipher.decrypt(enc_data)
-        return self._remove_padding(plaintext)
+        return remove_padding(plaintext)
 
     def get_bsn(self):
         aes_key = self._decrypt_enc_key()

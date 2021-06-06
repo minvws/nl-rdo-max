@@ -1,34 +1,10 @@
 <?xml version="1.0"?>
-<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" ID="_da39a3ee5e6b4b0d3255bfef95601890afd80709" entityID="urn:nl-eid-gdi:1.0:RD:00000004000000149000:entities:9002" validUntil="2021-10-11T10:00:00Z">
-    <dsig:Signature Id="Id-0001622015923228-00000000248abb40-1">
-        <dsig:SignedInfo>
-            <dsig:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
-            <dsig:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" />
-            <dsig:Reference URI="#_da39a3ee5e6b4b0d3255bfef95601890afd80709">
-                <dsig:Transforms>
-                    <dsig:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
-                    <dsig:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
-                </dsig:Transforms>
-                <dsig:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
-                <dsig:DigestValue>QbUvpJGDFcLcl0wqlmm6hqEWi9+ueeb3m3K3q354swg=</dsig:DigestValue>
-            </dsig:Reference>
-        </dsig:SignedInfo>
-        <dsig:SignatureValue>qRiKEJWIazWX3VPIltKZWUjW+rjqEj6Zt9Dj+q/H5AR9mTEJ64iTx4thkzeOz7mv
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" ID="_da39a3ee5e6b4b0d3255bfef95601890afd80709" entityID="urn:nl-eid-gdi:1.0:RD:00000004000000149000:entities:9002" validUntil="2021-10-11T10:00:00Z"><dsig:Signature Id="Id-0001622909643747-ffffffffa2b9916e-1"><dsig:SignedInfo><dsig:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><dsig:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><dsig:Reference URI="#_da39a3ee5e6b4b0d3255bfef95601890afd80709"><dsig:Transforms><dsig:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><dsig:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></dsig:Transforms><dsig:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><dsig:DigestValue>QbUvpJGDFcLcl0wqlmm6hqEWi9+ueeb3m3K3q354swg=</dsig:DigestValue></dsig:Reference></dsig:SignedInfo><dsig:SignatureValue>qRiKEJWIazWX3VPIltKZWUjW+rjqEj6Zt9Dj+q/H5AR9mTEJ64iTx4thkzeOz7mv
 BCoShOlYEMRW4LbOFvDvMhpMlXXTySJB7Vlx26ol8fbGnk+rizpU/pDASsNxhCjs
 5iYfCRRG+zEHy2CIGTlwHfLW7aehSoNQSD7Lff8dxswyENQmRzYMokUNrl5ANuM/
 tV/+au9nzdlPeHAeuon9YfH1eVRHe3C55yH402ksDV2oVF1LO3VHHYB5dVBojZBZ
 W+FUBZIGkUiD5ySD3tNo6ii/EJZhzDAyLAxZ5ZjdOs0IZjrbfQHl8SJtmd2Z+I/6
-vSFYl8WCU4cCDYKgm/dEbA==</dsig:SignatureValue>
-        <dsig:KeyInfo Id="Id-0001622015923228-00000000248abb40-2">
-            <dsig:KeyName>403f4a4faae5e6eb9fc711bda0af315e2cce58d3</dsig:KeyName>
-        </dsig:KeyInfo>
-    </dsig:Signature>
-    <md:IDPSSODescriptor WantAuthnRequestsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
-        <md:KeyDescriptor use="signing">
-            <dsig:KeyInfo>
-                <dsig:KeyName>403f4a4faae5e6eb9fc711bda0af315e2cce58d3</dsig:KeyName>
-                <dsig:X509Data>
-                    <dsig:X509Certificate>MIIHDDCCBPSgAwIBAgIUc4Ji/Ez0LtkphwrwXcUuQ6WhiBYwDQYJKoZIhvcNAQEL
+vSFYl8WCU4cCDYKgm/dEbA==</dsig:SignatureValue><dsig:KeyInfo Id="Id-0001622909643747-ffffffffa2b9916e-2"><dsig:KeyName>403f4a4faae5e6eb9fc711bda0af315e2cce58d3</dsig:KeyName></dsig:KeyInfo></dsig:Signature><md:IDPSSODescriptor WantAuthnRequestsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol"><md:KeyDescriptor use="signing"><dsig:KeyInfo><dsig:KeyName>403f4a4faae5e6eb9fc711bda0af315e2cce58d3</dsig:KeyName><dsig:X509Data><dsig:X509Certificate>MIIHDDCCBPSgAwIBAgIUc4Ji/Ez0LtkphwrwXcUuQ6WhiBYwDQYJKoZIhvcNAQEL
 BQAwgYAxCzAJBgNVBAYTAk5MMSAwHgYDVQQKDBdRdW9WYWRpcyBUcnVzdGxpbmsg
 Qi5WLjEXMBUGA1UEYQwOTlRSTkwtMzAyMzc0NTkxNjA0BgNVBAMMLVF1b1ZhZGlz
 IFBLSW92ZXJoZWlkIFByaXZhdGUgU2VydmljZXMgQ0EgLSBHMTAeFw0yMDExMTEx
@@ -66,12 +42,4 @@ e2XxcLl7wYLzFQwPlpHSnBZeZ6TRAigRtbXXV7qyJtZByMnFRoig2qDTD+B56xTg
 FqyApXlL1Ycy1eHHuYQrWk56bmkpKz/TdjOiSw4ekbEEPdfwsmB5fokgg60mg7oT
 KlOAJeWHdBCGRc03s6LNFw4Aces9yADCJSwsyPlVm0OxTwqZq6N4FdErqY/5zhf3
 LYT4Brvfbv21aIjWPNjI72w58nfGxqWsm6P0f6tgXBU=
-</dsig:X509Certificate>
-                </dsig:X509Data>
-            </dsig:KeyInfo>
-        </md:KeyDescriptor>
-        <md:ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://artifact-pp2.toegang.overheid.nl/kvs/rd/resolve_artifact" index="0" />
-        <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://pp2.toegang.overheid.nl/kvs/rd/request_logout" />
-        <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://pp2.toegang.overheid.nl/kvs/rd/request_authentication" />
-    </md:IDPSSODescriptor>
-</md:EntityDescriptor>
+</dsig:X509Certificate></dsig:X509Data></dsig:KeyInfo></md:KeyDescriptor><md:ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://artifact-pp2.toegang.overheid.nl/kvs/rd/resolve_artifact" index="0"/><md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://pp2.toegang.overheid.nl/kvs/rd/request_logout"/><md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://pp2.toegang.overheid.nl/kvs/rd/request_authentication"/></md:IDPSSODescriptor></md:EntityDescriptor>

@@ -1,22 +1,25 @@
+# pylint: disable=c-extension-no-member
 import base64
-from inge6.saml.utils import has_valid_signature
 import json
-from os import error
 
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 
 from lxml import etree
 
-from .saml_request import SAMLRequest
+from .saml_request import (
+    SAMLRequest, add_root_id,
+    add_reference, sign,
+)
 from .constants import NAMESPACES
 from .utils import has_valid_signature
 from ..config import settings
 
-####
-# TODO:
-# root.cacheDuration?
-#
-####
+
+def add_certs(root, cert_data):
+    certifi_elems = root.findall('.//ds:X509Certificate', NAMESPACES)
+
+    for elem in certifi_elems:
+        elem.text = base64.b64encode(cert_data.encode())
 
 class SPMetadata(SAMLRequest):
     TEMPLATE_PATH = settings.saml.sp_template
@@ -26,29 +29,24 @@ class SPMetadata(SAMLRequest):
     DEFAULT_ACS = settings.issuer + '/acs'
 
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())
+
         with open(self.SETTINGS_PATH, 'r') as settings_file:
             self.settings_dict = json.loads(settings_file.read())
-
-        self.root = etree.parse(self.TEMPLATE_PATH).getroot()
 
         with open(self.CERT_PATH, 'r') as cert_file:
             self.cert_data = cert_file.read()
 
-        self._add_root_id(self.root)
-        self._add_reference()
+        add_root_id(self.root, self._id_hash)
+        add_reference(self.root, self._id_hash)
+        add_certs(self.root, self.cert_data)
+
         self._add_service_locs()
         self._add_attribute_value()
-        self._add_certs()
         self._add_keyname()
         self._add_prefix_service_desc()
-        self._sign(self.root)
 
-    def _add_certs(self):
-        X509_elems = self.root.findall('.//ds:X509Certificate', NAMESPACES)
-
-        for elem in X509_elems:
-            elem.text = base64.b64encode(self.cert_data.encode())
+        sign(self.root, self.KEY_PATH)
 
     def _add_keyname(self):
         cert = load_certificate(FILETYPE_PEM, self.cert_data)
@@ -126,3 +124,5 @@ class SPMetadata(SAMLRequest):
             errors.append('Invalid Signature')
 
         return errors
+
+sp_metadata = SPMetadata()
