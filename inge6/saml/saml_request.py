@@ -22,7 +22,7 @@ def add_certs(root, cert_path):
     cert_node = root.find('.//ds:X509Certificate', {'ds': 'http://www.w3.org/2000/09/xmldsig#'})
 
     with open(cert_path, 'r') as cert_file:
-        cert_node.text = base64.b64encode(cert_file.read().encode())
+        cert_node.text = "\n".join(cert_file.split('\n')[1:-1])
 
 def sign(root, key_path):
     signature_node = xmlsec.tree.find_node(root, xmlsec.constants.NodeSignature)
