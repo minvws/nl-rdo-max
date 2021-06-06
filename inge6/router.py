@@ -96,6 +96,10 @@ def login_digid(state: str, force_digid: Optional[bool] = None):
 async def digid_mock(request: Request):
     return await tvs_request_handler.digid_mock(request)
 
+@router.post('/digid-mock-catch')
+async def digid_mock_catch(request: Request):
+    return await tvs_request_handler.digid_mock_catch(request, 'POST')
+
 @router.get('/digid-mock-catch')
-def digid_mock_catch(request: Request):
-    return tvs_request_handler.digid_mock_catch(request)
+async def digid_mock_catch(request: Request):
+    return await tvs_request_handler.digid_mock_catch(request, 'GET')

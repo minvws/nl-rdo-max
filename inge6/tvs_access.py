@@ -1,5 +1,5 @@
 import base64
-from os import stat
+from urllib.parse import parse_qs
 import uuid
 import json
 from typing import Optional, Union, Tuple
@@ -65,7 +65,7 @@ async def digid_mock(request: Request):
     <html>
     <h1> DigiD MOCK </h1>
     <div style='font-size:36;'>
-        <form method="GET" action="/digid-mock-catch">
+        <form method="POST" action="/digid-mock-catch">
             <label style='height:200px; width:400px' for="bsn">BSN Value:</label><br>
             <input style='height:200px; width:400px; font-size:36pt' type="text" id="bsn" value="900212640" name="bsn"><br>
             <input type="hidden" name="SAMLart" value="{artifact}">
@@ -80,9 +80,15 @@ async def digid_mock(request: Request):
     """
     return HTMLResponse(content=http_content, status_code=200)
 
-def digid_mock_catch(request: Request):
-    bsn = request.query_params['bsn']
-    relay_state = request.query_params['RelayState']
+async def digid_mock_catch(request: Request, method: str):
+    if method == 'POST':
+        form = await request.form()
+        bsn = form['bsn']
+        relay_state = form['RelayState']
+    else:
+        bsn = request.query_params['bsn']
+        relay_state = request.query_params['RelayState']
+
     response_uri = '/acs' + f'?SAMLart={bsn}&RelayState={relay_state}&mocking=1'
     return RedirectResponse(response_uri, status_code=303)
 
