@@ -78,8 +78,8 @@ async def token_endpoint(request):
     except UserNotAuthenticated as user_not_authenticated:
         logging.getLogger().debug('invalid client authentication at token endpoint', exc_info=True)
         error_resp = {
-            'error': str(user_not_authenticated),
-            'error_description': user_not_authenticated.oauth_error
+            'error': user_not_authenticated.oauth_error,
+            'error_description': str(user_not_authenticated)
         }
         response = JSONResponse(jsonable_encoder(error_resp), status_code=400)
         response.headers['WWW-Authenticate'] = 'Basic'
