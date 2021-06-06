@@ -50,7 +50,7 @@ class SPMetadata(SAMLRequest):
 
     def _add_keyname(self):
         cert = load_certificate(FILETYPE_PEM, self.cert_data)
-        sha1_fingerprint = cert.digest("sha256").upper()
+        sha1_fingerprint = cert.digest("sha256").decode().replace(":", "").lower()
         keyname_elem = self.root.find('.//ds:KeyInfo/ds:KeyName', NAMESPACES)
         keyname_elem.text = sha1_fingerprint
 
