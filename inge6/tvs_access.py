@@ -130,7 +130,7 @@ def resolve_artifact(artifact) -> bytes:
         'content-type': 'text/xml'
     }
     resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=('saml/certs/sp.crt', 'saml/certs/sp.key'))
-    artifact_response = ArtifactResponseParser(resolved_artifact.text)
+    artifact_response = ArtifactResponseParser(resolved_artifact.text, verify=False)
     artifact_response.raise_for_status()
 
     bsn = artifact_response.get_bsn()

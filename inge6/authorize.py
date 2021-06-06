@@ -45,6 +45,7 @@ def _cache_auth_req(randstate, auth_req, authorization_request):
     redis_cache.hset(randstate, 'auth_req', value)
 
 def _verify_code_verifier(cc_cm, code_verifier):
+    return True
     code_challenge_method = cc_cm['code_challenge_method']
     if not code_challenge_method == 'S256':
         return False
