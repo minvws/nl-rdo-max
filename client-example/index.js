@@ -26,7 +26,7 @@ var authorizationUrl;
 var client;
 var code_verifier;
 var code_challenge;
-var state;
+var state, nonce;
 
 app.get('/', (req, res) => {
   res.sendFile('index.html', {root: './'});
@@ -83,7 +83,7 @@ app.get('/login', (req, res) => {
     // console.log(req);
     const params = client.callbackParams(req);
     console.log(params);
-    client.callback(redirect_uri, params, { code_verifier, state }) // => Promise
+    client.callback(redirect_uri, params, { code_verifier, state, nonce }) // => Promise
       .then(function (tokenSet) {
         console.log('received and validated tokens %j', tokenSet);
         console.log('validated ID Token claims %j', tokenSet.claims());
@@ -144,6 +144,7 @@ function discoverTvsDigiD() {
         // it should be httpOnly (not readable by javascript) and encrypted.
         // code_verifier = generators.codeVerifier();
         state = generators.state()
+        nonce = generators.nonce()
 
         // code_challenge = generators.codeChallenge(code_verifier);
         // console.log(code_challenge, code_verifier)
@@ -158,6 +159,7 @@ function discoverTvsDigiD() {
           state: state,
           code_challenge,
           code_challenge_method: 'S256',
+          nonce: nonce
         });
       }, (error) => {
         console.log(error);
