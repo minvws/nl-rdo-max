@@ -37,7 +37,7 @@ class ArtifactResponseParser():
         return top_level_status_elem
 
     def get_second_level_status(self):
-        top_level = self.root.find('.//samlp:Response//samlp:StatusCode')
+        top_level = self.root.find('.//samlp:Response//samlp:StatusCode', NAMESPACES)
         if top_level.attrib['Value'].split(':')[-1].lower() != SUCCESS:
             second_level = top_level.find('./samlp:StatusCode', NAMESPACES)
             return second_level.attrib['Value']
