@@ -4,7 +4,7 @@ import pickle
 from . import get_redis_client
 from ..config import settings
 
-KEY_PREFIX = 'TVS:'
+KEY_PREFIX = settings.redis.prefix
 EXPIRES_IN_S = int(settings.redis.expires_in_s)
 
 def _serialize(value):
