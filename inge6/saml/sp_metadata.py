@@ -18,7 +18,7 @@ def add_certs(root, cert_data):
     certifi_elems = root.findall('.//ds:X509Certificate', NAMESPACES)
 
     for elem in certifi_elems:
-        elem.text = cert_data.replace("-----BEGIN CERTIFICATE-----\n", "").replace("-----END CERTIFICATE-----", "")
+        elem.text = cert_data.replace("-----BEGIN CERTIFICATE-----\n", "").replace("-----END CERTIFICATE-----\n", "")
 
 class SPMetadata(SAMLRequest):
     TEMPLATE_PATH = settings.saml.sp_template
