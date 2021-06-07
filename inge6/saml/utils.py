@@ -1,5 +1,4 @@
 # pylint: disable=c-extension-no-member
-from lxml import etree
 import xmlsec
 
 from .constants import NAMESPACES

@@ -10,7 +10,7 @@ from .saml_request import (
     add_reference, sign,
 )
 from .constants import NAMESPACES
-from .utils import has_valid_signature
+from .utils import has_valid_signatures
 from ..config import settings
 
 
@@ -83,7 +83,8 @@ class SPMetadata(SAMLRequest):
             raise KeyError('key does not exist. please check your settings.json') from key_error
 
     def _valid_signature(self):
-        return has_valid_signature(self.root)
+        _, is_valid = has_valid_signatures(self.root, cert_data=self.cert_data)
+        return is_valid
 
     def _contains_keyname(self):
         return self.root.find('.//ds:KeyInfo/ds:KeyName', NAMESPACES) is not None
