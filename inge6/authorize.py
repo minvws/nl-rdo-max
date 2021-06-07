@@ -1,5 +1,4 @@
 
-from inge6.saml.exceptions import UserNotAuthenticated
 import logging
 import base64
 from urllib.parse import urlencode, parse_qs
@@ -20,6 +19,8 @@ from . import tvs_access
 from .models import AuthorizeRequest
 from .oidc_provider import get_oidc_provider
 from .cache import redis_cache
+from .saml.exceptions import UserNotAuthenticated
+
 
 def authorize(authorization_request: AuthorizeRequest, headers):
     try:
@@ -46,6 +47,7 @@ def _cache_auth_req(randstate, auth_req, authorization_request):
 
 def _verify_code_verifier(cc_cm, code_verifier):
     return True
+    # pylint: disable=unreachable
     code_challenge_method = cc_cm['code_challenge_method']
     if not code_challenge_method == 'S256':
         return False

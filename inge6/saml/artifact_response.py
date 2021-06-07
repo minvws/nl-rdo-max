@@ -49,7 +49,7 @@ class ArtifactResponseParser():
     def raise_for_status(self):
         status = self.get_status()
         if status != 'saml_' + SUCCESS:
-            raise UserNotAuthenticated("User authentication flow failed", error=status)
+            raise UserNotAuthenticated("User authentication flow failed", oauth_error=status)
 
         return status
 

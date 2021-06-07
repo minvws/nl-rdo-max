@@ -1,7 +1,4 @@
 # pylint: disable=c-extension-no-member
-import copy
-
-from lxml import etree
 import xmlsec
 
 def get_loc_bind(element):
@@ -27,7 +24,7 @@ def has_valid_signature(root, cert_data=None, cert_path='saml/certs/sp.crt'):
     try:
         ctx.verify(signature_node)
         return True
-    except xmlsec.VerificationError as verification_error:
+    except xmlsec.VerificationError:
         return False
 
 def remove_padding(enc_data):

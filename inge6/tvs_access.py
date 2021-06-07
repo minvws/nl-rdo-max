@@ -1,8 +1,8 @@
 import base64
-from urllib.parse import parse_qs
+
 import uuid
 import json
-from typing import Optional, Union, Tuple
+from typing import Optional
 
 import requests
 
@@ -94,14 +94,9 @@ async def digid_mock(request: Request):
     """
     return HTMLResponse(content=http_content, status_code=200)
 
-async def digid_mock_catch(request: Request, method: str):
-    if method == 'POST':
-        form = await request.form()
-        bsn = form['bsn']
-        relay_state = form['RelayState']
-    else:
-        bsn = request.query_params['bsn']
-        relay_state = request.query_params['RelayState']
+async def digid_mock_catch(request: Request):
+    bsn = request.query_params['bsn']
+    relay_state = request.query_params['RelayState']
 
     response_uri = '/acs' + f'?SAMLart={bsn}&RelayState={relay_state}&mocking=1'
     return RedirectResponse(response_uri, status_code=303)
@@ -133,8 +128,8 @@ def _store_code_challenge(code, code_challenge, code_challenge_method):
 
 def resolve_artifact(artifact) -> bytes:
 
-    digid_mock = get_redis_client().get('DIGID_MOCK' + artifact)
-    if settings.mock_digid.lower() == "true" and digid_mock is not None:
+    is_digid_mock = get_redis_client().get('DIGID_MOCK' + artifact)
+    if settings.mock_digid.lower() == "true" and is_digid_mock is not None:
         return bsn_encrypt.symm_encrypt_bsn(artifact)
 
     resolve_artifact_req = ArtifactResolveRequest(artifact).get_xml()

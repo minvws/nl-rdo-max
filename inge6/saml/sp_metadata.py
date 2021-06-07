@@ -1,5 +1,4 @@
 # pylint: disable=c-extension-no-member
-import base64
 import json
 
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
