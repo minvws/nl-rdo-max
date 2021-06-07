@@ -18,7 +18,7 @@ def add_certs(root, cert_data):
     certifi_elems = root.findall('.//ds:X509Certificate', NAMESPACES)
 
     for elem in certifi_elems:
-        elem.text = cert_data.replace("-----BEGIN CERTIFICATE-----\n", "").replace("-----END CERTIFICATE-----\n", "")
+        elem.text = cert_data.replace("-----BEGIN CERTIFICATE-----\n", "").replace("-----END CERTIFICATE-----", "")
 
 class SPMetadata(SAMLRequest):
     TEMPLATE_PATH = settings.saml.sp_template
@@ -42,16 +42,17 @@ class SPMetadata(SAMLRequest):
 
         self._add_service_locs()
         self._add_attribute_value()
-        self._add_keyname()
+        self._add_keynames()
         self._add_prefix_service_desc()
 
         sign(self.root, self.KEY_PATH)
 
-    def _add_keyname(self):
+    def _add_keynames(self):
         cert = load_certificate(FILETYPE_PEM, self.cert_data)
         sha256_fingerprint = cert.digest("sha256").decode().replace(":", "").lower()
-        keyname_elem = self.root.find('.//ds:KeyInfo/ds:KeyName', NAMESPACES)
-        keyname_elem.text = sha256_fingerprint
+        keyname_elems = self.root.findall('.//ds:KeyInfo/ds:KeyName', NAMESPACES)
+        for keyname_elem in keyname_elems:
+            keyname_elem.text = sha256_fingerprint
 
     def _add_service_locs(self):
         sls_elem = self.root.find('.//md:SingleLogoutService', NAMESPACES)
