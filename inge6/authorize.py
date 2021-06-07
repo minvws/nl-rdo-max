@@ -46,15 +46,13 @@ def _cache_auth_req(randstate, auth_req, authorization_request):
     redis_cache.hset(randstate, 'auth_req', value)
 
 def _verify_code_verifier(cc_cm, code_verifier):
-    return True
-    # pylint: disable=unreachable
     code_challenge_method = cc_cm['code_challenge_method']
     if not code_challenge_method == 'S256':
         return False
 
-    verifier_hash = nacl.hash.sha256(code_verifier.encode())
-    code_challenge = base64.urlsafe_b64encode(verifier_hash).decode().replace('=','')
-    return code_challenge == cc_cm['code_challenge']
+    verifier_hash = nacl.hash.sha256(code_verifier.encode('ISO_8859_1'))
+    code_challenge = base64.urlsafe_b64encode(verifier_hash).decode()
+    return code_challenge == cc_cm['code_challenge'] or code_challenge.replace('=','') == cc_cm['code_challenge']
 
 async def token_endpoint(request):
     body = await request.body()
