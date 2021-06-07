@@ -51,7 +51,9 @@ def _verify_code_verifier(cc_cm, code_verifier):
         return False
 
     verifier_hash = nacl.hash.sha256(code_verifier.encode('ISO_8859_1'))
-    code_challenge = base64.urlsafe_b64encode(verifier_hash).decode()
+    verifier_bytearray = bytearray.fromhex(verifier_hash.decode())
+    code_challenge = base64.urlsafe_b64encode(verifier_bytearray).decode().replace("=","")
+    print(code_challenge, code_verifier, cc_cm['code_challenge'])
     return code_challenge == cc_cm['code_challenge']
 
 async def token_endpoint(request):
