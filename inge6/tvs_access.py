@@ -67,15 +67,29 @@ async def digid_mock(request: Request):
     <div style='font-size:36;'>
         <form method="POST" action="/digid-mock-catch">
             <label style='height:200px; width:400px' for="bsn">BSN Value:</label><br>
-            <input style='height:200px; width:400px; font-size:36pt' type="text" id="bsn" value="900212640" name="bsn"><br>
+            <input id='bsn_inp' style='height:200px; width:400px; font-size:36pt' type="text" id="bsn" value="900212640" name="bsn"><br>
             <input type="hidden" name="SAMLart" value="{artifact}">
             <input type="hidden" name="RelayState" value="{relay_state}">
-            <input style='height:100px; width:400px' type="submit" value="Login">
         </form>
     </div>
+    <a href='' id="submit_two" relayState={relay_state} samlArt={artifact} style='font-size:55; color: white; background-color:grey; display:box'> Login / Submit </a>
+    <br />
     <a href='/login-digid?force_digid=1&state={state}' style='font-size:55; background-color:purple; display:box'>Actual DigiD</a>
-    <br/>
-    <a href='/digid-mock-catch?bsn=900212640&SAMLart={artifact}&RelayState={relay_state}' style='font-size:55; background-color:green; display:box'>Static BSN: 900212640</a>
+    <script>
+        window.onload = function funLoad() {{
+            bsn_input_listener()
+            document.getElementById('bsn_inp').onchange = bsn_input_listener
+        }}
+
+        function bsn_input_listener() {{
+            submitButton = document.getElementById("submit_two")
+            relayState = submitButton.getAttribute("relaystate")
+            bsn = document.getElementById("bsn_inp").value
+            samlArt = submitButton.getAttribute("samlart")
+            href = '/digid-mock-catch?bsn=' + bsn + '&SAMLart=' + samlArt + '&RelayState=' + relayState
+            submitButton.href = href
+        }}
+    </script>
     </html>
     """
     return HTMLResponse(content=http_content, status_code=200)
