@@ -29,3 +29,6 @@ def has_valid_signature(root, cert_data=None, cert_path='saml/certs/sp.crt'):
         return True
     except xmlsec.VerificationError as verification_error:
         return False
+
+def remove_padding(enc_data):
+    return enc_data[:-enc_data[-1]]

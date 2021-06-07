@@ -1,6 +1,7 @@
+# pylint: disable=c-extension-no-member
+
 import pytest
 import xmlsec
-from lxml import etree
 
 from inge6.saml import AuthNRequest, ArtifactResolveRequest
 from inge6.saml.sp_metadata import SPMetadata

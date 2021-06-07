@@ -8,13 +8,10 @@ from lxml import etree
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
 from ..config import settings
-from .utils import has_valid_signature
+from .utils import has_valid_signature, remove_padding
 from .constants import NAMESPACES
 from .exceptions import UserNotAuthenticated
 from .idp_metadata import idp_metadata
-
-def remove_padding(enc_data):
-    return enc_data[:-enc_data[-1]]
 
 SUCCESS = "success"
 
