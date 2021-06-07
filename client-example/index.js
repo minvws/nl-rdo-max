@@ -104,6 +104,29 @@ app.get('/login', (req, res) => {
       });
 
   } else {
+    // !!!! CARE: EXAMPLE DOES NOT IMPLEMENT THIS SECURITY ASPECT:
+    // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
+    // it should be httpOnly (not readable by javascript) and encrypted.
+    // code_verifier = generators.codeVerifier();
+    state = generators.state()
+    nonce = generators.nonce()
+
+    // code_challenge = generators.codeChallenge(code_verifier);
+    // console.log(code_challenge, code_verifier)
+    // console.log(g)
+    challenge = generate_code_challenge()
+    code_verifier = challenge.code_verifier
+    code_challenge = challenge.code_challenge
+
+    authorizationUrl = client.authorizationUrl({
+      scope: 'openid',
+      resource: baseUrl + '/authorize',
+      state: state,
+      code_challenge,
+      code_challenge_method: 'S256',
+      nonce: nonce
+    });
+
     res.redirect(authorizationUrl);
   }
 });
@@ -139,28 +162,6 @@ function discoverTvsDigiD() {
           token_endpoint_auth_method: "none"
         });
 
-        // !!!! CARE: EXAMPLE DOES NOT IMPLEMENT THIS SECURITY ASPECT:
-        // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
-        // it should be httpOnly (not readable by javascript) and encrypted.
-        // code_verifier = generators.codeVerifier();
-        state = generators.state()
-        nonce = generators.nonce()
-
-        // code_challenge = generators.codeChallenge(code_verifier);
-        // console.log(code_challenge, code_verifier)
-        // console.log(g)
-        challenge = generate_code_challenge()
-        code_verifier = challenge.code_verifier
-        code_challenge = challenge.code_challenge
-
-        authorizationUrl = client.authorizationUrl({
-          scope: 'openid',
-          resource: baseUrl + '/authorize',
-          state: state,
-          code_challenge,
-          code_challenge_method: 'S256',
-          nonce: nonce
-        });
       }, (error) => {
         console.log(error);
       });
