@@ -1,7 +1,8 @@
 import json
 
-from redis_collections import Dict as RDict
 from jwkest.jwk import RSAKey, rsa_load
+
+from pyop.storage import RedisWrapper
 from pyop.authz_state import AuthorizationState
 from pyop.provider import Provider
 from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
@@ -48,10 +49,10 @@ def _init_oidc_provider(app):
 
     signing_key = RSAKey(key=rsa_load(settings.oidc.rsa_private_key), alg='RS256', )
 
-    authorization_code_db = RDict(key=settings.redis.code_namespace, redis=get_redis_client())
-    access_token_db = RDict(key=settings.redis.token_namespace, redis=get_redis_client())
-    refresh_token_db = RDict(key=settings.redis.refresh_token_namespace, redis=get_redis_client())
-    subject_identifier_db = RDict(key=settings.redis.sub_id_namespace, redis=get_redis_client())
+    authorization_code_db = RedisWrapper(collection=settings.redis.code_namespace, redis=get_redis_client())
+    access_token_db = RedisWrapper(collection=settings.redis.token_namespace, redis=get_redis_client())
+    refresh_token_db = RedisWrapper(collection=settings.redis.refresh_token_namespace, redis=get_redis_client())
+    subject_identifier_db = RedisWrapper(collection=settings.redis.sub_id_namespace, redis=get_redis_client())
 
     authz_state = AuthorizationState(
         HashBasedSubjectIdentifierFactory(settings.oidc.subject_id_hash_salt),
