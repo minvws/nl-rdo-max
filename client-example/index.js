@@ -111,12 +111,8 @@ app.get('/login', (req, res) => {
     state = generators.state()
     nonce = generators.nonce()
 
-    // code_challenge = generators.codeChallenge(code_verifier);
-    // console.log(code_challenge, code_verifier)
-    // console.log(g)
-    challenge = generate_code_challenge()
-    code_verifier = challenge.code_verifier
-    code_challenge = challenge.code_challenge
+    code_verifier = generators.codeVerifier()
+    code_challenge = generators.codeChallenge(code_verifier)
 
     authorizationUrl = client.authorizationUrl({
       scope: 'openid',
