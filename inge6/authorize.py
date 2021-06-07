@@ -2,7 +2,9 @@
 import logging
 import base64
 from urllib.parse import urlencode, parse_qs
+
 import nacl.hash
+from nacl.encoding import URLSafeBase64Encoder
 
 from fastapi import  Request, Response, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
@@ -50,11 +52,10 @@ def _verify_code_verifier(cc_cm, code_verifier):
     if not code_challenge_method == 'S256':
         return False
 
-    verifier_hash = nacl.hash.sha256(code_verifier.encode('ISO_8859_1'))
-    verifier_bytearray = bytearray.fromhex(verifier_hash.decode())
-    code_challenge = base64.urlsafe_b64encode(verifier_bytearray).decode().replace("=","")
-    print(code_challenge, code_verifier, cc_cm['code_challenge'])
+    verifier_hash = nacl.hash.sha256(code_verifier.encode('ISO_8859_1'), encoder=URLSafeBase64Encoder)
+    code_challenge = verifier_hash.decode().replace('=', '')
     return code_challenge == cc_cm['code_challenge']
+
 
 async def token_endpoint(request):
     body = await request.body()
