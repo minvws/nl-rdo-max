@@ -52,7 +52,7 @@ def _verify_code_verifier(cc_cm, code_verifier):
 
     verifier_hash = nacl.hash.sha256(code_verifier.encode('ISO_8859_1'))
     code_challenge = base64.urlsafe_b64encode(verifier_hash).decode()
-    return code_challenge == cc_cm['code_challenge'] or code_challenge.replace('=','') == cc_cm['code_challenge']
+    return code_challenge == cc_cm['code_challenge']
 
 async def token_endpoint(request):
     body = await request.body()
