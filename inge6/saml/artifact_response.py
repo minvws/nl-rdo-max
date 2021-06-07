@@ -8,7 +8,7 @@ from lxml import etree
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
 from ..config import settings
-from .utils import has_valid_signature, remove_padding
+from .utils import has_valid_signatures, remove_padding
 from .constants import NAMESPACES
 from .exceptions import UserNotAuthenticated
 from .idp_metadata import idp_metadata
@@ -63,16 +63,11 @@ class ArtifactResponseParser():
         return self._get_assertion_elem().find('.//saml2:Assertion', NAMESPACES)
 
     def verify_signatures(self):
-        signature_verify_elems = [
-            self._get_artifact_response_elem(),
-            self._get_assertion_elem(),
-            # self._get_advice_elem()
-        ]
+        root, valid = has_valid_signatures(self.root, cert_data=idp_metadata.get_cert_pem_data())
+        if not valid:
+            raise Exception("Invalid signatures")
 
-        for elem in signature_verify_elems:
-            is_valid = has_valid_signature(elem, cert_data=idp_metadata.get_cert_pem_data())
-            if not is_valid:
-                raise Exception("NOO")
+        self.root = root
 
     def _decrypt_enc_key(self) -> bytes:
         encrypted_key_el = self.root.find('.//xenc:EncryptedKey', {'xenc': 'http://www.w3.org/2001/04/xmlenc#'})
