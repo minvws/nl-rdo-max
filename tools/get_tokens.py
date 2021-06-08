@@ -2,7 +2,6 @@ from typing import Union
 import sys
 import requests
 import argparse
-import json
 import logging
 
 
