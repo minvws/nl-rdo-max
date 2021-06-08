@@ -100,16 +100,18 @@ async def digid_mock(request: Request):
 async def digid_mock_catch(request: Request):
     return await tvs_request_handler.digid_mock_catch(request)
 
+# pylint: disable=wrong-import-position, c-extension-no-member, wrong-import-order
 from lxml import etree
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs # pylint: disable=wrong-import-order
 
 @router.get('/consume_bsn/{bsn}')
 def consume_bsn_for_token(bsn: str, request: Request, authorize_req: AuthorizeRequest = Depends()):
-    print(bsn)
     response = authorization_handler.authorize(authorize_req, request.headers)
     response_tree = etree.fromstring(response.__dict__['body'].decode()).getroottree().getroot()
 
     relay_state = response_tree.find('.//input[@name="RelayState"]').attrib['value']
+
+    # pylint: disable=too-few-public-methods
     class AcsReq:
         @property
         def query_params(self):
