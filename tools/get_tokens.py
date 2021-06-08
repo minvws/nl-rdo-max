@@ -3,6 +3,7 @@ import sys
 import requests
 import argparse
 import logging
+import json
 
 
 def retrieve_hashes(endpoint: str, token: str) -> Union[None, dict]:
@@ -29,4 +30,4 @@ if __name__ == "__main__":
 
     for jwt_line in sys.stdin:
         jwt_token = jwt_line[:-1]
-        print(retrieve_hashes(config.url, jwt_token))
+        print(json.dumps(retrieve_hashes(config.url, jwt_token)))
