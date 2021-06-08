@@ -67,7 +67,7 @@ def test_artifact_response_parser_get_bsn(response_custom_bsn, monkeypatch):
     assert artifact_response.get_bsn() == '900212640'
 
 # pylint: disable=redefined-outer-name
-def test_artifact_response_parser_verify(response_unedited):
+def test_artifact_response_parser(response_unedited):
     ArtifactResponseParser(response_unedited)
     assert True
 

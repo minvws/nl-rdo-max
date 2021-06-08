@@ -17,7 +17,6 @@ SUCCESS = "success"
 
 CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
 
-# pylint: disable=too-few-public-methods
 class ArtifactResponseParser():
     PRIV_KEY_PATH = settings.saml.key_path
 
