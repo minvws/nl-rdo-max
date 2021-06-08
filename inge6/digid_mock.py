@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import Request
-from fastapi.response import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 
 async def digid_mock(request: Request):
     body = await request.form()

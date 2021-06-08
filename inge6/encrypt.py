@@ -35,5 +35,5 @@ class Encrypt:
         return payload
 
     def from_symm_to_pub(self, payload):
-        plaintext = self.symm_decrypt_bsn(payload)
-        return self.pub_encrypt_bsn(plaintext)
+        plaintext = self.symm_decrypt(payload)
+        return self.pub_encrypt(plaintext)

@@ -4,12 +4,12 @@ from jwkest.jwk import RSAKey, rsa_load
 
 from pyop.storage import RedisWrapper
 from pyop.authz_state import AuthorizationState
-from pyop.provider import Provider
+from pyop.provider import Provider as PyopProvider
 from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
 from pyop.userinfo import Userinfo
 
-from .config import settings
-from .cache import get_redis_client
+from ..config import settings
+from ..cache import get_redis_client
 
 class Provider:
 
@@ -18,14 +18,12 @@ class Provider:
         authentication_endpoint = app.url_path_for('authorize')
         jwks_uri = app.url_path_for('jwks_uri')
         token_endpoint = app.url_path_for('token_endpoint')
-        userinfo_endpoint = app.url_path_for('userinfo_endpoint')
 
         configuration_information = {
             'issuer': issuer,
             'authorization_endpoint': issuer + authentication_endpoint,
             'jwks_uri': issuer + jwks_uri,
             'token_endpoint': issuer + token_endpoint,
-            'userinfo_endpoint': issuer + userinfo_endpoint,
             'scopes_supported': ['openid', 'profile'],
             'response_types_supported': ['code', 'code id_token', 'code token', 'code id_token token'],  # code and hybrid
             'response_modes_supported': ['query', 'fragment'],
@@ -54,22 +52,13 @@ class Provider:
             subject_identifier_db=subject_identifier_db
         )
 
-        self.provider = Provider(signing_key, configuration_information,
+        self.provider = PyopProvider(signing_key, configuration_information,
                             authz_state,
                             clients, userinfo_db)
 
     def __getattr__(self, name):
-        if hasattr(self.provider):
+        if hasattr(self.provider, name):
             return getattr(self.provider, name)
 
         raise AttributeError("Attribute {} not found".format(name))
-
-    
-    def metadata(self):
-        errors = self.sp_metadata.validate()
-
-        if len(errors) == 0:
-            return Response(content=self.sp_metadata.get_xml().decode(), media_type="application/xml")
-
-        raise HTTPException(status_code=500, detail=', '.join(errors))
 

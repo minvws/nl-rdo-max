@@ -11,7 +11,6 @@ from ..config import settings
 from .utils import has_valid_signatures, remove_padding
 from .constants import NAMESPACES
 from .exceptions import UserNotAuthenticated
-from .idp_metadata import idp_metadata
 
 SUCCESS = "success"
 
@@ -20,8 +19,9 @@ CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
 class ArtifactResponseParser():
     PRIV_KEY_PATH = settings.saml.key_path
 
-    def __init__(self, xml_response, verify=True):
+    def __init__(self, xml_response, idp_metadata, verify=True):
         self.root = etree.fromstring(xml_response).getroottree().getroot()
+        self.idp_metadata = idp_metadata
         with open(self.PRIV_KEY_PATH, 'r') as priv_key_file:
             self.key = priv_key_file.read()
 
@@ -62,7 +62,7 @@ class ArtifactResponseParser():
         return self._get_assertion_elem().find('.//saml2:Assertion', NAMESPACES)
 
     def verify_signatures(self):
-        root, valid = has_valid_signatures(self.root, cert_data=idp_metadata.get_cert_pem_data())
+        root, valid = has_valid_signatures(self.root, cert_data=self.idp_metadata.get_cert_pem_data())
         if not valid:
             raise Exception("Invalid signatures")
 

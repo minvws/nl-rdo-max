@@ -10,41 +10,45 @@ from fastapi.encoders import jsonable_encoder
 from .config import settings
 from .cache import get_redis_client
 from .models import AuthorizeRequest
-from . import provider as tvs_connect_provider
-from . import digid_mock
+from .provider import get_provider
+from .digid_mock import (
+    digid_mock as dmock,
+    digid_mock_catch as dmock_catch
+)
 
 router = APIRouter()
 
 @router.get('/authorize')
 def authorize(request: Request, authorize_req: AuthorizeRequest = Depends()):
-    return tvs_connect_provider.authorize(authorize_req, request.headers)
+    return get_provider().authorize_endpoint(authorize_req, request.headers)
 
 @router.post('/accesstoken')
 async def token_endpoint(request: Request):
     ''' Expect a request with a body containing the grant_type.'''
     body = await request.body()
-    return tvs_connect_provider.token_endpoint(body)
+    headers = request.headers
+    return get_provider().token_endpoint(body, headers)
 
 @router.get('/metadata')
 def metadata():
-    return tvs_connect_provider.metadata()
+    return get_provider().metadata()
 
 @router.get('/acs')
 def assertion_consumer_service(request: Request):
-    return tvs_connect_provider.acs(request)
+    return get_provider().assertion_consumer_service(request)
 
 @router.post('/bsn_attribute')
 def bsn_attribute(request: Request):
-    return tvs_connect_provider.bsn_attribute(request)
+    return get_provider().bsn_attribute(request)
 
 @router.get('/.well-known/openid-configuration')
 def provider_configuration():
-    json_content = jsonable_encoder(tvs_connect_provider.provider_configuration.to_dict())
+    json_content = jsonable_encoder(get_provider().provider_configuration.to_dict())
     return JSONResponse(content=json_content)
 
 @router.get('/jwks')
 def jwks_uri():
-    json_content = jsonable_encoder(tvs_connect_provider.jwks)
+    json_content = jsonable_encoder(get_provider().jwks)
     return JSONResponse(content=json_content)
 
 @router.get("/")
@@ -82,12 +86,12 @@ def heartbeat() -> Dict[str, bool]:
 if settings.mock_digid.lower() == 'true':
     @router.get('/login-digid')
     def login_digid(state: str, force_digid: Optional[bool] = None):
-        return HTMLResponse(content=tvs_connect_provider._login(state, force_digid))
+        return HTMLResponse(content=get_provider()._login(state, force_digid))
 
     @router.post('/digid-mock')
     async def digid_mock(request: Request):
-        return await digid_mock.digid_mock(request)
+        return await dmock(request)
 
     @router.get('/digid-mock-catch')
     async def digid_mock_catch(request: Request):
-        return await digid_mock.digid_mock_catch(request)
+        return await dmock_catch(request)

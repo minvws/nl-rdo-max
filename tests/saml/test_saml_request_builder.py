@@ -4,7 +4,7 @@ import pytest
 import xmlsec
 
 from inge6.saml import AuthNRequest, ArtifactResolveRequest
-from inge6.saml.sp_metadata import SPMetadata
+from inge6.saml.metadata import SPMetadata
 
 
 def test_artifact_value():

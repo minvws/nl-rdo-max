@@ -3,7 +3,7 @@ import json
 import logging
 import requests
 
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlencode
 from typing import Optional
 
 from fastapi import Request, Response, HTTPException
@@ -30,7 +30,6 @@ from .saml import (
 
 from .oidc.provider import Provider as OIDCProvider
 from .oidc.authorize import (
-    authorize as oidc_authorize,
     is_authorized,
     accesstoken
 )
@@ -52,10 +51,10 @@ class Provider(OIDCProvider, SAMLProvider):
     SYMM_KEY = settings.bsn.symm_key
 
     def __init__(self, app, **kwargs):
-        super().__init(app, **kwargs)
+        super().__init__(app, **kwargs)
 
         self.bsn_encrypt = Encrypt(
-            i6_priv=self.I6_PRIV_KEY, 
+            i6_priv=self.I6_PRIV_KEY,
             i4_pub=self.I4_PUB_KEY,
             local_enc_key=self.SYMM_KEY
         )
@@ -67,8 +66,8 @@ class Provider(OIDCProvider, SAMLProvider):
             'saml_request': saml_request.get_base64_string().decode(),
             'relay_state': relay_state
         }
-    
-    def _cache_auth_req(randstate, auth_req, authorization_request):
+
+    def _cache_auth_req(self, randstate, auth_req, authorization_request):
         value = {
             'auth_req': auth_req,
             'code_challenge': authorization_request.code_challenge,
@@ -76,9 +75,9 @@ class Provider(OIDCProvider, SAMLProvider):
         }
         redis_cache.hset(randstate, 'auth_req', value)
 
-    def authorize(self, authorize_request: AuthorizeRequest, headers):
+    def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers):
         try:
-            auth_req = oidc_authorize(authorize_request, headers=headers)
+            auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
         except InvalidAuthenticationRequest as invalid_auth_req:
             logging.getLogger().debug('received invalid authn request', exc_info=True)
             error_url = invalid_auth_req.to_error_url()
@@ -91,12 +90,12 @@ class Provider(OIDCProvider, SAMLProvider):
         self._cache_auth_req(randstate, auth_req, authorize_request)
         return HTMLResponse(content=self._login(randstate))
 
-    def token_endpoint(self, body):
+    def token_endpoint(self, body, headers):
         code = parse_qs(body.decode())['code'][0]
         artifact = redis_cache.hget(code, 'arti')
 
         try:
-            token_response = accesstoken(self, body)
+            token_response = accesstoken(self, body, headers)
             encrypted_bsn = self._resolve_artifact(artifact)
 
             access_key = base64.b64encode(token_response['id_token'].encode()).decode()
@@ -166,7 +165,7 @@ class Provider(OIDCProvider, SAMLProvider):
     def _resolve_artifact(self, artifact) -> bytes:
         is_digid_mock = redis_cache.get('DIGID_MOCK' + artifact)
         if settings.mock_digid.lower() == "true" and is_digid_mock is not None:
-            return self.bsn_encrypt.symm_encrypt_bsn(artifact)
+            return self.bsn_encrypt.symm_encrypt(artifact)
 
         resolve_artifact_req = ArtifactResolveRequest(artifact).get_xml()
         url = self.idp_metadata.get_artifact_rs()['location']
@@ -175,14 +174,15 @@ class Provider(OIDCProvider, SAMLProvider):
             'content-type': 'text/xml'
         }
         resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=('saml/certs/sp.crt', 'saml/certs/sp.key'))
-        artifact_response = ArtifactResponseParser(resolved_artifact.text, verify=False)
+        artifact_response = ArtifactResponseParser(resolved_artifact.text, self.idp_metadata, verify=False)
         artifact_response.raise_for_status()
 
         bsn = artifact_response.get_bsn()
-        encrypted_bsn = self.bsn_encrypt.symm_encrypt_bsn(bsn)
+        encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
         return encrypted_bsn
 
-    def bsn_attribute(self, id_token: str):
+    def bsn_attribute(self, request: Request):
+        id_token = is_authorized(request)
         b64_id_token = base64.b64encode(id_token.encode())
         attributes = redis_cache.get(b64_id_token.decode())
         self.disable_access_token(b64_id_token)
@@ -192,5 +192,13 @@ class Provider(OIDCProvider, SAMLProvider):
 
         decoded_json = base64.b64decode(attributes).decode()
         bsn_dict = json.loads(decoded_json)
-        encrypted_bsn = self.bsn_encrypt.repack_bsn_attribute(bsn_dict)
+        encrypted_bsn = self.bsn_encrypt.from_symm_to_pub(bsn_dict)
         return Response(content=encrypted_bsn, status_code=200)
+
+    def metadata(self):
+        errors = self.sp_metadata.validate()
+
+        if len(errors) == 0:
+            return Response(content=self.sp_metadata.get_xml().decode(), media_type="application/xml")
+
+        raise HTTPException(status_code=500, detail=', '.join(errors))
