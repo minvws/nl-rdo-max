@@ -75,6 +75,9 @@ class Provider(OIDCProvider, SAMLProvider):
         }
         redis_cache.hset(randstate, 'auth_req', value)
 
+    def _create_redis_bsn_key(self, id_token):
+        return
+
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers):
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
@@ -98,7 +101,7 @@ class Provider(OIDCProvider, SAMLProvider):
             token_response = accesstoken(self, body, headers)
             encrypted_bsn = self._resolve_artifact(artifact)
 
-            access_key = base64.b64encode(token_response['id_token'].encode()).decode()
+            access_key = self._create_redis_bsn_key(token_response['id_token'].encode())
             redis_cache.set(access_key, encrypted_bsn)
 
             json_content_resp = jsonable_encoder(token_response.to_dict())
@@ -182,10 +185,11 @@ class Provider(OIDCProvider, SAMLProvider):
         return encrypted_bsn
 
     def bsn_attribute(self, request: Request):
-        id_token = is_authorized(request)
-        b64_id_token = base64.b64encode(id_token.encode())
-        attributes = redis_cache.get(b64_id_token.decode())
-        self.disable_access_token(b64_id_token)
+        id_token: str = is_authorized(request)
+
+        redis_bsn_key = self._create_redis_bsn_key(id_token)
+        attributes = redis_cache.get(redis_bsn_key.decode())
+        self.disable_access_token(redis_bsn_key)
 
         if attributes is None:
             raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )

@@ -32,10 +32,11 @@ def is_authorized(request: Request):
     authorization: str = request.headers.get("Authorization")
     scheme, id_token = get_authorization_scheme_param(authorization)
 
-    if scheme != 'Bearer' or not _validate_jwt_token(id_token):
+    jwt_dict = _validate_jwt_token(id_token)
+    if scheme != 'Bearer' or not jwt_dict:
         raise HTTPException(status_code=401, detail="Not authorized")
 
-    return id_token
+    return id_token, jwt_dict['at_hash']
 
 # def authorize(provider, authorization_request: AuthorizeRequest, headers):
 #     auth_req =
