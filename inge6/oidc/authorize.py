@@ -9,7 +9,6 @@ import jwt
 from fastapi import  Request, HTTPException
 from fastapi.security.utils import get_authorization_scheme_param
 
-from ..models import AuthorizeRequest
 from ..cache import redis_cache
 
 def _verify_code_verifier(cc_cm, code_verifier):

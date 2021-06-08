@@ -86,7 +86,7 @@ def heartbeat() -> Dict[str, bool]:
 if settings.mock_digid.lower() == 'true':
     @router.get('/login-digid')
     def login_digid(state: str, force_digid: Optional[bool] = None):
-        return HTMLResponse(content=get_provider()._login(state, force_digid))
+        return HTMLResponse(content=get_provider()._login(state, force_digid)) # pylint: disable=protected-access
 
     @router.post('/digid-mock')
     async def digid_mock(request: Request):

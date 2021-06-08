@@ -1,10 +1,11 @@
 import base64
 import json
 import logging
-import requests
 
 from urllib.parse import parse_qs, urlencode
 from typing import Optional
+
+import requests
 
 from fastapi import Request, Response, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
@@ -46,6 +47,36 @@ def get_provider(app = None):
         _PROVIDER = Provider(app)
     return _PROVIDER
 
+def _create_authn_post_context(relay_state, url):
+    saml_request = AuthNRequest()
+    return {
+        'sso_url': url,
+        'saml_request': saml_request.get_base64_string().decode(),
+        'relay_state': relay_state
+    }
+
+def _cache_auth_req(randstate, auth_req, authorization_request):
+    value = {
+        'auth_req': auth_req,
+        'code_challenge': authorization_request.code_challenge,
+        'code_challenge_method': authorization_request.code_challenge_method
+    }
+    redis_cache.hset(randstate, 'auth_req', value)
+
+def _store_code_challenge(code, code_challenge, code_challenge_method):
+    value = {
+        'code_challenge': code_challenge,
+        'code_challenge_method': code_challenge_method
+    }
+    redis_cache.hset(code, 'cc_cm', value)
+
+def _create_redis_bsn_key(id_token, at_hash=None):
+    if at_hash is not None:
+        return at_hash
+
+    jwt = validate_jwt_token(id_token)
+    return jwt['at_hash']
+
 class Provider(OIDCProvider, SAMLProvider):
     I6_PRIV_KEY = settings.bsn.i6_priv_key
     I4_PUB_KEY = settings.bsn.i4_pub_key
@@ -60,29 +91,6 @@ class Provider(OIDCProvider, SAMLProvider):
             local_enc_key=self.SYMM_KEY
         )
 
-    def _create_authn_post_context(self, relay_state, url):
-        saml_request = AuthNRequest()
-        return {
-            'sso_url': url,
-            'saml_request': saml_request.get_base64_string().decode(),
-            'relay_state': relay_state
-        }
-
-    def _cache_auth_req(self, randstate, auth_req, authorization_request):
-        value = {
-            'auth_req': auth_req,
-            'code_challenge': authorization_request.code_challenge,
-            'code_challenge_method': authorization_request.code_challenge_method
-        }
-        redis_cache.hset(randstate, 'auth_req', value)
-
-    def _create_redis_bsn_key(self, id_token, at_hash=None):
-        if at_hash is not None:
-            return at_hash
-
-        jwt = validate_jwt_token(id_token)
-        return jwt['at_hash']
-
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers):
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
@@ -95,7 +103,7 @@ class Provider(OIDCProvider, SAMLProvider):
             return Response(content='Something went wrong: {}'.format(str(invalid_auth_req)), status_code=400)
 
         randstate = redis_cache.gen_token()
-        self._cache_auth_req(randstate, auth_req, authorize_request)
+        _cache_auth_req(randstate, auth_req, authorize_request)
         return HTMLResponse(content=self._login(randstate))
 
     def token_endpoint(self, body, headers):
@@ -106,7 +114,7 @@ class Provider(OIDCProvider, SAMLProvider):
             token_response = accesstoken(self, body, headers)
             encrypted_bsn = self._resolve_artifact(artifact)
 
-            access_key = self._create_redis_bsn_key(token_response['id_token'].encode())
+            access_key = _create_redis_bsn_key(token_response['id_token'].encode())
             redis_cache.set(access_key, encrypted_bsn)
 
             json_content_resp = jsonable_encoder(token_response.to_dict())
@@ -136,9 +144,10 @@ class Provider(OIDCProvider, SAMLProvider):
 
     def _login(self, randstate: str, force_digid: Optional[bool] = False):
         if settings.mock_digid.lower() == "true" and not force_digid:
-            authn_post_ctx = self._create_authn_post_context(relay_state=randstate, url=f'/digid-mock?state={randstate}')
+            authn_post_ctx = _create_authn_post_context(relay_state=randstate, url=f'/digid-mock?state={randstate}')
         else:
-            authn_post_ctx = self._create_authn_post_context(relay_state=randstate, url=...)
+            sso_url = self.idp_metadata.get_sso()['location']
+            authn_post_ctx = _create_authn_post_context(relay_state=randstate, url=sso_url)
 
         return create_post_autosubmit_form(authn_post_ctx)
 
@@ -157,18 +166,8 @@ class Provider(OIDCProvider, SAMLProvider):
         code = authn_response['code']
 
         redis_cache.hset(code, 'arti', artifact)
-        self._store_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
+        _store_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
         return RedirectResponse(response_url, status_code=303)
-
-    def disable_access_token(self, b64_id_token):
-        redis_cache.delete('', b64_id_token.decode())
-
-    def _store_code_challenge(self, code, code_challenge, code_challenge_method):
-        value = {
-            'code_challenge': code_challenge,
-            'code_challenge_method': code_challenge_method
-        }
-        redis_cache.hset(code, 'cc_cm', value)
 
     def _resolve_artifact(self, artifact) -> bytes:
         is_digid_mock = redis_cache.get('DIGID_MOCK' + artifact)
@@ -192,7 +191,7 @@ class Provider(OIDCProvider, SAMLProvider):
     def bsn_attribute(self, request: Request):
         id_token, at_hash= is_authorized(request)
 
-        redis_bsn_key = self._create_redis_bsn_key(id_token, at_hash)
+        redis_bsn_key = _create_redis_bsn_key(id_token, at_hash)
         attributes = redis_cache.get(redis_bsn_key)
 
         if attributes is None:

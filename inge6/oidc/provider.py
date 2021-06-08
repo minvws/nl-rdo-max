@@ -11,6 +11,7 @@ from pyop.userinfo import Userinfo
 from ..config import settings
 from ..cache import get_redis_client
 
+# pylint: disable=too-few-public-methods
 class Provider:
 
     def __init__(self, app):
@@ -61,4 +62,3 @@ class Provider:
             return getattr(self.provider, name)
 
         raise AttributeError("Attribute {} not found".format(name))
-

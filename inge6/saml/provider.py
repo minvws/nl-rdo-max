@@ -13,4 +13,3 @@ class Provider:
     @property
     def idp_metadata(self):
         return self._idp_metadata
-
