@@ -1,3 +1,4 @@
+import sys
 import uuid
 import json
 import logging
@@ -12,24 +13,43 @@ DEFAULT_SERVER_PORT = 443
 
 DEFAULT_CLIENT_ID = 'test_client'
 
-parser = argparse.ArgumentParser(description="Convert a BSN to JWT Token tool.")
-parser.add_argument("--server-host", type=str, nargs='?', default=DEFAULT_SERVER_HOST, help="Server host to request JWT token from")
-parser.add_argument("--server-port", type=int, nargs='?', default=DEFAULT_SERVER_PORT, help="Server port to request JWT token from")
-parser.add_argument("--client-id", type=str, nargs='?', default=DEFAULT_CLIENT_ID, help="Server port to request JWT token from")
-parser.add_argument("--bsn", type=str, help="BSN to trade for a JWT Token")
 
 def randstr():
     return uuid.uuid4().hex
+
 
 def compute_code_challenge(code_verifier):
     verifier_hash = nacl.hash.sha256(code_verifier.encode('ISO_8859_1'), encoder=URLSafeBase64Encoder)
     code_challenge = verifier_hash.decode().replace('=', '')
     return code_challenge
 
-if __name__ == "__main__":
-    args = parser.parse_args()
 
-    bsn: str = args.bsn
+def retrieve_token(base_url, bsn):
+    auth_url = f'{base_url}/consume_bsn/{bsn}'
+
+    code_state_resp = requests.get(auth_url, params=params, verify=False)
+    code_state_dict = json.loads(code_state_resp.text)
+
+    code = code_state_dict['code'][0]
+    state = code_state_dict['state'][0]
+    data = f"client_id={args.client_id}&code={code}&state={state}&code_verifier={code_verifier}&" \
+           f"grant_type=authorization_code&redirect_uri={redirect_rui}"
+    at_url = f'{base_url}/accesstoken'
+
+    accesstoken = requests.post(url=at_url, data=data)
+    id_token = json.loads(accesstoken.text)['id_token']
+    return id_token
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Convert a BSN to JWT Token tool.")
+    parser.add_argument("--server-host", type=str, nargs='?', default=DEFAULT_SERVER_HOST,
+                        help="Server host to request JWT token from")
+    parser.add_argument("--server-port", type=int, nargs='?', default=DEFAULT_SERVER_PORT,
+                        help="Server port to request JWT token from")
+    parser.add_argument("--client-id", type=str, nargs='?', default=DEFAULT_CLIENT_ID,
+                        help="Client ID to request JWT token from")
+    args = parser.parse_args()
 
     server_host: str = args.server_host
     server_port: int = args.server_port
@@ -54,25 +74,7 @@ if __name__ == "__main__":
     }
 
     base_url = f'{server_host}:{server_port}'
-    auth_url = f'{base_url}/consume_bsn/{bsn}'
-
-    code_state_resp = requests.get(auth_url, params=params, verify=False)
-    code_state_dict = json.loads(code_state_resp.text)
-
-    code = code_state_dict['code'][0]
-    state = code_state_dict['state'][0]
-    data = f"client_id={args.client_id}&code={code}&state={state}&code_verifier={code_verifier}&grant_type=authorization_code&redirect_uri={redirect_rui}"
-    at_url = f'{base_url}/accesstoken'
-
-    accesstoken = requests.post(url=at_url, data=data)
-    id_token = json.loads(accesstoken.text)['id_token']
-    print(id_token)
-
-    # bsn_uri = f"{base_url}/bsn_attribute"
-    # headers = {
-    #   'Content-Type': 'application/json',
-    #   'Content-Length': '0',
-    #   'Authorization': f"Bearer {id_token}"
-    # }
-    # bsn = requests.post(bsn_uri, data="", headers=headers)
-    # print(bsn.text)
+    for inline in sys.stdin:
+        bsn = inline[:-1]
+        id_token = retrieve_token(base_url, bsn)
+        print(id_token)
