@@ -99,3 +99,29 @@ async def digid_mock(request: Request):
 @router.get('/digid-mock-catch')
 async def digid_mock_catch(request: Request):
     return await tvs_request_handler.digid_mock_catch(request)
+
+# pylint: disable=wrong-import-position, c-extension-no-member, wrong-import-order
+from lxml import etree
+from urllib.parse import parse_qs # pylint: disable=wrong-import-order
+
+@router.get('/consume_bsn/{bsn}')
+def consume_bsn_for_token(bsn: str, request: Request, authorize_req: AuthorizeRequest = Depends()):
+    response = authorization_handler.authorize(authorize_req, request.headers)
+    response_tree = etree.fromstring(response.__dict__['body'].decode()).getroottree().getroot()
+
+    relay_state = response_tree.find('.//input[@name="RelayState"]').attrib['value']
+
+    # pylint: disable=too-few-public-methods
+    class AcsReq:
+        @property
+        def query_params(self):
+            return {
+            'RelayState': relay_state,
+            'SAMLart': bsn,
+            'mocking': '1'
+        }
+
+    response = tvs_request_handler.acs(AcsReq())
+    response_qargs = parse_qs(response.headers["location"].split('?')[1])
+    content = jsonable_encoder(response_qargs)
+    return JSONResponse(content=content)
