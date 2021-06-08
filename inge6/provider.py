@@ -31,7 +31,8 @@ from .saml import (
 from .oidc.provider import Provider as OIDCProvider
 from .oidc.authorize import (
     is_authorized,
-    accesstoken
+    validate_jwt_token,
+    accesstoken,
 )
 
 
@@ -75,8 +76,12 @@ class Provider(OIDCProvider, SAMLProvider):
         }
         redis_cache.hset(randstate, 'auth_req', value)
 
-    def _create_redis_bsn_key(self, id_token):
-        return
+    def _create_redis_bsn_key(self, id_token, at_hash=None):
+        if at_hash is not None:
+            return at_hash
+
+        jwt = validate_jwt_token(id_token)
+        return jwt['at_hash']
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers):
         try:
@@ -185,11 +190,10 @@ class Provider(OIDCProvider, SAMLProvider):
         return encrypted_bsn
 
     def bsn_attribute(self, request: Request):
-        id_token: str = is_authorized(request)
+        id_token, at_hash= is_authorized(request)
 
-        redis_bsn_key = self._create_redis_bsn_key(id_token)
-        attributes = redis_cache.get(redis_bsn_key.decode())
-        self.disable_access_token(redis_bsn_key)
+        redis_bsn_key = self._create_redis_bsn_key(id_token, at_hash)
+        attributes = redis_cache.get(redis_bsn_key)
 
         if attributes is None:
             raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )

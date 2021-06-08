@@ -21,7 +21,7 @@ def _verify_code_verifier(cc_cm, code_verifier):
     code_challenge = verifier_hash.decode().replace('=', '')
     return code_challenge == cc_cm['code_challenge']
 
-def _validate_jwt_token(id_token: str):
+def validate_jwt_token(id_token: str):
     with open('secrets/public.pem') as rsa_priv_key:
         key = rsa_priv_key.read()
 
@@ -32,7 +32,7 @@ def is_authorized(request: Request):
     authorization: str = request.headers.get("Authorization")
     scheme, id_token = get_authorization_scheme_param(authorization)
 
-    jwt_dict = _validate_jwt_token(id_token)
+    jwt_dict = validate_jwt_token(id_token)
     if scheme != 'Bearer' or not jwt_dict:
         raise HTTPException(status_code=401, detail="Not authorized")
 
