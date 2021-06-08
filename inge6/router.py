@@ -105,7 +105,6 @@ from urllib.parse import parse_qs
 
 @router.get('/consume_bsn/{bsn}')
 def consume_bsn_for_token(bsn: str, request: Request, authorize_req: AuthorizeRequest = Depends()):
-    print(bsn)
     response = authorization_handler.authorize(authorize_req, request.headers)
     response_tree = etree.fromstring(response.__dict__['body'].decode()).getroottree().getroot()
 
