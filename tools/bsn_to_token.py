@@ -24,7 +24,7 @@ def compute_code_challenge(code_verifier):
     return code_challenge
 
 
-def retrieve_token(base_url, bsn):
+def retrieve_token(base_url, params, bsn):
     auth_url = f'{base_url}/consume_bsn/{bsn}'
 
     code_state_resp = requests.get(auth_url, params=params, verify=False)
@@ -76,5 +76,5 @@ if __name__ == "__main__":
     base_url = f'{server_host}:{server_port}'
     for inline in sys.stdin:
         bsn = inline[:-1]
-        id_token = retrieve_token(base_url, bsn)
+        id_token = retrieve_token(base_url, params, bsn)
         print(id_token)
