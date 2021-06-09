@@ -25,6 +25,8 @@ clients_file = clients.json
 rsa_private_key = secrets/private_unencrypted.pem
 subject_id_hash_salt = somesalt
 
+id_token_lifetime = 600
+
 [saml]
 base_dir = saml
 cert_path = saml/certs/sp.crt
@@ -41,9 +43,10 @@ authn_request_html_template = saml/templates/html/authn_request.html
 [redis]
 host = localhost
 port = 6379
-expires_in_s = 900
 
-prefix = TVS:
+object_ttl = 600
+
+default_cache_namespace = tvs-connect:
 
 token_namespace = tvs_token
 refresh_token_namespace = tvs_refresh_token

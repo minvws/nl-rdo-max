@@ -11,6 +11,7 @@ from fastapi.security.utils import get_authorization_scheme_param
 
 from ..cache import redis_cache
 
+
 def _verify_code_verifier(cc_cm, code_verifier):
     code_challenge_method = cc_cm['code_challenge_method']
     if not code_challenge_method == 'S256':
@@ -20,11 +21,13 @@ def _verify_code_verifier(cc_cm, code_verifier):
     code_challenge = verifier_hash.decode().replace('=', '')
     return code_challenge == cc_cm['code_challenge']
 
+
 def validate_jwt_token(id_token: str):
     with open('secrets/public.pem') as rsa_priv_key:
         key = rsa_priv_key.read()
 
     return jwt.decode(id_token, key=key, algorithms=['RS256'], audience=['test_client'])
+
 
 def is_authorized(request: Request):
     #Parse JWT token
@@ -37,9 +40,6 @@ def is_authorized(request: Request):
 
     return id_token, jwt_dict['at_hash']
 
-# def authorize(provider, authorization_request: AuthorizeRequest, headers):
-#     auth_req =
-#     return auth_req
 
 def accesstoken(provider, request_body, headers):
     code = parse_qs(request_body.decode())['code'][0]

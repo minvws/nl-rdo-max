@@ -4,8 +4,8 @@ import pickle
 from . import get_redis_client
 from ..config import settings
 
-KEY_PREFIX = settings.redis.prefix
-EXPIRES_IN_S = int(settings.redis.expires_in_s)
+KEY_PREFIX = settings.redis.default_cache_namespace
+EXPIRES_IN_S = int(settings.redis.object_ttl)
 
 def _serialize(value):
     return pickle.dumps(value)

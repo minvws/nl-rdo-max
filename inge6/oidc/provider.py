@@ -25,10 +25,10 @@ class Provider:
             'authorization_endpoint': issuer + authentication_endpoint,
             'jwks_uri': issuer + jwks_uri,
             'token_endpoint': issuer + token_endpoint,
-            'scopes_supported': ['openid', 'profile'],
-            'response_types_supported': ['code', 'code id_token', 'code token', 'code id_token token'],  # code and hybrid
-            'response_modes_supported': ['query', 'fragment'],
-            'grant_types_supported': ['authorization_code', 'implicit'],
+            'scopes_supported': ['openid'],
+            'response_types_supported': ['code'],
+            'response_modes_supported': ['query'],
+            'grant_types_supported': ['authorization_code'],
             'subject_types_supported': ['pairwise'],
             'token_endpoint_auth_methods_supported': ['none'],
             'claims_parameter_supported': True
@@ -54,8 +54,7 @@ class Provider:
         )
 
         self.provider = PyopProvider(signing_key, configuration_information,
-                            authz_state,
-                            clients, userinfo_db)
+                            authz_state, clients, userinfo_db, id_token_lifetime= settings.oidc.id_token_lifetime)
 
     def __getattr__(self, name):
         if hasattr(self.provider, name):
