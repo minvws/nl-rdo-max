@@ -74,6 +74,7 @@ if __name__ == "__main__":
     server_host: str = args.server_host
     server_port: int = args.server_port
 
+
     base_url = f'{server_host}:{server_port}'
     for inline in sys.stdin:
         bsn = inline.replace('\n', '')
