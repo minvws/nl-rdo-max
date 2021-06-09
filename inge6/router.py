@@ -106,8 +106,8 @@ if settings.mock_digid.lower() == 'true':
         response = get_provider().authorize_endpoint(authorize_req, request.headers)
         status_code = response.status_code
         if status_code != 200:
-            logging.debug('Status code 200 was expected, but was {}'.format(response.status_code))
-            if status_code >= 300 and status_code < 400:
+            logging.debug('Status code 200 was expected, but was %s', response.status_code)
+            if 300 <= status_code < 400:
                 redirect = response.raw_headers[0][1]
                 raise HTTPException(status_code=400, detail='200 expected, got {} with redirect uri: {}'.format(status_code, redirect))
             raise HTTPException(status_code=400, detail='detail authorize response status code was {}, but 200 was expected'.format(status_code))
