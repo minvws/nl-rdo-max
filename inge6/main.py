@@ -15,7 +15,6 @@ app.include_router(router)
 
 
 def validate_startup():
-    # TODO: check redis status
     if not os.path.isfile(settings.saml.cert_path):
         raise FileNotFoundError("File {} not found. Required for startup".format(settings.saml.cert_path))
 

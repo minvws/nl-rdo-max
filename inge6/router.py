@@ -115,7 +115,7 @@ if settings.mock_digid.lower() == 'true':
         response_tree = etree.fromstring(response.__dict__['body'].decode()).getroottree().getroot()
         relay_state = response_tree.find('.//input[@name="RelayState"]').attrib['value']
 
-        # pylint: disable=too-few-public-methods
+        # pylint: disable=too-few-public-methods, too-many-ancestors, super-init-not-called
         class AcsReq(Request):
             def __init__(self):
                 pass
