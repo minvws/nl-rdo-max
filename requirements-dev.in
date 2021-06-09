@@ -10,3 +10,4 @@ coverage-badge
 pytest
 pytest-cov
 
+types-redis
