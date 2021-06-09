@@ -27,7 +27,7 @@ def compute_code_challenge(code_verifier):
     return code_challenge
 
 
-def retrieve_token(base_url, redirect_uri, bsn):
+def retrieve_token(base_url, redirect_uri, bsn, verifiy=True):
     print(bsn)
     nonce = randstr()
     state = randstr()
@@ -48,7 +48,7 @@ def retrieve_token(base_url, redirect_uri, bsn):
 
     auth_url = f'{base_url}/consume_bsn/{bsn}'
 
-    code_state_resp = requests.get(auth_url, params=params, verify=False)
+    code_state_resp = requests.get(auth_url, params=params, verify=verifiy)
     if code_state_resp.status_code != 200:
         error_msg = json.loads(code_state_resp.text)['detail']
         raise BsnToTokenException(f"Invalid request, got status_code: {code_state_resp.status_code}. detail: {error_msg}")
@@ -75,6 +75,8 @@ if __name__ == "__main__":
                         help="Client ID to request JWT token from")
     parser.add_argument("--redirect-uri", type=str, nargs='?', default=DEFAULT_REDIRECT_URI,
                         help="Redirect uri belonging to the configured Client ID to request JWT token from")
+    parser.add_argument("insecure", type=bool, nargs='?', default=False,
+                        help="whether to valid the SSL certificates")
     args = parser.parse_args()
 
     server_host: str = args.server_host
@@ -84,7 +86,7 @@ if __name__ == "__main__":
     for inline in sys.stdin:
         try:
             bsn = inline.replace('\n', '')
-            id_token = retrieve_token(base_url, args.redirect_uri, bsn)
+            id_token = retrieve_token(base_url, args.redirect_uri, bsn, not args.insecure)
             print(id_token)
         except BsnToTokenException as exception:
             logging.error(exception)
