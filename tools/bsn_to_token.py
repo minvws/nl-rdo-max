@@ -25,6 +25,7 @@ def compute_code_challenge(code_verifier):
 
 
 def retrieve_token(base_url, bsn):
+    print(bsn)
     nonce = randstr()
     state = randstr()
 
@@ -75,6 +76,6 @@ if __name__ == "__main__":
 
     base_url = f'{server_host}:{server_port}'
     for inline in sys.stdin:
-        bsn = inline[:-1]
+        bsn = inline.replace('\n', '')
         id_token = retrieve_token(base_url, bsn)
         print(id_token)

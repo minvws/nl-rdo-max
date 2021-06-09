@@ -29,7 +29,7 @@ def get_event_details(provider_url, token) -> dict:
         "CoronaCheck-Protocol-Version": "3.0",
     }
     r = requests.post(provider_url, headers=h)
-    r.raise_for_status()
+    # r.raise_for_status()
     details = r.json()
     payload = base64.b64decode(details['payload'])
     return json.loads(payload)
@@ -47,14 +47,14 @@ if __name__ == "__main__":
     providers = retrieve_provider_details(config.providers_url)
 
     for hashes_line in sys.stdin:
-        hashes = json.loads(hashes_line)  #[:-1])
+        hashes = json.loads(hashes_line.replace('\n', ''))
 
         provider_events = {}
         for token in hashes['tokens']:
             provider = token['provider_identifier']
             unomi_details = get_event_details(providers[provider]['unomi_url'], token['unomi'])
             event = {
-                token['provider_identifier']: unomi_details
+                'unomi': unomi_details
             }
             if unomi_details['informationAvailable']:
                 event['event'] = get_event_details(providers[provider]['event_url'], token['event'])
