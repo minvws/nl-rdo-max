@@ -3,6 +3,7 @@ import sys
 import requests
 import argparse
 import logging
+import base64
 
 
 def retrieve_hashes(endpoint: str, token: str) -> Union[None, dict]:
@@ -28,5 +29,7 @@ if __name__ == "__main__":
     config = parser.parse_args()
 
     for jwt_line in sys.stdin:
-        jwt_token = jwt_line[:-1]
-        print(retrieve_hashes(config.url, jwt_token))
+        jwt_token = jwt_line.replace('\n', '')
+        hashes = retrieve_hashes(config.url, jwt_token)
+        payload = hashes['payload']
+        print(base64.b64decode(payload).decode())

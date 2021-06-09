@@ -24,7 +24,27 @@ def compute_code_challenge(code_verifier):
     return code_challenge
 
 
-def retrieve_token(base_url, params, bsn):
+def retrieve_token(base_url, bsn):
+    print(bsn)
+    nonce = randstr()
+    state = randstr()
+
+    code_verifier = randstr()
+    code_challenge = compute_code_challenge(code_verifier)
+
+    redirect_rui = 'http://157.90.231.134:3000/login'
+
+    params = {
+        'client_id': args.client_id,
+        'response_type': 'code',
+        'redirect_uri': redirect_rui,
+        'scope': 'openid',
+        'nonce': nonce,
+        'state': state,
+        'code_challenge': code_challenge,
+        'code_challenge_method': 'S256'
+    }
+
     auth_url = f'{base_url}/consume_bsn/{bsn}'
 
     code_state_resp = requests.get(auth_url, params=params, verify=False)
@@ -54,27 +74,9 @@ if __name__ == "__main__":
     server_host: str = args.server_host
     server_port: int = args.server_port
 
-    nonce = randstr()
-    state = randstr()
-
-    code_verifier = randstr()
-    code_challenge = compute_code_challenge(code_verifier)
-
-    redirect_rui = 'http://157.90.231.134:3000/login'
-
-    params = {
-        'client_id': args.client_id,
-        'response_type': 'code',
-        'redirect_uri': redirect_rui,
-        'scope': 'openid',
-        'nonce': nonce,
-        'state': state,
-        'code_challenge': code_challenge,
-        'code_challenge_method': 'S256'
-    }
 
     base_url = f'{server_host}:{server_port}'
     for inline in sys.stdin:
-        bsn = inline[:-1]
-        id_token = retrieve_token(base_url, params, bsn)
+        bsn = inline.replace('\n', '')
+        id_token = retrieve_token(base_url, bsn)
         print(id_token)
