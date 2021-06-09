@@ -1,4 +1,5 @@
 import os
+import logging
 
 from typing import Dict, Optional
 from urllib.parse import urlparse
@@ -84,6 +85,10 @@ def heartbeat() -> Dict[str, bool]:
 
 ## MOCK ENDPOINTS:
 if settings.mock_digid.lower() == 'true':
+    # pylint: disable=wrong-import-position, c-extension-no-member, wrong-import-order
+    from lxml import etree
+    from urllib.parse import parse_qs # pylint: disable=wrong-import-order
+
     @router.get('/login-digid')
     def login_digid(state: str, force_digid: Optional[bool] = None):
         return HTMLResponse(content=get_provider()._login(state, force_digid)) # pylint: disable=protected-access
@@ -95,3 +100,32 @@ if settings.mock_digid.lower() == 'true':
     @router.get('/digid-mock-catch')
     async def digid_mock_catch(request: Request):
         return await dmock_catch(request)
+
+    @router.get('/consume_bsn/{bsn}')
+    def consume_bsn_for_token(bsn: str, request: Request, authorize_req: AuthorizeRequest = Depends()):
+        response = get_provider().authorize_endpoint(authorize_req, request.headers)
+        status_code = response.status_code
+        if status_code != 200:
+            logging.debug('Status code 200 was expected, but was {}'.format(response.status_code))
+            if status_code >= 300 and status_code < 400:
+                redirect = response.raw_headers[0][1]
+                raise HTTPException(status_code=400, detail='200 expected, got {} with redirect uri: {}'.format(status_code, redirect))
+            raise HTTPException(status_code=400, detail='detail authorize response status code was {}, but 200 was expected'.format(status_code))
+
+        response_tree = etree.fromstring(response.__dict__['body'].decode()).getroottree().getroot()
+        relay_state = response_tree.find('.//input[@name="RelayState"]').attrib['value']
+
+        # pylint: disable=too-few-public-methods
+        class AcsReq:
+            @property
+            def query_params(self):
+                return {
+                'RelayState': relay_state,
+                'SAMLart': bsn,
+                'mocking': '1'
+            }
+
+        response = get_provider().assertion_consumer_service(AcsReq())
+        response_qargs = parse_qs(response.headers["location"].split('?')[1])
+        content = jsonable_encoder(response_qargs)
+        return JSONResponse(content=content)
