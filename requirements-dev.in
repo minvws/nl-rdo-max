@@ -11,3 +11,4 @@ pytest
 pytest-cov
 
 types-redis
+types-requests
