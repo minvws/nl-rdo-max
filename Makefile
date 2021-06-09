@@ -35,3 +35,6 @@ audit:
 
 test:
 	. .venv/bin/activate && ${env} pytest tests
+
+type-check:
+	. .venv/bin/activate && ${env} MYPYPATH=stubs/ mypy --show-error-codes inge6

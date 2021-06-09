@@ -29,3 +29,12 @@ $ make fresh
 ...
 $ sh run_server.sh
 ```
+
+
+# MyPy: stubs
+To make use of our custom stubs when running mypy make sure you have correctly exported the env variable
+```bash
+$ export MYPYPATH=~/work/myproject/stubs
+```
+
+

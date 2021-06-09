@@ -8,7 +8,7 @@ class ResponseType(str, Enum):
     CODE: str = "code"
 
     def __str__(self) -> str: # pylint: disable=invalid-str-returned
-        return self.CODE.value
+        return self.CODE
 
 class AuthorizeRequest(BaseModel):
     client_id: str

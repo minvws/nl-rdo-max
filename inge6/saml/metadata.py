@@ -1,6 +1,8 @@
 # pylint: disable=c-extension-no-member
 import json
 
+from typing import Dict, Optional
+
 from lxml import etree
 import xmlsec
 
@@ -15,7 +17,7 @@ from .utils import get_loc_bind, has_valid_signatures
 from ..config import settings
 
 
-def add_certs(root, cert_data):
+def add_certs(root, cert_data: str) -> None:
     certifi_elems = root.findall('.//ds:X509Certificate', NAMESPACES)
 
     for elem in certifi_elems:
@@ -49,14 +51,14 @@ class SPMetadata(SAMLRequest):
 
         sign(self.root, self.KEY_PATH)
 
-    def _add_keynames(self):
+    def _add_keynames(self) -> None:
         cert = load_certificate(FILETYPE_PEM, self.cert_data)
         sha256_fingerprint = cert.digest("sha256").decode().replace(":", "").lower()
         keyname_elems = self.root.findall('.//ds:KeyInfo/ds:KeyName', NAMESPACES)
         for keyname_elem in keyname_elems:
             keyname_elem.text = sha256_fingerprint
 
-    def _add_service_locs(self):
+    def _add_service_locs(self) -> None:
         sls_elem = self.root.find('.//md:SingleLogoutService', NAMESPACES)
         acs_elem = self.root.find('.//md:AssertionConsumerService', NAMESPACES)
 
@@ -66,7 +68,7 @@ class SPMetadata(SAMLRequest):
         sls_elem.attrib['Location'] = sls_loc
         acs_elem.attrib['Location'] = acs_loc
 
-    def _from_settings(self, selector, default = None):
+    def _from_settings(self, selector: str, default: Optional[str] = None) -> Optional[str]:
         key_hierarchy = selector.split('.')
         value = self.settings_dict
         for key in key_hierarchy:
@@ -76,7 +78,7 @@ class SPMetadata(SAMLRequest):
                 return default
         return value
 
-    def _add_attribute_value(self):
+    def _add_attribute_value(self) -> None:
         attr_value_elem = self.root.find('.//md:AttributeConsumingService//saml:AttributeValue', NAMESPACES)
 
         try:
@@ -84,14 +86,14 @@ class SPMetadata(SAMLRequest):
         except KeyError as key_error:
             raise KeyError('key does not exist. please check your settings.json') from key_error
 
-    def _valid_signature(self):
+    def _valid_signature(self) -> bool:
         _, is_valid = has_valid_signatures(self.root, cert_data=self.cert_data)
         return is_valid
 
     def _contains_keyname(self):
         return self.root.find('.//ds:KeyInfo/ds:KeyName', NAMESPACES) is not None
 
-    def _has_correct_bindings(self):
+    def _has_correct_bindings(self) -> bool:
         correct_bindings = True
         sls_elem = self.root.find('.//md:SingleLogoutService', NAMESPACES)
         acs_elem = self.root.find('.//md:AssertionConsumerService', NAMESPACES)
@@ -104,11 +106,11 @@ class SPMetadata(SAMLRequest):
 
         return correct_bindings
 
-    def _add_prefix_service_desc(self):
+    def _add_prefix_service_desc(self) -> None:
         service_desc_elem = self.root.find('.//md:ServiceDescription', NAMESPACES)
         service_desc_elem.text = settings.environment.capitalize() + ' ' + service_desc_elem.text
 
-    def validate(self):
+    def validate(self) -> list:
         errors = []
 
         if self.root.tag != '{%s}EntityDescriptor' % NAMESPACES['md']:
@@ -138,20 +140,20 @@ class IdPMetadata:
             raise xmlsec.VerificationError("Signature is invalid")
         self.template = new_root
 
-    def _validate_md(self):
+    def _validate_md(self) -> bool:
         raise NotImplementedError("WIP")
 
-    def find_in_md(self, name):
+    def find_in_md(self, name: str):
         return self.template.find(f'.//md:{name}', {'md': "urn:oasis:names:tc:SAML:2.0:metadata"})
 
-    def get_artifact_rs(self):
+    def get_artifact_rs(self) -> Dict[str, str]:
         resolution_service = self.find_in_md('ArtifactResolutionService')
         return get_loc_bind(resolution_service)
 
-    def get_cert_pem_data(self):
+    def get_cert_pem_data(self) -> str:
         return f"""-----BEGIN CERTIFICATE-----\n{self.template.find('.//md:IDPSSODescriptor//dsig:X509Certificate', NAMESPACES).text}-----END CERTIFICATE-----"""
 
-    def get_sso(self):
+    def get_sso(self) -> Dict[str, str]:
         sso = self.find_in_md('SingleSignOnService')
         return get_loc_bind(sso)
 

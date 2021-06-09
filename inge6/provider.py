@@ -3,15 +3,20 @@ import json
 import logging
 
 from urllib.parse import parse_qs, urlencode
-from typing import Optional
+from typing import Optional, Text
 
 import requests
 
-from fastapi import Request, Response, HTTPException
+from starlette.datastructures import Headers
+
+from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 
-from oic.oic.message import TokenErrorResponse
+from oic.oic.message import (
+    AuthorizationRequest as OICAuthRequest,
+    TokenErrorResponse
+)
 from pyop.exceptions import (
     InvalidAuthenticationRequest,
     InvalidClientAuthentication, OAuthError
@@ -36,18 +41,9 @@ from .oidc.authorize import (
     accesstoken,
 )
 
-
 _PROVIDER = None
 
-def get_provider(app = None):
-    global _PROVIDER # pylint: disable=global-statement
-    if _PROVIDER is None:
-        if app is None:
-            raise Exception("app cannot be None on first call.")
-        _PROVIDER = Provider(app)
-    return _PROVIDER
-
-def _create_authn_post_context(relay_state, url):
+def _create_authn_post_context(relay_state: str, url: str) -> dict:
     saml_request = AuthNRequest()
     return {
         'sso_url': url,
@@ -55,7 +51,7 @@ def _create_authn_post_context(relay_state, url):
         'relay_state': relay_state
     }
 
-def _cache_auth_req(randstate, auth_req, authorization_request):
+def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_request: AuthorizeRequest) -> None:
     value = {
         'auth_req': auth_req,
         'code_challenge': authorization_request.code_challenge,
@@ -63,14 +59,14 @@ def _cache_auth_req(randstate, auth_req, authorization_request):
     }
     redis_cache.hset(randstate, 'auth_req', value)
 
-def _store_code_challenge(code, code_challenge, code_challenge_method):
+def _store_code_challenge(code: str, code_challenge: str, code_challenge_method: str) -> None:
     value = {
         'code_challenge': code_challenge,
         'code_challenge_method': code_challenge_method
     }
     redis_cache.hset(code, 'cc_cm', value)
 
-def _create_redis_bsn_key(id_token, at_hash=None):
+def _create_redis_bsn_key(id_token: str, at_hash: str = None) -> str:
     if at_hash is not None:
         return at_hash
 
@@ -82,8 +78,8 @@ class Provider(OIDCProvider, SAMLProvider):
     I4_PUB_KEY = settings.bsn.i4_pub_key
     SYMM_KEY = settings.bsn.symm_key
 
-    def __init__(self, app, **kwargs):
-        super().__init__(app, **kwargs)
+    def __init__(self, app: FastAPI) -> None:
+        super().__init__(app)
 
         self.bsn_encrypt = Encrypt(
             i6_priv=self.I6_PRIV_KEY,
@@ -91,7 +87,7 @@ class Provider(OIDCProvider, SAMLProvider):
             local_enc_key=self.SYMM_KEY
         )
 
-    def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers):
+    def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers) -> Response:
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
         except InvalidAuthenticationRequest as invalid_auth_req:
@@ -106,7 +102,7 @@ class Provider(OIDCProvider, SAMLProvider):
         _cache_auth_req(randstate, auth_req, authorize_request)
         return HTMLResponse(content=self._login(randstate))
 
-    def token_endpoint(self, body, headers):
+    def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
         code = parse_qs(body.decode())['code'][0]
         artifact = redis_cache.hget(code, 'arti')
 
@@ -125,24 +121,19 @@ class Provider(OIDCProvider, SAMLProvider):
                 'error': user_not_authenticated.oauth_error,
                 'error_description': str(user_not_authenticated)
             }
-            response = JSONResponse(jsonable_encoder(error_resp), status_code=400)
-            response.headers['WWW-Authenticate'] = 'Basic'
-            return response
         except InvalidClientAuthentication as invalid_client_auth:
             logging.getLogger().debug('invalid client authentication at token endpoint', exc_info=True)
-            error_resp = TokenErrorResponse(error='invalid_client', error_description=str(invalid_client_auth))
-            response = Response(error_resp.to_json(), status_code=401)
-            response.headers['Content-Type'] = 'application/json'
-            response.headers['WWW-Authenticate'] = 'Basic'
-            return response
+            error_resp = TokenErrorResponse(error='invalid_client', error_description=str(invalid_client_auth)).to_json()
         except OAuthError as oauth_error:
             logging.getLogger().debug('invalid request: %s', str(oauth_error), exc_info=True)
-            error_resp = TokenErrorResponse(error=oauth_error.oauth_error, error_description=str(oauth_error))
-            response = Response(error_resp.to_json(), status_code=400)
-            response.headers['Content-Type'] = 'application/json'
-            return response
+            error_resp = TokenErrorResponse(error=oauth_error.oauth_error, error_description=str(oauth_error)).to_json()
 
-    def _login(self, randstate: str, force_digid: Optional[bool] = False):
+        # Error has occurred
+        response = JSONResponse(jsonable_encoder(error_resp), status_code=400)
+        response.headers['WWW-Authenticate'] = 'Basic'
+        return response
+
+    def _login(self, randstate: str, force_digid: Optional[bool] = False) -> Text:
         if settings.mock_digid.lower() == "true" and not force_digid:
             authn_post_ctx = _create_authn_post_context(relay_state=randstate, url=f'/digid-mock?state={randstate}')
         else:
@@ -151,7 +142,7 @@ class Provider(OIDCProvider, SAMLProvider):
 
         return create_post_autosubmit_form(authn_post_ctx)
 
-    def assertion_consumer_service(self, request: Request):
+    def assertion_consumer_service(self, request: Request) -> RedirectResponse:
         state = request.query_params['RelayState']
         artifact = request.query_params['SAMLart']
 
@@ -169,7 +160,7 @@ class Provider(OIDCProvider, SAMLProvider):
         _store_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
         return RedirectResponse(response_url, status_code=303)
 
-    def _resolve_artifact(self, artifact) -> bytes:
+    def _resolve_artifact(self, artifact: str) -> bytes:
         is_digid_mock = redis_cache.get('DIGID_MOCK' + artifact)
         if settings.mock_digid.lower() == "true" and is_digid_mock is not None:
             return self.bsn_encrypt.symm_encrypt(artifact)
@@ -188,7 +179,7 @@ class Provider(OIDCProvider, SAMLProvider):
         encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
         return encrypted_bsn
 
-    def bsn_attribute(self, request: Request):
+    def bsn_attribute(self, request: Request) -> Response:
         id_token, at_hash= is_authorized(request)
 
         redis_bsn_key = _create_redis_bsn_key(id_token, at_hash)
@@ -202,10 +193,18 @@ class Provider(OIDCProvider, SAMLProvider):
         encrypted_bsn = self.bsn_encrypt.from_symm_to_pub(bsn_dict)
         return Response(content=encrypted_bsn, status_code=200)
 
-    def metadata(self):
+    def metadata(self) -> Response:
         errors = self.sp_metadata.validate()
 
         if len(errors) == 0:
             return Response(content=self.sp_metadata.get_xml().decode(), media_type="application/xml")
 
         raise HTTPException(status_code=500, detail=', '.join(errors))
+
+def get_provider(app: FastAPI = None) -> Provider:
+    global _PROVIDER # pylint: disable=global-statement
+    if _PROVIDER is None:
+        if app is None:
+            raise Exception("app cannot be None on first call.")
+        _PROVIDER = Provider(app)
+    return _PROVIDER

@@ -108,7 +108,7 @@ if settings.mock_digid.lower() == 'true':
         if status_code != 200:
             logging.debug('Status code 200 was expected, but was %s', response.status_code)
             if 300 <= status_code < 400:
-                redirect = response.raw_headers[0][1]
+                redirect = response.raw_headers[0][1].decode()
                 raise HTTPException(status_code=400, detail='200 expected, got {} with redirect uri: {}'.format(status_code, redirect))
             raise HTTPException(status_code=400, detail='detail authorize response status code was {}, but 200 was expected'.format(status_code))
 
@@ -116,7 +116,10 @@ if settings.mock_digid.lower() == 'true':
         relay_state = response_tree.find('.//input[@name="RelayState"]').attrib['value']
 
         # pylint: disable=too-few-public-methods
-        class AcsReq:
+        class AcsReq(Request):
+            def __init__(self):
+                pass
+
             @property
             def query_params(self):
                 return {

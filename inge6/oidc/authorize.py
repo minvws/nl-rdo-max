@@ -1,4 +1,4 @@
-
+from typing import Tuple, Dict
 from urllib.parse import parse_qs
 
 import nacl.hash
@@ -12,7 +12,7 @@ from fastapi.security.utils import get_authorization_scheme_param
 from ..cache import redis_cache
 
 
-def _verify_code_verifier(cc_cm, code_verifier):
+def _verify_code_verifier(cc_cm: Dict[str ,str], code_verifier: str) -> bool:
     code_challenge_method = cc_cm['code_challenge_method']
     if not code_challenge_method == 'S256':
         return False
@@ -22,14 +22,14 @@ def _verify_code_verifier(cc_cm, code_verifier):
     return code_challenge == cc_cm['code_challenge']
 
 
-def validate_jwt_token(id_token: str):
+def validate_jwt_token(id_token: str) -> dict:
     with open('secrets/public.pem') as rsa_priv_key:
         key = rsa_priv_key.read()
 
     return jwt.decode(id_token, key=key, algorithms=['RS256'], audience=['test_client'])
 
 
-def is_authorized(request: Request):
+def is_authorized(request: Request) -> Tuple[str, str]:
     #Parse JWT token
     authorization: str = request.headers.get("Authorization")
     scheme, id_token = get_authorization_scheme_param(authorization)

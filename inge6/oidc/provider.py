@@ -1,3 +1,4 @@
+from typing import Any
 import json
 
 from jwkest.jwk import RSAKey, rsa_load
@@ -14,7 +15,7 @@ from ..cache import get_redis_client
 # pylint: disable=too-few-public-methods
 class Provider:
 
-    def __init__(self, app):
+    def __init__(self, app) -> None:
         issuer = settings.issuer
         authentication_endpoint = app.url_path_for('authorize')
         jwks_uri = app.url_path_for('jwks_uri')
@@ -34,7 +35,7 @@ class Provider:
             'claims_parameter_supported': True
         }
 
-        userinfo_db = Userinfo({'test_client': {'name': 'test_client'}})
+        userinfo_db = Userinfo({'test_user': ['claim_data1', 'claim_data2']})
         with open(settings.oidc.clients_file) as clients_file:
             clients = json.load(clients_file)
 
@@ -56,7 +57,7 @@ class Provider:
         self.provider = PyopProvider(signing_key, configuration_information,
                             authz_state, clients, userinfo_db, id_token_lifetime= settings.oidc.id_token_lifetime)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         if hasattr(self.provider, name):
             return getattr(self.provider, name)
 

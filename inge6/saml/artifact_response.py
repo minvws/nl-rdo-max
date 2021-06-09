@@ -1,4 +1,6 @@
 # pylint: disable=c-extension-no-member
+from typing import Text
+
 import base64
 import re
 
@@ -11,6 +13,7 @@ from ..config import settings
 from .utils import has_valid_signatures, remove_padding
 from .constants import NAMESPACES
 from .exceptions import UserNotAuthenticated
+from .metadata import IdPMetadata
 
 SUCCESS = "success"
 
@@ -19,7 +22,7 @@ CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
 class ArtifactResponseParser():
     PRIV_KEY_PATH = settings.saml.key_path
 
-    def __init__(self, xml_response, idp_metadata, verify=True):
+    def __init__(self, xml_response: str, idp_metadata: IdPMetadata, verify: bool=True) -> None:
         self.root = etree.fromstring(xml_response).getroottree().getroot()
         self.idp_metadata = idp_metadata
         with open(self.PRIV_KEY_PATH, 'r') as priv_key_file:
@@ -40,12 +43,12 @@ class ArtifactResponseParser():
 
         return top_level.attrib['Value']
 
-    def get_status(self):
+    def get_status(self) -> str:
         status = self.get_second_level_status()
         status = status.split(':')[-1]
         return 'saml_' + CAMEL_TO_SNAKE_RE.sub('_', status).lower()
 
-    def raise_for_status(self):
+    def raise_for_status(self) -> str:
         status = self.get_status()
         if status != 'saml_' + SUCCESS:
             raise UserNotAuthenticated("User authentication flow failed", oauth_error=status)
@@ -82,7 +85,7 @@ class ArtifactResponseParser():
         plaintext = cipher.decrypt(enc_data)
         return remove_padding(plaintext)
 
-    def get_bsn(self):
+    def get_bsn(self) -> Text:
         aes_key = self._decrypt_enc_key()
         bsn_element_raw = self._decrypt_enc_data(aes_key)
         bsn_element = etree.fromstring(bsn_element_raw.decode())

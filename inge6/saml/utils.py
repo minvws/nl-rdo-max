@@ -1,9 +1,10 @@
 # pylint: disable=c-extension-no-member
+from typing import Dict, Tuple, Any
 import xmlsec
 
 from .constants import NAMESPACES
 
-def get_loc_bind(element):
+def get_loc_bind(element) -> Dict[str, str]:
     location = element.get('Location')
     binding = element.get('Binding')
     return {
@@ -11,7 +12,7 @@ def get_loc_bind(element):
         'binding': binding
     }
 
-def has_valid_signature(root, signature_node, cert_data=None, cert_path='saml/certs/sp.crt'):
+def has_valid_signature(root, signature_node, cert_data: str = None, cert_path: str = 'saml/certs/sp.crt'):
     # Create a digital signature context (no key manager is needed).
     ctx = xmlsec.SignatureContext()
 
@@ -31,7 +32,7 @@ def get_referred_node(root, signature_node):
         return root
     return root.find(f'.//*[@ID="{referrer_id}"]', NAMESPACES)
 
-def has_valid_signatures(root, cert_data=None, cert_path='saml/certs/sp.crt'):
+def has_valid_signatures(root, cert_data: str = None, cert_path: str = 'saml/certs/sp.crt') -> Tuple[Any, bool]:
     signature_nodes = root.findall('.//dsig:Signature', NAMESPACES)
 
     try:
@@ -48,5 +49,5 @@ def has_valid_signatures(root, cert_data=None, cert_path='saml/certs/sp.crt'):
     return get_referred_node(root, signature_nodes[0]), True
 
 
-def remove_padding(enc_data):
+def remove_padding(enc_data: bytes) -> bytes:
     return enc_data[:-enc_data[-1]]

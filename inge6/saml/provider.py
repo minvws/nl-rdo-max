@@ -7,9 +7,9 @@ class Provider:
         self._sp_metadata = SPMetadata()
 
     @property
-    def sp_metadata(self):
+    def sp_metadata(self) -> SPMetadata:
         return self._sp_metadata
 
     @property
-    def idp_metadata(self):
+    def idp_metadata(self) -> IdPMetadata:
         return self._idp_metadata

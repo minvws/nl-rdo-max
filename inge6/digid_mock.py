@@ -3,7 +3,7 @@ import uuid
 from fastapi import Request
 from fastapi.responses import RedirectResponse, HTMLResponse
 
-async def digid_mock(request: Request):
+async def digid_mock(request: Request) -> HTMLResponse:
     body = await request.form()
     state = request.query_params['state']
     relay_state = body['RelayState']
@@ -42,7 +42,7 @@ async def digid_mock(request: Request):
     return HTMLResponse(content=http_content, status_code=200)
 
 
-async def digid_mock_catch(request: Request):
+async def digid_mock_catch(request: Request) -> RedirectResponse:
     bsn = request.query_params['bsn']
     relay_state = request.query_params['RelayState']
 
