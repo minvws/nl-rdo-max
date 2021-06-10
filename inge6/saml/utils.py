@@ -4,6 +4,16 @@ import xmlsec
 
 from .constants import NAMESPACES
 
+def from_settings(settings_dict, selector: str, default: Optional[str] = None) -> Optional[str]:
+    key_hierarchy = selector.split('.')
+    value = settings_dict
+    for key in key_hierarchy:
+        try:
+            value = value[key]
+        except KeyError as _:
+            return default
+    return value
+
 def get_loc_bind(element) -> Dict[str, str]:
     location = element.get('Location')
     binding = element.get('Binding')

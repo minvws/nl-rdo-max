@@ -3,6 +3,10 @@ from typing import Text
 
 import base64
 import re
+import json
+import logging
+
+from typing import List, Any
 
 from Crypto.Cipher import AES
 from lxml import etree
@@ -10,66 +14,121 @@ from lxml import etree
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
 from ..config import settings
-from .utils import has_valid_signatures, remove_padding
+from .utils import from_settings, has_valid_signatures, remove_padding
 from .constants import NAMESPACES
-from .exceptions import UserNotAuthenticated
-from .metadata import IdPMetadata
+from .exceptions import UserNotAuthenticated, ValidationError
+from .provider import SAMLProvider
 
 SUCCESS = "success"
 
+PRIV_KEY_PATH = settings.saml.key_path
 CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
 
-class ArtifactResponseParser():
-    PRIV_KEY_PATH = settings.saml.key_path
 
-    def __init__(self, xml_response: str, idp_metadata: IdPMetadata, verify: bool=True) -> None:
-        self.root = etree.fromstring(xml_response).getroottree().getroot()
-        self.idp_metadata = idp_metadata
-        with open(self.PRIV_KEY_PATH, 'r') as priv_key_file:
-            self.key = priv_key_file.read()
+def verify_signatures(tree, cert_data):
+    root, valid = has_valid_signatures(tree, cert_data=cert_data)
+    if not valid:
+        raise ValidationError("Invalid signatures")
 
-        if verify:
-            self.verify_signatures()
+    return root
 
-    def get_top_level_status_elem(self):
-        top_level_status_elem = self.root.find('.//samlp:ArtifactResponse/samlp:Status/samlp:StatusCode', NAMESPACES)
-        return top_level_status_elem
 
-    def get_second_level_status(self):
-        top_level = self.root.find('.//samlp:Response//samlp:StatusCode', NAMESPACES)
-        if top_level.attrib['Value'].split(':')[-1].lower() != SUCCESS:
-            second_level = top_level.find('./samlp:StatusCode', NAMESPACES)
-            return second_level.attrib['Value']
+class ArtifactResponse:
 
-        return top_level.attrib['Value']
+    def __init__(self, artifact_tree, is_verified: bool = True) -> None:
+        self.is_verifeid = is_verified
 
-    def get_status(self) -> str:
-        status = self.get_second_level_status()
-        status = status.split(':')[-1]
-        return 'saml_' + CAMEL_TO_SNAKE_RE.sub('_', status).lower()
+        self._root = artifact_tree
+        self._reponse = None
+        self._response_status = None
+        self._saml_status_code = None
+        self._status = None
+
+    @staticmethod
+    def from_string(cls, xml_response: str, provider: SAMLProvider):
+        artifact_response_tree = etree.fromstring(xml_response).getroottree().getroot()
+        return cls.parse(artifact_response_tree, provider)
+    
+    @staticmethod
+    def parse(cls, artifact_response_tree, provider: SAMLProvider):
+        verified_tree = verify_signatures(artifact_response_tree, provider.idp_metadata.get_cert_pem_data())
+        return cls(verified_tree, True)
+
+    @property
+    def root(self):
+        return self._root
+
+    @property
+    def response(self):
+        if self._response is not None:
+            return self._response
+
+        self._response = self.root.find('.//samlp:Response', NAMESPACES)
+        return self._response
+
+    @property
+    def response_status(self):
+        if self._response_status is not None:
+            return self._response_status
+
+        self._response_status = self.response.find('./samlp:Status', NAMESPACES)
+        return self._response_status
+
+    @property
+    def saml_status_code(self) -> str:
+        if self._saml_status_code is not None:
+            return self._saml_status_code
+
+        top_level_status_code = self.response_status.find('./samlp:StatusCode', NAMESPACES)
+        if top_level_status_code.attrib['Value'].split(':')[-1].lower() != SUCCESS:
+            second_level = top_level_status_code.find('./samlp:StatusCode', NAMESPACES)
+            self._saml_status_code = second_level.attrib['Value']
+            return self._saml_status_code
+
+        self._saml_status_code = top_level_status_code.attrib['Value']
+        return self._saml_status_code
+     
+    @property
+    def status(self) -> str:
+        if self._status is None:
+            return self._status
+        status = self.saml_status.split(':')[-1]
+        self._status = 'saml_' + CAMEL_TO_SNAKE_RE.sub('_', status).lower()   
+        return self._status
 
     def raise_for_status(self) -> str:
-        status = self.get_status()
-        if status != 'saml_' + SUCCESS:
+        if self.status != 'saml_' + SUCCESS:
             raise UserNotAuthenticated("User authentication flow failed", oauth_error=status)
 
-        return status
+        return self.status
 
-    def _get_artifact_response_elem(self):
-        return self.root.find('.//samlp:ArtifactResponse', NAMESPACES)
+    def verify_in_response_to(self, artifact_resp_tree) -> List[ValidationError]:
+        expected_entity_id = from_settings(settings_dict, 'sp.entityId')
+        response_conditions_aud = artifact_resp_tree.find('.//md:ArtifactResponse/samlp:Response//saml:AudienceRestriction/saml:Audience', NAMESPACES)
+        
+        errors = []
+        if expected_entity_id is None:
+            errors.append(ValidationError('Could not read entity id from settings'))
 
-    def _get_assertion_elem(self):
-        return self._get_artifact_response_elem().find('.//saml:Assertion', NAMESPACES)
+        if response_conditions_aud is None:
+            errors.append(ValidationError('Could not find response conditions audience in artifact response'))
+        
+        if response_conditions_aud.text == expected_entity_id:
+            errors.append(ValidationError('Invalid audience in response Conditions'))
 
-    def _get_advice_elem(self):
-        return self._get_assertion_elem().find('.//saml2:Assertion', NAMESPACES)
+        response_advice_encrypted_key_aud = artifact_resp_tree.find('.//md:ArtifactResponse/samlp:Response//saml2:Assertion/xenc:EncryptedKey', NAMESPACES)
+        if response_advice_encrypted_key_aud.attrib['Recipient'] == expected_entity_id:
+            errors.append(ValidationError('Invalid audience in response Conditions'))
+        
+        return errors
 
-    def verify_signatures(self):
-        root, valid = has_valid_signatures(self.root, cert_data=self.idp_metadata.get_cert_pem_data())
-        if not valid:
-            raise Exception("Invalid signatures")
 
-        self.root = root
+    def verify(self):
+        audience_errors = self.verify_in_response_to()
+        if len(audience_errors) != 0:
+            logging.error(audience_errors)
+            raise ValidationError('Audience verification errors.')
+        return self.verify_signatures()
 
     def _decrypt_enc_key(self) -> bytes:
         encrypted_key_el = self.root.find('.//xenc:EncryptedKey', {'xenc': 'http://www.w3.org/2001/04/xmlenc#'})

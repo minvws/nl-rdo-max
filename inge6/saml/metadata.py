@@ -13,7 +13,7 @@ from .saml_request import (
     add_reference, sign,
 )
 from .constants import NAMESPACES
-from .utils import get_loc_bind, has_valid_signatures
+from .utils import get_loc_bind, has_valid_signatures, from_settings
 from ..config import settings
 
 
@@ -62,21 +62,11 @@ class SPMetadata(SAMLRequest):
         sls_elem = self.root.find('.//md:SingleLogoutService', NAMESPACES)
         acs_elem = self.root.find('.//md:AssertionConsumerService', NAMESPACES)
 
-        sls_loc = self._from_settings('sp.SingleLogoutService.url', self.DEFAULT_SLS)
-        acs_loc = self._from_settings('sp.assertionConsumerService.url', self.DEFAULT_ACS)
+        sls_loc = from_settings(self.settings_dict, 'sp.SingleLogoutService.url', self.DEFAULT_SLS)
+        acs_loc = from_settings(self.settings_dict, 'sp.assertionConsumerService.url', self.DEFAULT_ACS)
 
         sls_elem.attrib['Location'] = sls_loc
         acs_elem.attrib['Location'] = acs_loc
-
-    def _from_settings(self, selector: str, default: Optional[str] = None) -> Optional[str]:
-        key_hierarchy = selector.split('.')
-        value = self.settings_dict
-        for key in key_hierarchy:
-            try:
-                value = value[key]
-            except KeyError as _:
-                return default
-        return value
 
     def _add_attribute_value(self) -> None:
         attr_value_elem = self.root.find('.//md:AttributeConsumingService//saml:AttributeValue', NAMESPACES)
