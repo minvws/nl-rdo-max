@@ -47,6 +47,8 @@ class ArtifactResponse:
         self._response_audience_restriction = None
         self._response_assertion = None
         self._advice_assertion = None
+        self._assertion_subject_confdata = None
+        self._assertion_subject_audrestriction = None
         self._assertion_attribute_enc_key = None
         self._assertion_attribute_enc_data = None
         self._issuer = None
@@ -184,6 +186,22 @@ class ArtifactResponse:
         self._advice_assertion_issuer = self.advice_assertion.find('./saml:Issuer', NAMESPACES)
         return self._advice_assertion_issuer
 
+    @property
+    def assertion_subject_confdata(self):
+        if self._assertion_subject_confdata is not None:
+            return self._assertion_subject_confdata
+
+        self._assertion_subject_confdata = self.response_assertion.find('./saml:Subject//saml:SubjectConfirmationData', NAMESPACES)
+        return self._assertion_subject_confdata
+
+    @property
+    def assertion_subject_audrestriction(self):
+        if self._assertion_subject_audrestriction is not None:
+            return self._assertion_subject_audrestriction
+        
+        self._assertion_subject_audrestriction = self.response_assertion.find('./saml:Conditions//saml:Audience', NAMESPACES)
+        return self._assertion_subject_audrestriction
+
     def raise_for_status(self) -> str:
         if self.status != 'saml_' + SUCCESS:
             raise UserNotAuthenticated("User authentication flow failed", oauth_error=self.status)
@@ -207,34 +225,59 @@ class ArtifactResponse:
         response_advice_encrypted_key_aud = self.assertion_attribute_enc_key
         if response_advice_encrypted_key_aud.attrib['Recipient'] != expected_entity_id:
             errors.append(ValidationError('Invalid audience in encrypted key. Expected {}, but was {}'.format(expected_entity_id, response_advice_encrypted_key_aud.attrib['Recipient'])))
+        
+        if self.assertion_subject_audrestriction.text != expected_entity_id:
+            errors.append(ValidationError('Invalid issuer in artifact assertion_subject_audrestriction. Expected {}, but was {}'.format(expected_entity_id, self.assertion_subject_audrestriction.text)))
 
         return errors
 
     def validate_issuer_texts(self) -> List[ValidationError]:
         expected_entity_id = self.provider.idp_metadata.entity_id
         errors = []
-        if self.issuer.text != self.provider.idp_metadata.entity_id:
+        if self.issuer.text != expected_entity_id:
             errors.append(ValidationError('Invalid issuer in artifact response. Expected {}, but was {}'.format(expected_entity_id, self.issuer.text)))
 
-        if self.response_issuer.text != self.provider.idp_metadata.entity_id:
+        if self.response_issuer.text != expected_entity_id:
             errors.append(ValidationError('Invalid issuer in artifact response_issuer. Expected {}, but was {}'.format(expected_entity_id, self.response_issuer.text)))
 
         if self.status == 'saml_' + SUCCESS:
-            if self.assertion_issuer.text != self.provider.idp_metadata.entity_id:
+            if self.assertion_issuer.text != expected_entity_id:
                 errors.append(ValidationError('Invalid issuer in artifact assertion_issuer. Expected {}, but was {}'.format(expected_entity_id, self.assertion_issuer.text)))
 
-            # RD V.S. AD.
-            if self.advice_assertion_issuer.text != self.provider.idp_metadata.entity_id:
-                errors.append(ValidationError('Invalid issuer in artifact advice_assertion_issuer. Expected {}, but was {}'.format(expected_entity_id, self.advice_assertion_issuer.text)))
+            # RD V.S. AD. we cannot perform this check
+            # if self.advice_assertion_issuer.text != self.provider.idp_metadata.entity_id:
+            #     errors.append(ValidationError('Invalid issuer in artifact advice_assertion_issuer. Expected {}, but was {}'.format(expected_entity_id, self.advice_assertion_issuer.text)))
+
+        return errors
+
+    def validate_recipient_uri(self) -> List[ValidationError]:
+        errors = []
+
+        expected_response_dest = from_settings(self.provider.settings_dict, 'sp.assertionConsumerService.url')
+        if expected_response_dest != self.response.attrib['Destination']:
+            errors.append(ValidationError('Response destination is not what was expected. Expected: {}, was {}'.format(expected_response_dest, self.response.attrib['Destination'])))
+
+        if self.status == 'saml_' + SUCCESS:
+            if expected_response_dest != self.assertion_subject_confdata.attrib['Recipient']:
+                errors.append(ValidationError('Recipient in assertion subject confirmation data was not as expected. Expected {}, was {}'
+                                            .format(expected_response_dest, self.assertion_subject_confdata.attrib['Recipient'])))
+
+        return errors
+
+    def validate_others(self) -> List[ValidationError]:
+        assert self.status == 'saml_' + SUCCESS
+        errors = []
 
         return errors
 
     def validate(self) -> None:
         errors = []
-        if self.status == 'saml_' + SUCCESS:
-            errors += self.validate_in_response_to()
 
         errors += self.validate_issuer_texts()
+        errors += self.validate_recipient_uri()
+
+        if self.status == 'saml_' + SUCCESS:
+            errors += self.validate_in_response_to()
 
         if len(errors) != 0:
             logging.error(errors)
