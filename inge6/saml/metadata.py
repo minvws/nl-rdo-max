@@ -130,6 +130,8 @@ class IdPMetadata:
             raise xmlsec.VerificationError("Signature is invalid")
         self.template = new_root
 
+        self.entity_id = self.template.attrib['entityID']
+
     def _validate_md(self) -> bool:
         raise NotImplementedError("WIP")
 

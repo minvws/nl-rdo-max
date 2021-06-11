@@ -1,5 +1,5 @@
 # pylint: disable=c-extension-no-member
-from typing import Dict, Tuple, Any
+from typing import Dict, Tuple, Any, Optional
 import xmlsec
 
 from .constants import NAMESPACES

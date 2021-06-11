@@ -1,7 +1,8 @@
 import pytest
 
+from inge6.saml import ArtifactResponse
+from inge6.saml.provider import Provider as SAMLProvider
 from inge6.saml.exceptions import UserNotAuthenticated
-from inge6.saml import ArtifactResponseParser
 from inge6.saml.metadata import IdPMetadata
 
 # pylint: disable=pointless-string-statement
@@ -61,22 +62,22 @@ def response_authn_failed():
     return art_resp_resource
 
 @pytest.fixture
-def idp_metadata():
-    return IdPMetadata()
+def saml_provider():
+    return SAMLProvider()
 
 # pylint: disable=redefined-outer-name
-def test_get_bsn(response_custom_bsn, idp_metadata, monkeypatch):
-    artifact_response = ArtifactResponseParser(response_custom_bsn, idp_metadata, verify=False)
+def test_get_bsn(response_custom_bsn, saml_provider, monkeypatch):
+    artifact_response = ArtifactResponse.from_string(response_custom_bsn, saml_provider, insecure=True)
 
-    monkeypatch.setattr(artifact_response, 'key', PRIV_KEY_BSN_AES_KEY)
+    monkeypatch.setattr(saml_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
     assert artifact_response.get_bsn() == '900212640'
 
 # pylint: disable=redefined-outer-name
-def test_from_string(response_unedited, idp_metadata):
-    ArtifactResponseParser(response_unedited, idp_metadata,)
+def test_from_string(response_unedited, saml_provider):
+    ArtifactResponse.from_string(response_unedited, saml_provider)
     assert True
 
 # pylint: disable=redefined-outer-name
-def test_authnfailed(response_authn_failed, idp_metadata):
+def test_authnfailed(response_authn_failed, saml_provider):
     with pytest.raises(UserNotAuthenticated):
-        ArtifactResponseParser(response_authn_failed, idp_metadata, verify=False).raise_for_status()
+        ArtifactResponse.from_string(response_authn_failed, saml_provider, insecure=True).raise_for_status()

@@ -31,7 +31,7 @@ from .models import AuthorizeRequest
 from .saml.exceptions import UserNotAuthenticated
 from .saml.provider import Provider as SAMLProvider
 from .saml import (
-    AuthNRequest, ArtifactResolveRequest, ArtifactResponseParser
+    AuthNRequest, ArtifactResolveRequest, ArtifactResponse
 )
 
 from .oidc.provider import Provider as OIDCProvider
@@ -172,7 +172,7 @@ class Provider(OIDCProvider, SAMLProvider):
             'content-type': 'text/xml'
         }
         resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=('saml/certs/sp.crt', 'saml/certs/sp.key'))
-        artifact_response = ArtifactResponseParser(resolved_artifact.text, self.idp_metadata, verify=False)
+        artifact_response = ArtifactResponse.from_string(resolved_artifact.text, self)
         artifact_response.raise_for_status()
 
         bsn = artifact_response.get_bsn()
