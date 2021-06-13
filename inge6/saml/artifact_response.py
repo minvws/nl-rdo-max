@@ -5,6 +5,7 @@ import base64
 import re
 import json
 import logging
+from datetime import datetime, timedelta
 
 from typing import List
 
@@ -20,6 +21,8 @@ from .exceptions import UserNotAuthenticated, ValidationError
 from .provider import Provider as SAMLProvider
 
 SUCCESS = "success"
+
+RESPONSE_EXPIRES_IN = int(settings.saml.response_expires_in)
 
 PRIV_KEY_PATH = settings.saml.key_path
 CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
@@ -264,14 +267,38 @@ class ArtifactResponse:
 
         return errors
 
-    def validate_others(self) -> List[ValidationError]:
-        assert self.status == 'saml_' + SUCCESS
+    def validate_issue_instant(self) -> List[ValidationError]:
+        # TODO: Check timezones
         errors = []
+        current_instant = datetime.now()
+
+        issue_instant = datetime_object = datetime.strptime(self.root.attrib['IssueInstant'], "%Y-%m-%dT%H:%M:%SZ")
+        expiration_time = issue_instant + timedelta(seconds= RESPONSE_EXPIRES_IN)
+        if current_instant > expiration_time:
+            errors.append(ValidationError("Issued ArtifactResponse has expired. Current time: {}, issue instant expiration time: {}".format(current_instant, expiration_time)))
+
+        issue_instant_resp = datetime_object = datetime.strptime(self.response.attrib['IssueInstant'], "%Y-%m-%dT%H:%M:%SZ")
+        expiration_time_resp = issue_instant_resp + timedelta(seconds= RESPONSE_EXPIRES_IN)
+        if current_instant > expiration_time_resp:
+            errors.append(ValidationError("Issued Response has expired. Current time: {}, issue instant expiration time: {}".format(current_instant, expiration_time)))
+      
+        if self.status == 'saml_' + SUCCESS:
+            issue_instant_assertion = datetime_object = datetime.strptime(self.response_assertion.attrib['IssueInstant'], "%Y-%m-%dT%H:%M:%SZ")
+            expiration_time_assertion = issue_instant_assertion + timedelta(seconds= RESPONSE_EXPIRES_IN)
+            if current_instant > expiration_time_assertion:
+                errors.append(ValidationError("Issued Response Assertion has expired. Current time: {}, issue instant expiration time: {}".format(current_instant, expiration_time)))
+
+            issue_instant_advice_assertion = datetime_object = datetime.strptime(self.advice_assertion.attrib['IssueInstant'][:-5], "%Y-%m-%dT%H:%M:%S")
+            expiration_time_advice_assertion = issue_instant_advice_assertion + timedelta(seconds= RESPONSE_EXPIRES_IN)
+            if current_instant > expiration_time_advice_assertion:
+                errors.append(ValidationError("Issued Advice Assertion has expired. Current time: {}, issue instant expiration time: {}".format(current_instant, expiration_time)))
 
         return errors
 
     def validate(self) -> None:
         errors = []
+
+        errors += self.validate_issue_instant()
 
         errors += self.validate_issuer_texts()
         errors += self.validate_recipient_uri()
