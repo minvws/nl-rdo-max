@@ -1,6 +1,8 @@
+# pylint: disable=c-extension-no-member
+from datetime import datetime, timedelta
+
 import pytest
 
-from datetime import datetime, timedelta
 from lxml import etree
 
 from inge6.saml import ArtifactResponse
@@ -54,12 +56,12 @@ def update_time_values(xml_str):
     datetime_elems = root.findall('.//*[@IssueInstant]')
     for elem in datetime_elems:
         elem.attrib['IssueInstant'] = current_time.strftime(strformat)
-    
+
     datetime_elems = root.findall('.//*[@NotBefore]')
     for elem in datetime_elems:
         not_before_time = current_time - timedelta(seconds=120)
         elem.attrib['NotBefore'] = not_before_time.strftime(strformat)
-    
+
     datetime_elems = root.findall('.//*[@NotOnOrAfter]')
     for elem in datetime_elems:
         not_on_or_after_time = current_time + timedelta(seconds=120)

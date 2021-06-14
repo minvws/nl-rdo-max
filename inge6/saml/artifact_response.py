@@ -1,13 +1,12 @@
 # pylint: disable=c-extension-no-member
-from typing import Text
+from typing import Text, List
 
 import base64
 import re
 import logging
 from datetime import datetime, timedelta
-import dateutil.parser
 
-from typing import List
+import dateutil.parser
 
 from Crypto.Cipher import AES
 from lxml import etree
@@ -35,7 +34,7 @@ def verify_signatures(tree, cert_data):
 
     return root
 
-
+# pylint: disable=too-many-instance-attributes, too-many-public-methods
 class ArtifactResponse:
 
     def __init__(self, artifact_tree, provider: SAMLProvider, is_verified: bool = True, is_test_instance: bool = True) -> None:
@@ -202,7 +201,7 @@ class ArtifactResponse:
     def assertion_subject_audrestriction(self):
         if self._assertion_subject_audrestriction is not None:
             return self._assertion_subject_audrestriction
-        
+
         self._assertion_subject_audrestriction = self.response_assertion.find('./saml:Conditions//saml:Audience', NAMESPACES)
         return self._assertion_subject_audrestriction
 
@@ -229,7 +228,7 @@ class ArtifactResponse:
         response_advice_encrypted_key_aud = self.assertion_attribute_enc_key
         if response_advice_encrypted_key_aud.attrib['Recipient'] != expected_entity_id:
             errors.append(ValidationError('Invalid audience in encrypted key. Expected {}, but was {}'.format(expected_entity_id, response_advice_encrypted_key_aud.attrib['Recipient'])))
-        
+
         if self.assertion_subject_audrestriction.text != expected_entity_id:
             errors.append(ValidationError('Invalid issuer in artifact assertion_subject_audrestriction. Expected {}, but was {}'.format(expected_entity_id, self.assertion_subject_audrestriction.text)))
 
@@ -299,7 +298,7 @@ class ArtifactResponse:
         service_id_attr_val = list(root.find("./*[@Name='urn:nl-eid-gdi:1.0:ServiceUUID']"))[0].text
         expected_service_uuid = from_settings(self.provider.sp_metadata.settings_dict, 'sp.attributeConsumingService.requestedAttributes.0.attributeValue.0')
         if service_id_attr_val != expected_service_uuid:
-            errors.append(ValidationError("service uuid does not comply with specified uuid. Expected {}, was {}".format(service_id_attr_val, expected_service_uuid)))    
+            errors.append(ValidationError("service uuid does not comply with specified uuid. Expected {}, was {}".format(service_id_attr_val, expected_service_uuid)))
 
         if self.is_test_instance:
             keyname = root.find('.//ds:KeyName', NAMESPACES).text
@@ -336,7 +335,7 @@ class ArtifactResponse:
         # expected_authority = self.provider.idp_metadata.entity_id
         # if authenticating_authority != expected_authority:
         #     errors.append(ValidationError('Authority is not as expected. Expected {}, was {}'.format(expected_authority, authenticating_authority)))
-         
+
         return errors
 
     def validate(self) -> None:
@@ -359,7 +358,6 @@ class ArtifactResponse:
 
     def _decrypt_enc_key(self) -> bytes:
         aes_key = OneLogin_Saml2_Utils.decrypt_element(self.assertion_attribute_enc_key, self.provider.priv_key, debug=True)
-        # TODO: Data reference = ...
         return aes_key
 
     def _decrypt_enc_data(self, aes_key: bytes) -> bytes:

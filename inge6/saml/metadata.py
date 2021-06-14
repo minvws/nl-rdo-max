@@ -1,7 +1,7 @@
 # pylint: disable=c-extension-no-member
 import json
 
-from typing import Dict, Optional
+from typing import Dict
 
 from lxml import etree
 import xmlsec

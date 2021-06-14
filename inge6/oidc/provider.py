@@ -13,7 +13,7 @@ from ..config import settings
 from ..cache import get_redis_client
 
 # pylint: disable=too-few-public-methods
-class Provider(object):
+class Provider:
 
     def __init__(self, app) -> None:
         issuer = settings.issuer
