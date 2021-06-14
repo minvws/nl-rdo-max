@@ -3,9 +3,9 @@ from typing import Text
 
 import base64
 import re
-import json
 import logging
 from datetime import datetime, timedelta
+import dateutil.parser
 
 from typing import List
 
@@ -38,9 +38,10 @@ def verify_signatures(tree, cert_data):
 
 class ArtifactResponse:
 
-    def __init__(self, artifact_tree, provider: SAMLProvider, is_verified: bool = True) -> None:
+    def __init__(self, artifact_tree, provider: SAMLProvider, is_verified: bool = True, issue_instant_validation: bool = True) -> None:
         self.provider = provider
         self.is_verifeid = is_verified
+        self.issue_instant_validation = issue_instant_validation
 
         self._root = artifact_tree
         self._response = None
@@ -62,18 +63,18 @@ class ArtifactResponse:
         self.validate()
 
     @classmethod
-    def from_string(cls, xml_response: str, provider: SAMLProvider, insecure=False):
+    def from_string(cls, xml_response: str, provider: SAMLProvider, insecure=False, issue_instant_validation: bool=True):
         artifact_response_tree = etree.fromstring(xml_response).getroottree().getroot()
-        return cls.parse(artifact_response_tree, provider, insecure)
+        return cls.parse(artifact_response_tree, provider, insecure, issue_instant_validation)
 
     @classmethod
-    def parse(cls, artifact_response_tree, provider: SAMLProvider, insecure=False):
+    def parse(cls, artifact_response_tree, provider: SAMLProvider, insecure=False, issue_instant_validation: bool=True):
         unverified_tree = artifact_response_tree.find('.//samlp:ArtifactResponse', NAMESPACES)
         if insecure:
-            return cls(unverified_tree, provider, False)
+            return cls(unverified_tree, provider, False, issue_instant_validation)
 
         verified_tree = verify_signatures(artifact_response_tree, provider.idp_metadata.get_cert_pem_data())
-        return cls(verified_tree, provider, True)
+        return cls(verified_tree, provider, True, issue_instant_validation)
 
     @property
     def root(self):
@@ -267,44 +268,89 @@ class ArtifactResponse:
 
         return errors
 
-    def validate_issue_instant(self) -> List[ValidationError]:
-        # TODO: Check timezones
+    def validate_time_restrictions(self) -> List[ValidationError]:
         errors = []
         current_instant = datetime.now()
 
-        issue_instant = datetime_object = datetime.strptime(self.root.attrib['IssueInstant'], "%Y-%m-%dT%H:%M:%SZ")
-        expiration_time = issue_instant + timedelta(seconds= RESPONSE_EXPIRES_IN)
-        if current_instant > expiration_time:
-            errors.append(ValidationError("Issued ArtifactResponse has expired. Current time: {}, issue instant expiration time: {}".format(current_instant, expiration_time)))
+        issue_instant_els = self.root.findall(".//*[@IssueInstant]")
+        for elem in issue_instant_els:
+            issue_instant = dateutil.parser.parse(elem.attrib['IssueInstant'], ignoretz=True)
+            expiration_time = issue_instant + timedelta(seconds= RESPONSE_EXPIRES_IN)
+            if current_instant > expiration_time:
+                errors.append(ValidationError("Issued ArtifactResponse:{} has expired. Current time: {}, issue instant expiration time: {}".format(elem.tag, current_instant, expiration_time)))
 
-        issue_instant_resp = datetime_object = datetime.strptime(self.response.attrib['IssueInstant'], "%Y-%m-%dT%H:%M:%SZ")
-        expiration_time_resp = issue_instant_resp + timedelta(seconds= RESPONSE_EXPIRES_IN)
-        if current_instant > expiration_time_resp:
-            errors.append(ValidationError("Issued Response has expired. Current time: {}, issue instant expiration time: {}".format(current_instant, expiration_time)))
-      
-        if self.status == 'saml_' + SUCCESS:
-            issue_instant_assertion = datetime_object = datetime.strptime(self.response_assertion.attrib['IssueInstant'], "%Y-%m-%dT%H:%M:%SZ")
-            expiration_time_assertion = issue_instant_assertion + timedelta(seconds= RESPONSE_EXPIRES_IN)
-            if current_instant > expiration_time_assertion:
-                errors.append(ValidationError("Issued Response Assertion has expired. Current time: {}, issue instant expiration time: {}".format(current_instant, expiration_time)))
+        issue_instant_els = self.root.findall(".//*[@NotBefore]")
+        for elem in issue_instant_els:
+            not_before_time = dateutil.parser.parse(elem.attrib['NotBefore'], ignoretz=True)
+            if current_instant < not_before_time:
+                errors.append(ValidationError("Message should not be processed before {}, but is processed at time: {}".format(not_before_time, current_instant)))
 
-            issue_instant_advice_assertion = datetime_object = datetime.strptime(self.advice_assertion.attrib['IssueInstant'][:-5], "%Y-%m-%dT%H:%M:%S")
-            expiration_time_advice_assertion = issue_instant_advice_assertion + timedelta(seconds= RESPONSE_EXPIRES_IN)
-            if current_instant > expiration_time_advice_assertion:
-                errors.append(ValidationError("Issued Advice Assertion has expired. Current time: {}, issue instant expiration time: {}".format(current_instant, expiration_time)))
+        issue_instant_els = self.root.findall(".//*[@NotOnOrAfter]")
+        for elem in issue_instant_els:
+            not_on_or_after = dateutil.parser.parse(elem.attrib['NotOnOrAfter'], ignoretz=True)
+            if current_instant >= not_on_or_after:
+                errors.append(ValidationError("Message should not be processed before {}, but is processed at time: {}".format(not_on_or_after, current_instant)))
 
+        return errors
+
+    def validate_attribute_statement(self, root):
+        errors = []
+
+        service_id_attr_val = list(root.find("./*[@Name='urn:nl-eid-gdi:1.0:ServiceUUID']"))[0].text
+        expected_service_uuid = from_settings(self.provider.sp_metadata.settings_dict, 'sp.attributeConsumingService.requestedAttributes.0.attributeValue.0')
+        if service_id_attr_val != expected_service_uuid:
+            errors.append(ValidationError("service uuid does not comply with specified uuid. Expected {}, was {}".format(service_id_attr_val, expected_service_uuid)))    
+
+        keyname = root.find('.//ds:KeyName', NAMESPACES).text
+        expected_keyname = self.provider.sp_metadata.keyname
+        if keyname != expected_keyname:
+            errors.append(ValidationError("KeyName does not comply with specified keyname. Expected {}, was {}".format(expected_keyname, keyname)))
+
+        return errors
+
+    def validate_attribute_statements(self):
+        errors = []
+
+        advice_assertion_attrstatement = self.advice_assertion.find('.//saml2:AttributeStatement', NAMESPACES)
+        errors += self.validate_attribute_statement(advice_assertion_attrstatement)
+
+        response_assertion_attrstatement = self.response_assertion.find('.//saml:AttributeStatement', NAMESPACES)
+        errors += self.validate_attribute_statement(response_assertion_attrstatement)
+
+        return errors
+
+    def validate_authn_statement(self):
+        errors = []
+
+        if self.issue_instant_validation:
+            current_instant = datetime.now()
+            issue_instant_text = self.response_assertion.find('.//saml:AuthnStatement', NAMESPACES).attrib['AuthnInstant']
+            issue_instant = dateutil.parser.parse(issue_instant_text, ignoretz=True)
+            expiration_time = issue_instant + timedelta(seconds= RESPONSE_EXPIRES_IN)
+            if current_instant > expiration_time:
+                errors.append(ValidationError('Authn instant\'s datetime is expired. Current time {}, expiration time {}'.format(current_instant, expiration_time)))
+
+        # Authenticating authority is the AD: AuthenticatieDienst, we only know RD: RouteringsDienst.
+        # authenticating_authority = self.response_assertion.find('.//saml:AuthenticatingAuthority', NAMESPACES).text
+        # expected_authority = self.provider.idp_metadata.entity_id
+        # if authenticating_authority != expected_authority:
+        #     errors.append(ValidationError('Authority is not as expected. Expected {}, was {}'.format(expected_authority, authenticating_authority)))
+         
         return errors
 
     def validate(self) -> None:
         errors = []
 
-        errors += self.validate_issue_instant()
+        if self.issue_instant_validation:
+            errors += self.validate_time_restrictions()
 
         errors += self.validate_issuer_texts()
         errors += self.validate_recipient_uri()
 
         if self.status == 'saml_' + SUCCESS:
             errors += self.validate_in_response_to()
+            errors += self.validate_attribute_statements()
+            errors += self.validate_authn_statement()
 
         if len(errors) != 0:
             logging.error(errors)
@@ -312,6 +358,7 @@ class ArtifactResponse:
 
     def _decrypt_enc_key(self) -> bytes:
         aes_key = OneLogin_Saml2_Utils.decrypt_element(self.assertion_attribute_enc_key, self.provider.priv_key, debug=True)
+        # TODO: Data reference = ...
         return aes_key
 
     def _decrypt_enc_data(self, aes_key: bytes) -> bytes:

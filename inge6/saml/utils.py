@@ -9,6 +9,11 @@ def from_settings(settings_dict, selector: str, default: Optional[str] = None) -
     value = settings_dict
     for key in key_hierarchy:
         try:
+            key = int(key)
+        except ValueError:
+            pass
+
+        try:
             value = value[key]
         except KeyError as _:
             return default

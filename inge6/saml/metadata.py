@@ -39,6 +39,7 @@ class SPMetadata(SAMLRequest):
 
         with open(self.CERT_PATH, 'r') as cert_file:
             self.cert_data = cert_file.read()
+        self.keyname = None
 
         add_root_id(self.root, self._id_hash)
         add_reference(self.root, self._id_hash)
@@ -54,6 +55,8 @@ class SPMetadata(SAMLRequest):
     def _add_keynames(self) -> None:
         cert = load_certificate(FILETYPE_PEM, self.cert_data)
         sha256_fingerprint = cert.digest("sha256").decode().replace(":", "").lower()
+        self.keyname = sha256_fingerprint
+
         keyname_elems = self.root.findall('.//ds:KeyInfo/ds:KeyName', NAMESPACES)
         for keyname_elem in keyname_elems:
             keyname_elem.text = sha256_fingerprint
@@ -131,6 +134,7 @@ class IdPMetadata:
         self.template = new_root
 
         self.entity_id = self.template.attrib['entityID']
+        self.keyname = self.template.find('.//md:IDPSSODescriptor//dsig:KeyName', NAMESPACES).text
 
     def _validate_md(self) -> bool:
         raise NotImplementedError("WIP")
