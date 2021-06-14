@@ -300,7 +300,8 @@ class ArtifactResponse:
         if service_id_attr_val != expected_service_uuid:
             errors.append(ValidationError("service uuid does not comply with specified uuid. Expected {}, was {}".format(service_id_attr_val, expected_service_uuid)))
 
-        if not self.is_test_instance:
+        if not self.is_test_instance and self.is_verifeid:
+            # Only perform this validation if it is verified, and not a test instance.
             keyname = root.find('.//ds:KeyName', NAMESPACES).text
             expected_keyname = self.provider.sp_metadata.keyname
             if keyname != expected_keyname:
