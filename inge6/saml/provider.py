@@ -3,7 +3,7 @@ import json
 from .metadata import IdPMetadata, SPMetadata
 from ..config import settings
 
-class Provider:
+class Provider(object):
     SETTINGS_PATH = settings.saml.settings_path
     PRIV_KEY_PATH = settings.saml.key_path
 
