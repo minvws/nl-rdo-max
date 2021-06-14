@@ -11,7 +11,7 @@ const port = 3000
 
 const baseUrl = `https://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`;
 
-const clientBaseUrl = "https://2572d1828b7b.ngrok.io";
+const clientBaseUrl = process.env.CLIENT_BASE_URL 
 const redirect_uri = clientBaseUrl + "/login";
 const finished_redirect_uri = clientBaseUrl + "/finished";
 
