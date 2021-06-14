@@ -38,10 +38,10 @@ def verify_signatures(tree, cert_data):
 
 class ArtifactResponse:
 
-    def __init__(self, artifact_tree, provider: SAMLProvider, is_verified: bool = True, issue_instant_validation: bool = True) -> None:
+    def __init__(self, artifact_tree, provider: SAMLProvider, is_verified: bool = True, is_test_instance: bool = True) -> None:
         self.provider = provider
         self.is_verifeid = is_verified
-        self.issue_instant_validation = issue_instant_validation
+        self.is_test_instance = is_test_instance
 
         self._root = artifact_tree
         self._response = None
@@ -63,18 +63,18 @@ class ArtifactResponse:
         self.validate()
 
     @classmethod
-    def from_string(cls, xml_response: str, provider: SAMLProvider, insecure=False, issue_instant_validation: bool=True):
+    def from_string(cls, xml_response: str, provider: SAMLProvider, insecure=False, is_test_instance: bool=True):
         artifact_response_tree = etree.fromstring(xml_response).getroottree().getroot()
-        return cls.parse(artifact_response_tree, provider, insecure, issue_instant_validation)
+        return cls.parse(artifact_response_tree, provider, insecure, is_test_instance)
 
     @classmethod
-    def parse(cls, artifact_response_tree, provider: SAMLProvider, insecure=False, issue_instant_validation: bool=True):
+    def parse(cls, artifact_response_tree, provider: SAMLProvider, insecure=False, is_test_instance: bool=True):
         unverified_tree = artifact_response_tree.find('.//samlp:ArtifactResponse', NAMESPACES)
         if insecure:
-            return cls(unverified_tree, provider, False, issue_instant_validation)
+            return cls(unverified_tree, provider, False, is_test_instance)
 
         verified_tree = verify_signatures(artifact_response_tree, provider.idp_metadata.get_cert_pem_data())
-        return cls(verified_tree, provider, True, issue_instant_validation)
+        return cls(verified_tree, provider, True, is_test_instance)
 
     @property
     def root(self):
@@ -301,10 +301,11 @@ class ArtifactResponse:
         if service_id_attr_val != expected_service_uuid:
             errors.append(ValidationError("service uuid does not comply with specified uuid. Expected {}, was {}".format(service_id_attr_val, expected_service_uuid)))    
 
-        keyname = root.find('.//ds:KeyName', NAMESPACES).text
-        expected_keyname = self.provider.sp_metadata.keyname
-        if keyname != expected_keyname:
-            errors.append(ValidationError("KeyName does not comply with specified keyname. Expected {}, was {}".format(expected_keyname, keyname)))
+        if self.is_test_instance:
+            keyname = root.find('.//ds:KeyName', NAMESPACES).text
+            expected_keyname = self.provider.sp_metadata.keyname
+            if keyname != expected_keyname:
+                errors.append(ValidationError("KeyName does not comply with specified keyname. Expected {}, was {}".format(expected_keyname, keyname)))
 
         return errors
 
@@ -322,7 +323,7 @@ class ArtifactResponse:
     def validate_authn_statement(self):
         errors = []
 
-        if self.issue_instant_validation:
+        if self.is_test_instance:
             current_instant = datetime.now()
             issue_instant_text = self.response_assertion.find('.//saml:AuthnStatement', NAMESPACES).attrib['AuthnInstant']
             issue_instant = dateutil.parser.parse(issue_instant_text, ignoretz=True)
@@ -341,7 +342,7 @@ class ArtifactResponse:
     def validate(self) -> None:
         errors = []
 
-        if self.issue_instant_validation:
+        if self.is_test_instance:
             errors += self.validate_time_restrictions()
 
         errors += self.validate_issuer_texts()
