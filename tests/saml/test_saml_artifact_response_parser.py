@@ -105,7 +105,7 @@ def test_get_bsn(response_custom_bsn, saml_provider, monkeypatch):
 
 # pylint: disable=redefined-outer-name
 def test_from_string(response_unedited, saml_provider):
-    ArtifactResponse.from_string(response_unedited, saml_provider, is_test_instance=False)
+    ArtifactResponse.from_string(response_unedited, saml_provider, is_test_instance=True)
     assert True
 
 # pylint: disable=redefined-outer-name

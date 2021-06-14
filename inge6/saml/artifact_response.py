@@ -62,12 +62,12 @@ class ArtifactResponse:
         self.validate()
 
     @classmethod
-    def from_string(cls, xml_response: str, provider: SAMLProvider, insecure=False, is_test_instance: bool=True):
+    def from_string(cls, xml_response: str, provider: SAMLProvider, insecure=False, is_test_instance: bool=False):
         artifact_response_tree = etree.fromstring(xml_response).getroottree().getroot()
         return cls.parse(artifact_response_tree, provider, insecure, is_test_instance)
 
     @classmethod
-    def parse(cls, artifact_response_tree, provider: SAMLProvider, insecure=False, is_test_instance: bool=True):
+    def parse(cls, artifact_response_tree, provider: SAMLProvider, insecure=False, is_test_instance: bool=False):
         unverified_tree = artifact_response_tree.find('.//samlp:ArtifactResponse', NAMESPACES)
         if insecure:
             return cls(unverified_tree, provider, False, is_test_instance)
@@ -298,10 +298,7 @@ class ArtifactResponse:
         service_id_attr_val = list(root.find("./*[@Name='urn:nl-eid-gdi:1.0:ServiceUUID']"))[0].text
         expected_service_uuid = from_settings(self.provider.sp_metadata.settings_dict, 'sp.attributeConsumingService.requestedAttributes.0.attributeValue.0')
         if service_id_attr_val != expected_service_uuid:
-            errors.append(ValidationError("service uuid does not comply with specified uuid. Expected {}, was {}".format(service_id_attr_val, expected_service_uuid)))
-
-        if self.is_test_instance:
-            keyname = root.find('.//ds:KeyName', NAMESPACES).text
+            errors.append(Validatvalidate_time_restrictions/ds:KeyName', NAMESPACES).text
             expected_keyname = self.provider.sp_metadata.keyname
             if keyname != expected_keyname:
                 errors.append(ValidationError("KeyName does not comply with specified keyname. Expected {}, was {}".format(expected_keyname, keyname)))
@@ -322,7 +319,7 @@ class ArtifactResponse:
     def validate_authn_statement(self):
         errors = []
 
-        if self.is_test_instance:
+        if not self.is_test_instance:
             current_instant = datetime.now()
             issue_instant_text = self.response_assertion.find('.//saml:AuthnStatement', NAMESPACES).attrib['AuthnInstant']
             issue_instant = dateutil.parser.parse(issue_instant_text, ignoretz=True)
@@ -341,7 +338,7 @@ class ArtifactResponse:
     def validate(self) -> None:
         errors = []
 
-        if self.is_test_instance:
+        if not self.is_test_instance:
             errors += self.validate_time_restrictions()
 
         errors += self.validate_issuer_texts()
