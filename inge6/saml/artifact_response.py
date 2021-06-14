@@ -37,7 +37,7 @@ def verify_signatures(tree, cert_data):
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
 class ArtifactResponse:
 
-    def __init__(self, artifact_tree, provider: SAMLProvider, is_verified: bool = True, is_test_instance: bool = True) -> None:
+    def __init__(self, artifact_tree, provider: SAMLProvider, is_verified: bool = True, is_test_instance: bool = False) -> None:
         self.provider = provider
         self.is_verifeid = is_verified
         self.is_test_instance = is_test_instance
@@ -298,7 +298,10 @@ class ArtifactResponse:
         service_id_attr_val = list(root.find("./*[@Name='urn:nl-eid-gdi:1.0:ServiceUUID']"))[0].text
         expected_service_uuid = from_settings(self.provider.sp_metadata.settings_dict, 'sp.attributeConsumingService.requestedAttributes.0.attributeValue.0')
         if service_id_attr_val != expected_service_uuid:
-            errors.append(Validatvalidate_time_restrictions/ds:KeyName', NAMESPACES).text
+            errors.append(ValidationError("service uuid does not comply with specified uuid. Expected {}, was {}".format(service_id_attr_val, expected_service_uuid)))
+
+        if not self.is_test_instance:
+            keyname = root.find('.//ds:KeyName', NAMESPACES).text
             expected_keyname = self.provider.sp_metadata.keyname
             if keyname != expected_keyname:
                 errors.append(ValidationError("KeyName does not comply with specified keyname. Expected {}, was {}".format(expected_keyname, keyname)))
