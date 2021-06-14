@@ -13,7 +13,7 @@ from ..config import settings
 from ..cache import get_redis_client
 
 # pylint: disable=too-few-public-methods
-class Provider:
+class Provider(object):
 
     def __init__(self, app) -> None:
         issuer = settings.issuer
@@ -35,7 +35,7 @@ class Provider:
             'claims_parameter_supported': True
         }
 
-        userinfo_db = Userinfo({'test_user': ['claim_data1', 'claim_data2']})
+        userinfo_db = Userinfo({'test_client': {'name': 'test_client'}})
         with open(settings.oidc.clients_file) as clients_file:
             clients = json.load(clients_file)
 
@@ -55,7 +55,7 @@ class Provider:
         )
 
         self.provider = PyopProvider(signing_key, configuration_information,
-                            authz_state, clients, userinfo_db, id_token_lifetime= settings.oidc.id_token_lifetime)
+                            authz_state, clients, userinfo_db, id_token_lifetime= int(settings.oidc.id_token_lifetime))
 
     def __getattr__(self, name: str) -> Any:
         if hasattr(self.provider, name):
