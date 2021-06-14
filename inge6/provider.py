@@ -79,7 +79,8 @@ class Provider(OIDCProvider, SAMLProvider):
     SYMM_KEY = settings.bsn.symm_key
 
     def __init__(self, app: FastAPI) -> None:
-        super().__init__(app)
+        OIDCProvider.__init__(self, app)
+        SAMLProvider.__init__(self)
 
         self.bsn_encrypt = Encrypt(
             i6_priv=self.I6_PRIV_KEY,
