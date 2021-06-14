@@ -28,8 +28,11 @@ class SPMetadata(SAMLRequest):
     TEMPLATE_PATH = settings.saml.sp_template
     SETTINGS_PATH = 'saml/settings.json'
 
-    DEFAULT_SLS = settings.issuer + '/sls'
-    DEFAULT_ACS = settings.issuer + '/acs'
+    DEFAULT_SLS_URL = settings.issuer + '/sls'
+    DEFAULT_SLS_BINDING = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+
+    DEFAULT_ACS_URL = settings.issuer + '/acs'
+    DEFAULT_ACS_BINDING = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
 
     def __init__(self) -> None:
         super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())
@@ -39,18 +42,26 @@ class SPMetadata(SAMLRequest):
 
         with open(self.CERT_PATH, 'r') as cert_file:
             self.cert_data = cert_file.read()
+
         self.keyname = None
+        self.entity_id = None
 
         add_root_id(self.root, self._id_hash)
         add_reference(self.root, self._id_hash)
         add_certs(self.root, self.cert_data)
 
-        self._add_service_locs()
+        self._add_entity_id()
+        self._add_service_details()
         self._add_attribute_value()
         self._add_keynames()
-        self._add_prefix_service_desc()
 
         sign(self.root, self.KEY_PATH)
+
+    def _add_entity_id(self) -> None:
+        self.entity_id = from_settings(self.settings_dict, 'sp.entityId')
+        if self.entity_id is None:
+            raise ValueError('Please specify the sp.entityId attribute in settings.json')
+        self.root.attrib['EntityID'] = self.entity_id
 
     def _add_keynames(self) -> None:
         cert = load_certificate(FILETYPE_PEM, self.cert_data)
@@ -61,15 +72,28 @@ class SPMetadata(SAMLRequest):
         for keyname_elem in keyname_elems:
             keyname_elem.text = sha256_fingerprint
 
-    def _add_service_locs(self) -> None:
+    def _add_service_details(self) -> None:
         sls_elem = self.root.find('.//md:SingleLogoutService', NAMESPACES)
         acs_elem = self.root.find('.//md:AssertionConsumerService', NAMESPACES)
 
-        sls_loc = from_settings(self.settings_dict, 'sp.SingleLogoutService.url', self.DEFAULT_SLS)
-        acs_loc = from_settings(self.settings_dict, 'sp.assertionConsumerService.url', self.DEFAULT_ACS)
+        sls_loc = from_settings(self.settings_dict, 'sp.SingleLogoutService.url', self.DEFAULT_SLS_URL)
+        sls_binding = from_settings(self.settings_dict, 'sp.SingleLogoutService.binding', self.DEFAULT_SLS_BINDING)
+
+        acs_binding = from_settings(self.settings_dict, 'sp.assertionConsumerService.binding', self.DEFAULT_ACS_URL)
+        acs_loc = from_settings(self.settings_dict, 'sp.assertionConsumerService.url', self.DEFAULT_ACS_BINDING)
 
         sls_elem.attrib['Location'] = sls_loc
+        sls_elem.attrib['Binding'] = sls_binding
+
         acs_elem.attrib['Location'] = acs_loc
+        acs_elem.attrib['Binding'] = acs_binding
+
+        attr_consuming_service = self.root.find('.//md:AttributeConsumingService', NAMESPACES)
+        service_name = attr_consuming_service.find('./md:ServiceName', NAMESPACES)
+        service_desc = attr_consuming_service.find('./md:ServiceDescription', NAMESPACES)
+
+        service_name.text = from_settings(self.settings_dict, 'sp.attributeConsumingService.serviceName', 'CoronaCheck')
+        service_desc.text = from_settings(self.settings_dict, 'sp.attributeConsumingService.serviceDescription', 'CoronaCheck Inlogservice')
 
     def _add_attribute_value(self) -> None:
         attr_value_elem = self.root.find('.//md:AttributeConsumingService//saml:AttributeValue', NAMESPACES)
@@ -98,10 +122,6 @@ class SPMetadata(SAMLRequest):
         correct_bindings = correct_bindings and acs_elem.attrib['Binding'] == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
 
         return correct_bindings
-
-    def _add_prefix_service_desc(self) -> None:
-        service_desc_elem = self.root.find('.//md:ServiceDescription', NAMESPACES)
-        service_desc_elem.text = settings.environment.capitalize() + ' ' + service_desc_elem.text
 
     def validate(self) -> list:
         errors = []
