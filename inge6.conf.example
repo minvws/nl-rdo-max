@@ -33,6 +33,8 @@ cert_path = saml/certs/sp.crt
 key_path = saml/certs/sp.key
 settings_path = saml/settings.json
 
+response_expires_in = 600
+
 idp_path = saml/metadata/idp_metadata.xml
 
 sp_template = saml/templates/xml/sp_metadata.xml
