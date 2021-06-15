@@ -17,6 +17,9 @@ pynacl
 python-multipart
 python-dateutil
 
+# type stubs
+types-python-dateutil
+
 # fastapi optional dependencies
 itsdangerous
 
