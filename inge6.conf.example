@@ -11,9 +11,9 @@ use_ssl = True
 mock_digid = True
 
 [bsn]
-i6_priv_key =
-i4_pub_key =
-symm_key =
+sign_key =
+encrypt_key =
+local_symm_key =
 
 [ssl]
 base_dir = secrets/ssl

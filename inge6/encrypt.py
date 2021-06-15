@@ -10,11 +10,11 @@ from nacl.encoding import Base64Encoder
 
 class Encrypt:
 
-    def __init__(self, i6_priv: bytes, i4_pub: bytes, local_enc_key: str) -> None:
-        i6_priv_key = PrivateKey(i6_priv, encoder=Base64Encoder)
-        i4_pub_key = PublicKey(i4_pub, encoder=Base64Encoder)
+    def __init__(self, sign_key: bytes, enc_key: bytes, local_enc_key: str) -> None:
+        sign_key = PrivateKey(sign_key, encoder=Base64Encoder)
+        enc_key = PublicKey(enc_key, encoder=Base64Encoder)
 
-        self.box = Box(i6_priv_key, i4_pub_key)
+        self.box = Box(sign_key, enc_key)
         self.secret_box = SecretBox(bytes.fromhex(local_enc_key))
 
     def symm_encrypt(self, plaintext: str) -> bytes:

@@ -70,19 +70,29 @@ def _create_redis_bsn_key(key: str, id_token: str) -> str:
     jwt = validate_jwt_token(key, id_token)
     return jwt['at_hash']
 
+class TokenSAMLErrorResponse(TokenErrorResponse):
+    c_allowed_values = TokenErrorResponse.c_allowed_values.copy()
+    c_allowed_values.update(
+    {
+        "error": [
+            "saml_authn_failed",
+        ]
+    }
+)
+
 class Provider(OIDCProvider, SAMLProvider):
-    I6_PRIV_KEY = settings.bsn.i6_priv_key
-    I4_PUB_KEY = settings.bsn.i4_pub_key
-    SYMM_KEY = settings.bsn.symm_key
+    BSN_SIGN_KEY = settings.bsn.sign_key
+    BSN_ENCRYPT_KEY = settings.bsn.encrypt_key
+    BSN_LOCAL_SYMM_KEY = settings.bsn.local_symm_key
 
     def __init__(self, app: FastAPI) -> None:
         OIDCProvider.__init__(self, app)
         SAMLProvider.__init__(self)
 
         self.bsn_encrypt = Encrypt(
-            i6_priv=self.I6_PRIV_KEY,
-            i4_pub=self.I4_PUB_KEY,
-            local_enc_key=self.SYMM_KEY
+            sign_key=self.BSN_SIGN_KEY,
+            enc_key=self.BSN_ENCRYPT_KEY,
+            local_enc_key=self.BSN_LOCAL_SYMM_KEY
         )
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers) -> Response:
@@ -115,10 +125,7 @@ class Provider(OIDCProvider, SAMLProvider):
             return JSONResponse(content=json_content_resp)
         except UserNotAuthenticated as user_not_authenticated:
             logging.getLogger().debug('invalid client authentication at token endpoint', exc_info=True)
-            error_resp = {
-                'error': user_not_authenticated.oauth_error,
-                'error_description': str(user_not_authenticated)
-            }
+            error_resp = TokenSAMLErrorResponse(error=user_not_authenticated.oauth_error, error_description=str(user_not_authenticated)).to_json()
         except InvalidClientAuthentication as invalid_client_auth:
             logging.getLogger().debug('invalid client authentication at token endpoint', exc_info=True)
             error_resp = TokenErrorResponse(error='invalid_client', error_description=str(invalid_client_auth)).to_json()
@@ -128,7 +135,6 @@ class Provider(OIDCProvider, SAMLProvider):
 
         # Error has occurred
         response = JSONResponse(jsonable_encoder(error_resp), status_code=400)
-        response.headers['WWW-Authenticate'] = 'Basic'
         return response
 
     def _login(self, randstate: str, force_digid: Optional[bool] = False) -> Text:
