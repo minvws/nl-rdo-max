@@ -66,11 +66,8 @@ def _store_code_challenge(code: str, code_challenge: str, code_challenge_method:
     }
     redis_cache.hset(code, 'cc_cm', value)
 
-def _create_redis_bsn_key(id_token: str, at_hash: str = None) -> str:
-    if at_hash is not None:
-        return at_hash
-
-    jwt = validate_jwt_token(id_token)
+def _create_redis_bsn_key(key: str, id_token: str) -> str:
+    jwt = validate_jwt_token(key, id_token)
     return jwt['at_hash']
 
 class Provider(OIDCProvider, SAMLProvider):
@@ -111,7 +108,7 @@ class Provider(OIDCProvider, SAMLProvider):
             token_response = accesstoken(self, body, headers)
             encrypted_bsn = self._resolve_artifact(artifact)
 
-            access_key = _create_redis_bsn_key(token_response['id_token'].encode())
+            access_key = _create_redis_bsn_key(self.key, token_response['id_token'].encode())
             redis_cache.set(access_key, encrypted_bsn)
 
             json_content_resp = jsonable_encoder(token_response.to_dict())
@@ -181,9 +178,9 @@ class Provider(OIDCProvider, SAMLProvider):
         return encrypted_bsn
 
     def bsn_attribute(self, request: Request) -> Response:
-        id_token, at_hash= is_authorized(request)
+        _, at_hash= is_authorized(self.key, request)
 
-        redis_bsn_key = _create_redis_bsn_key(id_token, at_hash)
+        redis_bsn_key = at_hash
         attributes = redis_cache.get(redis_bsn_key)
 
         if attributes is None:
