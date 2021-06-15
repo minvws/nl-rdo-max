@@ -43,8 +43,8 @@ from .oidc.authorize import (
 
 _PROVIDER = None
 
-def _create_authn_post_context(relay_state: str, url: str) -> dict:
-    saml_request = AuthNRequest()
+def _create_authn_post_context(relay_state: str, url: str, issuer_id) -> dict:
+    saml_request = AuthNRequest(url, issuer_id)
     return {
         'sso_url': url,
         'saml_request': saml_request.get_base64_string().decode(),
@@ -139,11 +139,12 @@ class Provider(OIDCProvider, SAMLProvider):
         return response
 
     def _login(self, randstate: str, force_digid: Optional[bool] = False) -> Text:
+        issuer_id = self.sp_metadata.issuer_id
         if settings.mock_digid.lower() == "true" and not force_digid:
-            authn_post_ctx = _create_authn_post_context(relay_state=randstate, url=f'/digid-mock?state={randstate}')
+            authn_post_ctx = _create_authn_post_context(relay_state=randstate, url=f'/digid-mock?state={randstate}', issuer_id=issuer_id)
         else:
             sso_url = self.idp_metadata.get_sso()['location']
-            authn_post_ctx = _create_authn_post_context(relay_state=randstate, url=sso_url)
+            authn_post_ctx = _create_authn_post_context(relay_state=randstate, url=sso_url, issuer_id=issuer_id)
 
         return create_post_autosubmit_form(authn_post_ctx)
 
@@ -170,7 +171,9 @@ class Provider(OIDCProvider, SAMLProvider):
         if settings.mock_digid.lower() == "true" and is_digid_mock is not None:
             return self.bsn_encrypt.symm_encrypt(artifact)
 
-        resolve_artifact_req = ArtifactResolveRequest(artifact).get_xml()
+        sso_url = self.idp_metadata.get_sso()['location']
+        issuer_id = self.sp_metadata.issuer_id
+        resolve_artifact_req = ArtifactResolveRequest(artifact, sso_url, issuer_id).get_xml()
         url = self.idp_metadata.get_artifact_rs()['location']
         headers = {
             'SOAPAction' : '"https://artifact-pp2.toegang.overheid.nl/kvs/rd/resolve_artifact"',

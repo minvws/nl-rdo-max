@@ -66,16 +66,11 @@ class SAMLRequest:
 class AuthNRequest(SAMLRequest):
     TEMPLATE_PATH = settings.saml.authn_request_template
 
-    def __init__(self) -> None:
-        from .metadata import SPMetadata, IdPMetadata
-
-        super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())        
-        self.idp_metadata = IdPMetadata()
-        self.sp_metadata = SPMetadata()
-
+    def __init__(self, sso_url, issuer_id) -> None:
+        super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())
         add_root_id(self.root, self._id_hash)
-        add_destination(self.root, self.idp_metadata.get_sso()['location'])
-        add_issuer(self.root, self.sp_metadata.issuer_id)
+        add_destination(self.root, sso_url)
+        add_issuer(self.root, issuer_id)
         add_root_issue_instant(self.root)
         add_reference(self.root, self._id_hash)
         add_certs(self.root, self.CERT_PATH)
@@ -84,18 +79,14 @@ class AuthNRequest(SAMLRequest):
 class ArtifactResolveRequest(SAMLRequest):
     TEMPLATE_PATH = settings.saml.artifactresolve_request_template
 
-    def __init__(self, artifact_code) -> None:
-        from .metadata import SPMetadata, IdPMetadata
-        
+    def __init__(self, artifact_code, sso_url, issuer_id) -> None:
         super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())
         self.saml_resolve_req = self.root.find('.//samlp:ArtifactResolve', {'samlp': "urn:oasis:names:tc:SAML:2.0:protocol"})
-        self.idp_metadata = IdPMetadata()
-        self.sp_metadata = SPMetadata()
 
         add_root_id(self.saml_resolve_req, self._id_hash)
         add_root_issue_instant(self.saml_resolve_req)
-        add_destination(self.saml_resolve_req, self.idp_metadata.get_sso()['location'])
-        add_issuer(self.saml_resolve_req, self.sp_metadata.issuer_id)
+        add_destination(self.saml_resolve_req, sso_url)
+        add_issuer(self.saml_resolve_req, issuer_id)
         add_reference(self.saml_resolve_req, self._id_hash)
         add_certs(self.saml_resolve_req, self.CERT_PATH)
         add_artifact(self.saml_resolve_req, artifact_code)
