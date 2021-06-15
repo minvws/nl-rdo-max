@@ -1,4 +1,4 @@
-from typing import Mapping, Union, List
+from typing import Mapping, Dict
 
 class Userinfo(object):
-    def __init__(self, db: Mapping[str, Union[str, List[str]]]) -> None: ...
+    def __init__(self, db: Mapping[str, Dict[str, str]]) -> None: ...

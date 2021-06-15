@@ -37,7 +37,7 @@ class Provider:
             'claims_parameter_supported': True
         }
 
-        userinfo_db = Userinfo({'test_client': 'test_client'})
+        userinfo_db = Userinfo({'test_client': {'test': 'test_client'}})
         with open(settings.oidc.clients_file) as clients_file:
             clients = json.load(clients_file)
 
