@@ -210,7 +210,7 @@ class ArtifactResponse:
 
     def validate_time_restrictions(self) -> List[ValidationError]:
         errors = []
-        current_instant = datetime.now()
+        current_instant = datetime.utcnow()
 
         issue_instant_els = self.root.findall(".//*[@IssueInstant]")
         for elem in issue_instant_els:
@@ -265,7 +265,7 @@ class ArtifactResponse:
         errors = []
 
         if not self.is_test_instance:
-            current_instant = datetime.now()
+            current_instant = datetime.utcnow()
             issue_instant_text = self.response_assertion.find('.//saml:AuthnStatement', NAMESPACES).attrib['AuthnInstant']
             issue_instant = dateutil.parser.parse(issue_instant_text, ignoretz=True)
             expiration_time = issue_instant + timedelta(seconds= RESPONSE_EXPIRES_IN)
