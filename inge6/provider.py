@@ -70,6 +70,7 @@ def _create_redis_bsn_key(key: str, id_token: str) -> str:
     jwt = validate_jwt_token(key, id_token)
     return jwt['at_hash']
 
+# pylint: disable=too-many-ancestors
 class TokenSAMLErrorResponse(TokenErrorResponse):
     c_allowed_values = TokenErrorResponse.c_allowed_values.copy()
     c_allowed_values.update(
@@ -90,9 +91,9 @@ class Provider(OIDCProvider, SAMLProvider):
         SAMLProvider.__init__(self)
 
         self.bsn_encrypt = Encrypt(
-            sign_key=self.BSN_SIGN_KEY,
-            enc_key=self.BSN_ENCRYPT_KEY,
-            local_enc_key=self.BSN_LOCAL_SYMM_KEY
+            raw_sign_key=self.BSN_SIGN_KEY,
+            raw_enc_key=self.BSN_ENCRYPT_KEY,
+            raw_local_enc_key=self.BSN_LOCAL_SYMM_KEY
         )
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers) -> Response:

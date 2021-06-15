@@ -1,5 +1,5 @@
 # pylint: disable=c-extension-no-member
-from typing import Dict, Tuple, Any, Optional
+from typing import Dict, Tuple, Any, Optional, Union
 import xmlsec
 
 from .constants import NAMESPACES
@@ -7,6 +7,8 @@ from .constants import NAMESPACES
 def from_settings(settings_dict, selector: str, default: Optional[str] = None) -> Optional[str]:
     key_hierarchy = selector.split('.')
     value = settings_dict
+
+    key: Union[str, int] = ''
     for key in key_hierarchy:
         try:
             key = int(key)

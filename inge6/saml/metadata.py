@@ -1,7 +1,7 @@
 # pylint: disable=c-extension-no-member
 import json
 
-from typing import Dict
+from typing import Dict, Optional
 
 from lxml import etree
 import xmlsec
@@ -43,8 +43,8 @@ class SPMetadata(SAMLRequest):
         with open(self.CERT_PATH, 'r') as cert_file:
             self.cert_data = cert_file.read()
 
-        self.keyname = None
-        self.entity_id = None
+        self.keyname: Optional[str] = None
+        self.entity_id: Optional[str] = None
 
         add_root_id(self.root, self._id_hash)
         add_reference(self.root, self._id_hash)

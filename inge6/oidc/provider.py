@@ -37,7 +37,7 @@ class Provider:
             'claims_parameter_supported': True
         }
 
-        userinfo_db = Userinfo({'test_client': {'name': 'test_client'}})
+        userinfo_db = Userinfo({'test_client': 'test_client'})
         with open(settings.oidc.clients_file) as clients_file:
             clients = json.load(clients_file)
 
@@ -58,7 +58,7 @@ class Provider:
 
         self.provider = PyopProvider(signing_key, configuration_information,
                             authz_state, clients, userinfo_db, id_token_lifetime= int(settings.oidc.id_token_lifetime))
-    
+
         with open('secrets/public.pem') as rsa_priv_key:
             self.key = rsa_priv_key.read()
 

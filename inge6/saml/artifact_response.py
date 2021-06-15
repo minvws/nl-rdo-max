@@ -84,7 +84,7 @@ class ArtifactResponse:
         return self.root.find('.//samlp:Response', NAMESPACES)
 
     @cached_property
-    def response_status(self): 
+    def response_status(self):
         return self.response.find('./samlp:Status', NAMESPACES)
 
     @cached_property

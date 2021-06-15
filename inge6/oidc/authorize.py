@@ -13,7 +13,7 @@ from ..cache import redis_cache
 
 def _compute_code_challenge(code_verifier: str):
     """
-    Given a code verifier compute the code_challenge. This code_challenge is computed as defined (https://datatracker.ietf.org/doc/html/rfc7636#section-4.2): 
+    Given a code verifier compute the code_challenge. This code_challenge is computed as defined (https://datatracker.ietf.org/doc/html/rfc7636#section-4.2):
 
         code_challenge = BASE64URL-ENCODE(SHA256(ASCII(code_verifier))).
 
@@ -23,7 +23,7 @@ def _compute_code_challenge(code_verifier: str):
     :param code_verifier: the code verifier to transform to the Code Challenge
     """
     verifier_hash = nacl.hash.sha256(code_verifier.encode('ISO_8859_1'), encoder=URLSafeBase64Encoder)
-    return verifier_hash.decode().replace('=', '') 
+    return verifier_hash.decode().replace('=', '')
 
 def verify_code_verifier(cc_cm: Dict[str ,str], code_verifier: str) -> bool:
     """
@@ -92,7 +92,7 @@ def _is_valid_at_request_body(request_body: bytes):
 
 def accesstoken(provider, request_body, headers):
     """
-    An access token is requested through this function. It validates whether the body contains the expected parameters and verifies the 
+    An access token is requested through this function. It validates whether the body contains the expected parameters and verifies the
     supplied code_verifier.
 
     :param provider: the provider that is eventually allow to handle the token request once the validations have been performed
