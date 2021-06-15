@@ -17,7 +17,7 @@
                     "index": 1,
                     "name": "urn:nl-eid-gdi:1.0:ServiceUUID",
                     "isRequired": true,
-                    "attributeValue": [""]
+                    "attributeValue": ["c282ff81-005f-86cb-e053-0c069d0ae01a"]
                 }
             ]
         }

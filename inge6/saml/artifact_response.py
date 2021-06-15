@@ -239,7 +239,7 @@ class ArtifactResponse:
         service_id_attr_val = list(root.find("./*[@Name='urn:nl-eid-gdi:1.0:ServiceUUID']"))[0].text
         expected_service_uuid = from_settings(self.provider.sp_metadata.settings_dict, 'sp.attributeConsumingService.requestedAttributes.0.attributeValue.0')
         if service_id_attr_val != expected_service_uuid:
-            errors.append(ValidationError("service uuid does not comply with specified uuid. Expected {}, was {}".format(service_id_attr_val, expected_service_uuid)))
+            errors.append(ValidationError("service uuid does not comply with specified uuid. Expected {}, was {}".format(expected_service_uuid, service_id_attr_val)))
 
         if not self.is_test_instance and self.is_verifeid:
             # Only perform this validation if it is verified, and not a test instance.
