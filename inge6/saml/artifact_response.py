@@ -4,7 +4,9 @@ from typing import Text, List
 import base64
 import re
 import logging
+
 from datetime import datetime, timedelta
+from functools import cached_property
 
 import dateutil.parser
 
@@ -18,8 +20,6 @@ from .utils import from_settings, has_valid_signatures, remove_padding
 from .constants import NAMESPACES
 from .exceptions import UserNotAuthenticated, ValidationError
 from .provider import Provider as SAMLProvider
-
-SUCCESS = "success"
 
 RESPONSE_EXPIRES_IN = int(settings.saml.response_expires_in)
 
@@ -79,134 +79,75 @@ class ArtifactResponse:
     def root(self):
         return self._root
 
-    @property
+    @cached_property
     def response(self):
-        if self._response is not None:
-            return self._response
+        return self.root.find('.//samlp:Response', NAMESPACES)
 
-        self._response = self.root.find('.//samlp:Response', NAMESPACES)
-        return self._response
+    @cached_property
+    def response_status(self): 
+        return self.response.find('./samlp:Status', NAMESPACES)
 
-    @property
-    def response_status(self):
-        if self._response_status is not None:
-            return self._response_status
-
-        self._response_status = self.response.find('./samlp:Status', NAMESPACES)
-        return self._response_status
-
-    @property
+    @cached_property
     def saml_status_code(self) -> str:
-        if self._saml_status_code is not None:
-            return self._saml_status_code
-
         top_level_status_code = self.response_status.find('./samlp:StatusCode', NAMESPACES)
-        if top_level_status_code.attrib['Value'].split(':')[-1].lower() != SUCCESS:
+
+        if top_level_status_code.attrib['Value'].split(':')[-1].lower() != "success":
             second_level = top_level_status_code.find('./samlp:StatusCode', NAMESPACES)
-            self._saml_status_code = second_level.attrib['Value']
-            return self._saml_status_code
+            return second_level.attrib['Value']
 
-        self._saml_status_code = top_level_status_code.attrib['Value']
-        return self._saml_status_code
+        return top_level_status_code.attrib['Value']
 
-    @property
+    @cached_property
     def status(self) -> str:
-        if self._status is not None:
-            return self._status
         status = self.saml_status_code.split(':')[-1]
-        self._status = 'saml_' + CAMEL_TO_SNAKE_RE.sub('_', status).lower()
-        return self._status
+        return 'saml_' + CAMEL_TO_SNAKE_RE.sub('_', status).lower()
 
-    @property
+    @cached_property
     def response_audience_restriction(self):
-        if self._response_audience_restriction is not None:
-            return self._response_audience_restriction
+        return self.response.find('.//saml:AudienceRestriction', NAMESPACES)
 
-        self._response_audience_restriction = self.response.find('.//saml:AudienceRestriction', NAMESPACES)
-        return self._response_audience_restriction
-
-    @property
+    @cached_property
     def response_assertion(self):
-        if self._response_assertion is not None:
-            return self._response_assertion
+        return self.response.find('./saml:Assertion', NAMESPACES)
 
-        self._response_assertion = self.response.find('./saml:Assertion', NAMESPACES)
-        return self._response_assertion
-
-    @property
+    @cached_property
     def advice_assertion(self):
-        if self._advice_assertion is not None:
-            return self._advice_assertion
+        return self.response_assertion.find('.//saml:Assertion', NAMESPACES)
 
-        self._advice_assertion = self.response_assertion.find('.//saml:Assertion', NAMESPACES)
-        return self._advice_assertion
-
-    @property
+    @cached_property
     def assertion_attribute_enc_key(self):
-        if self._assertion_attribute_enc_key is not None:
-            return self._assertion_attribute_enc_key
+        return self.response_assertion.find('.//saml2:AttributeStatement//xenc:EncryptedKey', NAMESPACES)
 
-        self._assertion_attribute_enc_key = self.response_assertion.find('.//saml2:AttributeStatement//xenc:EncryptedKey', NAMESPACES)
-        return self._assertion_attribute_enc_key
-
-    @property
+    @cached_property
     def assertion_attribute_enc_data(self):
-        if self._assertion_attribute_enc_data is not None:
-            return self._assertion_attribute_enc_data
+        return self.response_assertion.find('.//saml2:AttributeStatement//xenc:EncryptedData', NAMESPACES)
 
-        self._assertion_attribute_enc_data = self.response_assertion.find('.//saml2:AttributeStatement//xenc:EncryptedData', NAMESPACES)
-        return self._assertion_attribute_enc_data
-
-    @property
+    @cached_property
     def issuer(self):
-        if self._issuer is not None:
-            return self._issuer
+        return self.root.find('./saml:Issuer', NAMESPACES)
 
-        self._issuer = self.root.find('./saml:Issuer', NAMESPACES)
-        return self._issuer
-
-    @property
+    @cached_property
     def response_issuer(self):
-        if self._response_issuer is not None:
-            return self._response_issuer
+        return self.response.find('./saml:Issuer', NAMESPACES)
 
-        self._response_issuer = self.response.find('./saml:Issuer', NAMESPACES)
-        return self._response_issuer
-
-    @property
+    @cached_property
     def assertion_issuer(self):
-        if self._assertion_issuer is not None:
-            return self._assertion_issuer
+        return self.response_assertion.find('./saml:Issuer', NAMESPACES)
 
-        self._assertion_issuer = self.response_assertion.find('./saml:Issuer', NAMESPACES)
-        return self._assertion_issuer
-
-    @property
+    @cached_property
     def advice_assertion_issuer(self):
-        if self._advice_assertion_issuer is not None:
-            return self._advice_assertion_issuer
+        return self.advice_assertion.find('./saml:Issuer', NAMESPACES)
 
-        self._advice_assertion_issuer = self.advice_assertion.find('./saml:Issuer', NAMESPACES)
-        return self._advice_assertion_issuer
-
-    @property
+    @cached_property
     def assertion_subject_confdata(self):
-        if self._assertion_subject_confdata is not None:
-            return self._assertion_subject_confdata
+        return self.response_assertion.find('./saml:Subject//saml:SubjectConfirmationData', NAMESPACES)
 
-        self._assertion_subject_confdata = self.response_assertion.find('./saml:Subject//saml:SubjectConfirmationData', NAMESPACES)
-        return self._assertion_subject_confdata
-
-    @property
+    @cached_property
     def assertion_subject_audrestriction(self):
-        if self._assertion_subject_audrestriction is not None:
-            return self._assertion_subject_audrestriction
-
-        self._assertion_subject_audrestriction = self.response_assertion.find('./saml:Conditions//saml:Audience', NAMESPACES)
-        return self._assertion_subject_audrestriction
+        return self.response_assertion.find('./saml:Conditions//saml:Audience', NAMESPACES)
 
     def raise_for_status(self) -> str:
-        if self.status != 'saml_' + SUCCESS:
+        if self.status != 'saml_success':
             raise UserNotAuthenticated("User authentication flow failed", oauth_error=self.status)
 
         return self.status
@@ -243,7 +184,7 @@ class ArtifactResponse:
         if self.response_issuer.text != expected_entity_id:
             errors.append(ValidationError('Invalid issuer in artifact response_issuer. Expected {}, but was {}'.format(expected_entity_id, self.response_issuer.text)))
 
-        if self.status == 'saml_' + SUCCESS:
+        if self.status == 'saml_success':
             if self.assertion_issuer.text != expected_entity_id:
                 errors.append(ValidationError('Invalid issuer in artifact assertion_issuer. Expected {}, but was {}'.format(expected_entity_id, self.assertion_issuer.text)))
 
@@ -260,7 +201,7 @@ class ArtifactResponse:
         if expected_response_dest != self.response.attrib['Destination']:
             errors.append(ValidationError('Response destination is not what was expected. Expected: {}, was {}'.format(expected_response_dest, self.response.attrib['Destination'])))
 
-        if self.status == 'saml_' + SUCCESS:
+        if self.status == 'saml_success':
             if expected_response_dest != self.assertion_subject_confdata.attrib['Recipient']:
                 errors.append(ValidationError('Recipient in assertion subject confirmation data was not as expected. Expected {}, was {}'
                                             .format(expected_response_dest, self.assertion_subject_confdata.attrib['Recipient'])))
@@ -348,7 +289,7 @@ class ArtifactResponse:
         errors += self.validate_issuer_texts()
         errors += self.validate_recipient_uri()
 
-        if self.status == 'saml_' + SUCCESS:
+        if self.status == 'saml_success':
             errors += self.validate_in_response_to()
             errors += self.validate_attribute_statements()
             errors += self.validate_authn_statement()
