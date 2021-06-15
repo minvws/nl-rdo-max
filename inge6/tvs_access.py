@@ -127,7 +127,6 @@ def _store_code_challenge(code, code_challenge, code_challenge_method):
     redis_cache.hset(code, 'cc_cm', value)
 
 def resolve_artifact(artifact) -> bytes:
-
     is_digid_mock = get_redis_client().get('DIGID_MOCK' + artifact)
     if settings.mock_digid.lower() == "true" and is_digid_mock is not None:
         return bsn_encrypt.symm_encrypt_bsn(artifact)
