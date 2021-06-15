@@ -1,15 +1,17 @@
 {
-    "strict": true,
-    "debug": true,
     "sp": {
         "entityId": "urn:nl-eid-gdi:1.0:DV:00000002003182447001:entities:9001",
         "assertionConsumerService": {
-            "url": "https://10.48.118.250:8006/acs",
+            "url": "https://tvs.acc.coronacheck.nl/acs",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+        },
+        "SingleLogoutService": {
+            "url": "https://tvs.acc.coronacheck.nl/sls",
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
         },
         "attributeConsumingService": {
             "serviceName": "CoronaCheck",
-            "serviceDescription": "Test vaccinatie bewijzen inlogservice",
+            "serviceDescription": "CoronaCheck Inlogservice",
             "requestedAttributes": [
                 {
                     "index": 1,

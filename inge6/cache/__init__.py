@@ -9,14 +9,14 @@ _REDIS_CLIENT: Optional[StrictRedis] = None
 def get_redis_client() -> StrictRedis:
     global _REDIS_CLIENT
     if _REDIS_CLIENT is None:
-        ssl = (True if settings.redis.ssl.lower() == 'true' else False)
+        use_ssl = settings.redis.ssl.lower() == 'true'
 
-        if ssl:
+        if use_ssl:
             _REDIS_CLIENT = StrictRedis(
                                 host=settings.redis.host, port=settings.redis.port, db=0,
-                                ssl=True, 
-                                ssl_keyfile=settings.redis.key, ssl_certfile=settings.redis.cert, 
-                                ssl_cert_reqs='required', ssl_ca_certs=settings.redis.cafile
+                                ssl=True,
+                                ssl_keyfile=settings.redis.key, ssl_certfile=settings.redis.cert,
+                                ssl_ca_certs=settings.redis.cafile
                             )
         else:
             _REDIS_CLIENT = StrictRedis(host=settings.redis.host, port=settings.redis.port, db=0)

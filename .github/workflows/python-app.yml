@@ -27,6 +27,8 @@ jobs:
           make venv
       - name: Lint with pylint
         run: make lint
+      - name: Type check with MyPy
+        run: make type-check
       - name: Audit with bandid
         run: make audit
   tests:

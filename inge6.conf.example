@@ -11,9 +11,9 @@ use_ssl = True
 mock_digid = True
 
 [bsn]
-i6_priv_key =
-i4_pub_key =
-symm_key =
+sign_key =
+encrypt_key =
+local_symm_key =
 
 [ssl]
 base_dir = secrets/ssl
@@ -25,10 +25,15 @@ clients_file = clients.json
 rsa_private_key = secrets/private_unencrypted.pem
 subject_id_hash_salt = somesalt
 
+id_token_lifetime = 600
+
 [saml]
 base_dir = saml
 cert_path = saml/certs/sp.crt
 key_path = saml/certs/sp.key
+settings_path = saml/settings.json
+
+response_expires_in = 600
 
 idp_path = saml/metadata/idp_metadata.xml
 
@@ -41,9 +46,15 @@ authn_request_html_template = saml/templates/html/authn_request.html
 [redis]
 host = localhost
 port = 6379
-expires_in_s = 900
 
-prefix = TVS:
+ssl = True
+key = secrets/redis/private/redis_key.key
+cert = secrets/redis/certs/cert.crt
+cafile = secrets/redis/certs/cacert.crt
+
+object_ttl = 600
+
+default_cache_namespace = tvs-connect:
 
 token_namespace = tvs_token
 refresh_token_namespace = tvs_refresh_token

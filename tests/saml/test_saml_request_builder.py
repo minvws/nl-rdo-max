@@ -4,19 +4,19 @@ import pytest
 import xmlsec
 
 from inge6.saml import AuthNRequest, ArtifactResolveRequest
-from inge6.saml.sp_metadata import SPMetadata
+from inge6.saml.metadata import SPMetadata
 
 
 def test_artifact_value():
     expected = "some_artifact_code"
-    saml_req = ArtifactResolveRequest(expected)
+    saml_req = ArtifactResolveRequest(expected, sso_url='test_url', issuer_id='test_id')
     artifact_node = saml_req.root.find('.//samlp:Artifact', {'samlp': 'urn:oasis:names:tc:SAML:2.0:protocol'})
 
     assert artifact_node.text == expected
 
 @pytest.mark.parametrize("saml_request", [
-    AuthNRequest(),
-    ArtifactResolveRequest('some_artifact_code'),
+    AuthNRequest(sso_url='test_url', issuer_id='test_id'),
+    ArtifactResolveRequest('some_artifact_code', sso_url='test_url', issuer_id='test_id'),
     SPMetadata()])
 def test_verify_requests(saml_request):
     getroot =saml_request.saml_elem

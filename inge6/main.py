@@ -7,7 +7,7 @@ from fastapi import FastAPI
 
 from .config import settings
 from .router import router
-from .oidc_provider import get_oidc_provider
+from .provider import get_provider
 
 app = FastAPI()
 
@@ -29,7 +29,7 @@ async def startup_event():
         datefmt='%m/%d/%Y %I:%M:%S %p'
     )
     validate_startup()
-    get_oidc_provider(app)
+    get_provider(app)
 
 if __name__ == "__main__":
     run_kwargs = {

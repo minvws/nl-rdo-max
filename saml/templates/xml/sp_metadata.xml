@@ -1,4 +1,4 @@
-<md:EntityDescriptor xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" cacheDuration="PT604800S" entityID="urn:nl-eid-gdi:1.0:DV:00000002003182447001:entities:9001">
+<md:EntityDescriptor xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" cacheDuration="PT604800S">
     <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
         <ds:SignedInfo>
             <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
@@ -36,11 +36,11 @@
                 </ds:X509Data>
             </ds:KeyInfo>
         </md:KeyDescriptor>
-        <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://tvs-connect.acc.coronacheck.nl/sls" />
-        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact" Location="https://tvs-connect.acc.coronacheck.nl/acs" index="1" />
+        <md:SingleLogoutService/>
+        <md:AssertionConsumerService index="1" />
         <md:AttributeConsumingService index="1">
-            <md:ServiceName xml:lang="en">CoronaCheck</md:ServiceName>
-            <md:ServiceDescription xml:lang="en">Coronacheck Inlogservice</md:ServiceDescription>
+            <md:ServiceName xml:lang="en"></md:ServiceName>
+            <md:ServiceDescription xml:lang="en"></md:ServiceDescription>
             <md:RequestedAttribute Name="urn:nl-eid-gdi:1.0:ServiceUUID" isRequired="true">
                 <saml:AttributeValue xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"></saml:AttributeValue>
             </md:RequestedAttribute>

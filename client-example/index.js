@@ -1,25 +1,18 @@
+require('dotenv').config()
 const { Issuer, generators } = require('openid-client');
 const { createHash, randomBytes } = require('crypto');
 const base64url = require('base64url')
 
 const https = require('https')
 const express = require('express');
-const url = require('url');
 
 const app = express()
 const port = 3000
 
-const host = "10.48.118.250";
-const baseUrl = `https://${host}:8006`;
-// const host = "tvs-connect.coronacheck.nl";
-// const baseUrl = `https://${host}`;
+const baseUrl = `https://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`;
 
-const clientBaseUrl = "https://54c0a6a90e9b.ngrok.io";
+const clientBaseUrl = process.env.CLIENT_BASE_URL 
 const redirect_uri = clientBaseUrl + "/login";
-const redirect_uris = [
-  clientBaseUrl + "/login",
-  "http://10.48.118.250:3000" + "/login",
-]
 const finished_redirect_uri = clientBaseUrl + "/finished";
 
 var authorizationUrl;
@@ -41,8 +34,8 @@ app.get('/finished', (req, res) => {
   parsed_json = JSON.parse(jsoned)
 
   const new_req = https.request({
-    hostname: host,
-    port: 8006,
+    hostname: process.env.SERVER_HOST,
+    port: process.env.SERVER_PORT,
     path: '/bsn_attribute',
     method: 'POST',
     headers: {
@@ -107,7 +100,6 @@ app.get('/login', (req, res) => {
     // !!!! CARE: EXAMPLE DOES NOT IMPLEMENT THIS SECURITY ASPECT:
     // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
     // it should be httpOnly (not readable by javascript) and encrypted.
-    // code_verifier = generators.codeVerifier();
     state = generators.state()
     nonce = generators.nonce()
 
@@ -128,22 +120,9 @@ app.get('/login', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
+  console.log(`Example app listening at ${process.env.CLIENT_BASE_URL}:${port}`);
   discoverTvsDigiD();
 });
-
-function generate_code_challenge() {
-  const random = (bytes = 32) => base64url(randomBytes(bytes));
-  const code_verifier = random();
-  const code_challenge_1 = createHash('sha256').update(code_verifier).digest('hex');
-  const code_challenge = base64url(code_challenge_1);
-  // console.log(code_verifier, code_challenge)
-  // console.log(code_verifier, code_challenge_1, code_challenge);
-  return {
-    code_verifier: code_verifier,
-    code_challenge: code_challenge
-  }
-}
 
 function discoverTvsDigiD() {
   Issuer.discover(baseUrl + '/.well-known/openid-configuration') // => Promise

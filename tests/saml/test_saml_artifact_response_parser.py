@@ -1,7 +1,14 @@
+# pylint: disable=c-extension-no-member
+from datetime import datetime, timedelta
+
 import pytest
 
+from lxml import etree
+
+from inge6.saml import ArtifactResponse
+from inge6.saml.provider import Provider as SAMLProvider
 from inge6.saml.exceptions import UserNotAuthenticated
-from inge6.saml import ArtifactResponseParser
+from inge6.saml.constants import NAMESPACES
 
 # pylint: disable=pointless-string-statement
 """
@@ -41,11 +48,37 @@ uVMYjWfxR/Ub1uu5XcVrxGHKpmpTrRMvYOJwexlJQlc7p1aSZ0ttxgvewfUcxJrc
 PMn2xczoZzs7FpuIdsN62kxrd+bAPhC25K9mwG3oPZxR+aITjEKD
 -----END RSA PRIVATE KEY-----"""
 
+def update_time_values(xml_str):
+    root = etree.fromstring(xml_str)
+    strformat = '%Y-%m-%dT%H:%M:%S.%f%z'
+    current_time = datetime.now()
+
+    datetime_elems = root.findall('.//*[@IssueInstant]')
+    for elem in datetime_elems:
+        elem.attrib['IssueInstant'] = current_time.strftime(strformat)
+
+    datetime_elems = root.findall('.//*[@NotBefore]')
+    for elem in datetime_elems:
+        not_before_time = current_time - timedelta(seconds=120)
+        elem.attrib['NotBefore'] = not_before_time.strftime(strformat)
+
+    datetime_elems = root.findall('.//*[@NotOnOrAfter]')
+    for elem in datetime_elems:
+        not_on_or_after_time = current_time + timedelta(seconds=120)
+        elem.attrib['NotOnOrAfter'] = not_on_or_after_time.strftime(strformat)
+
+    authn_instants = root.findall('.//saml:AuthnStatement', NAMESPACES)
+    for elem in authn_instants:
+        elem.attrib['AuthnInstant'] = current_time.strftime(strformat)
+
+    return etree.tostring(root).decode()
+
+
 @pytest.fixture
 def response_custom_bsn():
     with open('tests/resources/artifact_response_custom_bsn.xml') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
-    return art_resp_resource
+    return update_time_values(art_resp_resource)
 
 @pytest.fixture
 def response_unedited():
@@ -57,21 +90,25 @@ def response_unedited():
 def response_authn_failed():
     with open('tests/resources/artifact_resolve_response_authnfailed.xml') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
-    return art_resp_resource
+    return update_time_values(art_resp_resource)
+
+@pytest.fixture
+def saml_provider():
+    return SAMLProvider()
 
 # pylint: disable=redefined-outer-name
-def test_artifact_response_parser_get_bsn(response_custom_bsn, monkeypatch):
-    artifact_response = ArtifactResponseParser(response_custom_bsn, verify=False)
+def test_get_bsn(response_custom_bsn, saml_provider, monkeypatch):
+    artifact_response = ArtifactResponse.from_string(response_custom_bsn, saml_provider, insecure=True)
 
-    monkeypatch.setattr(artifact_response, 'key', PRIV_KEY_BSN_AES_KEY)
+    monkeypatch.setattr(saml_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
     assert artifact_response.get_bsn() == '900212640'
 
 # pylint: disable=redefined-outer-name
-def test_artifact_response_parser_verify(response_unedited):
-    ArtifactResponseParser(response_unedited)
+def test_from_string(response_unedited, saml_provider):
+    ArtifactResponse.from_string(response_unedited, saml_provider, is_test_instance=True)
     assert True
 
 # pylint: disable=redefined-outer-name
-def test_artifact_response_parser_authnfailed(response_authn_failed):
+def test_authnfailed(response_authn_failed, saml_provider):
     with pytest.raises(UserNotAuthenticated):
-        ArtifactResponseParser(response_authn_failed, verify=False).raise_for_status()
+        ArtifactResponse.from_string(response_authn_failed, saml_provider, insecure=True).raise_for_status()
