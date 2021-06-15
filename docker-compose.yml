@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  inge-6:
+    build:
+      context: '${INGE6_PATH:-.}'
+      dockerfile: Dockerfile
+      args:
+        - PORT=8000
+    container_name: inge-6
+    environment:
+      - PORT=8000
+    ports:
+      - 8556:8000
