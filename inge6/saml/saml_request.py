@@ -27,7 +27,13 @@ def add_certs(root, cert_path: str) -> None:
     with open(cert_path, 'r') as cert_file:
         cert_node.text = base64.b64encode(cert_file.read().encode())
 
-def sign(root, key_path: str) -> None:
+def add_issuer(root, issuer_id):
+    root.find('./saml:Issuer', {'saml': 'urn:oasis:names:tc:SAML:2.0:assertion'}).text = issuer_id
+
+def add_destination(root, destination):
+    root.attrib['Destination'] = destination
+
+def sign(root, key_path):
     signature_node = xmlsec.tree.find_node(root, xmlsec.constants.NodeSignature)
     ctx = xmlsec.SignatureContext()
     key = xmlsec.Key.from_file(key_path, xmlsec.constants.KeyDataFormatPem)
@@ -61,9 +67,15 @@ class AuthNRequest(SAMLRequest):
     TEMPLATE_PATH = settings.saml.authn_request_template
 
     def __init__(self) -> None:
-        super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())
+        from .metadata import SPMetadata, IdPMetadata
+
+        super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())        
+        self.idp_metadata = IdPMetadata()
+        self.sp_metadata = SPMetadata()
 
         add_root_id(self.root, self._id_hash)
+        add_destination(self.root, self.idp_metadata.get_sso()['location'])
+        add_issuer(self.root, self.sp_metadata.issuer_id)
         add_root_issue_instant(self.root)
         add_reference(self.root, self._id_hash)
         add_certs(self.root, self.CERT_PATH)
@@ -72,12 +84,18 @@ class AuthNRequest(SAMLRequest):
 class ArtifactResolveRequest(SAMLRequest):
     TEMPLATE_PATH = settings.saml.artifactresolve_request_template
 
-    def __init__(self, artifact_code: str) -> None:
+    def __init__(self, artifact_code) -> None:
+        from .metadata import SPMetadata, IdPMetadata
+        
         super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())
         self.saml_resolve_req = self.root.find('.//samlp:ArtifactResolve', {'samlp': "urn:oasis:names:tc:SAML:2.0:protocol"})
+        self.idp_metadata = IdPMetadata()
+        self.sp_metadata = SPMetadata()
 
         add_root_id(self.saml_resolve_req, self._id_hash)
         add_root_issue_instant(self.saml_resolve_req)
+        add_destination(self.saml_resolve_req, self.idp_metadata.get_sso()['location'])
+        add_issuer(self.saml_resolve_req, self.sp_metadata.issuer_id)
         add_reference(self.saml_resolve_req, self._id_hash)
         add_certs(self.saml_resolve_req, self.CERT_PATH)
         add_artifact(self.saml_resolve_req, artifact_code)

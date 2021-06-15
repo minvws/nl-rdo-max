@@ -40,6 +40,8 @@ class SPMetadata(SAMLRequest):
         with open(self.SETTINGS_PATH, 'r') as settings_file:
             self.settings_dict = json.loads(settings_file.read())
 
+        self.issuer_id = self.settings_dict['sp']['entityId']
+
         with open(self.CERT_PATH, 'r') as cert_file:
             self.cert_data = cert_file.read()
 
