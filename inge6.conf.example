@@ -47,6 +47,11 @@ authn_request_html_template = saml/templates/html/authn_request.html
 host = localhost
 port = 6379
 
+ssl = True
+key = secrets/redis/private/redis_key.key
+cert = secrets/redis/certs/cert.crt
+cafile = secrets/redis/certs/cacert.crt
+
 object_ttl = 600
 
 default_cache_namespace = tvs-connect:
