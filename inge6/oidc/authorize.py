@@ -111,6 +111,9 @@ def accesstoken(provider, request_body, headers):
 
     cc_cm = redis_cache.hget(code, 'cc_cm')
 
+    if cc_cm is None:
+        raise HTTPException(400, detail='Code challenge has expired. Please retry authorization.')
+
     if not verify_code_verifier(cc_cm, code_verifier):
         raise HTTPException(400, detail='Bad request. code verifier not recognized')
 
