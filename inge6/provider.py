@@ -98,6 +98,16 @@ def _rate_limit_test(user_limit_key: str) -> None:
     get_redis_client().expire(redis_key, 1)
 
 def _get_too_busy_redirect_error_uri(redirect_uri, state):
+    """
+    Given the redirect uri and state, return an error to the client desribing the service
+    is too busy to handle an authorize request.
+
+        redirect_uri?error=login_required&error_description=The+servers+are+too+busy+right+now,+please+try+again+later&state=34Gf3431D
+
+    :param redirect_uri: uri to pass the error query params to
+    :param state: state that corresponds to the request
+
+    """
     error = "login_required"
     error_desc = "The servers are too busy right now, please try again later."
     return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
