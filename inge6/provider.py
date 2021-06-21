@@ -73,7 +73,7 @@ def _create_redis_bsn_key(key: str, id_token: str) -> str:
     jwt = validate_jwt_token(key, id_token)
     return jwt['at_hash']
 
-def _rate_limit_test(ip_address: str, user_limit_key: str) -> None:
+def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> None:
     """
     Test is we have passed the user limit defined in the redis-store. The rate limit
     defines the number of users per second which we allow.
@@ -83,12 +83,12 @@ def _rate_limit_test(ip_address: str, user_limit_key: str) -> None:
     :param user_limit_key: the key in the redis store that defines the number of allowed users per 10th of a second
     :raises: TooBusyError when the number of users exceeds the allowed number.
     """
-    ipv4_hash = nacl.hash.sha256(ip_address.encode()).decode()
-    ipv4_key = "tvs:ipv4:" + ipv4_hash
-    if get_redis_client().get(ipv4_key) is not None:
-        raise TooManyRequestsFromOrigin("Too many requests from the same ip_address during the last 10 seconds.")
+    ip_hash = nacl.hash.sha256(ip_address.encode()).decode()
+    ip_key = "tvs:ipv4:" + ip_hash
+    if get_redis_client().get(ip_key) is not None:
+        raise TooManyRequestsFromOrigin(f"Too many requests from the same ip_address during the last {ip_expire_s} seconds.")
 
-    get_redis_client().set(ipv4_key, "exists", ex=10)
+    get_redis_client().set(ip_key, "exists", ex=ip_expire_s)
 
     user_limit = get_redis_client().get(user_limit_key)
 
@@ -142,7 +142,7 @@ class Provider(OIDCProvider, SAMLProvider):
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
         try:
-            _rate_limit_test(ip_address, settings.ratelimit.user_limit_key)
+            _rate_limit_test(ip_address, settings.ratelimit.user_limit_key, int(settings.ratelimit.ip_expire_in_s))
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
             logging.getLogger().warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
             redirect_uri = _get_too_busy_redirect_error_uri(authorize_request.redirect_uri, authorize_request.state)
