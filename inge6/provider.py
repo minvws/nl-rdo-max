@@ -84,8 +84,7 @@ def _rate_limit_test(ip_address: str, user_limit_key: str) -> None:
     :raises: TooBusyError when the number of users exceeds the allowed number.
     """
     ipv4_hash = nacl.hash.sha256(ip_address.encode()).decode()
-    timeslot_ipv4 = int(datetime.utcnow().timestamp() / 10)
-    ipv4_key = "tvs:ipv4:" + str(timeslot_ipv4) + f":{ipv4_hash}"
+    ipv4_key = "tvs:ipv4:" + ipv4_hash
     if get_redis_client().get(ipv4_key) is not None:
         raise TooManyRequestsFromOrigin("Too many requests from the same ip_address during the last 10 seconds.")
 

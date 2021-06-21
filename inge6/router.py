@@ -103,7 +103,7 @@ if settings.mock_digid.lower() == 'true':
 
     @router.get('/consume_bsn/{bsn}')
     def consume_bsn_for_token(bsn: str, request: Request, authorize_req: AuthorizeRequest = Depends()):
-        response = get_provider().authorize_endpoint(authorize_req, request.headers)
+        response = get_provider().authorize_endpoint(authorize_req, request.headers, request.client.host)
         status_code = response.status_code
         if status_code != 200:
             logging.debug('Status code 200 was expected, but was %s', response.status_code)
