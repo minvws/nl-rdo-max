@@ -36,6 +36,7 @@ if __name__ == "__main__":
         'host': settings.host,
         'port': int(settings.port),
         'reload': settings.debug == "True",
+        'proxy_headers': True
     }
 
     if hasattr(settings, 'use_ssl') and settings.use_ssl.lower() == 'true':

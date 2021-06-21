@@ -8,6 +8,7 @@ from datetime import datetime
 
 import requests
 
+import nacl.hash
 from starlette.datastructures import Headers
 
 from fastapi import FastAPI, Request, Response, HTTPException
@@ -28,7 +29,7 @@ from .cache import get_redis_client, redis_cache
 from .utils import create_post_autosubmit_form, create_page_too_busy
 from .encrypt import Encrypt
 from .models import AuthorizeRequest
-from .exceptions import TooBusyError, TokenSAMLErrorResponse
+from .exceptions import TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin
 
 from .saml.exceptions import UserNotAuthenticated
 from .saml.provider import Provider as SAMLProvider
@@ -72,7 +73,7 @@ def _create_redis_bsn_key(key: str, id_token: str) -> str:
     jwt = validate_jwt_token(key, id_token)
     return jwt['at_hash']
 
-def _rate_limit_test(user_limit_key: str) -> None:
+def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> None:
     """
     Test is we have passed the user limit defined in the redis-store. The rate limit
     defines the number of users per second which we allow.
@@ -82,6 +83,13 @@ def _rate_limit_test(user_limit_key: str) -> None:
     :param user_limit_key: the key in the redis store that defines the number of allowed users per 10th of a second
     :raises: TooBusyError when the number of users exceeds the allowed number.
     """
+    ip_hash = nacl.hash.sha256(ip_address.encode()).decode()
+    ip_key = "tvs:ipv4:" + ip_hash
+    if get_redis_client().get(ip_key) is not None:
+        raise TooManyRequestsFromOrigin(f"Too many requests from the same ip_address during the last {ip_expire_s} seconds.")
+
+    get_redis_client().set(ip_key, "exists", ex=ip_expire_s)
+
     user_limit = get_redis_client().get(user_limit_key)
 
     if user_limit is None:
@@ -90,11 +98,11 @@ def _rate_limit_test(user_limit_key: str) -> None:
     user_limit = int(user_limit)
     timeslot = int(datetime.utcnow().timestamp() * 10)
 
-    redis_key = "tvs:limiter:" + str(timeslot)
-    num_users = get_redis_client().incr(redis_key)
+    timeslot_key = "tvs:limiter:" + str(timeslot)
+    num_users = get_redis_client().incr(timeslot_key)
 
     if num_users == 1:
-        get_redis_client().expire(redis_key, 2)
+        get_redis_client().expire(timeslot_key, 2)
     elif num_users >= user_limit:
         raise TooBusyError("Servers are too busy at this point, please try again later")
 
@@ -132,11 +140,11 @@ class Provider(OIDCProvider, SAMLProvider):
         with open(settings.ratelimit.sorry_too_busy_page, 'r') as too_busy_file:
             self.too_busy_page_template = too_busy_file.read()
 
-    def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers) -> Response:
+    def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
         try:
-            _rate_limit_test(settings.ratelimit.user_limit_key)
-        except TooBusyError:
-            logging.getLogger().warning("Service is too busy, cancelling authorization flow.")
+            _rate_limit_test(ip_address, settings.ratelimit.user_limit_key, int(settings.ratelimit.ip_expire_in_s))
+        except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
+            logging.getLogger().warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
             redirect_uri = _get_too_busy_redirect_error_uri(authorize_request.redirect_uri, authorize_request.state)
             too_busy_page = create_page_too_busy(self.too_busy_page_template, redirect_uri)
             return HTMLResponse(content=too_busy_page)
