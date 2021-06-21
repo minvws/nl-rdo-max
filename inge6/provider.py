@@ -73,7 +73,7 @@ def _create_redis_bsn_key(key: str, id_token: str) -> str:
     return jwt['at_hash']
 
 def _rate_limit_test(ratelimit: int):
-    seconds_since_epoch = datetime.now().timestamp()
+    seconds_since_epoch = datetime.utcnow().timestamp()
     
     redis_key = "tvs:limiter:" + seconds_since_epoch
     users = redis_cache.get(redis_key)
