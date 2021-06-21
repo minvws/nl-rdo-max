@@ -96,6 +96,16 @@ app.get('/login', (req, res) => {
         res.send(html)
       });
 
+  } else if ('error' in req.query) {
+    html = `
+    <h1> Something went wrong: </h1>
+    <ul>
+      <li> <b>error:</b> ${req.query['error']} </li>
+      <li> <b>error_description:</b> ${req.query['error_description']} </li>
+      <li> <b>state:</b> ${req.query['state']} </li>
+    </ul>
+    `
+    res.send(html)
   } else {
     // !!!! CARE: EXAMPLE DOES NOT IMPLEMENT THIS SECURITY ASPECT:
     // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
