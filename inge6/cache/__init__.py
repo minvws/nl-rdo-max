@@ -7,6 +7,11 @@ from ..config import settings
 _REDIS_CLIENT: Optional[StrictRedis] = None
 
 def get_redis_client() -> StrictRedis:
+    """
+    Global function to retrieve the connection with the redis-server.
+
+    :returns: StrictRedis object having a connection with the configured redis server.
+    """
     global _REDIS_CLIENT
     if _REDIS_CLIENT is None:
         use_ssl = settings.redis.ssl.lower() == 'true'

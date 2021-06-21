@@ -4,6 +4,7 @@ import logging
 
 from urllib.parse import parse_qs, urlencode
 from typing import Optional, Text
+from datetime import datetime
 
 import requests
 
@@ -23,10 +24,11 @@ from pyop.exceptions import (
 )
 
 from .config import settings
-from .cache import redis_cache
-from .utils import create_post_autosubmit_form
+from .cache import get_redis_client, redis_cache
+from .utils import create_post_autosubmit_form, create_page_too_busy
 from .encrypt import Encrypt
 from .models import AuthorizeRequest
+from .exceptions import TooBusyError, TokenSAMLErrorResponse
 
 from .saml.exceptions import UserNotAuthenticated
 from .saml.provider import Provider as SAMLProvider
@@ -70,16 +72,46 @@ def _create_redis_bsn_key(key: str, id_token: str) -> str:
     jwt = validate_jwt_token(key, id_token)
     return jwt['at_hash']
 
-# pylint: disable=too-many-ancestors
-class TokenSAMLErrorResponse(TokenErrorResponse):
-    c_allowed_values = TokenErrorResponse.c_allowed_values.copy()
-    c_allowed_values.update(
-    {
-        "error": [
-            "saml_authn_failed",
-        ]
-    }
-)
+def _rate_limit_test(user_limit_key: str) -> None:
+    """
+    Test is we have passed the user limit defined in the redis-store. The rate limit
+    defines the number of users per second which we allow.
+
+    if no user_limit is found in the redis store, this check is treated as 'disabled'.
+
+    :param user_limit_key: the key in the redis store that defines the number of allowed users per second
+    :raises: TooBusyError when the number of users exceeds the allowed number.
+    """
+    user_limit = get_redis_client().get(user_limit_key)
+
+    if user_limit is None:
+        return
+
+    user_limit = int(user_limit)
+    seconds_since_epoch = datetime.utcnow().timestamp()
+    redis_key = "tvs:limiter:" + str(seconds_since_epoch)
+    num_users = get_redis_client().incr(redis_key)
+
+    if num_users == 1:
+        get_redis_client().expire(redis_key, 2)
+    elif num_users >= user_limit:
+        raise TooBusyError("Servers are too busy at this point, please try again later")
+
+
+def _get_too_busy_redirect_error_uri(redirect_uri, state):
+    """
+    Given the redirect uri and state, return an error to the client desribing the service
+    is too busy to handle an authorize request.
+
+        redirect_uri?error=login_required&error_description=The+servers+are+too+busy+right+now,+please+try+again+later&state=34Gf3431D
+
+    :param redirect_uri: uri to pass the error query params to
+    :param state: state that corresponds to the request
+
+    """
+    error = "login_required"
+    error_desc = "The servers are too busy right now, please try again later."
+    return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
 
 class Provider(OIDCProvider, SAMLProvider):
     BSN_SIGN_KEY = settings.bsn.sign_key
@@ -96,7 +128,18 @@ class Provider(OIDCProvider, SAMLProvider):
             raw_local_enc_key=self.BSN_LOCAL_SYMM_KEY
         )
 
+        with open(settings.ratelimit.sorry_too_busy_page, 'r') as too_busy_file:
+            self.too_busy_page_template = too_busy_file.read()
+
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers) -> Response:
+        try:
+            _rate_limit_test(settings.ratelimit.user_limit_key)
+        except TooBusyError:
+            logging.getLogger().warning("Service is too busy, cancelling authorization flow.")
+            redirect_uri = _get_too_busy_redirect_error_uri(authorize_request.redirect_uri, authorize_request.state)
+            too_busy_page = create_page_too_busy(self.too_busy_page_template, redirect_uri)
+            return HTMLResponse(content=too_busy_page)
+
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
         except InvalidAuthenticationRequest as invalid_auth_req:
