@@ -4,6 +4,7 @@ import logging
 
 from urllib.parse import parse_qs, urlencode
 from typing import Optional, Text
+from datetime import datetime
 
 import requests
 
@@ -24,9 +25,10 @@ from pyop.exceptions import (
 
 from .config import settings
 from .cache import redis_cache
-from .utils import create_post_autosubmit_form
+from .utils import create_post_autosubmit_form, create_page_too_busy
 from .encrypt import Encrypt
 from .models import AuthorizeRequest
+from .exceptions import TooBusyError, TokenSAMLErrorResponse
 
 from .saml.exceptions import UserNotAuthenticated
 from .saml.provider import Provider as SAMLProvider
@@ -70,16 +72,22 @@ def _create_redis_bsn_key(key: str, id_token: str) -> str:
     jwt = validate_jwt_token(key, id_token)
     return jwt['at_hash']
 
-# pylint: disable=too-many-ancestors
-class TokenSAMLErrorResponse(TokenErrorResponse):
-    c_allowed_values = TokenErrorResponse.c_allowed_values.copy()
-    c_allowed_values.update(
-    {
-        "error": [
-            "saml_authn_failed",
-        ]
-    }
-)
+def _rate_limit_test(ratelimit: int):
+    seconds_since_epoch = datetime.now().timestamp()
+    
+    redis_key = "tvs:limiter:" + seconds_since_epoch
+    users = redis_cache.get(redis_key)
+
+    if users > ratelimit:
+        raise TooBusyError("Servers are too busy at this point, please try again later")
+    else:
+        redis_cache.incr(redis_key)
+        redis_cache.expire(redis_key,1)
+
+def _get_too_busy_redirect_error_uri(redirect_uri, state):
+    error = "login_required"
+    error_desc = "The servers are too busy right now, please try again later."
+    return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
 
 class Provider(OIDCProvider, SAMLProvider):
     BSN_SIGN_KEY = settings.bsn.sign_key
@@ -96,7 +104,17 @@ class Provider(OIDCProvider, SAMLProvider):
             raw_local_enc_key=self.BSN_LOCAL_SYMM_KEY
         )
 
+        with open(settings.ratelimit.sorry_page_too_busy, 'r') as too_busy_file:
+            self.too_busy_page_template = too_busy_file.read()
+
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers) -> Response:
+        try:
+            _rate_limit_test(settings.ratelimit.user_limit)
+        except TooBusyError:
+            redirect_uri = _get_too_busy_redirect_error_uri(authorize_request.redirect_uri, authorize_request.state)
+            too_busy_page = create_page_too_busy(self.too_busy_page_template, redirect_uri)
+            return HTMLResponse(content=too_busy_page)
+
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
         except InvalidAuthenticationRequest as invalid_auth_req:
