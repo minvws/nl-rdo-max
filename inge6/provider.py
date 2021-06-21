@@ -88,7 +88,7 @@ def _rate_limit_test(user_limit_key: str) -> None:
         return
 
     user_limit = int(user_limit)
-    seconds_since_epoch = datetime.now().timestamp()
+    seconds_since_epoch = datetime.utcnow().timestamp()
     redis_key = "tvs:limiter:" + str(seconds_since_epoch)
     num_users = get_redis_client().get(redis_key)
 
