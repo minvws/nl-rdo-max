@@ -12,7 +12,7 @@ mock_digid = True
 
 [ratelimit]
 sorry_too_busy_page = static/templates/sorry-coronacheck-combined.html
-user_limit = 25
+user_limit_key = tvs_connect_user_limit
 
 [bsn]
 sign_key =

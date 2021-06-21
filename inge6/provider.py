@@ -24,7 +24,7 @@ from pyop.exceptions import (
 )
 
 from .config import settings
-from .cache import redis_cache
+from .cache import get_redis_client, redis_cache
 from .utils import create_post_autosubmit_form, create_page_too_busy
 from .encrypt import Encrypt
 from .models import AuthorizeRequest
@@ -72,17 +72,30 @@ def _create_redis_bsn_key(key: str, id_token: str) -> str:
     jwt = validate_jwt_token(key, id_token)
     return jwt['at_hash']
 
-def _rate_limit_test(ratelimit: int):
-    seconds_since_epoch = datetime.now().timestamp()
-    
-    redis_key = "tvs:limiter:" + seconds_since_epoch
-    users = redis_cache.get(redis_key)
+def _rate_limit_test(user_limit_key: str) -> None:
+    """
+    Test is we have passed the user limit defined in the redis-store. The rate limit
+    defines the number of users per second which we allow.
 
-    if users > ratelimit:
+    if no user_limit is found in the redis store, this check is treated as 'disabled'.
+
+    :param user_limit_key: the key in the redis store that defines the number of allowed users per second 
+    :raises: TooBusyError when the number of users exceeds the allowed number.
+    """
+    user_limit = get_redis_client().get(user_limit_key)
+
+    if user_limit is None:
+        return
+
+    seconds_since_epoch = datetime.now().timestamp()
+    redis_key = "tvs:limiter:" + seconds_since_epoch
+    num_users = get_redis_client().get(redis_key)
+
+    if num_users is not None and num_users > user_limit:
         raise TooBusyError("Servers are too busy at this point, please try again later")
-    else:
-        redis_cache.incr(redis_key)
-        redis_cache.expire(redis_key,1)
+
+    get_redis_client().incr(redis_key)
+    get_redis_client().expire(redis_key, 1)
 
 def _get_too_busy_redirect_error_uri(redirect_uri, state):
     error = "login_required"
@@ -109,7 +122,7 @@ class Provider(OIDCProvider, SAMLProvider):
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers) -> Response:
         try:
-            _rate_limit_test(settings.ratelimit.user_limit)
+            _rate_limit_test(settings.ratelimit.user_limit_key)
         except TooBusyError:
             redirect_uri = _get_too_busy_redirect_error_uri(authorize_request.redirect_uri, authorize_request.state)
             too_busy_page = create_page_too_busy(self.too_busy_page_template, redirect_uri)
