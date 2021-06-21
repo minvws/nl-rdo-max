@@ -87,12 +87,13 @@ def _rate_limit_test(user_limit_key: str) -> None:
     if user_limit is None:
         return
 
+    user_limit = int(user_limit)
     seconds_since_epoch = datetime.now().timestamp()
-    redis_key = "tvs:limiter:" + seconds_since_epoch
+    redis_key = "tvs:limiter:" + str(seconds_since_epoch)
     num_users = get_redis_client().get(redis_key)
 
-    if num_users is not None and num_users > user_limit:
-        raise TooBusyError("Servers are too busy at this point, please try again later")
+    if num_users is not None and int(num_users) > user_limit:
+       raise TooBusyError("Servers are too busy at this point, please try again later")
 
     get_redis_client().incr(redis_key)
     get_redis_client().expire(redis_key, 1)
@@ -127,13 +128,14 @@ class Provider(OIDCProvider, SAMLProvider):
             raw_local_enc_key=self.BSN_LOCAL_SYMM_KEY
         )
 
-        with open(settings.ratelimit.sorry_page_too_busy, 'r') as too_busy_file:
+        with open(settings.ratelimit.sorry_too_busy_page, 'r') as too_busy_file:
             self.too_busy_page_template = too_busy_file.read()
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers) -> Response:
         try:
             _rate_limit_test(settings.ratelimit.user_limit_key)
         except TooBusyError:
+            logging.getLogger().warning("Service is too busy, cancelling authorization flow.")
             redirect_uri = _get_too_busy_redirect_error_uri(authorize_request.redirect_uri, authorize_request.state)
             too_busy_page = create_page_too_busy(self.too_busy_page_template, redirect_uri)
             return HTMLResponse(content=too_busy_page)
