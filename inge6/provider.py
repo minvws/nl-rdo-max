@@ -99,9 +99,9 @@ def _rate_limit_test(ip_address: str, user_limit_key: str) -> None:
     elif num_users >= user_limit:
         raise TooBusyError("Servers are too busy at this point, please try again later")
 
-    ipv4_hash = nacl.hash.sha256(ip_address.encode())
+    ipv4_hash = nacl.hash.sha256(ip_address.encode()).decode()
     timeslot_ipv4 = int(datetime.utcnow().timestamp() / 10)
-    ipv4_key = "tvs:sismember:" + str(timeslot_ipv4) + f":{ipv4_hash}"
+    ipv4_key = "tvs:ipv4:" + str(timeslot_ipv4) + f":{ipv4_hash}"
     if get_redis_client().get(ipv4_key) is not None:
         raise TooManyRequestsFromOrigin(f"Too many requests from the same ip_address during the last 10 seconds.")
     
