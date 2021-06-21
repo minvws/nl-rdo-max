@@ -8,6 +8,7 @@ from datetime import datetime
 
 import requests
 
+import nacl.hash
 from starlette.datastructures import Headers
 
 from fastapi import FastAPI, Request, Response, HTTPException
@@ -82,7 +83,6 @@ def _rate_limit_test(ip_address: str, user_limit_key: str) -> None:
     :param user_limit_key: the key in the redis store that defines the number of allowed users per 10th of a second
     :raises: TooBusyError when the number of users exceeds the allowed number.
     """
-    LIMIT_EXPIRE_S = 2
     user_limit = get_redis_client().get(user_limit_key)
 
     if user_limit is None:
@@ -95,17 +95,18 @@ def _rate_limit_test(ip_address: str, user_limit_key: str) -> None:
     num_users = get_redis_client().incr(timeslot_key)
 
     if num_users == 1:
-        get_redis_client().expire(timeslot_key, LIMIT_EXPIRE_S)
+        get_redis_client().expire(timeslot_key, 2)
     elif num_users >= user_limit:
         raise TooBusyError("Servers are too busy at this point, please try again later")
 
-    smember_key = "tvs:sismember:" + str(timeslot)
-    if get_redis_client().sismember(smember_key, ip_address):
-        raise TooManyRequestsFromOrigin(f"Too many requests from the same ip_address this second. IPv4: {ip_address}")
+    ipv4_hash = nacl.hash.sha256(ip_address.encode())
+    timeslot_ipv4 = int(datetime.utcnow().timestamp() / 10)
+    ipv4_key = "tvs:sismember:" + str(timeslot_ipv4) + f":{ipv4_hash}"
+    if get_redis_client().get(ipv4_key) is not None:
+        raise TooManyRequestsFromOrigin(f"Too many requests from the same ip_address during the last 10 seconds.")
     
-    get_redis_client().sadd(smember_key, ip_address)
-    get_redis_client().expire(smember_key, LIMIT_EXPIRE_S)
-
+    EXPIRES_IN_S = 10
+    get_redis_client().set(ipv4_key, "exists", ex=EXPIRES_IN_S)
 
 def _get_too_busy_redirect_error_uri(redirect_uri, state):
     """
