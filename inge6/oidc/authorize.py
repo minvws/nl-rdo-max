@@ -52,7 +52,7 @@ def validate_jwt_token(key: str, id_token: str) -> dict:
     :returns: a dictionary containing the parts of the valid JWT token
     :raises InvalidSignatureError: raises an exception when the id_token is invalid.
     """
-    return jwt.decode(id_token, key=key, algorithms=['RS256'], audience=['test_client'])
+    return jwt.decode(id_token, key=key, algorithms=['RS256'], audience=['cc_web', 'cc_app'])
 
 
 def is_authorized(key: str, request: Request) -> Tuple[str, str]:
