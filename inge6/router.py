@@ -21,7 +21,7 @@ router = APIRouter()
 
 @router.get('/authorize')
 def authorize(request: Request, authorize_req: AuthorizeRequest = Depends()):
-    return get_provider().authorize_endpoint(authorize_req, request.headers)
+    return get_provider().authorize_endpoint(authorize_req, request.headers, request.client.host)
 
 @router.post('/accesstoken')
 async def token_endpoint(request: Request):
