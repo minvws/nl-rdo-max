@@ -79,7 +79,7 @@ def _rate_limit_test(user_limit_key: str) -> None:
 
     if no user_limit is found in the redis store, this check is treated as 'disabled'.
 
-    :param user_limit_key: the key in the redis store that defines the number of allowed users per second 
+    :param user_limit_key: the key in the redis store that defines the number of allowed users per second
     :raises: TooBusyError when the number of users exceeds the allowed number.
     """
     user_limit = get_redis_client().get(user_limit_key)
@@ -93,7 +93,7 @@ def _rate_limit_test(user_limit_key: str) -> None:
     num_users = get_redis_client().get(redis_key)
 
     if num_users is not None and int(num_users) > user_limit:
-       raise TooBusyError("Servers are too busy at this point, please try again later")
+        raise TooBusyError("Servers are too busy at this point, please try again later")
 
     get_redis_client().incr(redis_key)
     get_redis_client().expire(redis_key, 1)

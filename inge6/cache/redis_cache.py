@@ -10,7 +10,7 @@ EXPIRES_IN_S: int = int(settings.redis.object_ttl)
 def _serialize(value: Any) -> bytes:
     """
     Function that specifies how the data should be serialized into the redis-server.
-    
+
     :param value: Any value that should be storen in a redis database
     :returns: Serialized value, a pickle dump.
     """
@@ -18,7 +18,7 @@ def _serialize(value: Any) -> bytes:
 
 def _deserialize(serialized_value: Optional[Any]) -> Any:
     """
-    Specifies the opposite of the serialize function, expects the output of a redis GET command. And 
+    Specifies the opposite of the serialize function, expects the output of a redis GET command. And
     returns the deserialized version of that output.
 
     :param serialized_value: value retrieved from our redis-server connection
@@ -79,7 +79,7 @@ def hset(namespace: str, key: str, value: Any) -> None:
 
 def hget(namespace, key) -> Any:
     """
-    Get a value from the redis database within a namespace. Rather than 
+    Get a value from the redis database within a namespace. Rather than
     manually prefixing the key, use the internal redis namespace system
     to retrieve keys without clashing with other clients.
     """
