@@ -90,13 +90,13 @@ def _rate_limit_test(user_limit_key: str) -> None:
     user_limit = int(user_limit)
     seconds_since_epoch = datetime.utcnow().timestamp()
     redis_key = "tvs:limiter:" + str(seconds_since_epoch)
-    num_users = get_redis_client().get(redis_key)
+    num_users = get_redis_client().incr(redis_key)
 
-    if num_users is not None and int(num_users) > user_limit:
+    if num_users == 1:
+        get_redis_client().expire(redis_key, 2)
+    elif num_users >= user_limit:
         raise TooBusyError("Servers are too busy at this point, please try again later")
 
-    get_redis_client().incr(redis_key)
-    get_redis_client().expire(redis_key, 1)
 
 def _get_too_busy_redirect_error_uri(redirect_uri, state):
     """
