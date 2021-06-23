@@ -3,7 +3,7 @@ import json
 import logging
 
 from urllib.parse import parse_qs, urlencode
-from typing import Optional, Text
+from typing import Optional, Text, List
 from datetime import datetime
 
 import requests
@@ -69,8 +69,8 @@ def _store_code_challenge(code: str, code_challenge: str, code_challenge_method:
     }
     redis_cache.hset(code, 'cc_cm', value)
 
-def _create_redis_bsn_key(key: str, id_token: str) -> str:
-    jwt = validate_jwt_token(key, id_token)
+def _create_redis_bsn_key(key: str, id_token: str, audience: List[Text]) -> str:
+    jwt = validate_jwt_token(key, id_token, audience)
     return jwt['at_hash']
 
 def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> None:
@@ -140,6 +140,9 @@ class Provider(OIDCProvider, SAMLProvider):
         with open(settings.ratelimit.sorry_too_busy_page, 'r') as too_busy_file:
             self.too_busy_page_template = too_busy_file.read()
 
+        with open(settings.oidc.clients_file, 'r') as clients_file:
+            self.audience = list(json.loads(clients_file.read()).keys())
+
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
         try:
             _rate_limit_test(ip_address, settings.ratelimit.user_limit_key, int(settings.ratelimit.ip_expire_in_s))
@@ -171,7 +174,7 @@ class Provider(OIDCProvider, SAMLProvider):
             token_response = accesstoken(self, body, headers)
             encrypted_bsn = self._resolve_artifact(artifact)
 
-            access_key = _create_redis_bsn_key(self.key, token_response['id_token'].encode())
+            access_key = _create_redis_bsn_key(self.key, token_response['id_token'].encode(), self.audience)
             redis_cache.set(access_key, encrypted_bsn)
 
             json_content_resp = jsonable_encoder(token_response.to_dict())
@@ -231,7 +234,7 @@ class Provider(OIDCProvider, SAMLProvider):
             'SOAPAction' : '"https://artifact-pp2.toegang.overheid.nl/kvs/rd/resolve_artifact"',
             'content-type': 'text/xml'
         }
-        resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=('saml/certs/sp.crt', 'saml/certs/sp.key'))
+        resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=(settings.saml.cert_path, settings.saml.key_path))
         artifact_response = ArtifactResponse.from_string(resolved_artifact.text, self)
         artifact_response.raise_for_status()
 
@@ -240,7 +243,7 @@ class Provider(OIDCProvider, SAMLProvider):
         return encrypted_bsn
 
     def bsn_attribute(self, request: Request) -> Response:
-        _, at_hash= is_authorized(self.key, request)
+        _, at_hash= is_authorized(self.key, request, self.audience)
 
         redis_bsn_key = at_hash
         attributes = redis_cache.get(redis_bsn_key)

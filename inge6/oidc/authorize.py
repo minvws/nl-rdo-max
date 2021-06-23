@@ -1,4 +1,4 @@
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List, Text
 from urllib.parse import parse_qs
 
 import nacl.hash
@@ -43,7 +43,7 @@ def verify_code_verifier(cc_cm: Dict[str ,str], code_verifier: str) -> bool:
     return code_challenge == cc_cm['code_challenge']
 
 
-def validate_jwt_token(key: str, id_token: str) -> dict:
+def validate_jwt_token(key: str, id_token: str, audience: List[Text]) -> dict:
     """
     Verify and decode the JWT Token, raises exception on error.
 
@@ -52,10 +52,10 @@ def validate_jwt_token(key: str, id_token: str) -> dict:
     :returns: a dictionary containing the parts of the valid JWT token
     :raises InvalidSignatureError: raises an exception when the id_token is invalid.
     """
-    return jwt.decode(id_token, key=key, algorithms=['RS256'], audience=['cc_web', 'cc_app'])
+    return jwt.decode(id_token, key=key, algorithms=['RS256'], audience=audience)
 
 
-def is_authorized(key: str, request: Request) -> Tuple[str, str]:
+def is_authorized(key: str, request: Request, audience: List[Text]) -> Tuple[str, str]:
     """
     Verify that a request is authorized by verifying the id_token in the Authorization
     header.
@@ -71,7 +71,7 @@ def is_authorized(key: str, request: Request) -> Tuple[str, str]:
     if scheme != 'Bearer':
         raise HTTPException(status_code=401, detail="Not authorized")
 
-    jwt_dict = validate_jwt_token(key, id_token)
+    jwt_dict = validate_jwt_token(key, id_token, audience)
     return id_token, jwt_dict['at_hash']
 
 def _is_valid_at_request_body(request_body: bytes):
