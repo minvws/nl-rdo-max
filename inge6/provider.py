@@ -139,7 +139,7 @@ class Provider(OIDCProvider, SAMLProvider):
 
         with open(settings.ratelimit.sorry_too_busy_page, 'r') as too_busy_file:
             self.too_busy_page_template = too_busy_file.read()
-        
+
         with open(settings.oidc.clients_file, 'r') as clients_file:
             self.audience = list(json.loads(clients_file.read()).keys())
 
