@@ -1,6 +1,6 @@
 import logging
 
-from typing import Dict, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Form
 from fastapi.responses import JSONResponse, HTMLResponse
