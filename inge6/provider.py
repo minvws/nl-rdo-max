@@ -120,7 +120,7 @@ def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_accesslist):
     """
     if redirect_uri not in uri_accesslist:
         return "https://coronacheck.nl"
-    
+
     error = "login_required"
     error_desc = "The servers are too busy right now, please try again later."
     return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
