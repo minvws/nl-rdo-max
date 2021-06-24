@@ -62,23 +62,9 @@ def read_root():
 
 @router.get("/health")
 def health() -> Dict[str, bool]:
-    errors = list()
-
-    # Check reachability redis
-    if not get_redis_client().ping():
-        errors.append("CANNOT REACH REDIS CLIENT ON {}:{}".format(settings.redis.host, settings.redis.port))
-
-    # Check accessability cert and key path
-    if not os.access(settings.saml.cert_path, os.R_OK):
-        errors.append("CANNOT ACCESS SAML CERT FILE")
-
-    if not os.access(settings.saml.key_path, os.R_OK):
-        errors.append("CANNOT ACCESS SAML KEY FILE")
-
-    if len(errors) != 0:
-        raise HTTPException(status_code=500, detail=',\n'.join(errors))
-
-    return {"running": True}
+    redis_healthy = get_redis_client().ping()
+    healthy = redis_healthy
+    return {"healthy": healthy, "results": [{"healthy": redis_healthy, "service": "keydb"}]}
 
 
 ## MOCK ENDPOINTS:
