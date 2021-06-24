@@ -1,12 +1,12 @@
 import uuid
 
-from fastapi import Request
 from fastapi.responses import RedirectResponse, HTMLResponse
 
-async def digid_mock(request: Request) -> HTMLResponse:
-    body = await request.form()
-    state = request.query_params['state']
-    relay_state = body['RelayState']
+from .models import DigiDMockRequest, DigiDMockCatchRequest
+
+def digid_mock(digid_mock_request: DigiDMockRequest) -> HTMLResponse:
+    state = digid_mock_request.state
+    relay_state = digid_mock_request.RelayState
     artifact = str(uuid.uuid4())
     http_content = f"""
     <html>
@@ -42,9 +42,9 @@ async def digid_mock(request: Request) -> HTMLResponse:
     return HTMLResponse(content=http_content, status_code=200)
 
 
-async def digid_mock_catch(request: Request) -> RedirectResponse:
-    bsn = request.query_params['bsn']
-    relay_state = request.query_params['RelayState']
+def digid_mock_catch(request: DigiDMockCatchRequest) -> RedirectResponse:
+    bsn = request.bsn
+    relay_state = request.RelayState
 
     response_uri = '/acs' + f'?SAMLart={bsn}&RelayState={relay_state}&mocking=1'
     return RedirectResponse(response_uri, status_code=303)

@@ -20,6 +20,16 @@ class AuthorizeRequest(BaseModel):
     code_challenge: str
     code_challenge_method: str
 
+class DigiDMockRequest(BaseModel):
+    state: str
+    SAMLRequest: str
+    RelayState: str
+
+class DigiDMockCatchRequest(BaseModel):
+    bsn: str
+    SAMLart: str
+    RelayState: str
+      
 class SorryPageRequest(BaseModel):
     state: str
     redirect_uri: str
