@@ -21,9 +21,5 @@ def create_post_autosubmit_form(context: dict) -> Text:
     return _fill_template_from_file(settings.saml.authn_request_html_template, context)
 
 
-def create_page_too_busy(page_template: str, base_url: str) -> Text:
-    context = {
-        'coronacheck_uri': base_url
-    }
-
-    return _fill_template(page_template, context)
+def create_page_too_busy(page_template_head: str, page_template_tail: str, base_url: str) -> Text:
+    return page_template_head + base_url + page_template_tail
