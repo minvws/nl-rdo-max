@@ -86,10 +86,11 @@ def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> 
     """
     ip_hash = nacl.hash.sha256(ip_address.encode()).decode()
     ip_key = "tvs:ipv4:" + ip_hash
-    if get_redis_client().get(ip_key) is not None:
+    ip_key_exists = get_redis_client().getset(ip_key, 'exists')
+    if ip_key_exists is not None:
         raise TooManyRequestsFromOrigin(f"Too many requests from the same ip_address during the last {ip_expire_s} seconds.")
-
-    get_redis_client().set(ip_key, "exists", ex=ip_expire_s)
+    else:
+        get_redis_client().expire(ip_key, ip_expire_s)
 
     user_limit = get_redis_client().get(user_limit_key)
 
@@ -141,8 +142,11 @@ class Provider(OIDCProvider, SAMLProvider):
             raw_local_enc_key=self.BSN_LOCAL_SYMM_KEY
         )
 
-        with open(settings.ratelimit.sorry_too_busy_page, 'r') as too_busy_file:
-            self.too_busy_page_template = too_busy_file.read()
+        with open(settings.ratelimit.sorry_too_busy_page_head, 'r') as too_busy_file:
+            self.too_busy_page_template_head = too_busy_file.read()
+
+        with open(settings.ratelimit.sorry_too_busy_page_tail, 'r') as too_busy_file:
+            self.too_busy_page_template_tail = too_busy_file.read()
 
         with open(settings.oidc.clients_file, 'r') as clients_file:
             self.audience = list(json.loads(clients_file.read()).keys())
@@ -150,7 +154,7 @@ class Provider(OIDCProvider, SAMLProvider):
     def sorry_too_busy(self, request: SorryPageRequest):
         allow_list = self.clients[request.client_id]['redirect_uris']
         redirect_uri = _get_too_busy_redirect_error_uri(request.redirect_uri, request.state, allow_list)
-        too_busy_page = create_page_too_busy(self.too_busy_page_template, redirect_uri)
+        too_busy_page = create_page_too_busy(self.too_busy_page_template_head, self.too_busy_page_template_tail, redirect_uri)
         return HTMLResponse(content=too_busy_page)
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
