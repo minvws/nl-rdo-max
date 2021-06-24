@@ -1,5 +1,3 @@
-import html
-
 from typing import Text
 from jinja2 import Template
 from .config import settings
@@ -29,6 +27,3 @@ def create_page_too_busy(page_template: str, base_url: str) -> Text:
     }
 
     return _fill_template(page_template, context)
-
-def escape_html(text):
-    return html.escape(text)
