@@ -9,7 +9,7 @@ from .config import settings
 from .router import router
 from .provider import get_provider
 
-app = FastAPI()
+app = FastAPI(docs_url= None, redoc_url= None)
 
 app.include_router(router)
 
