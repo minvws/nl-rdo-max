@@ -1,5 +1,6 @@
 # pylint: disable=too-few-public-methods
 from enum import Enum
+from inge6.saml.saml_request import SAMLRequest
 
 from fastapi import Form
 from pydantic import BaseModel
@@ -19,6 +20,11 @@ class AuthorizeRequest(BaseModel):
     state: str
     code_challenge: str
     code_challenge_method: str
+
+class DigiDMockRequest(BaseModel):
+    state: str
+    SAMLRequest: str
+    RelayState: str
 
 class AccesstokenRequest(BaseModel):
     code: str
