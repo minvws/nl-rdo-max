@@ -9,7 +9,6 @@ from datetime import datetime
 
 import requests
 
-import nacl.hash
 from starlette.datastructures import Headers
 
 from fastapi import FastAPI, Request, Response, HTTPException
