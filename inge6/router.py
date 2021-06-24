@@ -57,7 +57,11 @@ def sorry_too_busy(request: SorryPageRequest = Depends()):
     return get_provider().sorry_too_busy(request)
 
 @router.get("/")
-def heartbeat() -> Dict[str, bool]:
+def read_root():
+    return HTMLResponse("TVS bridge")
+
+@router.get("/health")
+def health() -> Dict[str, bool]:
     errors = list()
 
     # Check reachability redis
@@ -68,7 +72,7 @@ def heartbeat() -> Dict[str, bool]:
     if not os.access(settings.saml.cert_path, os.R_OK):
         errors.append("CANNOT ACCESS SAML CERT FILE")
 
-    if not os.access(settings.saml.cert_path, os.R_OK):
+    if not os.access(settings.saml.key_path, os.R_OK):
         errors.append("CANNOT ACCESS SAML KEY FILE")
 
     if len(errors) != 0:
