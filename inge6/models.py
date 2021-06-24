@@ -1,8 +1,10 @@
 # pylint: disable=too-few-public-methods
 from enum import Enum
 
+from .utils import escape_html
+
 from fastapi import Form
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 class ResponseType(str, Enum):
     CODE: str = "code"
@@ -25,15 +27,27 @@ class DigiDMockRequest(BaseModel):
     SAMLRequest: str
     RelayState: str
 
+    @validator('state', 'SAMLRequest', 'RelayState')
+    def convert_to_escaped_html(cls, text):
+        return escape_html(text)
+
 class DigiDMockCatchRequest(BaseModel):
     bsn: str
     SAMLart: str
     RelayState: str
+
+    @validator('bsn', 'SAMLart', 'RelayState')
+    def convert_to_escaped_html(cls, text):
+        return escape_html(text)
       
 class SorryPageRequest(BaseModel):
     state: str
     redirect_uri: str
     client_id: str
+
+    @validator('state', 'redirect_uri', 'client_id')
+    def convert_to_escaped_html(cls, text):
+        return escape_html(text)
 
 class AccesstokenRequest(BaseModel):
     code: str
