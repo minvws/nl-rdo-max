@@ -107,7 +107,7 @@ def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> 
         raise TooBusyError("Servers are too busy at this point, please try again later")
 
 
-def _get_too_busy_redirect_error_uri(redirect_uri, state):
+def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_accesslist):
     """
     Given the redirect uri and state, return an error to the client desribing the service
     is too busy to handle an authorize request.
@@ -118,6 +118,9 @@ def _get_too_busy_redirect_error_uri(redirect_uri, state):
     :param state: state that corresponds to the request
 
     """
+    if redirect_uri not in uri_accesslist:
+        return "https://coronacheck.nl"
+    
     error = "login_required"
     error_desc = "The servers are too busy right now, please try again later."
     return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
@@ -148,7 +151,7 @@ class Provider(OIDCProvider, SAMLProvider):
             _rate_limit_test(ip_address, settings.ratelimit.user_limit_key, int(settings.ratelimit.ip_expire_in_s))
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
             logging.getLogger().warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
-            redirect_uri = _get_too_busy_redirect_error_uri(authorize_request.redirect_uri, authorize_request.state)
+            redirect_uri = _get_too_busy_redirect_error_uri(authorize_request.redirect_uri, authorize_request.state, self.clients[authorize_request.client_id]['redirect_uris'])
             too_busy_page = create_page_too_busy(self.too_busy_page_template, redirect_uri)
             return HTMLResponse(content=too_busy_page)
 
