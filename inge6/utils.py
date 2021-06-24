@@ -7,9 +7,9 @@ from .config import settings
 
 def _fill_template(template_txt: str, context: dict):
     template = Template(template_txt)
-    html = template.render(context)
+    rendered = template.render(context)
 
-    return html
+    return rendered
 
 
 def _fill_template_from_file(filename: str, context: dict) -> Text:
