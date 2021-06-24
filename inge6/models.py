@@ -25,11 +25,15 @@ class DigiDMockRequest(BaseModel):
     SAMLRequest: str
     RelayState: str
 
-
 class DigiDMockCatchRequest(BaseModel):
     bsn: str
     SAMLart: str
     RelayState: str
+      
+class SorryPageRequest(BaseModel):
+    state: str
+    redirect_uri: str
+    client_id: str
 
 class AccesstokenRequest(BaseModel):
     code: str
