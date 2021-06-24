@@ -52,6 +52,10 @@ def jwks_uri():
     json_content = jsonable_encoder(get_provider().jwks)
     return JSONResponse(content=json_content)
 
+@router.get('/sorry-too-busy')
+def sorry_too_busy(request: Request):
+    return get_provider().sorry_too_busy(request)
+
 @router.get("/")
 async def read_root(request: Request):
     url_data = urlparse(request.url._url) # pylint: disable=protected-access
