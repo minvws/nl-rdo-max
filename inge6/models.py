@@ -20,6 +20,11 @@ class AuthorizeRequest(BaseModel):
     code_challenge: str
     code_challenge_method: str
 
+class SorryPageRequest(BaseModel):
+    state: str
+    redirect_uri: str
+    client_id: str
+
 class AccesstokenRequest(BaseModel):
     code: str
     code_verifier: str

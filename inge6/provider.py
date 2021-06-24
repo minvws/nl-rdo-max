@@ -29,7 +29,7 @@ from .config import settings
 from .cache import get_redis_client, redis_cache
 from .utils import create_post_autosubmit_form, create_page_too_busy
 from .encrypt import Encrypt
-from .models import AuthorizeRequest
+from .models import AuthorizeRequest, SorryPageRequest
 from .exceptions import TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin
 
 from .saml.exceptions import UserNotAuthenticated
@@ -77,7 +77,7 @@ def _create_redis_bsn_key(key: str, id_token: str, audience: List[Text]) -> str:
 def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> None:
     """
     Test is we have passed the user limit defined in the redis-store. The rate limit
-    defines the number of users per second which we allow.
+    defines the number of users per second whiSorryPageRequestch we allow.
 
     if no user_limit is found in the redis store, this check is treated as 'disabled'.
 
@@ -108,7 +108,7 @@ def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> 
         raise TooBusyError("Servers are too busy at this point, please try again later")
 
 
-def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_accesslist):
+def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     """
     Given the redirect uri and state, return an error to the client desribing the service
     is too busy to handle an authorize request.
@@ -119,7 +119,7 @@ def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_accesslist):
     :param state: state that corresponds to the request
 
     """
-    if redirect_uri not in uri_accesslist:
+    if redirect_uri not in uri_allow_list:
         return "https://coronacheck.nl"
 
     error = "login_required"
@@ -147,11 +147,9 @@ class Provider(OIDCProvider, SAMLProvider):
         with open(settings.oidc.clients_file, 'r') as clients_file:
             self.audience = list(json.loads(clients_file.read()).keys())
 
-    def sorry_too_busy(self, request):
-        redirect_uri = request.query_params['redirect_uri']
-        client_id = request.query_params['client_id']
-        state = request.query_params['state']
-        redirect_uri = _get_too_busy_redirect_error_uri(redirect_uri, state, self.clients[client_id]['redirect_uris'])
+    def sorry_too_busy(self, request: SorryPageRequest):
+        allow_list = self.clients[request.client_id]['redirect_uris']
+        redirect_uri = _get_too_busy_redirect_error_uri(request.redirect_uri, request.state, allow_list)
         too_busy_page = create_page_too_busy(self.too_busy_page_template, redirect_uri)
         return HTMLResponse(content=too_busy_page)
 
