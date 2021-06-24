@@ -1,10 +1,8 @@
-import os
 import logging
 
-from typing import Dict, Optional
-from urllib.parse import urlparse
+from typing import Optional
 
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, Form
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
@@ -57,35 +55,15 @@ def sorry_too_busy(request: SorryPageRequest = Depends()):
     return get_provider().sorry_too_busy(request)
 
 @router.get("/")
-async def read_root(request: Request):
-    url_data = urlparse(request.url._url) # pylint: disable=protected-access
-    return {
-        "headers": request.headers,
-        "query_params": request.query_params,
-        "path_params": request.path_params,
-        "url": url_data.path
-    }
+def read_root():
+    return HTMLResponse("TVS bridge")
 
-@router.get("/heartbeat")
-def heartbeat() -> Dict[str, bool]:
-    errors = list()
-
-    # Check reachability redis
-    if not get_redis_client().ping():
-        errors.append("CANNOT REACH REDIS CLIENT ON {}:{}".format(settings.redis.host, settings.redis.port))
-
-    # Check accessability cert and key path
-    if not os.access(settings.saml.cert_path, os.R_OK):
-        errors.append("CANNOT ACCESS SAML CERT FILE")
-
-    if not os.access(settings.saml.cert_path, os.R_OK):
-        errors.append("CANNOT ACCESS SAML KEY FILE")
-
-    if len(errors) != 0:
-        raise HTTPException(status_code=500, detail=',\n'.join(errors))
-
-    return {"running": True}
-
+@router.get("/health")
+def health() -> JSONResponse:
+    redis_healthy = get_redis_client().ping()
+    healthy = redis_healthy
+    response = {"healthy": healthy, "results": [{"healthy": redis_healthy, "service": "keydb"}]}
+    return JSONResponse(content=jsonable_encoder(response), status_code=200 if healthy else 500)
 
 ## MOCK ENDPOINTS:
 if settings.mock_digid.lower() == 'true':
@@ -98,21 +76,11 @@ if settings.mock_digid.lower() == 'true':
         return HTMLResponse(content=get_provider()._login(state, force_digid)) # pylint: disable=protected-access
 
     @router.post('/digid-mock')
-    async def digid_mock(request: Request):
-        body = await request.body()
-        body_params = parse_qs(body.decode())
-
-        try:
-            saml_request = body_params['SAMLRequest'][0]
-            relay_state = body_params['RelayState'][0]
-        except KeyError as err:
-            resp = {'error': f'missing query params {err}'}
-            return JSONResponse(jsonable_encoder(resp), status_code=400)
-
-        return dmock(DigiDMockRequest(**{
-            'SAMLRequest': saml_request,
-            'RelayState': relay_state,
-            **request.query_params
+    async def digid_mock(state: str, SAMLRequest: str = Form(...), RelayState: str = Form(...)):  # pylint: disable=invalid-name
+        return dmock(DigiDMockRequest.parse_obj({
+            'SAMLRequest': SAMLRequest,
+            'RelayState': RelayState,
+            'state': state
         }))
 
     @router.get('/digid-mock-catch')
