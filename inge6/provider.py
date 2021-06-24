@@ -77,7 +77,7 @@ def _create_redis_bsn_key(key: str, id_token: str, audience: List[Text]) -> str:
 def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> None:
     """
     Test is we have passed the user limit defined in the redis-store. The rate limit
-    defines the number of users per second whiSorryPageRequestch we allow.
+    defines the number of users per second which we allow.
 
     if no user_limit is found in the redis store, this check is treated as 'disabled'.
 
