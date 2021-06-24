@@ -84,8 +84,7 @@ def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> 
     :param user_limit_key: the key in the redis store that defines the number of allowed users per 10th of a second
     :raises: TooBusyError when the number of users exceeds the allowed number.
     """
-    ip_hash = nacl.hash.sha256(ip_address.encode()).decode()
-    ip_key = "tvs:ipv4:" + ip_hash
+    ip_key = "tvs:ipv4:" + ip_address
     if get_redis_client().get(ip_key) is not None:
         raise TooManyRequestsFromOrigin(f"Too many requests from the same ip_address during the last {ip_expire_s} seconds.")
 
