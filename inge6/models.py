@@ -29,7 +29,7 @@ class DigiDMockCatchRequest(BaseModel):
     bsn: str
     SAMLart: str
     RelayState: str
-      
+
 class SorryPageRequest(BaseModel):
     state: str
     redirect_uri: str
