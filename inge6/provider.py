@@ -89,8 +89,7 @@ def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> 
     ip_key_exists = get_redis_client().getset(ip_key, 'exists')
     if ip_key_exists is not None:
         raise TooManyRequestsFromOrigin(f"Too many requests from the same ip_address during the last {ip_expire_s} seconds.")
-    else:
-        get_redis_client().expire(ip_key, ip_expire_s)
+    get_redis_client().expire(ip_key, ip_expire_s)
 
     user_limit = get_redis_client().get(user_limit_key)
 
