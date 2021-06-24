@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+from urllib import parse
 
 from urllib.parse import parse_qs, urlencode
 from typing import Optional, Text, List
@@ -146,14 +147,25 @@ class Provider(OIDCProvider, SAMLProvider):
         with open(settings.oidc.clients_file, 'r') as clients_file:
             self.audience = list(json.loads(clients_file.read()).keys())
 
+    def sorry_too_busy(self, request):
+        redirect_uri = request.query_params['redirect_uri']
+        client_id = request.query_params['client_id']
+        state = request.query_params['state']
+        redirect_uri = _get_too_busy_redirect_error_uri(redirect_uri, state, self.clients[client_id]['redirect_uris'])
+        too_busy_page = create_page_too_busy(self.too_busy_page_template, redirect_uri)
+        return HTMLResponse(content=too_busy_page)
+
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
         try:
             _rate_limit_test(ip_address, settings.ratelimit.user_limit_key, int(settings.ratelimit.ip_expire_in_s))
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
             logging.getLogger().warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
-            redirect_uri = _get_too_busy_redirect_error_uri(authorize_request.redirect_uri, authorize_request.state, self.clients[authorize_request.client_id]['redirect_uris'])
-            too_busy_page = create_page_too_busy(self.too_busy_page_template, redirect_uri)
-            return HTMLResponse(content=too_busy_page)
+            query_params = {
+                'redirect_uri': authorize_request.redirect_uri,
+                'client_id': authorize_request.client_id,
+                'state': authorize_request.state
+            }
+            return RedirectResponse('/sorry-too-busy?' + parse.urlencode(query_params))
 
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
