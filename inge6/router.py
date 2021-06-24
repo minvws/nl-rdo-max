@@ -57,16 +57,6 @@ def sorry_too_busy(request: SorryPageRequest = Depends()):
     return get_provider().sorry_too_busy(request)
 
 @router.get("/")
-async def read_root(request: Request):
-    url_data = urlparse(request.url._url) # pylint: disable=protected-access
-    return {
-        "headers": request.headers,
-        "query_params": request.query_params,
-        "path_params": request.path_params,
-        "url": url_data.path
-    }
-
-@router.get("/heartbeat")
 def heartbeat() -> Dict[str, bool]:
     errors = list()
 
