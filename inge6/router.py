@@ -1,5 +1,7 @@
+from inge6.saml import saml_request
 import os
 import logging
+import json
 
 from typing import Dict, Optional
 from urllib.parse import urlparse
@@ -10,7 +12,7 @@ from fastapi.encoders import jsonable_encoder
 
 from .config import settings
 from .cache import get_redis_client
-from .models import AuthorizeRequest
+from .models import AuthorizeRequest, DigiDMockRequest, DigiDMockCatchRequest
 from .provider import get_provider
 from .digid_mock import (
     digid_mock as dmock,
@@ -99,11 +101,25 @@ if settings.mock_digid.lower() == 'true':
 
     @router.post('/digid-mock')
     async def digid_mock(request: Request):
-        return await dmock(request)
+        body = await request.body()
+        body_params = parse_qs(body.decode())
+
+        try:
+            saml_request = body_params['SAMLRequest'][0]
+            relay_state = body_params['RelayState'][0]
+        except KeyError as err:
+            resp = {'error': f'missing query params {err}'}
+            return JSONResponse(jsonable_encoder(resp), status_code=400)
+
+        return dmock(DigiDMockRequest(**{
+            'SAMLRequest': saml_request,
+            'RelayState': relay_state,
+            **request.query_params
+        }))
 
     @router.get('/digid-mock-catch')
-    async def digid_mock_catch(request: Request):
-        return await dmock_catch(request)
+    async def digid_mock_catch(request: DigiDMockCatchRequest = Depends()):
+        return dmock_catch(request)
 
     @router.get('/consume_bsn/{bsn}')
     def consume_bsn_for_token(bsn: str, request: Request, authorize_req: AuthorizeRequest = Depends()):

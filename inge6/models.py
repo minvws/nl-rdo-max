@@ -26,6 +26,12 @@ class DigiDMockRequest(BaseModel):
     SAMLRequest: str
     RelayState: str
 
+
+class DigiDMockCatchRequest(BaseModel):
+    bsn: str
+    SAMLart: str
+    RelayState: str
+
 class AccesstokenRequest(BaseModel):
     code: str
     code_verifier: str
