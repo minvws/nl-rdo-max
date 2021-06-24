@@ -10,7 +10,7 @@ from fastapi.encoders import jsonable_encoder
 
 from .config import settings
 from .cache import get_redis_client
-from .models import AuthorizeRequest
+from .models import AuthorizeRequest, SorryPageRequest
 from .provider import get_provider
 from .digid_mock import (
     digid_mock as dmock,
@@ -53,7 +53,7 @@ def jwks_uri():
     return JSONResponse(content=json_content)
 
 @router.get('/sorry-too-busy')
-def sorry_too_busy(request: Request):
+def sorry_too_busy(request: SorryPageRequest = Depends()):
     return get_provider().sorry_too_busy(request)
 
 @router.get("/")
