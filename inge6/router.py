@@ -59,7 +59,7 @@ def read_root():
     return HTMLResponse("TVS bridge")
 
 @router.get("/health")
-def health() -> Dict[str, bool]:
+def health() -> JSONResponse:
     redis_healthy = get_redis_client().ping()
     healthy = redis_healthy
     response = {"healthy": healthy, "results": [{"healthy": redis_healthy, "service": "keydb"}]}
