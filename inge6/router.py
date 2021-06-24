@@ -65,8 +65,7 @@ def health() -> Dict[str, bool]:
     redis_healthy = get_redis_client().ping()
     healthy = redis_healthy
     response = {"healthy": healthy, "results": [{"healthy": redis_healthy, "service": "keydb"}]}
-    jsonresp = jsonable_encoder(response)
-    return JSONResponse(content=jsonresp, status_code=200 if healthy else 500)
+    return JSONResponse(content=jsonable_encoder(response), status_code=200 if healthy else 500)
 
 ## MOCK ENDPOINTS:
 if settings.mock_digid.lower() == 'true':
