@@ -2,7 +2,7 @@ import logging
 
 from typing import Dict, Optional
 
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, Form
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
@@ -76,21 +76,11 @@ if settings.mock_digid.lower() == 'true':
         return HTMLResponse(content=get_provider()._login(state, force_digid)) # pylint: disable=protected-access
 
     @router.post('/digid-mock')
-    async def digid_mock(request: Request):
-        body = await request.body()
-        body_params = parse_qs(body.decode())
-
-        try:
-            saml_request = body_params['SAMLRequest'][0]
-            relay_state = body_params['RelayState'][0]
-        except KeyError as err:
-            resp = {'error': f'missing query params {err}'}
-            return JSONResponse(jsonable_encoder(resp), status_code=400)
-
-        return dmock(DigiDMockRequest(**{
-            'SAMLRequest': saml_request,
-            'RelayState': relay_state,
-            **request.query_params
+    async def digid_mock(state: str, SAMLRequest: str = Form(...), RelayState: str = Form(...)):  # pylint: disable=invalid-name
+        return dmock(DigiDMockRequest.parse_obj({
+            'SAMLRequest': SAMLRequest,
+            'RelayState': RelayState,
+            'state': state
         }))
 
     @router.get('/digid-mock-catch')
