@@ -16,13 +16,17 @@ RUN apt-get update \
         python3-dev \
         git
 
-COPY requirements.txt /app/requirements.txt
-COPY requirements-dev.txt /app/requirements-dev.txt
+COPY requirements.in /app/requirements.in
+COPY requirements-dev.in /app/requirements-dev.in
 
 WORKDIR /app
 
-RUN pip install -U pip pip-tools setuptools wheel \
-    && pip install -Ur requirements.txt \
+RUN pip install -U pip pip-tools setuptools wheel
+
+RUN python3 -m piptools compile /app/requirements.in
+RUN python3 -m piptools compile /app/requirements-dev.in
+
+RUN pip install -Ur requirements.txt \
     && pip install -Ur requirements-dev.txt \
     && pip uninstall pyop -y \
     && pip install git+https://github.com/maxxiefjv/pyop.git@propose-changes-redis

@@ -3,10 +3,12 @@ import json
 import logging
 
 from urllib.parse import parse_qs, urlencode
-from typing import Optional, Text
+from typing import Optional, Text, List
+from datetime import datetime
 
 import requests
 
+import nacl.hash
 from starlette.datastructures import Headers
 
 from fastapi import FastAPI, Request, Response, HTTPException
@@ -23,10 +25,11 @@ from pyop.exceptions import (
 )
 
 from .config import settings
-from .cache import redis_cache
-from .utils import create_post_autosubmit_form
+from .cache import get_redis_client, redis_cache
+from .utils import create_post_autosubmit_form, create_page_too_busy
 from .encrypt import Encrypt
 from .models import AuthorizeRequest
+from .exceptions import TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin
 
 from .saml.exceptions import UserNotAuthenticated
 from .saml.provider import Provider as SAMLProvider
@@ -66,20 +69,58 @@ def _store_code_challenge(code: str, code_challenge: str, code_challenge_method:
     }
     redis_cache.hset(code, 'cc_cm', value)
 
-def _create_redis_bsn_key(key: str, id_token: str) -> str:
-    jwt = validate_jwt_token(key, id_token)
+def _create_redis_bsn_key(key: str, id_token: str, audience: List[Text]) -> str:
+    jwt = validate_jwt_token(key, id_token, audience)
     return jwt['at_hash']
 
-# pylint: disable=too-many-ancestors
-class TokenSAMLErrorResponse(TokenErrorResponse):
-    c_allowed_values = TokenErrorResponse.c_allowed_values.copy()
-    c_allowed_values.update(
-    {
-        "error": [
-            "saml_authn_failed",
-        ]
-    }
-)
+def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> None:
+    """
+    Test is we have passed the user limit defined in the redis-store. The rate limit
+    defines the number of users per second which we allow.
+
+    if no user_limit is found in the redis store, this check is treated as 'disabled'.
+
+    :param user_limit_key: the key in the redis store that defines the number of allowed users per 10th of a second
+    :raises: TooBusyError when the number of users exceeds the allowed number.
+    """
+    ip_hash = nacl.hash.sha256(ip_address.encode()).decode()
+    ip_key = "tvs:ipv4:" + ip_hash
+    if get_redis_client().get(ip_key) is not None:
+        raise TooManyRequestsFromOrigin(f"Too many requests from the same ip_address during the last {ip_expire_s} seconds.")
+
+    get_redis_client().set(ip_key, "exists", ex=ip_expire_s)
+
+    user_limit = get_redis_client().get(user_limit_key)
+
+    if user_limit is None:
+        return
+
+    user_limit = int(user_limit)
+    timeslot = int(datetime.utcnow().timestamp() * 10)
+
+    timeslot_key = "tvs:limiter:" + str(timeslot)
+    num_users = get_redis_client().incr(timeslot_key)
+
+    if num_users == 1:
+        get_redis_client().expire(timeslot_key, 2)
+    elif num_users >= user_limit:
+        raise TooBusyError("Servers are too busy at this point, please try again later")
+
+
+def _get_too_busy_redirect_error_uri(redirect_uri, state):
+    """
+    Given the redirect uri and state, return an error to the client desribing the service
+    is too busy to handle an authorize request.
+
+        redirect_uri?error=login_required&error_description=The+servers+are+too+busy+right+now,+please+try+again+later&state=34Gf3431D
+
+    :param redirect_uri: uri to pass the error query params to
+    :param state: state that corresponds to the request
+
+    """
+    error = "login_required"
+    error_desc = "The servers are too busy right now, please try again later."
+    return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
 
 class Provider(OIDCProvider, SAMLProvider):
     BSN_SIGN_KEY = settings.bsn.sign_key
@@ -96,7 +137,21 @@ class Provider(OIDCProvider, SAMLProvider):
             raw_local_enc_key=self.BSN_LOCAL_SYMM_KEY
         )
 
-    def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers) -> Response:
+        with open(settings.ratelimit.sorry_too_busy_page, 'r') as too_busy_file:
+            self.too_busy_page_template = too_busy_file.read()
+
+        with open(settings.oidc.clients_file, 'r') as clients_file:
+            self.audience = list(json.loads(clients_file.read()).keys())
+
+    def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
+        try:
+            _rate_limit_test(ip_address, settings.ratelimit.user_limit_key, int(settings.ratelimit.ip_expire_in_s))
+        except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
+            logging.getLogger().warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
+            redirect_uri = _get_too_busy_redirect_error_uri(authorize_request.redirect_uri, authorize_request.state)
+            too_busy_page = create_page_too_busy(self.too_busy_page_template, redirect_uri)
+            return HTMLResponse(content=too_busy_page)
+
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
         except InvalidAuthenticationRequest as invalid_auth_req:
@@ -119,7 +174,7 @@ class Provider(OIDCProvider, SAMLProvider):
             token_response = accesstoken(self, body, headers)
             encrypted_bsn = self._resolve_artifact(artifact)
 
-            access_key = _create_redis_bsn_key(self.key, token_response['id_token'].encode())
+            access_key = _create_redis_bsn_key(self.key, token_response['id_token'].encode(), self.audience)
             redis_cache.set(access_key, encrypted_bsn)
 
             json_content_resp = jsonable_encoder(token_response.to_dict())
@@ -179,7 +234,7 @@ class Provider(OIDCProvider, SAMLProvider):
             'SOAPAction' : '"https://artifact-pp2.toegang.overheid.nl/kvs/rd/resolve_artifact"',
             'content-type': 'text/xml'
         }
-        resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=('saml/certs/sp.crt', 'saml/certs/sp.key'))
+        resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=(settings.saml.cert_path, settings.saml.key_path))
         artifact_response = ArtifactResponse.from_string(resolved_artifact.text, self)
         artifact_response.raise_for_status()
 
@@ -188,7 +243,7 @@ class Provider(OIDCProvider, SAMLProvider):
         return encrypted_bsn
 
     def bsn_attribute(self, request: Request) -> Response:
-        _, at_hash= is_authorized(self.key, request)
+        _, at_hash= is_authorized(self.key, request, self.audience)
 
         redis_bsn_key = at_hash
         attributes = redis_cache.get(redis_bsn_key)
