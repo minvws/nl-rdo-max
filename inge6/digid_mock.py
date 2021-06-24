@@ -1,13 +1,12 @@
 import uuid
 
-from fastapi import Request
 from fastapi.responses import RedirectResponse, HTMLResponse
 
 from .models import DigiDMockRequest, DigiDMockCatchRequest
 
-def digid_mock(digidMockRequest: DigiDMockRequest) -> HTMLResponse:
-    state = digidMockRequest.state
-    relay_state = digidMockRequest.RelayState
+def digid_mock(digid_mock_request: DigiDMockRequest) -> HTMLResponse:
+    state = digid_mock_request.state
+    relay_state = digid_mock_request.RelayState
     artifact = str(uuid.uuid4())
     http_content = f"""
     <html>

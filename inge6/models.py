@@ -1,6 +1,5 @@
 # pylint: disable=too-few-public-methods
 from enum import Enum
-from inge6.saml.saml_request import SAMLRequest
 
 from fastapi import Form
 from pydantic import BaseModel

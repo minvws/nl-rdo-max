@@ -1,7 +1,5 @@
-from inge6.saml import saml_request
 import os
 import logging
-import json
 
 from typing import Dict, Optional
 from urllib.parse import urlparse
