@@ -4,7 +4,7 @@ import logging
 from urllib import parse
 
 from urllib.parse import parse_qs, urlencode
-from typing import Optional, Text, List
+from typing import Optional, Text, List, Union
 from datetime import datetime
 
 import requests
@@ -228,7 +228,7 @@ class Provider(OIDCProvider, SAMLProvider):
 
         return create_post_autosubmit_form(authn_post_ctx)
 
-    def assertion_consumer_service(self, request: Request) -> RedirectResponse:
+    def assertion_consumer_service(self, request: Request) -> Union[RedirectResponse, HTMLResponse]:
         state = request.query_params['RelayState']
         artifact = request.query_params['SAMLart']
 
