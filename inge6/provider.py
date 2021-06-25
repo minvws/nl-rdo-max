@@ -4,7 +4,7 @@ import logging
 from urllib import parse
 
 from urllib.parse import parse_qs, urlencode
-from typing import Optional, Text, List
+from typing import Optional, Text, List, Union
 from datetime import datetime
 
 import requests
@@ -29,7 +29,10 @@ from .cache import get_redis_client, redis_cache
 from .utils import create_post_autosubmit_form, create_page_too_busy
 from .encrypt import Encrypt
 from .models import AuthorizeRequest, SorryPageRequest
-from .exceptions import TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin
+from .exceptions import (
+    TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin,
+    ExpiredResourceError
+)
 
 from .saml.exceptions import UserNotAuthenticated
 from .saml.provider import Provider as SAMLProvider
@@ -69,6 +72,12 @@ def _store_code_challenge(code: str, code_challenge: str, code_challenge_method:
     }
     redis_cache.hset(code, 'cc_cm', value)
 
+def hget_from_redis(namespace, key):
+    result = redis_cache.hget(namespace, key)
+    if result is None:
+        raise ExpiredResourceError("Resource is not (any longer) available in redis")
+    return result
+
 def _create_redis_bsn_key(key: str, id_token: str, audience: List[Text]) -> str:
     jwt = validate_jwt_token(key, id_token, audience)
     return jwt['at_hash']
@@ -104,7 +113,6 @@ def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> 
         get_redis_client().expire(timeslot_key, 2)
     elif num_users >= user_limit:
         raise TooBusyError("Servers are too busy at this point, please try again later")
-
 
 def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     """
@@ -182,9 +190,9 @@ class Provider(OIDCProvider, SAMLProvider):
 
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
         code = parse_qs(body.decode())['code'][0]
-        artifact = redis_cache.hget(code, 'arti')
 
         try:
+            artifact = hget_from_redis(code, 'arti')
             token_response = accesstoken(self, body, headers)
             encrypted_bsn = self._resolve_artifact(artifact)
 
@@ -202,6 +210,9 @@ class Provider(OIDCProvider, SAMLProvider):
         except OAuthError as oauth_error:
             logging.getLogger().debug('invalid request: %s', str(oauth_error), exc_info=True)
             error_resp = TokenErrorResponse(error=oauth_error.oauth_error, error_description=str(oauth_error)).to_json()
+        except ExpiredResourceError as expired_err:
+            logging.getLogger().debug('invalid request: %s', str(expired_err), exc_info=True)
+            error_resp = TokenErrorResponse(error='invalid_request', error_description=str(expired_err)).to_json()
 
         # Error has occurred
         response = JSONResponse(jsonable_encoder(error_resp), status_code=400)
@@ -217,15 +228,19 @@ class Provider(OIDCProvider, SAMLProvider):
 
         return create_post_autosubmit_form(authn_post_ctx)
 
-    def assertion_consumer_service(self, request: Request) -> RedirectResponse:
+    def assertion_consumer_service(self, request: Request) -> Union[RedirectResponse, HTMLResponse]:
         state = request.query_params['RelayState']
         artifact = request.query_params['SAMLart']
 
         if 'mocking' in request.query_params and settings.mock_digid.lower() == 'true':
             redis_cache.set('DIGID_MOCK' + artifact, 'true')
 
-        auth_req_dict = redis_cache.hget(state, 'auth_req')
-        auth_req = auth_req_dict['auth_req']
+        try:
+            auth_req_dict = hget_from_redis(state, 'auth_req')
+            auth_req = auth_req_dict['auth_req']
+        except ExpiredResourceError as expired_err:
+            logging.getLogger().debug('received invalid authn request. Reason: %s', expired_err, exc_info=True)
+            return HTMLResponse('Session expired')
 
         authn_response = self.authorize(auth_req, 'test_client')
         response_url = authn_response.request(auth_req['redirect_uri'], False)

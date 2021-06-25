@@ -7,6 +7,9 @@ class TooBusyError(RuntimeError):
 class TooManyRequestsFromOrigin(RuntimeError):
     pass
 
+class ExpiredResourceError(RuntimeError):
+    pass
+
 # pylint: disable=too-many-ancestors
 class TokenSAMLErrorResponse(TokenErrorResponse):
     c_allowed_values = TokenErrorResponse.c_allowed_values.copy()
