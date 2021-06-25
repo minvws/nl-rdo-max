@@ -193,7 +193,6 @@ class Provider(OIDCProvider, SAMLProvider):
         code = parse_qs(body.decode())['code'][0]
 
         try:
-            # artifact = redis_cache.hget(code, 'arti')
             artifact = self.hget_from_redis(code, 'arti')
             token_response = accesstoken(self, body, headers)
             encrypted_bsn = self._resolve_artifact(artifact)
@@ -237,8 +236,12 @@ class Provider(OIDCProvider, SAMLProvider):
         if 'mocking' in request.query_params:
             redis_cache.set('DIGID_MOCK' + artifact, 'true')
 
-        auth_req_dict = redis_cache.hget(state, 'auth_req')
-        auth_req = auth_req_dict['auth_req']
+        try:
+            auth_req_dict = self.hget_from_redis(state, 'auth_req')
+            auth_req = auth_req_dict['auth_req']
+        except ExpiredResourceError as expired_err:
+            logging.getLogger().debug('received invalid authn request', exc_info=True)
+            return HTMLResponse('Session expired')
 
         authn_response = self.authorize(auth_req, 'test_client')
         response_url = authn_response.request(auth_req['redirect_uri'], False)
