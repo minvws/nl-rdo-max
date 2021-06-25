@@ -221,7 +221,7 @@ class Provider(OIDCProvider, SAMLProvider):
         state = request.query_params['RelayState']
         artifact = request.query_params['SAMLart']
 
-        if 'mocking' in request.query_params:
+        if 'mocking' in request.query_params and settings.mock_digid.lower() == 'true':
             redis_cache.set('DIGID_MOCK' + artifact, 'true')
 
         auth_req_dict = redis_cache.hget(state, 'auth_req')
