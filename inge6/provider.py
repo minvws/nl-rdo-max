@@ -31,7 +31,7 @@ from .encrypt import Encrypt
 from .models import AuthorizeRequest, SorryPageRequest
 from .exceptions import (
     TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin,
-    ExpiredResourceError
+    ExpiredResourceError, JSONErrorResponse
 )
 
 from .saml.exceptions import UserNotAuthenticated
@@ -214,7 +214,7 @@ class Provider(OIDCProvider, SAMLProvider):
             error_resp = TokenErrorResponse(error=oauth_error.oauth_error, error_description=str(oauth_error)).to_json()
         except ExpiredResourceError as expired_err:
             logging.getLogger().debug('invalid request: %s', str(expired_err), exc_info=True)
-            error_resp = ErrorResponse()
+            error_resp = TokenErrorResponse(error='invalid_request', error_description=str(expired_err)).to_json()
 
         # Error has occurred
         response = JSONResponse(jsonable_encoder(error_resp), status_code=400)
