@@ -14,7 +14,7 @@ def digid_mock(digid_mock_request: DigiDMockRequest) -> HTMLResponse:
     <div style='font-size:36;'>
         <form method="POST" action="/digid-mock-catch">
             <label style='height:200px; width:400px' for="bsn">BSN Value:</label><br>
-            <input id='bsn_inp' style='height:200px; width:400px; font-size:36pt' type="text" id="bsn" value="900212640" name="bsn"><br>
+            <input id='bsn_inp' style='height:200px; width:400px; font-size:36pt' type="text" id="bsn" value="999991772" name="bsn"><br>
             <input type="hidden" name="SAMLart" value="{artifact}">
             <input type="hidden" name="RelayState" value="{relay_state}">
         </form>
