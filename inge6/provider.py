@@ -72,7 +72,7 @@ def _store_code_challenge(code: str, code_challenge: str, code_challenge_method:
     }
     redis_cache.hset(code, 'cc_cm', value)
 
-def hget_from_redis(self, namespace, key):
+def hget_from_redis(namespace, key):
     result = redis_cache.hget(namespace, key)
     if result is None:
         raise ExpiredResourceError("Resource is not (any longer) available in redis")
@@ -239,7 +239,7 @@ class Provider(OIDCProvider, SAMLProvider):
             auth_req_dict = hget_from_redis(state, 'auth_req')
             auth_req = auth_req_dict['auth_req']
         except ExpiredResourceError as expired_err:
-            logging.getLogger().debug(f'received invalid authn request. Reason: {expired_err}', exc_info=True)
+            logging.getLogger().debug('received invalid authn request. Reason: %s', expired_err, exc_info=True)
             return HTMLResponse('Session expired')
 
         authn_response = self.authorize(auth_req, 'test_client')
