@@ -31,7 +31,7 @@ from .encrypt import Encrypt
 from .models import AuthorizeRequest, SorryPageRequest
 from .exceptions import (
     TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin,
-    ExpiredResourceError, JSONErrorResponse
+    ExpiredResourceError
 )
 
 from .saml.exceptions import UserNotAuthenticated
@@ -72,6 +72,12 @@ def _store_code_challenge(code: str, code_challenge: str, code_challenge_method:
     }
     redis_cache.hset(code, 'cc_cm', value)
 
+def hget_from_redis(self, namespace, key):
+    result = redis_cache.hget(namespace, key)
+    if result is None:
+        raise ExpiredResourceError("Resource is not (any longer) available in redis")
+    return result
+
 def _create_redis_bsn_key(key: str, id_token: str, audience: List[Text]) -> str:
     jwt = validate_jwt_token(key, id_token, audience)
     return jwt['at_hash']
@@ -107,7 +113,6 @@ def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> 
         get_redis_client().expire(timeslot_key, 2)
     elif num_users >= user_limit:
         raise TooBusyError("Servers are too busy at this point, please try again later")
-
 
 def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     """
@@ -183,17 +188,11 @@ class Provider(OIDCProvider, SAMLProvider):
         _cache_auth_req(randstate, auth_req, authorize_request)
         return HTMLResponse(content=self._login(randstate))
 
-    def hget_from_redis(self, namespace, key):
-        result = redis_cache.hget(namespace, key)
-        if result is None:
-            raise ExpiredResourceError("Resource is not (any longer) available in redis")
-        return result 
-
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
         code = parse_qs(body.decode())['code'][0]
 
         try:
-            artifact = self.hget_from_redis(code, 'arti')
+            artifact = hget_from_redis(code, 'arti')
             token_response = accesstoken(self, body, headers)
             encrypted_bsn = self._resolve_artifact(artifact)
 
@@ -237,10 +236,10 @@ class Provider(OIDCProvider, SAMLProvider):
             redis_cache.set('DIGID_MOCK' + artifact, 'true')
 
         try:
-            auth_req_dict = self.hget_from_redis(state, 'auth_req')
+            auth_req_dict = hget_from_redis(state, 'auth_req')
             auth_req = auth_req_dict['auth_req']
         except ExpiredResourceError as expired_err:
-            logging.getLogger().debug('received invalid authn request', exc_info=True)
+            logging.getLogger().debug(f'received invalid authn request. Reason: {expired_err}', exc_info=True)
             return HTMLResponse('Session expired')
 
         authn_response = self.authorize(auth_req, 'test_client')
