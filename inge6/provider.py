@@ -29,7 +29,10 @@ from .cache import get_redis_client, redis_cache
 from .utils import create_post_autosubmit_form, create_page_too_busy
 from .encrypt import Encrypt
 from .models import AuthorizeRequest, SorryPageRequest
-from .exceptions import TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin
+from .exceptions import (
+    TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin,
+    ExpiredResourceError
+)
 
 from .saml.exceptions import UserNotAuthenticated
 from .saml.provider import Provider as SAMLProvider
@@ -180,11 +183,18 @@ class Provider(OIDCProvider, SAMLProvider):
         _cache_auth_req(randstate, auth_req, authorize_request)
         return HTMLResponse(content=self._login(randstate))
 
+    def hget_from_redis(self, namespace, key):
+        result = redis_cache.hget(namespace, key)
+        if result is None:
+            raise ExpiredResourceError("Resource is not (any longer) available in redis")
+        return result 
+
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
         code = parse_qs(body.decode())['code'][0]
-        artifact = redis_cache.hget(code, 'arti')
 
         try:
+            # artifact = redis_cache.hget(code, 'arti')
+            artifact = self.hget_from_redis(code, 'arti')
             token_response = accesstoken(self, body, headers)
             encrypted_bsn = self._resolve_artifact(artifact)
 
@@ -202,6 +212,9 @@ class Provider(OIDCProvider, SAMLProvider):
         except OAuthError as oauth_error:
             logging.getLogger().debug('invalid request: %s', str(oauth_error), exc_info=True)
             error_resp = TokenErrorResponse(error=oauth_error.oauth_error, error_description=str(oauth_error)).to_json()
+        except ExpiredResourceError as expired_err:
+            logging.getLogger().debug('invalid request: %s', str(expired_err), exc_info=True)
+            error_resp = ErrorResponse()
 
         # Error has occurred
         response = JSONResponse(jsonable_encoder(error_resp), status_code=400)
