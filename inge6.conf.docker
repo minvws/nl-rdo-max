@@ -1,6 +1,6 @@
 [DEFAULT]
 app_name = "CoronaCheck TVS - Digid login"
-issuer = https://10.48.118.250:8006
+issuer = https://172.17.0.1:8556
 environment = development
 
 host = 0.0.0.0
@@ -23,8 +23,8 @@ local_symm_key =
 
 [ssl]
 base_dir = secrets/ssl
-cert_file = certs/apache-selfsigned.crt
-key_file = private/apache-selfsigned.key
+cert_file = certs/inge6.localdev.crt
+key_file = private/inge6.localdev.key
 
 [oidc]
 clients_file = clients.json
@@ -50,10 +50,10 @@ artifactresolve_request_template = saml/templates/xml/artifactresolve_request.xm
 authn_request_html_template = saml/templates/html/authn_request.html
 
 [redis]
-host = localhost
+host = 172.17.0.1
 port = 6379
 
-ssl = True
+ssl = False
 key = secrets/redis/private/redis_key.key
 cert = secrets/redis/certs/cert.crt
 cafile = secrets/redis/certs/cacert.crt
