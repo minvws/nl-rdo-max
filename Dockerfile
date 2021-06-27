@@ -37,4 +37,10 @@ ARG PORT=8006
 ENV PORT=${PORT}
 EXPOSE ${PORT}
 
-CMD python3 -m uvicorn inge6.main:app --debug --host 0.0.0.0 --port ${PORT} --reload
+ARG SSL_KEY=./secrets/ssl/private/inge6.localdev.key
+ENV SSL_KEY=${SSL_KEY}
+
+ARG SSL_CERT=./secrets/ssl/certs/inge6.localdev.crt
+ENV SSL_CERT=${SSL_CERT}
+
+CMD python3 -m uvicorn inge6.main:app --debug --host 0.0.0.0 --port ${PORT} --ssl-keyfile ${SSL_KEY} --ssl-certfile ${SSL_CERT} --reload
