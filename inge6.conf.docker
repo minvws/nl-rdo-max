@@ -1,0 +1,68 @@
+[DEFAULT]
+app_name = "CoronaCheck TVS - Digid login"
+issuer = https://172.17.0.1:8556
+environment = development
+
+host = 0.0.0.0
+port = 8006
+
+debug = True
+use_ssl = True
+mock_digid = True
+
+[ratelimit]
+sorry_too_busy_page_head = static/templates/sorry-coronacheck_head.html
+sorry_too_busy_page_tail = static/templates/sorry-coronacheck_tail.html
+user_limit_key = tvs_connect_user_limit
+ip_expire_in_s = 10
+
+[bsn]
+sign_key =
+encrypt_key =
+local_symm_key =
+
+[ssl]
+base_dir = secrets/ssl
+cert_file = certs/inge6.localdev.crt
+key_file = private/inge6.localdev.key
+
+[oidc]
+clients_file = clients.json
+rsa_private_key = secrets/private_unencrypted.pem
+subject_id_hash_salt = somesalt
+
+id_token_lifetime = 600
+
+[saml]
+base_dir = saml
+cert_path = saml/certs/sp.crt
+key_path = saml/certs/sp.key
+settings_path = saml/settings.json
+
+response_expires_in = 600
+
+idp_path = saml/metadata/idp_metadata.xml
+
+sp_template = saml/templates/xml/sp_metadata.xml
+authn_request_template = saml/templates/xml/authn_request.xml
+artifactresolve_request_template = saml/templates/xml/artifactresolve_request.xml
+
+authn_request_html_template = saml/templates/html/authn_request.html
+
+[redis]
+host = 172.17.0.1
+port = 6379
+
+ssl = False
+key = secrets/redis/private/redis_key.key
+cert = secrets/redis/certs/cert.crt
+cafile = secrets/redis/certs/cacert.crt
+
+object_ttl = 600
+
+default_cache_namespace = tvs-connect:
+
+token_namespace = tvs_token
+refresh_token_namespace = tvs_refresh_token
+sub_id_namespace = tvs_sub_id
+code_namespace = tvs_auth_code
