@@ -33,7 +33,7 @@ RUN pip install -Ur requirements.txt \
 
 COPY . /app
 
-ARG PORT=8000
+ARG PORT=8006
 ENV PORT=${PORT}
 EXPOSE ${PORT}
 
