@@ -16,7 +16,7 @@ const redirect_uri = clientBaseUrl + "/login";
 const finished_redirect_uri = clientBaseUrl + "/finished";
 
 var authorizationUrl;
-var client;
+var client = null;
 var code_verifier;
 var code_challenge;
 var state, nonce;
@@ -149,5 +149,6 @@ function discoverTvsDigiD() {
 
       }, (error) => {
         console.log(error);
+        setTimeout(discoverTvsDigiD, 2000); // Automatic retry
       });
 }
