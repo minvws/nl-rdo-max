@@ -2,6 +2,8 @@ import logging
 
 from typing import Optional
 
+from redis.exceptions import ConnectionError
+
 from fastapi import APIRouter, Depends, Request, HTTPException, Form
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
@@ -60,7 +62,12 @@ def read_root():
 
 @router.get("/health")
 def health() -> JSONResponse:
-    redis_healthy = get_redis_client().ping()
+    try:
+        redis_healthy = get_redis_client().ping()
+    except ConnectionError:
+        logging.getLogger().error('Redis server is not reachable. Attempted: %s:%s, ssl=%s', settings.redis.host, settings.redis.port, settings.redis.ssl)
+        redis_healthy = False
+
     healthy = redis_healthy
     response = {"healthy": healthy, "results": [{"healthy": redis_healthy, "service": "keydb"}]}
     return JSONResponse(content=jsonable_encoder(response), status_code=200 if healthy else 500)
