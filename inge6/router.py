@@ -64,8 +64,8 @@ def read_root():
 def health() -> JSONResponse:
     try:
         redis_healthy = get_redis_client().ping()
-    except redis.exceptions.ConnectionError:
-        logging.getLogger().error('Redis server is not reachable. Attempted: %s:%s, ssl=%s', settings.redis.host, settings.redis.port, settings.redis.ssl)
+    except redis.exceptions.RedisError as exception:
+        logging.getLogger().exception('Redis server is not reachable. Attempted: %s:%s, ssl=%s', settings.redis.host, settings.redis.port, settings.redis.ssl, exc_info=exception)
         redis_healthy = False
 
     healthy = redis_healthy
