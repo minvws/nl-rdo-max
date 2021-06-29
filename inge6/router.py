@@ -2,7 +2,7 @@ import logging
 
 from typing import Optional
 
-from redis.exceptions import ConnectionError
+import redis.exceptions
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Form
 from fastapi.responses import JSONResponse, HTMLResponse
@@ -64,7 +64,7 @@ def read_root():
 def health() -> JSONResponse:
     try:
         redis_healthy = get_redis_client().ping()
-    except ConnectionError:
+    except redis.exceptions.ConnectionError:
         logging.getLogger().error('Redis server is not reachable. Attempted: %s:%s, ssl=%s', settings.redis.host, settings.redis.port, settings.redis.ssl)
         redis_healthy = False
 
