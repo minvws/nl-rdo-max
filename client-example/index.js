@@ -126,7 +126,8 @@ app.get('/login', (req, res) => {
       code_challenge_method: 'S256',
       nonce: nonce
     });
-
+    authorizationUrl = baseUrlBrowser + '/' + authorizationUrl.split('/').slice(-1)[0]
+    console.log(`authorization url ${authorizationUrl}`)
     res.redirect(authorizationUrl);
   }
 });
