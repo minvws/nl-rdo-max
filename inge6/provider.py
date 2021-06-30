@@ -164,7 +164,8 @@ class Provider(OIDCProvider, SAMLProvider):
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
         try:
-            _rate_limit_test(ip_address, settings.ratelimit.user_limit_key, int(settings.ratelimit.ip_expire_in_s))
+            if settings.mock_digid.lower() != 'true':
+                _rate_limit_test(ip_address, settings.ratelimit.user_limit_key, int(settings.ratelimit.ip_expire_in_s))
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
             logging.getLogger().warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
             query_params = {
