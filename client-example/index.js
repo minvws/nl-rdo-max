@@ -10,6 +10,8 @@ const app = express()
 const port = 3000
 
 const baseUrl = `https://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`;
+const baseUrlBrowser = `https://${process.env.SERVER_HOST_BROWSER}:${process.env.SERVER_PORT}`;
+
 
 const clientBaseUrl = process.env.CLIENT_BASE_URL 
 const redirect_uri = clientBaseUrl + "/login";
@@ -115,16 +117,17 @@ app.get('/login', (req, res) => {
 
     code_verifier = generators.codeVerifier()
     code_challenge = generators.codeChallenge(code_verifier)
-
+    console.log(`resource url ${baseUrlBrowser + '/authorize'}`)
     authorizationUrl = client.authorizationUrl({
       scope: 'openid',
-      resource: baseUrl + '/authorize',
+      resource: baseUrlBrowser + '/authorize',
       state: state,
       code_challenge,
       code_challenge_method: 'S256',
       nonce: nonce
     });
-
+    authorizationUrl = baseUrlBrowser + '/' + authorizationUrl.split('/').slice(-1)[0]
+    console.log(`authorization url ${authorizationUrl}`)
     res.redirect(authorizationUrl);
   }
 });
