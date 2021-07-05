@@ -249,7 +249,7 @@ class Provider(OIDCProvider, SAMLProvider):
         code = authn_response['code']
 
         redis_cache.hset(code, 'arti', artifact)
-        logging.getLogger().debug('Storing sha256(artifact) %s under code %s', nacl.hash.sha256(artifact), code)
+        logging.getLogger().debug('Storing sha256(artifact) %s under code %s', nacl.hash.sha256(artifact.encode()).decode(), code)
         _store_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
         return RedirectResponse(response_url, status_code=303)
 
@@ -258,7 +258,7 @@ class Provider(OIDCProvider, SAMLProvider):
         if settings.mock_digid.lower() == "true" and is_digid_mock is not None:
             return self.bsn_encrypt.symm_encrypt(artifact)
 
-        hashed_artifact = nacl.hash.sha256(artifact)
+        hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
         logging.getLogger().debug('Making and sending request sha256(artifact) %s', hashed_artifact)
         sso_url = self.idp_metadata.get_sso()['location']
         issuer_id = self.sp_metadata.issuer_id
