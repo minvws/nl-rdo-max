@@ -269,12 +269,12 @@ class Provider(OIDCProvider, SAMLProvider):
             'content-type': 'text/xml'
         }
         resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=(settings.saml.cert_path, settings.saml.key_path))
-        
+
         logging.getLogger().debug('Received a response for sha256(artifact) %s', hashed_artifact)
         artifact_response = ArtifactResponse.from_string(resolved_artifact.text, self)
         artifact_response.raise_for_status()
         logging.getLogger().debug('Resolved sha256(artifact) %s', hashed_artifact)
-        
+
         bsn = artifact_response.get_bsn()
         encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
         return encrypted_bsn
