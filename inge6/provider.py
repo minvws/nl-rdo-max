@@ -9,6 +9,8 @@ from datetime import datetime
 
 import requests
 
+import nacl.hash
+
 from starlette.datastructures import Headers
 
 from fastapi import FastAPI, Request, Response, HTTPException
@@ -231,6 +233,7 @@ class Provider(OIDCProvider, SAMLProvider):
     def assertion_consumer_service(self, request: Request) -> Union[RedirectResponse, HTMLResponse]:
         state = request.query_params['RelayState']
         artifact = request.query_params['SAMLart']
+        artifact_hashed =  nacl.hash.sha256(artifact.encode()).decode()
 
         if 'mocking' in request.query_params and settings.mock_digid.lower() == 'true':
             redis_cache.set('DIGID_MOCK' + artifact, 'true')
@@ -239,18 +242,24 @@ class Provider(OIDCProvider, SAMLProvider):
             auth_req_dict = hget_from_redis(state, 'auth_req')
             auth_req = auth_req_dict['auth_req']
         except ExpiredResourceError as expired_err:
-            logging.getLogger().debug('received invalid authn request. Reason: %s', expired_err, exc_info=True)
+            logging.getLogger().error('received invalid authn request for artifact %s. Reason: %s', artifact_hashed, expired_err, exc_info=True)
             return HTMLResponse('Session expired')
 
         authn_response = self.authorize(auth_req, 'test_client')
         response_url = authn_response.request(auth_req['redirect_uri'], False)
         code = authn_response['code']
 
+        logging.getLogger().debug('Storing sha256(artifact) %s under code %s', artifact_hashed, code)
         redis_cache.hset(code, 'arti', artifact)
         _store_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
+        logging.getLogger().debug('Stored code challenge')
+
         return RedirectResponse(response_url, status_code=303)
 
     def _resolve_artifact(self, artifact: str) -> bytes:
+        hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
+        logging.getLogger().debug('Making and sending request sha256(artifact) %s', hashed_artifact)
+
         is_digid_mock = redis_cache.get('DIGID_MOCK' + artifact)
         if settings.mock_digid.lower() == "true" and is_digid_mock is not None:
             return self.bsn_encrypt.symm_encrypt(artifact)
@@ -264,8 +273,12 @@ class Provider(OIDCProvider, SAMLProvider):
             'content-type': 'text/xml'
         }
         resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=(settings.saml.cert_path, settings.saml.key_path))
+
+        logging.getLogger().debug('Received a response for sha256(artifact) %s with status_code %s', hashed_artifact, resolved_artifact.status_code)
         artifact_response = ArtifactResponse.from_string(resolved_artifact.text, self)
+        logging.getLogger().debug('ArtifactResponse for %s, received status_code %s', hashed_artifact, artifact_response._saml_status_code) # pylint: disable=protected-access
         artifact_response.raise_for_status()
+        logging.getLogger().debug('Validated sha256(artifact) %s', hashed_artifact)
 
         bsn = artifact_response.get_bsn()
         encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
