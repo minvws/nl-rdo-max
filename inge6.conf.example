@@ -60,7 +60,7 @@ cafile = secrets/redis/certs/cacert.crt
 
 object_ttl = 600
 
-default_cache_namespace = tvs-connect:
+default_cache_namespace = tvs-connect
 
 token_namespace = tvs_token
 refresh_token_namespace = tvs_refresh_token

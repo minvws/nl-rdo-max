@@ -1,7 +1,10 @@
 from typing import Any, Text, Optional
 import pickle
+import logging
 
 from . import get_redis_client
+from .redis_debugger import debug_get
+
 from ..config import settings
 
 KEY_PREFIX: str = settings.redis.default_cache_namespace
@@ -34,7 +37,7 @@ def _get_namespace(namespace: str) -> str:
     :param namespace: The key that needs to be prefixed
     :returns: the namespaces key.
     """
-    return KEY_PREFIX + namespace
+    return f"{KEY_PREFIX}:{namespace}"
 
 # pylint: disable=redefined-builtin
 def set(key: str, value: Any) -> None:
@@ -59,6 +62,10 @@ def get(key: str) -> Any:
     """
     key = _get_namespace(key)
     value = get_redis_client().get(key)
+
+    if logging.root.level == logging.DEBUG:
+        debug_get(get_redis_client(), key, value)
+
     deserialized_value = _deserialize(value)
     return deserialized_value
 
@@ -74,6 +81,13 @@ def hset(namespace: str, key: str, value: Any) -> None:
     """
     serialized_value = _serialize(value)
     namespace = _get_namespace(namespace)
+
+    if logging.root.level == logging.DEBUG:
+        # If in debugging mode, prepend namespace with key for better debugging.
+        # It allows the redis debugger to search for specific key_types, and
+        # redis db inspection shows better keys
+        namespace = f'{namespace}:{key}'
+
     get_redis_client().hset(namespace, key, serialized_value)
     get_redis_client().expire(name=namespace, time=EXPIRES_IN_S)
 
@@ -84,7 +98,17 @@ def hget(namespace, key) -> Any:
     to retrieve keys without clashing with other clients.
     """
     namespace = _get_namespace(namespace)
-    value = get_redis_client().hget(namespace, key)
+
+    if logging.root.level == logging.DEBUG:
+        # If in debugging mode, namespace is prepended with the key for better debugging.
+        # It allows the redis debugger to search for specific key_types, and
+        # redis db inspection shows better keys
+        namespace = f'{namespace}:{key}'
+        value = get_redis_client().hget(namespace, key)
+        debug_get(get_redis_client(), namespace, value)
+    else:
+        value = get_redis_client().hget(namespace, key)
+
     deserialized_value = _deserialize(value)
     return deserialized_value
 
