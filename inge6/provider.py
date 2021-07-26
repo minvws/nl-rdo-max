@@ -105,7 +105,7 @@ def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> 
     if user_limit is None:
         return
 
-    user_limit = int(user_limit * 10)
+    user_limit = int(user_limit)
     timeslot = int(datetime.utcnow().timestamp())
 
     timeslot_key = "tvs:limiter:" + str(timeslot)
