@@ -255,7 +255,8 @@ class Provider(OIDCProvider, SAMLProvider):
         _store_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
         logging.getLogger().debug('Stored code challenge')
 
-        return RedirectResponse(response_url, status_code=303)
+        # return RedirectResponse(response_url, status_code=303)
+        return HTMLResponse(create_acs_redirect_link({"redirect_url": response_url}))
 
     def _resolve_artifact(self, artifact: str) -> bytes:
         hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
