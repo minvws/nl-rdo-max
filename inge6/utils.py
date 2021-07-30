@@ -20,6 +20,9 @@ def _fill_template_from_file(filename: str, context: dict) -> Text:
 def create_post_autosubmit_form(context: dict) -> Text:
     return _fill_template_from_file(settings.saml.authn_request_html_template, context)
 
+def create_acs_redirect_link(context: dict) -> Text:
+    return _fill_template_from_file("saml/templates/html/assertion_consumer_service.html", context)
+
 
 def create_page_too_busy(page_template_head: str, page_template_tail: str, base_url: str) -> Text:
     return page_template_head + base_url + page_template_tail
