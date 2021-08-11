@@ -2,7 +2,7 @@
 import html
 from enum import Enum
 
-from fastapi import Form
+from fastapi import Form, Query
 from pydantic import BaseModel, validator
 
 
@@ -26,6 +26,20 @@ class DigiDMockRequest(BaseModel):
     state: str
     SAMLRequest: str
     RelayState: str
+
+    # pylint: disable=invalid-name
+    @classmethod
+    def from_request(
+        cls,
+        state: str = Query(""),
+        SAMLRequest: str = Form(...),
+        RelayState: str = Form(...),
+    ) -> 'DigiDMockRequest':
+        return DigiDMockRequest.parse_obj({
+            'SAMLRequest': SAMLRequest,
+            'RelayState': RelayState,
+            'state': state
+        })
 
     @validator('state', 'RelayState', 'SAMLRequest')
     def convert_to_escaped_html(cls, text): # pylint: disable=no-self-argument, no-self-use

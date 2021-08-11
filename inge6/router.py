@@ -83,12 +83,9 @@ if settings.mock_digid.lower() == 'true':
         return HTMLResponse(content=get_provider()._login(state, force_digid)) # pylint: disable=protected-access
 
     @router.post('/digid-mock')
-    async def digid_mock(state: str, SAMLRequest: str = Form(...), RelayState: str = Form(...)):  # pylint: disable=invalid-name
-        return dmock(DigiDMockRequest.parse_obj({
-            'SAMLRequest': SAMLRequest,
-            'RelayState': RelayState,
-            'state': state
-        }))
+    # async def digid_mock(state: str, SAMLRequest: str = Form(...), RelayState: str = Form(...)):  # pylint: disable=invalid-name
+    async def digid_mock(digid_mock_req: DigiDMockRequest = Depends(DigiDMockRequest.from_request)):  # pylint: disable=invalid-name
+        return dmock(digid_mock_req)
 
     @router.get('/digid-mock-catch')
     async def digid_mock_catch(request: DigiDMockCatchRequest = Depends()):
