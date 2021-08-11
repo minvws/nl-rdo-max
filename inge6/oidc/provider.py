@@ -43,10 +43,11 @@ class Provider:
 
         signing_key = RSAKey(key=rsa_load(settings.oidc.rsa_private_key), alg='RS256', )
 
-        authorization_code_db = RedisWrapper(collection=settings.redis.code_namespace, redis=get_redis_client(), ttl=REDIS_TTL)
-        access_token_db = RedisWrapper(collection=settings.redis.token_namespace, redis=get_redis_client(), ttl=REDIS_TTL)
-        refresh_token_db = RedisWrapper(collection=settings.redis.refresh_token_namespace, redis=get_redis_client(), ttl=REDIS_TTL)
-        subject_identifier_db = RedisWrapper(collection=settings.redis.sub_id_namespace, redis=get_redis_client(), ttl=REDIS_TTL)
+        redis_db_uri = f'redis://{settings.redis.host}:{settings.redis.port}'
+        authorization_code_db = RedisWrapper(db_uri=redis_db_uri, collection=settings.redis.code_namespace, ttl=REDIS_TTL)
+        access_token_db = RedisWrapper(db_uri=redis_db_uri, collection=settings.redis.token_namespace, ttl=REDIS_TTL)
+        refresh_token_db = RedisWrapper(db_uri=redis_db_uri, collection=settings.redis.refresh_token_namespace, ttl=REDIS_TTL)
+        subject_identifier_db = RedisWrapper(db_uri=redis_db_uri, collection=settings.redis.sub_id_namespace, ttl=REDIS_TTL)
 
         authz_state = AuthorizationState(
             HashBasedSubjectIdentifierFactory(settings.oidc.subject_id_hash_salt),

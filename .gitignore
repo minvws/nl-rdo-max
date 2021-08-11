@@ -1,6 +1,4 @@
 *.ipyc
-requirements.txt
-requirements-dev.txt
 .venv
 .vscode
 .idea
