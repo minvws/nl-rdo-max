@@ -10,7 +10,6 @@ from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
 from pyop.userinfo import Userinfo
 
 from ..config import settings
-from ..cache import get_redis_client
 
 REDIS_TTL = int(settings.redis.object_ttl)
 
