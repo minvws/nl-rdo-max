@@ -6,7 +6,7 @@
 fastapi
 redis
 redis-collections
-pyop==3.1.1
+pyop==3.2.0 # pip won't use the newest version implicitly
 pycryptodome
 pyOpenSSL
 pyjwt
