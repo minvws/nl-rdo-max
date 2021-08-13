@@ -1,8 +1,6 @@
 import logging
 import re
 
-from typing import Optional
-
 import redis.exceptions
 
 from fastapi import APIRouter, Depends, Request, HTTPException
