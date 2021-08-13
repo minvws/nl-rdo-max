@@ -10,7 +10,7 @@ participant IDPx
 participant App
 
 App->Inge6:/authorize?redirect_uri&code_challenge&code_method=h
-Inge6->Redis:store(randstate, {code_challenge,code_method,state,nonce})
+Inge6->Redis:store(randstate, {code, code_challenge,code_method,state,nonce})
 Inge6-->App:HTMLResponse(form: AuthnRequest + RelayState=randstate, onload(submit))
 
 App->IDPx:post(AuthnRequest, Relaystate)
@@ -31,6 +31,7 @@ Inge6->Inge6:validate code_verifier
 Redis<->Inge6:get(arti:code)
 Inge6->RD_BC:/resolve?artifact
 Inge6<--RD_BC:resolved artifact?attributes
+Inge6->Inge6:validate artifactResponse
 
 Inge6->Redis:store(get_cookie[h(token)], attributes)
 

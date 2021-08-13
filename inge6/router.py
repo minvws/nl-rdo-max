@@ -1,4 +1,5 @@
 import logging
+import re
 
 from typing import Optional
 
@@ -118,6 +119,10 @@ if settings.mock_digid.lower() == 'true':
             }
 
         response = get_provider().assertion_consumer_service(AcsReq())
-        response_qargs = parse_qs(response.headers["location"].split('?')[1])
+        redirect_url = re.search(r"<meta http-equiv=\"refresh\" content=\"0;url=(.*?)\" />", response.body.decode())
+        if redirect_url is None:
+            raise HTTPException(status_code=400, detail="No valid refresh url found")
+
+        response_qargs = parse_qs(redirect_url[1].split('?')[1])
         content = jsonable_encoder(response_qargs)
         return JSONResponse(content=content)

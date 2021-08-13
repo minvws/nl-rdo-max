@@ -9,6 +9,8 @@ from datetime import datetime
 
 import requests
 
+import nacl.hash
+
 from starlette.datastructures import Headers
 
 from fastapi import FastAPI, Request, Response, HTTPException
@@ -26,7 +28,7 @@ from pyop.exceptions import (
 
 from .config import settings
 from .cache import get_redis_client, redis_cache
-from .utils import create_post_autosubmit_form, create_page_too_busy
+from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link
 from .encrypt import Encrypt
 from .models import AuthorizeRequest, SorryPageRequest
 from .exceptions import (
@@ -104,7 +106,7 @@ def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> 
         return
 
     user_limit = int(user_limit)
-    timeslot = int(datetime.utcnow().timestamp() * 10)
+    timeslot = int(datetime.utcnow().timestamp())
 
     timeslot_key = "tvs:limiter:" + str(timeslot)
     num_users = get_redis_client().incr(timeslot_key)
@@ -164,7 +166,8 @@ class Provider(OIDCProvider, SAMLProvider):
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
         try:
-            _rate_limit_test(ip_address, settings.ratelimit.user_limit_key, int(settings.ratelimit.ip_expire_in_s))
+            if settings.mock_digid.lower() != 'true':
+                _rate_limit_test(ip_address, settings.ratelimit.user_limit_key, int(settings.ratelimit.ip_expire_in_s))
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
             logging.getLogger().warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
             query_params = {
@@ -231,6 +234,7 @@ class Provider(OIDCProvider, SAMLProvider):
     def assertion_consumer_service(self, request: Request) -> Union[RedirectResponse, HTMLResponse]:
         state = request.query_params['RelayState']
         artifact = request.query_params['SAMLart']
+        artifact_hashed =  nacl.hash.sha256(artifact.encode()).decode()
 
         if 'mocking' in request.query_params and settings.mock_digid.lower() == 'true':
             redis_cache.set('DIGID_MOCK' + artifact, 'true')
@@ -239,18 +243,24 @@ class Provider(OIDCProvider, SAMLProvider):
             auth_req_dict = hget_from_redis(state, 'auth_req')
             auth_req = auth_req_dict['auth_req']
         except ExpiredResourceError as expired_err:
-            logging.getLogger().debug('received invalid authn request. Reason: %s', expired_err, exc_info=True)
+            logging.getLogger().error('received invalid authn request for artifact %s. Reason: %s', artifact_hashed, expired_err, exc_info=True)
             return HTMLResponse('Session expired')
 
         authn_response = self.authorize(auth_req, 'test_client')
         response_url = authn_response.request(auth_req['redirect_uri'], False)
         code = authn_response['code']
 
+        logging.getLogger().debug('Storing sha256(artifact) %s under code %s', artifact_hashed, code)
         redis_cache.hset(code, 'arti', artifact)
         _store_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
-        return RedirectResponse(response_url, status_code=303)
+        logging.getLogger().debug('Stored code challenge')
+
+        return HTMLResponse(create_acs_redirect_link({"redirect_url": response_url}))
 
     def _resolve_artifact(self, artifact: str) -> bytes:
+        hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
+        logging.getLogger().debug('Making and sending request sha256(artifact) %s', hashed_artifact)
+
         is_digid_mock = redis_cache.get('DIGID_MOCK' + artifact)
         if settings.mock_digid.lower() == "true" and is_digid_mock is not None:
             return self.bsn_encrypt.symm_encrypt(artifact)
@@ -264,8 +274,12 @@ class Provider(OIDCProvider, SAMLProvider):
             'content-type': 'text/xml'
         }
         resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=(settings.saml.cert_path, settings.saml.key_path))
+
+        logging.getLogger().debug('Received a response for sha256(artifact) %s with status_code %s', hashed_artifact, resolved_artifact.status_code)
         artifact_response = ArtifactResponse.from_string(resolved_artifact.text, self)
+        logging.getLogger().debug('ArtifactResponse for %s, received status_code %s', hashed_artifact, artifact_response._saml_status_code) # pylint: disable=protected-access
         artifact_response.raise_for_status()
+        logging.getLogger().debug('Validated sha256(artifact) %s', hashed_artifact)
 
         bsn = artifact_response.get_bsn()
         encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
