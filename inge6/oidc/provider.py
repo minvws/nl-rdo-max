@@ -16,11 +16,11 @@ REDIS_TTL = int(settings.redis.object_ttl)
 # pylint: disable=too-few-public-methods
 class Provider:
 
-    def __init__(self, app) -> None:
+    def __init__(self) -> None:
         issuer = settings.issuer
-        authentication_endpoint = app.url_path_for('authorize')
-        jwks_uri = app.url_path_for('jwks_uri')
-        token_endpoint = app.url_path_for('token_endpoint')
+        authentication_endpoint = settings.authorize_endpoint
+        jwks_uri = settings.jwks_endpoint
+        token_endpoint = settings.accesstoken_endpoint
 
         configuration_information = {
             'issuer': issuer,

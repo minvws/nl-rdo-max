@@ -46,18 +46,7 @@ jobs:
           sudo apt-get install libxmlsec1-dev pkg-config
           python -m pip install --upgrade pip setuptools wheel
           make venv
-      - name: Setup config and settings
-        run: |
-          cp inge6.conf.example inge6.conf
-          cp saml/settings-dist.json saml/settings.json
-      - name: Create EC keypair
-        # JWT Signing keys
-        # SAML keys
-        run: |
-          mkdir -p secrets
-          openssl genrsa -out secrets/private_encrypted.pem 2048
-          openssl rsa -in secrets/private_encrypted.pem -pubout -out secrets/public.pem
-          openssl genrsa -out saml/certs/sp.key 2048
-          openssl req -new -x509 -key saml/certs/sp.key -out saml/certs/sp.crt -days 360 -subj "/C=US/ST=SCA/L=SCA/O=Oracle/OU=Java/CN=test cert"
+      - name: Setup settings and secrets
+        run: make setup
       - name: Test with unittest
         run: make test
