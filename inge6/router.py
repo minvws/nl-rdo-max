@@ -20,11 +20,11 @@ from .digid_mock import (
 
 router = APIRouter()
 
-@router.get('/authorize')
+@router.get(settings.authorize_endpoint)
 def authorize(request: Request, authorize_req: AuthorizeRequest = Depends()):
     return get_provider().authorize_endpoint(authorize_req, request.headers, request.client.host)
 
-@router.post('/accesstoken')
+@router.post(settings.accesstoken_endpoint)
 async def token_endpoint(request: Request):
     ''' Expect a request with a body containing the grant_type.'''
     body = await request.body()
@@ -48,7 +48,7 @@ def provider_configuration():
     json_content = jsonable_encoder(get_provider().provider_configuration.to_dict())
     return JSONResponse(content=json_content)
 
-@router.get('/jwks')
+@router.get(settings.jwks_endpoint)
 def jwks_uri():
     json_content = jsonable_encoder(get_provider().jwks)
     return JSONResponse(content=json_content)
@@ -61,7 +61,7 @@ def sorry_too_busy(request: SorryPageRequest = Depends()):
 def read_root():
     return HTMLResponse("TVS bridge")
 
-@router.get("/health")
+@router.get(settings.health_endpoint)
 def health() -> JSONResponse:
     try:
         redis_healthy = get_redis_client().ping()

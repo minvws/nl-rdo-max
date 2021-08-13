@@ -8,7 +8,10 @@ autoflake
 coverage
 coverage-badge
 pytest
+pytest-asyncio
 pytest-cov
+pytest-mock
+pytest_redis
 
 types-redis
 types-requests
