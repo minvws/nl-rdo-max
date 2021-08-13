@@ -1,6 +1,7 @@
 # pylint: disable=too-few-public-methods
 import html
 from enum import Enum
+from typing import Optional
 
 from fastapi import Form, Query
 from pydantic import BaseModel, validator
@@ -21,6 +22,14 @@ class AuthorizeRequest(BaseModel):
     state: str
     code_challenge: str
     code_challenge_method: str
+
+class LoginDigiDRequest(BaseModel):
+    state: str
+    force_digid: Optional[bool] = None
+
+    @validator('state')
+    def convert_to_escaped_html(cls, text): # pylint: disable=no-self-argument, no-self-use
+        return html.escape(text)
 
 class DigiDMockRequest(BaseModel):
     state: str
