@@ -3,6 +3,11 @@ app_name = "CoronaCheck TVS - Digid login"
 issuer = https://10.48.118.250:8006
 environment = development
 
+authorize_endpoint = /authorize
+accesstoken_endpoint = /accesstoken
+jwks_endpoint = /jwks
+health_endpoint = /health
+
 host = 0.0.0.0
 port = 8006
 
@@ -17,9 +22,9 @@ user_limit_key = tvs_connect_user_limit
 ip_expire_in_s = 10
 
 [bsn]
-sign_key =
-encrypt_key =
-local_symm_key =
+sign_key       = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+encrypt_key    = BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=
+local_symm_key = 0000000000000000000000000000000000000000000000000000000000000000
 
 [ssl]
 base_dir = secrets/ssl

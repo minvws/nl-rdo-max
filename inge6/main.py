@@ -29,14 +29,14 @@ async def startup_event():
         datefmt='%m/%d/%Y %I:%M:%S %p'
     )
     validate_startup()
-    get_provider(app)
+    get_provider()
 
 if __name__ == "__main__":
     run_kwargs = {
         'host': settings.host,
         'port': int(settings.port),
         'reload': settings.debug == "True",
-        'proxy_headers': True
+        'proxy_headers': True,
     }
 
     if hasattr(settings, 'use_ssl') and settings.use_ssl.lower() == 'true':
