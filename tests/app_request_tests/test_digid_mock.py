@@ -2,7 +2,10 @@ from fastapi.testclient import TestClient
 
 from inge6.main import app
 
-
+def test_login_digid():
+    client = TestClient(app)
+    response = client.get("https://tvs.acc.coronacheck.nl/login-digid?force_digid=1&state=%22%3E%3Cscript%3Ealert(%27XSS%27)%3C%2fscript%3E")
+    assert "<script>" not in response.text
 
 def test_digid_mock():
     client = TestClient(app)
