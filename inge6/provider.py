@@ -32,7 +32,7 @@ from .config import settings
 from .cache import get_redis_client, redis_cache
 from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link
 from .encrypt import Encrypt
-from .models import AuthorizeRequest, SorryPageRequest
+from .models import AuthorizeRequest, LoginDigiDRequest, SorryPageRequest
 from .exceptions import (
     TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin,
     ExpiredResourceError
@@ -204,6 +204,7 @@ class Provider(OIDCProvider, SAMLProvider):
         req = prepare_req(authorize_request)
         auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
         return RedirectResponse(auth.login())
+        # return HTMLResponse(content=self._login(LoginDigiDRequest(state=randstate)))
 
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
         code = parse_qs(body.decode())['code'][0]
@@ -235,8 +236,12 @@ class Provider(OIDCProvider, SAMLProvider):
         response = JSONResponse(jsonable_encoder(error_resp), status_code=400)
         return response
 
-    def _login(self, randstate: str, force_digid: Optional[bool] = False) -> Text:
+    def _login(self, login_digid_req: LoginDigiDRequest) -> Text:
+        force_digid = login_digid_req.force_digid if login_digid_req.force_digid is not None else False
+        randstate = login_digid_req.state
+
         issuer_id = self.sp_metadata.issuer_id
+
         if settings.mock_digid.lower() == "true" and not force_digid:
             authn_post_ctx = _create_authn_post_context(relay_state=randstate, url=f'/digid-mock?state={randstate}', issuer_id=issuer_id)
         else:
