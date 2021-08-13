@@ -13,7 +13,7 @@ import nacl.hash
 
 from starlette.datastructures import Headers
 
-from fastapi import FastAPI, Request, Response, HTTPException
+from fastapi import Request, Response, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 
@@ -139,8 +139,8 @@ class Provider(OIDCProvider, SAMLProvider):
     BSN_ENCRYPT_KEY = settings.bsn.encrypt_key
     BSN_LOCAL_SYMM_KEY = settings.bsn.local_symm_key
 
-    def __init__(self, app: FastAPI) -> None:
-        OIDCProvider.__init__(self, app)
+    def __init__(self) -> None:
+        OIDCProvider.__init__(self)
         SAMLProvider.__init__(self)
 
         self.bsn_encrypt = Encrypt(
@@ -307,10 +307,8 @@ class Provider(OIDCProvider, SAMLProvider):
 
         raise HTTPException(status_code=500, detail=', '.join(errors))
 
-def get_provider(app: FastAPI = None) -> Provider:
+def get_provider() -> Provider:
     global _PROVIDER # pylint: disable=global-statement
     if _PROVIDER is None:
-        if app is None:
-            raise Exception("app cannot be None on first call.")
-        _PROVIDER = Provider(app)
+        _PROVIDER = Provider()
     return _PROVIDER

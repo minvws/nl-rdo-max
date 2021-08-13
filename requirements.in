@@ -26,5 +26,5 @@ itsdangerous
 # Communication with services
 python3-saml==1.10.1
 zeep==4.0.0
-unidecode==1.1.2
+unidecode==1.2.0
 requests==2.26.0
