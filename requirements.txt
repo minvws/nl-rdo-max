@@ -120,7 +120,7 @@ typing-extensions==3.10.0.0
     # via
     #   oic
     #   pydantic
-unidecode==1.1.2
+unidecode==1.2.0
     # via -r requirements.in
 urllib3==1.26.6
     # via requests
