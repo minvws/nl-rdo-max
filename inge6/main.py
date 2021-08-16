@@ -51,12 +51,17 @@ def validate_startup():
         )
 
     if settings.use_ssl.lower() == 'true':
-        if not os.path.isfile(settings.ssl.cert_file):
+        if not os.path.isdir(settings.ssl.base_dir):
+            ssl_missing_files.append(
+                (settings.ssl.base_dir, "SSL base_dir does not exist")
+            )
+
+        if not os.path.isfile(settings.ssl.base_dir + '/' + settings.ssl.cert_file):
             ssl_missing_files.append(
                 (settings.ssl.cert_file, "SSL certificate file")
             )
 
-        if not os.path.isfile(settings.ssl.key_file):
+        if not os.path.isfile(settings.ssl.base_dir + '/' + settings.ssl.key_file):
             ssl_missing_files.append(
                 (settings.ssl.key_file, "SSL key file")
             )
@@ -70,7 +75,7 @@ def validate_startup():
         if len(ssl_missing_files) > 0:
             error_msg += """
 Some of these files seem to be ssl related.
-If you didn't mean to enable ssl change this setting in your config
+If you didn't mean to enable ssl change this setting in your config (not recommended).
             """
 
         log.error(error_msg)
