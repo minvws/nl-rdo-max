@@ -201,10 +201,12 @@ class Provider(OIDCProvider, SAMLProvider):
         randstate = redis_cache.gen_token()
         _cache_auth_req(randstate, auth_req, authorize_request)
 
+        if settings.mock_digid.lower() == 'true':
+            return HTMLResponse(content=self._login(LoginDigiDRequest(state=randstate)))
+
         req = prepare_req(authorize_request)
         auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
         return RedirectResponse(auth.login())
-        # return HTMLResponse(content=self._login(LoginDigiDRequest(state=randstate)))
 
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
         code = parse_qs(body.decode())['code'][0]
