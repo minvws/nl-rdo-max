@@ -1,6 +1,8 @@
 import base64
 import json
 import logging
+from logging import Logger
+
 from urllib import parse
 
 from urllib.parse import parse_qs, urlencode
@@ -48,6 +50,8 @@ from .oidc.authorize import (
     validate_jwt_token,
     accesstoken,
 )
+
+log: Logger = logging.getLogger(__package__)
 
 _PROVIDER = None
 
@@ -169,7 +173,7 @@ class Provider(OIDCProvider, SAMLProvider):
             if settings.mock_digid.lower() != 'true':
                 _rate_limit_test(ip_address, settings.ratelimit.user_limit_key, int(settings.ratelimit.ip_expire_in_s))
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
-            logging.getLogger().warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
+            log.warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
             query_params = {
                 'redirect_uri': authorize_request.redirect_uri,
                 'client_id': authorize_request.client_id,
@@ -180,7 +184,7 @@ class Provider(OIDCProvider, SAMLProvider):
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
         except InvalidAuthenticationRequest as invalid_auth_req:
-            logging.getLogger().debug('received invalid authn request', exc_info=True)
+            log.debug('received invalid authn request', exc_info=True)
             error_url = invalid_auth_req.to_error_url()
             if error_url:
                 return RedirectResponse(error_url, status_code=303)
@@ -205,16 +209,16 @@ class Provider(OIDCProvider, SAMLProvider):
             json_content_resp = jsonable_encoder(token_response.to_dict())
             return JSONResponse(content=json_content_resp)
         except UserNotAuthenticated as user_not_authenticated:
-            logging.getLogger().debug('invalid client authentication at token endpoint', exc_info=True)
+            log.debug('invalid client authentication at token endpoint', exc_info=True)
             error_resp = TokenSAMLErrorResponse(error=user_not_authenticated.oauth_error, error_description=str(user_not_authenticated)).to_json()
         except InvalidClientAuthentication as invalid_client_auth:
-            logging.getLogger().debug('invalid client authentication at token endpoint', exc_info=True)
+            log.debug('invalid client authentication at token endpoint', exc_info=True)
             error_resp = TokenErrorResponse(error='invalid_client', error_description=str(invalid_client_auth)).to_json()
         except OAuthError as oauth_error:
-            logging.getLogger().debug('invalid request: %s', str(oauth_error), exc_info=True)
+            log.debug('invalid request: %s', str(oauth_error), exc_info=True)
             error_resp = TokenErrorResponse(error=oauth_error.oauth_error, error_description=str(oauth_error)).to_json()
         except ExpiredResourceError as expired_err:
-            logging.getLogger().debug('invalid request: %s', str(expired_err), exc_info=True)
+            log.debug('invalid request: %s', str(expired_err), exc_info=True)
             error_resp = TokenErrorResponse(error='invalid_request', error_description=str(expired_err)).to_json()
 
         # Error has occurred
@@ -247,23 +251,23 @@ class Provider(OIDCProvider, SAMLProvider):
             auth_req_dict = hget_from_redis(state, 'auth_req')
             auth_req = auth_req_dict['auth_req']
         except ExpiredResourceError as expired_err:
-            logging.getLogger().error('received invalid authn request for artifact %s. Reason: %s', artifact_hashed, expired_err, exc_info=True)
+            log.error('received invalid authn request for artifact %s. Reason: %s', artifact_hashed, expired_err, exc_info=True)
             return HTMLResponse('Session expired')
 
         authn_response = self.authorize(auth_req, 'test_client')
         response_url = authn_response.request(auth_req['redirect_uri'], False)
         code = authn_response['code']
 
-        logging.getLogger().debug('Storing sha256(artifact) %s under code %s', artifact_hashed, code)
+        log.debug('Storing sha256(artifact) %s under code %s', artifact_hashed, code)
         redis_cache.hset(code, 'arti', artifact)
         _store_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
-        logging.getLogger().debug('Stored code challenge')
+        log.debug('Stored code challenge')
 
         return HTMLResponse(create_acs_redirect_link({"redirect_url": response_url}))
 
     def _resolve_artifact(self, artifact: str) -> bytes:
         hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
-        logging.getLogger().debug('Making and sending request sha256(artifact) %s', hashed_artifact)
+        log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
 
         is_digid_mock = redis_cache.get('DIGID_MOCK' + artifact)
         if settings.mock_digid.lower() == "true" and is_digid_mock is not None:
@@ -279,11 +283,11 @@ class Provider(OIDCProvider, SAMLProvider):
         }
         resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=(settings.saml.cert_path, settings.saml.key_path))
 
-        logging.getLogger().debug('Received a response for sha256(artifact) %s with status_code %s', hashed_artifact, resolved_artifact.status_code)
+        log.debug('Received a response for sha256(artifact) %s with status_code %s', hashed_artifact, resolved_artifact.status_code)
         artifact_response = ArtifactResponse.from_string(resolved_artifact.text, self)
-        logging.getLogger().debug('ArtifactResponse for %s, received status_code %s', hashed_artifact, artifact_response._saml_status_code) # pylint: disable=protected-access
+        log.debug('ArtifactResponse for %s, received status_code %s', hashed_artifact, artifact_response._saml_status_code) # pylint: disable=protected-access
         artifact_response.raise_for_status()
-        logging.getLogger().debug('Validated sha256(artifact) %s', hashed_artifact)
+        log.debug('Validated sha256(artifact) %s', hashed_artifact)
 
         bsn = artifact_response.get_bsn()
         encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)

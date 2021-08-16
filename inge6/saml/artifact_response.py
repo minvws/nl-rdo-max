@@ -4,6 +4,7 @@ from typing import Text, List
 import base64
 import re
 import logging
+from logging import Logger
 
 from datetime import datetime, timedelta
 from functools import cached_property
@@ -26,6 +27,7 @@ RESPONSE_EXPIRES_IN = int(settings.saml.response_expires_in)
 PRIV_KEY_PATH = settings.saml.key_path
 CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
 
+log: Logger = logging.getLogger(__package__)
 
 def verify_signatures(tree, cert_data):
     root, valid = has_valid_signatures(tree, cert_data=cert_data)
@@ -295,7 +297,7 @@ class ArtifactResponse:
             errors += self.validate_authn_statement()
 
         if len(errors) != 0:
-            logging.error(errors)
+            log.error(errors)
             raise ValidationError('Audience verification errors.')
 
     def _decrypt_enc_key(self) -> bytes:
