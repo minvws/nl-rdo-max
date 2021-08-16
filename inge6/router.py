@@ -1,8 +1,6 @@
 import logging
 import re
 
-from typing import Optional
-
 import redis.exceptions
 
 from fastapi import APIRouter, Depends, Request, HTTPException
@@ -11,7 +9,7 @@ from fastapi.encoders import jsonable_encoder
 
 from .config import settings
 from .cache import get_redis_client
-from .models import AuthorizeRequest, DigiDMockRequest, DigiDMockCatchRequest, SorryPageRequest
+from .models import AuthorizeRequest, DigiDMockRequest, DigiDMockCatchRequest, LoginDigiDRequest, SorryPageRequest
 from .provider import get_provider
 from .digid_mock import (
     digid_mock as dmock,
@@ -80,8 +78,8 @@ if settings.mock_digid.lower() == 'true':
     from urllib.parse import parse_qs # pylint: disable=wrong-import-order
 
     @router.get('/login-digid')
-    def login_digid(state: str, force_digid: Optional[bool] = None):
-        return HTMLResponse(content=get_provider()._login(state, force_digid)) # pylint: disable=protected-access
+    def login_digid(login_digid_req: LoginDigiDRequest = Depends()):
+        return HTMLResponse(content=get_provider()._login(login_digid_req)) # pylint: disable=protected-access
 
     @router.post('/digid-mock')
     async def digid_mock(digid_mock_req: DigiDMockRequest = Depends(DigiDMockRequest.from_request)):  # pylint: disable=invalid-name
