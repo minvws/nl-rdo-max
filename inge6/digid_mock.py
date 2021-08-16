@@ -19,7 +19,7 @@ def digid_mock(digid_mock_request: DigiDMockRequest) -> HTMLResponse:
             <input type="hidden" name="RelayState" value="{relay_state}">
         </form>
     </div>
-    <a href='' id="submit_two" relayState={relay_state} samlArt={artifact} style='font-size:55; color: white; background-color:grey; display:box'> Login / Submit </a>
+    <a href='' id="submit_two" relayState="{relay_state}" samlArt="{artifact}" style='font-size:55; color: white; background-color:grey; display:box'> Login / Submit </a>
     <br />
     <a href='/login-digid?force_digid=1&state={state}' style='font-size:55; background-color:purple; display:box'>Actual DigiD</a>
     <script>
