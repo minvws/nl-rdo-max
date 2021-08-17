@@ -5,7 +5,7 @@ import base64, zlib
 import urllib.parse as urlparse
 
 from starlette.datastructures import Headers
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 
 from inge6.models import AuthorizeRequest
 from inge6.provider import Provider
@@ -15,6 +15,7 @@ from inge6.config import settings
 NAMESPACES = {
     'saml': 'urn:oasis:names:tc:SAML:2.0:assertion',
     'samlp': 'urn:oasis:names:tc:SAML:2.0:protocol',
+    'ds': 'http://www.w3.org/2000/09/xmldsig#',
 }
 
 def decode_base64_and_inflate( b64string ):
@@ -25,11 +26,32 @@ def decode_base64_and_inflate( b64string ):
 def provider() -> Provider:
     yield Provider()
 
-# pylint: disable=redefined-outer-name
-def test_authorize_endpoint(provider: Provider):
+@pytest.fixture
+def digid_config():
+    tmp = settings.connect_to_idp
+    settings.connect_to_idp = 'digid'
+    yield
+    settings.connect_to_idp = tmp
+
+@pytest.fixture
+def tvs_config():
+    tmp = settings.connect_to_idp
+    settings.connect_to_idp = 'tvs'
+    yield
+    settings.connect_to_idp = tmp
+
+@pytest.fixture
+def disable_digid_mock():
+    tmp = settings.mock_digid
+    settings.mock_digid = 'false'
+    yield
+    settings.mock_digid = tmp
+
+# pylint: disable=redefined-outer-name, unused-argument
+def test_authorize_endpoint_digid(provider: Provider, digid_config, disable_digid_mock):
     """
     Test if the generated authn request corresponds with the
-    expected values:
+    expected values when connecting to digid:
 
     <samlp:AuthnRequest
         xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
@@ -76,7 +98,85 @@ def test_authorize_endpoint(provider: Provider):
     assert parsed_authnreq.attrib['ProviderName'] is not None
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
 
-    # TODO: What should the issuer contain
+    #TODO: What should the issuer contain
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == settings.issuer
-    assert parsed_authnreq.find('./samlp:RequestedAuthnContext', NAMESPACES) is not None
+    assert parsed_authnreq.find('./samlp:RequestedAuthnContext', NAMESPACES).attrib['Comparison'] == 'minimum' is not None
     assert parsed_authnreq.find('.//saml:AuthnContextClassRef', NAMESPACES) is not None
+    assert parsed_authnreq.find('.//saml:AuthnContextClassRef', NAMESPACES).text == 'urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract'
+
+
+# pylint: disable=redefined-outer-name, unused-argument
+def test_authorize_endpoint_tvs(provider: Provider, tvs_config):
+    """
+    Test if the generated authn request corresponds with the
+    structure when connecting to tvs:
+
+    <samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+            Version="2.0" ForceAuthn="true"
+            AssertionConsumerServiceIndex="1" AttributeConsumingServiceIndex="1"
+            ID="_32d4a5dd3c99cd03e25c5eaaf1c15e251103a514cac58cc3a556ed2a1812d712389355e84f19670cca"
+            Destination="/digid-mock?state=07a3865faac4f1e8b08f88cb6a7a656b684a1f0f39e3e9f1b0e30a7464dbb4da"
+            IssueInstant="2021-08-17T13:28:16Z">
+    <saml:Issuer>https://localhost:8007</saml:Issuer>
+    <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <ds:SignedInfo>
+            <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+            <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+            <ds:Reference URI="#_32d4a5dd3c99cd03e25c5eaaf1c15e251103a514cac58cc3a556ed2a1812d712389355e84f19670cca">
+                <ds:Transforms>
+                    <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                    <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                </ds:Transforms>
+                <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                <ds:DigestValue>6m+p3/2Fe1s2YYogNwrx7pYn9DAYb1FrBIFzGy5yPmQ=</ds:DigestValue>
+            </ds:Reference>
+        </ds:SignedInfo>
+        <ds:SignatureValue>...</ds:SignatureValue>
+            <ds:KeyInfo>
+                <ds:KeyName/>
+                <ds:X509Data>
+                    <ds:X509Certificate>...</ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </ds:Signature>
+    </samlp:AuthnRequest>
+    """
+
+    def get_post_params_from_html(html: str):
+        html_autosubmit = etree.fromstring(html)
+        post_form = html_autosubmit.find('.//form')
+        saml_req = post_form.find("./input[@name='SAMLRequest']").attrib['value']
+        relay_state = post_form.find("./input[@name='RelayState']").attrib['value']
+
+        return {
+            'SAMLRequest': saml_req,
+            'relay_state': relay_state
+        }
+
+    auth_req = AuthorizeRequest(
+        client_id="test_client",
+        redirect_uri="http://localhost:3000/login",
+        response_type="code",
+        nonce="n-0S6_WzA2Mj",
+        state="af0ifjsldkj",
+        scope="openid",
+        code_challenge="_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier = SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
+        code_challenge_method="S256",
+    )
+
+    headers = Headers()
+
+    resp: HTMLResponse = provider.authorize_endpoint(auth_req, headers, '0.0.0.0')
+    saml_request = get_post_params_from_html(resp.body)['SAMLRequest']
+    generated_authnreq = base64.b64decode(saml_request).decode()
+    parsed_authnreq = etree.fromstring(generated_authnreq).getroottree().getroot()
+
+    assert parsed_authnreq.attrib['ID'] is not None
+    assert parsed_authnreq.attrib['IssueInstant'] is not None
+    assert parsed_authnreq.attrib['AssertionConsumerServiceIndex'] is not None
+    assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
+
+    #TODO: What should the issuer contain
+    assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == settings.issuer
+    assert parsed_authnreq.find('./ds:Signature', NAMESPACES) is not None
+    assert parsed_authnreq.find('.//ds:SignatureValue', NAMESPACES) is not None
