@@ -1,8 +1,8 @@
-# Open ID Connect requests
+# Open ID Connect requests to Inge6
 
 Each of these requests are documented by the image above, and the documentation below. Please use as described.
 
-# `/authorize`
+# GET `/authorize`
 The authorize request is defined for clients to create a session with which they can login onto DigiD via the ToegangVerleningService (TVS). This can later be used to request attributes from DigiD.
 
 ### `client_id`:
@@ -33,22 +33,46 @@ GET /authorize?
     &scope=openid%20profile
     &state=af0ifjsldkj
     &nonce=n-0S6_WzA2Mj
+    &code_challenge=_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw
+    &code_challenge_method=S256
 ```
 
-# `/accesstoken`
+# POST `/accesstoken`
 
+### `code`
+The code returned from the /authorize request.
+
+### `code_verifier`
+The code verifier used in the /authorize request to compute the code_challenge
+
+### `client_id`
+The client identifier used to verify
+
+### `state`
+The same state used in the /authorize request. 
+
+### `grant_type`
+"An authorization grant is a credential representing the resource
+owner's authorization (to access its protected resources) used by the
+client to obtain an access token.  This specification defines four
+grant types -- authorization code, implicit, resource owner password
+credentials, and client credentials -- as well as an extensibility
+mechanism for defining additional types." - (https://datatracker.ietf.org/doc/html/rfc6749#section-1.3)
 
 ### `redirect_uri`
 Should be identical to the redirect_uri provided in the authorization request.
 
 Ensure that the redirect_uri parameter value is identical to the redirect_uri parameter value that was included in the initial Authorization Request. If the redirect_uri parameter value is not present when there is only one registered redirect_uri value, the Authorization Server MAY return an error (since the Client should have included the parameter) or MAY proceed without an error (since OAuth 2.0 permits the parameter to be omitted in this case).
 
-
 ## Example of request:
 ```bash
 POST /accesstoken
 Content-Type: application/x-www-form-urlencoded
-WWW-Authenticate: Basic
-```
 
-curl -v -H "Content-Type: application/x-www-form-urlencoded" --data "code=7f2fa9a48d8f4aef95a5fffb695d8f20&state=af0ifjsldkj&client_id=test_client&grant_type=authorization_code&redirect_uri=localhost:8006/attrs" "localhost/accesstoken"
+    code=7f2fa9a48d8f4aef95a5fffb695d8f20
+    &code_verifier=SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
+    &state=af0ifjsldkj
+    &client_id=test_client
+    &grant_type=authorization_code
+    &redirect_uri=localhost:8006/attrs
+```
