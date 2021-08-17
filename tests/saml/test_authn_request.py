@@ -1,4 +1,7 @@
 import pytest
+import base64
+from inge6.provider import Provider
+
 from lxml import etree
 
 import urllib.parse as urlparse
@@ -20,10 +23,10 @@ NAMESPACES = {
 }
 
 # pylint: disable=redefined-outer-name, unused-argument
-def test_authorize_endpoint_digid(provider: Provider, digid_config, disable_digid_mock):
+def test_authorize_endpoint_digid(digid_config, disable_digid_mock):
     """
     Test if the generated authn request corresponds with the
-    expected values when connecting to digid:
+    expected values when connecting to digid. e.g. a Redirect Binding:
 
     <samlp:AuthnRequest
         xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
@@ -40,6 +43,7 @@ def test_authorize_endpoint_digid(provider: Provider, digid_config, disable_digi
         </samlp:RequestedAuthnContext>
     </samlp:AuthnRequest>
     """
+    provider: Provider = Provider()
 
     auth_req = AuthorizeRequest(
         client_id="test_client",
@@ -56,7 +60,7 @@ def test_authorize_endpoint_digid(provider: Provider, digid_config, disable_digi
 
     resp: RedirectResponse = provider.authorize_endpoint(auth_req, headers, '0.0.0.0')
     redirect_url = resp.headers.get('location')
-    print(redirect_url)
+
     parsed_url = urlparse.urlparse(redirect_url)
     query_params = urlparse.parse_qs(parsed_url.query)
     assert all(key in query_params.keys() for key in ['SAMLRequest', 'RelayState', 'Signature', 'SigAlg'])
@@ -78,10 +82,10 @@ def test_authorize_endpoint_digid(provider: Provider, digid_config, disable_digi
 
 
 # pylint: disable=redefined-outer-name, unused-argument
-def test_authorize_endpoint_tvs(provider: Provider, tvs_config):
+def test_authorize_endpoint_tvs(tvs_config):
     """
     Test if the generated authn request corresponds with the
-    structure when connecting to tvs:
+    structure when connecting to tvs. e.g. a POST Binding:
 
     <samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
             Version="2.0" ForceAuthn="true"
@@ -125,6 +129,7 @@ def test_authorize_endpoint_tvs(provider: Provider, tvs_config):
             'relay_state': relay_state
         }
 
+    provider: Provider = Provider()
     auth_req = AuthorizeRequest(
         client_id="test_client",
         redirect_uri="http://localhost:3000/login",
