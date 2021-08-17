@@ -26,7 +26,7 @@ def add_certs(root, cert_data: str) -> None:
 
 class SPMetadata(SAMLRequest):
     TEMPLATE_PATH = settings.saml.sp_template
-    SETTINGS_PATH = 'saml/settings.json'
+    SETTINGS_PATH = settings.saml.settings_path
 
     DEFAULT_SLS_URL = settings.issuer + '/sls'
     DEFAULT_SLS_BINDING = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
@@ -146,7 +146,7 @@ class SPMetadata(SAMLRequest):
         return errors
 
 class IdPMetadata:
-    IDP_PATH = settings.saml.idp_path
+    IDP_PATH = settings.saml.idp_metadata_path
 
     def __init__(self) -> None:
         self.template = etree.parse(self.IDP_PATH).getroot()
