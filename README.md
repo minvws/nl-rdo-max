@@ -62,6 +62,44 @@ $ export MYPYPATH=~/work/myproject/stubs
 # Using the mock environment
 For development purposes we have created a 'backdoor' to retrieve a JWT Token for arbitrary BSNs, only available when `mock_digid` is True in the settings file. This setting enables two things:
 1. The program flow is altered. By default we do not connect to the actual IdP, instead an 'end-user' is allowed to input an arbitrary BSN and retrieve a corresponding token. However, it still allows for connecting to the actual IdP if that is requested.
-2. An additional endpoint is available `/consume_bsn_for_token`. This endpoint allows external tools and test services to let Inge6 consume a bsn and return a 'code'. This code can then be used in the `accesstoken_endpoint`, the accesstoken endpoint defined in the settings file, to retrieve a JWT token that corresponds to the provided bsn.
+2. An additional endpoint is available `/consume_bsn`. This endpoint allows external tools and test services to let Inge6 consume a bsn and return a 'code'. This code can then be used in the `accesstoken_endpoint`, the accesstoken endpoint defined in the settings file, to retrieve a JWT token that corresponds to the provided bsn.
 
+A code example on the second case:
+```python
+import json
+import urllib.parse
+import requests
+
+from fastapi.responses import JSONResponse
+
+inge6_mock_uri = "development.inge6.uri/"
+redirect_uri = "coronacheck://auth/login"
+
+authorize_params = {
+    'client_id': "test_client",
+    'redirect_uri': redirect_uri,
+    'response_type': "code",
+    'nonce': "n-0S6_WzA2Mj",
+    'state': "af0ifjsldkj",
+    'scope': "openid",
+    'code_challenge': "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier : SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
+    'code_challenge_method': "S256",
+}
+
+query_params: str = urllib.parse.urlencode(authorize_params)
+bsn: str = '999991772'
+resp: JSONResponse = requests.get(f'{inge6_mock_uri}/consume_bsn/{bsn}?{query_params}')
+if (resp.status_code != 200):
+    print('failed consume_bsn request: ', resp.status_code, resp.reason)
+
+code = json.loads(resp.content.decode())['code'][0]
+code_verifier = 'SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c'
+acc_req_body = f'client_id=test_client&redirect_uri={redirect_uri}&code={code}&code_verifier={code_verifier}&grant_type=authorization_code'
+
+accesstoken_resp: JSONResponse = requests.post(f'{inge6_mock_uri}/accesstoken', acc_req_body)
+if (resp.status_code != 200):
+    print('failed accesstoken request: ', resp.status_code, resp.body)
+
+accesstoken = json.loads(accesstoken_resp.content.decode())
+```
 
