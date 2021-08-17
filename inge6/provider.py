@@ -4,7 +4,7 @@ import logging
 from urllib import parse
 
 from urllib.parse import parse_qs, urlencode
-from typing import Optional, Text, List, Union
+from typing import Text, List, Union
 from datetime import datetime
 
 import requests
