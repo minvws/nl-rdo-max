@@ -35,9 +35,9 @@ def validate_startup():
             (settings.saml.settings_path, "SAML settings file")
         )
 
-    if not os.path.isfile(settings.saml.idp_path):
+    if not os.path.isfile(settings.saml.idp_metadata_path):
         missing_files.append(
-            (settings.saml.idp_path, "SAML Identity Provider Metadata")
+            (settings.saml.idp_metadata_path, "SAML Identity Provider Metadata")
         )
 
     if not os.path.isfile(settings.oidc.clients_file):

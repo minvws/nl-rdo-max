@@ -77,7 +77,7 @@ settings_path = saml/settings.json
 response_expires_in = 600
 
 # IdP metadata file location
-idp_path = saml/metadata/idp_metadata.xml
+idp_metadata_path = saml/metadata/idp_metadata.xml
 
 # template files:
 sp_template = saml/templates/xml/sp_metadata.xml
