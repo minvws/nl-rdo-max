@@ -59,8 +59,8 @@ class Provider:
         self.provider = PyopProvider(signing_key, configuration_information,
                             authz_state, clients, userinfo_db, id_token_lifetime= int(settings.oidc.id_token_lifetime))
 
-        with open('secrets/public.pem') as rsa_priv_key:
-            self.key = rsa_priv_key.read()
+        with open(settings.oidc.rsa_public_key) as rsa_pub_key:
+            self.key = rsa_pub_key.read()
 
     def __getattr__(self, name: str) -> Any:
         if hasattr(self.provider, name):

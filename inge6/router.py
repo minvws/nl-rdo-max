@@ -1,4 +1,6 @@
 import logging
+from logging import Logger
+
 import re
 
 import redis.exceptions
@@ -15,6 +17,8 @@ from .digid_mock import (
     digid_mock as dmock,
     digid_mock_catch as dmock_catch
 )
+
+log: Logger = logging.getLogger(__package__)
 
 router = APIRouter()
 
@@ -64,7 +68,7 @@ def health() -> JSONResponse:
     try:
         redis_healthy = get_redis_client().ping()
     except redis.exceptions.RedisError as exception:
-        logging.getLogger().exception('Redis server is not reachable. Attempted: %s:%s, ssl=%s', settings.redis.host, settings.redis.port, settings.redis.ssl, exc_info=exception)
+        log.exception('Redis server is not reachable. Attempted: %s:%s, ssl=%s', settings.redis.host, settings.redis.port, settings.redis.ssl, exc_info=exception)
         redis_healthy = False
 
     healthy = redis_healthy
@@ -94,7 +98,7 @@ if settings.mock_digid.lower() == 'true':
         response = get_provider().authorize_endpoint(authorize_req, request.headers, request.client.host)
         status_code = response.status_code
         if status_code != 200:
-            logging.debug('Status code 200 was expected, but was %s', response.status_code)
+            log.debug('Status code 200 was expected, but was %s', response.status_code)
             if 300 <= status_code < 400:
                 redirect = response.raw_headers[0][1].decode()
                 raise HTTPException(status_code=400, detail='200 expected, got {} with redirect uri: {}'.format(status_code, redirect))

@@ -3,70 +3,103 @@ app_name = "CoronaCheck TVS - Digid login"
 issuer = https://10.48.118.250:8006
 environment = development
 
+# OIDC endpoints
 authorize_endpoint = /authorize
 accesstoken_endpoint = /accesstoken
 jwks_endpoint = /jwks
 health_endpoint = /health
 
+# The host to be running on
 host = 0.0.0.0
 port = 8006
 
+# Are we running in debug mode? turns on auto-reload on code changes
 debug = True
+
+# Should we create an SSL connection through uvicorn?
 use_ssl = True
+
+# Should the mock environment be enabled
 mock_digid = True
 
+# what is the current logging level
+loglevel = debug
+
 [ratelimit]
+# The ratelimiter runs a sorry page when it has exceeded the allowed number of requests per 
+# second. It will lookup the number of allowed requests per second in the redis database under the 
+# key defined in the user_limit_key setting. Finally, the ip_expire_in_s defined the number of seconds
+# an ip-address should be remembered in the redis-db
 sorry_too_busy_page_head = static/templates/sorry-coronacheck_head.html
 sorry_too_busy_page_tail = static/templates/sorry-coronacheck_tail.html
 user_limit_key = tvs_connect_user_limit
 ip_expire_in_s = 10
 
 [bsn]
+# Once the bsn is retrieved it is encrypted and stored in the redis database. This encryption
+# is done using the local_symm_key which is a libsodium key. Finally, when the BSN is requested
+# it is re-encrypted using the encrypt_key and signed using the sign_key.
 sign_key       = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 encrypt_key    = BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=
 local_symm_key = 0000000000000000000000000000000000000000000000000000000000000000
 
 [ssl]
+# Setting for the SSL connection when enabled, defined by the root use_ssl setting.
 base_dir = secrets/ssl
 cert_file = certs/apache-selfsigned.crt
 key_file = private/apache-selfsigned.key
 
 [oidc]
+# For OIDC the following files need to be configured correctly. Client allowlist and 
+# JWT token signing and verification.
 clients_file = clients.json
 rsa_private_key = secrets/private_unencrypted.pem
+rsa_public_key = secrets/public.pem
+
+# salt for hashing subjects
 subject_id_hash_salt = somesalt
 
+# How long is a token valid
 id_token_lifetime = 600
 
 [saml]
+# saml configuration relating saml request signing, verification and communication 
+# settings.
 base_dir = saml
 cert_path = saml/certs/sp.crt
 key_path = saml/certs/sp.key
 settings_path = saml/settings.json
 
+# How long do we consider the response to be valid?
 response_expires_in = 600
 
+# IdP metadata file location
 idp_path = saml/metadata/idp_metadata.xml
 
+# template files:
 sp_template = saml/templates/xml/sp_metadata.xml
 authn_request_template = saml/templates/xml/authn_request.xml
 artifactresolve_request_template = saml/templates/xml/artifactresolve_request.xml
-
 authn_request_html_template = saml/templates/html/authn_request.html
 
 [redis]
+# Connecting to the redis server through parameters:
 host = localhost
 port = 6379
 
+# SSL settings, to create a TLS connection to the redis store.
 ssl = True
 key = secrets/redis/private/redis_key.key
 cert = secrets/redis/certs/cert.crt
 cafile = secrets/redis/certs/cacert.crt
 
+# How long do values live in redis?
 object_ttl = 600
 
+# prefix to cached key-value pairs stored using this service
 default_cache_namespace = tvs-connect:
 
+# prefix to tokens, subjects and codes stored in the redis database by the OIDC library
 token_namespace = tvs_token
 refresh_token_namespace = tvs_refresh_token
 sub_id_namespace = tvs_sub_id
