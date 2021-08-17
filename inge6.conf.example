@@ -3,6 +3,9 @@ app_name = "CoronaCheck TVS - Digid login"
 issuer = https://10.48.118.250:8006
 environment = development
 
+# TVS or DigiD?
+connect_to_idp = digid
+
 # OIDC endpoints
 authorize_endpoint = /authorize
 accesstoken_endpoint = /accesstoken

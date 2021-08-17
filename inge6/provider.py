@@ -205,12 +205,15 @@ class Provider(OIDCProvider, SAMLProvider):
         randstate = redis_cache.gen_token()
         _cache_auth_req(randstate, auth_req, authorize_request)
 
-        if settings.mock_digid.lower() == 'true':
+        # TODO: There is some special behavior defined on the auth_req when mocking. If we want identical
+        # behavior through mocking with connect_to_idp=digid as without mocking, we need to 
+        # create a mock redirectresponse.
+        if settings.connect_to_idp.lower() == 'tvs'or settings.mock_digid.lower() == 'true':
             return HTMLResponse(content=self._login(LoginDigiDRequest(state=randstate)))
-
-        req = prepare_req(authorize_request)
-        auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
-        return RedirectResponse(auth.login())
+        else:
+            req = prepare_req(authorize_request)
+            auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
+            return RedirectResponse(auth.login())
 
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
         code = parse_qs(body.decode())['code'][0]
@@ -295,7 +298,7 @@ class Provider(OIDCProvider, SAMLProvider):
         resolve_artifact_req = ArtifactResolveRequest(artifact, sso_url, issuer_id).get_xml()
         url = self.idp_metadata.get_artifact_rs()['location']
         headers = {
-            'SOAPAction' : '"https://artifact-pp2.toegang.overheid.nl/kvs/rd/resolve_artifact"',
+            'SOAPAction' : 'resolve_artifact', #TODO: DOES THIS WORK?
             'content-type': 'text/xml'
         }
         resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=(settings.saml.cert_path, settings.saml.key_path))
