@@ -73,7 +73,7 @@ import requests
 from fastapi.responses import JSONResponse
 
 inge6_mock_uri = "development.inge6.uri/"
-redirect_uri = "coronacheck://auth/login"
+redirect_uri = "some.allowlisted.uri"
 
 authorize_params = {
     'client_id': "test_client",
