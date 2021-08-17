@@ -111,7 +111,7 @@ types-requests==2.25.6
     # via -r requirements-dev.in
 typing-extensions==3.10.0.0
     # via mypy
-uvicorn==0.14.0
+uvicorn==0.15.0
     # via -r requirements-dev.in
 wrapt==1.12.1
     # via astroid
