@@ -1,6 +1,6 @@
 # In this document the requests overview for this system is described:
-The app flow is described in the image shown below.
-![System Authorize Overview](out/tvs-connect.acc.coroncheck.nl.png "System Overview Authorize request")
+The inge6 happy flow is described in the image shown below.
+![System Authorize Overview](images/tvs-connect.acc.coroncheck.nl.png "System Overview Authorize request")
 
 For this service the standard OpenID Connect protocol is implemented, it is therefore recommended to use an OpenID Connect client library to communicate with this service.
 
