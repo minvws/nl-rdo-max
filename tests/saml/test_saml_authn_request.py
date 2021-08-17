@@ -1,7 +1,6 @@
 import pytest
 from lxml import etree
 
-import base64, zlib
 import urllib.parse as urlparse
 
 from starlette.datastructures import Headers
@@ -12,40 +11,13 @@ from inge6.provider import Provider
 
 from inge6.config import settings
 
+from .test_utils import decode_base64_and_inflate
+
 NAMESPACES = {
     'saml': 'urn:oasis:names:tc:SAML:2.0:assertion',
     'samlp': 'urn:oasis:names:tc:SAML:2.0:protocol',
     'ds': 'http://www.w3.org/2000/09/xmldsig#',
 }
-
-def decode_base64_and_inflate( b64string ):
-    decoded_data = base64.b64decode( b64string )
-    return zlib.decompress( decoded_data , -15)
-
-@pytest.fixture
-def provider() -> Provider:
-    yield Provider()
-
-@pytest.fixture
-def digid_config():
-    tmp = settings.connect_to_idp
-    settings.connect_to_idp = 'digid'
-    yield
-    settings.connect_to_idp = tmp
-
-@pytest.fixture
-def tvs_config():
-    tmp = settings.connect_to_idp
-    settings.connect_to_idp = 'tvs'
-    yield
-    settings.connect_to_idp = tmp
-
-@pytest.fixture
-def disable_digid_mock():
-    tmp = settings.mock_digid
-    settings.mock_digid = 'false'
-    yield
-    settings.mock_digid = tmp
 
 # pylint: disable=redefined-outer-name, unused-argument
 def test_authorize_endpoint_digid(provider: Provider, digid_config, disable_digid_mock):
@@ -84,7 +56,7 @@ def test_authorize_endpoint_digid(provider: Provider, digid_config, disable_digi
 
     resp: RedirectResponse = provider.authorize_endpoint(auth_req, headers, '0.0.0.0')
     redirect_url = resp.headers.get('location')
-
+    print(redirect_url)
     parsed_url = urlparse.urlparse(redirect_url)
     query_params = urlparse.parse_qs(parsed_url.query)
     assert all(key in query_params.keys() for key in ['SAMLRequest', 'RelayState', 'Signature', 'SigAlg'])
