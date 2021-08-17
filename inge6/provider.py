@@ -28,6 +28,8 @@ from pyop.exceptions import (
     InvalidClientAuthentication, OAuthError
 )
 
+from onelogin.saml2.auth import OneLogin_Saml2_Auth
+
 from .config import settings
 from .cache import get_redis_client, redis_cache
 from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link
@@ -138,6 +140,15 @@ def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     error_desc = "The servers are too busy right now, please try again later."
     return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
 
+def prepare_req(auth_req: AuthorizeRequest):
+    return {
+        'https': 'on',
+        'http_host': settings.issuer,
+        'script_name': settings.authorize_endpoint,
+        'get_date': auth_req.dict(),
+        'post_data': None
+    }
+
 class Provider(OIDCProvider, SAMLProvider):
     BSN_SIGN_KEY = settings.bsn.sign_key
     BSN_ENCRYPT_KEY = settings.bsn.encrypt_key
@@ -193,7 +204,13 @@ class Provider(OIDCProvider, SAMLProvider):
 
         randstate = redis_cache.gen_token()
         _cache_auth_req(randstate, auth_req, authorize_request)
-        return HTMLResponse(content=self._login(LoginDigiDRequest(state=randstate)))
+
+        if settings.mock_digid.lower() == 'true':
+            return HTMLResponse(content=self._login(LoginDigiDRequest(state=randstate)))
+
+        req = prepare_req(authorize_request)
+        auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
+        return RedirectResponse(auth.login())
 
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
         code = parse_qs(body.decode())['code'][0]
