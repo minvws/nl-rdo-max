@@ -50,6 +50,11 @@ def validate_startup():
             (settings.oidc.rsa_private_key, "OIDC private key file path")
         )
 
+    if not os.path.isfile(settings.oidc.rsa_public_key):
+        missing_files.append(
+            (settings.oidc.rsa_private_key, "OIDC public key file path")
+        )
+
     if settings.use_ssl.lower() == 'true':
         if not os.path.isdir(settings.ssl.base_dir):
             ssl_missing_files.append(
