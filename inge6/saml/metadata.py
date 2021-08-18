@@ -26,7 +26,7 @@ def add_certs(root, cert_data: str) -> None:
 
 class SPMetadata(SAMLRequest):
     TEMPLATE_PATH = settings.saml.sp_template
-    SETTINGS_PATH = 'saml/settings.json'
+    SETTINGS_PATH = settings.saml.settings_path
 
     DEFAULT_SLS_URL = settings.issuer + '/sls'
     DEFAULT_SLS_BINDING = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
@@ -146,7 +146,7 @@ class SPMetadata(SAMLRequest):
         return errors
 
 class IdPMetadata:
-    IDP_PATH = settings.saml.idp_path
+    IDP_PATH = settings.saml.idp_metadata_path
 
     def __init__(self) -> None:
         self.template = etree.parse(self.IDP_PATH).getroot()
@@ -158,9 +158,6 @@ class IdPMetadata:
         self.entity_id = self.template.attrib['entityID']
         self.keyname = self.template.find('.//md:IDPSSODescriptor//dsig:KeyName', NAMESPACES).text
 
-    def _validate_md(self) -> bool:
-        raise NotImplementedError("WIP")
-
     def find_in_md(self, name: str):
         return self.template.find(f'.//md:{name}', {'md': "urn:oasis:names:tc:SAML:2.0:metadata"})
 
@@ -171,8 +168,11 @@ class IdPMetadata:
     def get_cert_pem_data(self) -> str:
         return f"""-----BEGIN CERTIFICATE-----\n{self.template.find('.//md:IDPSSODescriptor//dsig:X509Certificate', NAMESPACES).text}-----END CERTIFICATE-----"""
 
-    def get_sso(self) -> Dict[str, str]:
-        sso = self.find_in_md('SingleSignOnService')
+    def get_sso(self, binding='POST') -> Dict[str, str]:
+        sso = self.template.find(
+            f".//md:SingleSignOnService[@Binding='urn:oasis:names:tc:SAML:2.0:bindings:HTTP-{binding}']",
+            {'md': "urn:oasis:names:tc:SAML:2.0:metadata"}
+        )
         return get_loc_bind(sso)
 
     def get_xml(self) -> bytes:

@@ -41,14 +41,14 @@ subject_id_hash_salt = somesalt
 id_token_lifetime = 600
 
 [saml]
-base_dir = saml
-cert_path = saml/certs/sp.crt
-key_path = saml/certs/sp.key
-settings_path = saml/settings.json
+base_dir = saml/tvs
+cert_path = saml/tvs/certs/sp.crt
+key_path = saml/tvs/certs/sp.key
+settings_path = saml/tvs/settings.json
 
 response_expires_in = 600
 
-idp_path = saml/metadata/idp_metadata.xml
+idp_metadata_path = saml/tvs/metadata/idp_metadata.xml
 
 sp_template = saml/templates/xml/sp_metadata.xml
 authn_request_template = saml/templates/xml/authn_request.xml

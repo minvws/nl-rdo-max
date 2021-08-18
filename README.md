@@ -16,11 +16,11 @@ In short, setup these files:
 ## SAML
 SAML handles the communication between Inge6 and the IdP, short for Identity Provider, which is either TVS or DigiD. To make this work we need to setup the SAML directory.
 
-Please make sure that these files are available:
+Please make sure that these files are available, and reference to the correct IdP (tvs or digid settings):
 - `cert_path`, the certificate used for verifying our signed message. Passed along in requests
 - `key_path`, the key used for signing SAML requests
 - `settings_path`, a file containing the SAML settings for creating our metadata and requests, and parsing the IdP metadata. An example is provided in saml/settings-dist.json, this file also includes an explanation of the options.
-- `idp_path`, the location of the metadata of the IdP
+- `idp_metadata_path`, the location of the metadata of the IdP
 
 Template files (these are included in the repository):
 - `sp_template`, saml/templates/xml/sp_metadata.xml

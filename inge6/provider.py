@@ -28,9 +28,12 @@ from pyop.exceptions import (
     InvalidClientAuthentication, OAuthError
 )
 
+from onelogin.saml2.auth import OneLogin_Saml2_Auth
+
+from . import constants
 from .config import settings
 from .cache import get_redis_client, redis_cache
-from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link
+from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link, create_authn_post_context
 from .encrypt import Encrypt
 from .models import AuthorizeRequest, LoginDigiDRequest, SorryPageRequest
 from .exceptions import (
@@ -41,7 +44,7 @@ from .exceptions import (
 from .saml.exceptions import UserNotAuthenticated
 from .saml.provider import Provider as SAMLProvider
 from .saml import (
-    AuthNRequest, ArtifactResolveRequest, ArtifactResponse
+    ArtifactResolveRequest, ArtifactResponse
 )
 
 from .oidc.provider import Provider as OIDCProvider
@@ -54,14 +57,6 @@ from .oidc.authorize import (
 log: Logger = logging.getLogger(__package__)
 
 _PROVIDER = None
-
-def _create_authn_post_context(relay_state: str, url: str, issuer_id) -> dict:
-    saml_request = AuthNRequest(url, issuer_id)
-    return {
-        'sso_url': url,
-        'saml_request': saml_request.get_base64_string().decode(),
-        'relay_state': relay_state
-    }
 
 def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_request: AuthorizeRequest) -> None:
     value = {
@@ -138,6 +133,28 @@ def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     error_desc = "The servers are too busy right now, please try again later."
     return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
 
+def _prepare_req(auth_req: AuthorizeRequest):
+    return {
+        'https': 'on',
+        'http_host': settings.issuer,
+        'script_name': settings.authorize_endpoint,
+        'get_date': auth_req.dict(),
+        'post_data': None
+    }
+
+def _get_bsn_from_art_resp(bsn_response: str) -> str:
+    if settings.connect_to_idp.lower() == constants.IdPName.TVS.value:
+        return bsn_response
+
+    if settings.connect_to_idp.lower() == constants.IdPName.DIGID.value:
+        sector_split = bsn_response.split(':')
+        sector_number = constants.SECTOR_CODES[sector_split[0]]
+        if sector_number != constants.SectorNumber.BSN:
+            raise ValueError("Expected BSN number, received: {}".format(sector_number))
+        return sector_split[1]
+
+    raise ValueError("Invalid value for connect_to_idp: {}".format(settings.connect_to_idp))
+
 class Provider(OIDCProvider, SAMLProvider):
     BSN_SIGN_KEY = settings.bsn.sign_key
     BSN_ENCRYPT_KEY = settings.bsn.encrypt_key
@@ -193,7 +210,16 @@ class Provider(OIDCProvider, SAMLProvider):
 
         randstate = redis_cache.gen_token()
         _cache_auth_req(randstate, auth_req, authorize_request)
-        return HTMLResponse(content=self._login(LoginDigiDRequest(state=randstate)))
+
+        # There is some special behavior defined on the auth_req when mocking. If we want identical
+        # behavior through mocking with connect_to_idp=digid as without mocking, we need to
+        # create a mock redirectresponse.
+        if settings.connect_to_idp.lower() == constants.IdPName.TVS.value or settings.mock_digid.lower() == 'true':
+            return HTMLResponse(content=self._login(LoginDigiDRequest(state=randstate)))
+
+        req = _prepare_req(authorize_request)
+        auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
+        return RedirectResponse(auth.login())
 
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
         code = parse_qs(body.decode())['code'][0]
@@ -232,10 +258,10 @@ class Provider(OIDCProvider, SAMLProvider):
         issuer_id = self.sp_metadata.issuer_id
 
         if settings.mock_digid.lower() == "true" and not force_digid:
-            authn_post_ctx = _create_authn_post_context(relay_state=randstate, url=f'/digid-mock?state={randstate}', issuer_id=issuer_id)
+            authn_post_ctx = create_authn_post_context(relay_state=randstate, url=f'/digid-mock?state={randstate}', issuer_id=issuer_id)
         else:
             sso_url = self.idp_metadata.get_sso()['location']
-            authn_post_ctx = _create_authn_post_context(relay_state=randstate, url=sso_url, issuer_id=issuer_id)
+            authn_post_ctx = create_authn_post_context(relay_state=randstate, url=sso_url, issuer_id=issuer_id)
 
         return create_post_autosubmit_form(authn_post_ctx)
 
@@ -278,7 +304,7 @@ class Provider(OIDCProvider, SAMLProvider):
         resolve_artifact_req = ArtifactResolveRequest(artifact, sso_url, issuer_id).get_xml()
         url = self.idp_metadata.get_artifact_rs()['location']
         headers = {
-            'SOAPAction' : '"https://artifact-pp2.toegang.overheid.nl/kvs/rd/resolve_artifact"',
+            'SOAPAction' : 'resolve_artifact',
             'content-type': 'text/xml'
         }
         resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=(settings.saml.cert_path, settings.saml.key_path))
@@ -289,7 +315,7 @@ class Provider(OIDCProvider, SAMLProvider):
         artifact_response.raise_for_status()
         log.debug('Validated sha256(artifact) %s', hashed_artifact)
 
-        bsn = artifact_response.get_bsn()
+        bsn = _get_bsn_from_art_resp(artifact_response.get_bsn())
         encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
         return encrypted_bsn
 

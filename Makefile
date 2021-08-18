@@ -21,19 +21,28 @@ clients.json: clients.json.example
 inge6.conf: inge6.conf.example
 	cp inge6.conf.example inge6.conf
 
-saml/settings.json: saml/settings-dist.json
-	cp saml/settings-dist.json saml/settings.json
+saml/tvs/settings.json: saml/settings.json.example
+	cp saml/settings.json.example saml/tvs/settings.json
+
+saml/digid/settings.json: saml/settings.json.example
+	cp saml/settings.json.example saml/digid/settings.json
 
 secrets/private_unencrypted.pem:
 	openssl genrsa -out secrets/private_unencrypted.pem 2048
 secrets/public.pem: secrets/private_unencrypted.pem
 	openssl rsa -in secrets/private_unencrypted.pem -pubout -out secrets/public.pem
-saml/certs/sp.key:
-	openssl genrsa -out saml/certs/sp.key 2048
-saml/certs/sp.crt: saml/certs/sp.key
-	openssl req -new -x509 -key saml/certs/sp.key -out saml/certs/sp.crt -days 360 -subj "/C=US/ST=SCA/L=SCA/O=Oracle/OU=Java/CN=test cert"
 
-setup: inge6.conf saml/settings.json secrets clients.json secrets/public.pem saml/certs/sp.crt
+saml/tvs/certs/sp.key:
+	openssl genrsa -out saml/tvs/certs/sp.key 2048
+saml/tvs/certs/sp.crt: saml/tvs/certs/sp.key
+	openssl req -new -x509 -key saml/tvs/certs/sp.key -out saml/tvs/certs/sp.crt -days 360 -subj "/C=US/ST=SCA/L=SCA/O=Oracle/OU=Java/CN=test cert"
+
+saml/digid/certs/sp.key:
+	openssl genrsa -out saml/digid/certs/sp.key 2048
+saml/digid/certs/sp.crt: saml/digid/certs/sp.key
+	openssl req -new -x509 -key saml/digid/certs/sp.key -out saml/digid/certs/sp.crt -days 360 -subj "/C=US/ST=SCA/L=SCA/O=Oracle/OU=Java/CN=test cert"
+
+setup: inge6.conf saml/tvs/settings.json secrets clients.json secrets/public.pem saml/tvs/certs/sp.crt saml/digid/certs/sp.crt
 
 fresh: clean_venv venv
 
