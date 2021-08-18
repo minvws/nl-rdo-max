@@ -68,16 +68,16 @@ id_token_lifetime = 600
 [saml]
 # saml configuration relating saml request signing, verification and communication 
 # settings.
-base_dir = saml
-cert_path = saml/certs/sp.crt
-key_path = saml/certs/sp.key
-settings_path = saml/settings.json
+base_dir = saml/tvs
+cert_path = saml/tvs/certs/sp.crt
+key_path = saml/tvs/certs/sp.key
+settings_path = saml/tvs/settings.json
 
 # How long do we consider the response to be valid?
 response_expires_in = 600
 
 # IdP metadata file location
-idp_metadata_path = saml/metadata/idp_metadata.xml
+idp_metadata_path = saml/tvs/metadata/idp_metadata.xml
 
 # template files:
 sp_template = saml/templates/xml/sp_metadata.xml

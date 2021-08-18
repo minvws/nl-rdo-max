@@ -1,5 +1,5 @@
 from inge6.models import SorryPageRequest
-from inge6.provider import get_provider
+from inge6.provider import get_provider, _get_bsn_from_art_resp
 
 def test_sorry_too_busy():
     request = SorryPageRequest(
@@ -15,4 +15,4 @@ def test_sorry_too_busy():
 # pylint: disable=unused-argument
 def test_get_bsn_from_artresponse(digid_config):
     art_resp_sector = 's00000000:900029365'
-    assert get_provider()._get_bsn_from_art_resp(art_resp_sector) == '900029365' # pylint: disable=protected-access
+    assert _get_bsn_from_art_resp(art_resp_sector) == '900029365' # pylint: disable=protected-access

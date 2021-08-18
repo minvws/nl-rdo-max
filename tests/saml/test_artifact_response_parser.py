@@ -79,7 +79,7 @@ def update_time_values(xml_str):
 def response_custom_bsn_tvs():
     with open('tests/resources/artifact_response_custom_bsn.xml') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
-    return update_time_values(art_resp_resource)
+    return art_resp_resource
 
 @pytest.fixture
 def response_unedited_tvs():
@@ -91,13 +91,14 @@ def response_unedited_tvs():
 def response_authn_failed_tvs():
     with open('tests/resources/artifact_resolve_response_authnfailed.xml') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
-    return update_time_values(art_resp_resource)
+    return art_resp_resource
 
 @pytest.fixture
 def saml_provider():
     return SAMLProvider()
 
 
+@freeze_time("2021-06-01 12:44:06")
 # pylint: disable=redefined-outer-name
 def test_get_bsn_tvs(response_custom_bsn_tvs, saml_provider, monkeypatch):
     artifact_response = ArtifactResponse.from_string(response_custom_bsn_tvs, saml_provider, insecure=True)
@@ -105,12 +106,14 @@ def test_get_bsn_tvs(response_custom_bsn_tvs, saml_provider, monkeypatch):
     monkeypatch.setattr(saml_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
     assert artifact_response.get_bsn() == '900212640'
 
+@freeze_time("2021-08-18 16:35:24.335248")
 # pylint: disable=redefined-outer-name
 def test_from_string_tvs(response_unedited_tvs, saml_provider):
     ArtifactResponse.from_string(response_unedited_tvs, saml_provider, is_test_instance=True)
     assert True
 
 # pylint: disable=redefined-outer-name
+@freeze_time("2021-06-06 11:40:11")
 def test_authnfailed_tvs(response_authn_failed_tvs, saml_provider):
     with pytest.raises(UserNotAuthenticated):
         ArtifactResponse.from_string(response_authn_failed_tvs, saml_provider, insecure=True).raise_for_status()

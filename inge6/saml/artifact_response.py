@@ -332,13 +332,13 @@ class ArtifactResponse:
         plaintext = cipher.decrypt(enc_data)
         return remove_padding(plaintext)
 
-    def _decrypt_bsn(self) -> Text:
+    def _decrypt_bsn(self):
         aes_key = self._decrypt_enc_key()
         bsn_element_raw = self._decrypt_enc_data(aes_key)
         bsn_element = etree.fromstring(bsn_element_raw.decode())
         return bsn_element
 
-    def _plaintext_bsn(self) -> Text:
+    def _plaintext_bsn(self):
         return self.assertion_subject.find('./saml:NameID', NAMESPACES)
 
     def get_bsn(self) -> Text:

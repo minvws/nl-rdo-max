@@ -19,6 +19,7 @@ def digid_config():
     tmp_saml_settingspath = settings.saml.settings_path
     tmp_saml_idp_metadata_path = settings.saml.idp_metadata_path
     settings.connect_to_idp = 'digid'
+    settings.saml.base_dir = 'saml/digid'
     settings.saml.cert_path = 'saml/digid/certs/sp.crt'
     settings.saml.key_path = 'saml/digid/certs/sp.key'
     settings.saml.settings_path = 'saml/digid/settings.json'
@@ -38,6 +39,7 @@ def tvs_config():
     tmp_saml_settingspath = settings.saml.settings_path
     tmp_saml_idp_metadata_path = settings.saml.idp_metadata_path
     settings.connect_to_idp = 'tvs'
+    settings.saml.base_dir = 'saml/tvs'
     settings.saml.cert_path = 'saml/tvs/certs/sp.crt'
     settings.saml.key_path = 'saml/tvs/certs/sp.key'
     settings.saml.settings_path = 'saml/tvs/settings.json'

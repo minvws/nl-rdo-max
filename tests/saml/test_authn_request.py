@@ -1,4 +1,5 @@
 import base64
+import json
 
 import urllib.parse as urlparse
 
@@ -20,7 +21,7 @@ NAMESPACES = {
 }
 
 # pylint: disable=redefined-outer-name, unused-argument
-def test_authorize_endpoint_digid(digid_config, disable_digid_mock):
+def test_authorize_endpoint_digid(digid_config, disable_digid_mock, redis_mock):
     """
     Test if the generated authn request corresponds with the
     expected values when connecting to digid. e.g. a Redirect Binding:
@@ -72,14 +73,17 @@ def test_authorize_endpoint_digid(digid_config, disable_digid_mock):
     assert parsed_authnreq.attrib['ProviderName'] is not None
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
 
-    assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == settings.issuer
+    with open(settings.saml.settings_path, 'r') as saml_settings:
+        expected_issuer = json.loads(saml_settings.read())['sp']['entityId']
+
+    assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == expected_issuer
     assert parsed_authnreq.find('./samlp:RequestedAuthnContext', NAMESPACES).attrib['Comparison'] == 'minimum' is not None
     assert parsed_authnreq.find('.//saml:AuthnContextClassRef', NAMESPACES) is not None
     assert parsed_authnreq.find('.//saml:AuthnContextClassRef', NAMESPACES).text == 'urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract'
 
 
 # pylint: disable=redefined-outer-name, unused-argument
-def test_authorize_endpoint_tvs(tvs_config):
+def test_authorize_endpoint_tvs(tvs_config, redis_mock):
     """
     Test if the generated authn request corresponds with the
     structure when connecting to tvs. e.g. a POST Binding:
@@ -152,6 +156,10 @@ def test_authorize_endpoint_tvs(tvs_config):
     assert parsed_authnreq.attrib['AssertionConsumerServiceIndex'] is not None
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
 
-    assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == settings.issuer
+
+    with open(settings.saml.settings_path, 'r') as saml_settings:
+        expected_issuer = json.loads(saml_settings.read())['sp']['entityId']
+
+    assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == expected_issuer
     assert parsed_authnreq.find('./ds:Signature', NAMESPACES) is not None
     assert parsed_authnreq.find('.//ds:SignatureValue', NAMESPACES) is not None
