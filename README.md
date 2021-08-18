@@ -20,7 +20,7 @@ Please make sure that these files are available, and reference to the correct Id
 - `cert_path`, the certificate used for verifying our signed message. Passed along in requests
 - `key_path`, the key used for signing SAML requests
 - `settings_path`, a file containing the SAML settings for creating our metadata and requests, and parsing the IdP metadata. An example is provided in saml/settings-dist.json, this file also includes an explanation of the options.
-- `idp_path`, the location of the metadata of the IdP
+- `idp_metadata_path`, the location of the metadata of the IdP
 
 Template files (these are included in the repository):
 - `sp_template`, saml/templates/xml/sp_metadata.xml
