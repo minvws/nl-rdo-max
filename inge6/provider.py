@@ -30,6 +30,7 @@ from pyop.exceptions import (
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
+from . import constants
 from .config import settings
 from .cache import get_redis_client, redis_cache
 from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link, create_authn_post_context
@@ -39,7 +40,6 @@ from .exceptions import (
     TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin,
     ExpiredResourceError
 )
-from .constants import SECTOR_CODES
 
 from .saml.exceptions import UserNotAuthenticated
 from .saml.provider import Provider as SAMLProvider
@@ -143,13 +143,13 @@ def _prepare_req(auth_req: AuthorizeRequest):
     }
 
 def _get_bsn_from_art_resp(bsn_response: str) -> str:
-    if settings.connect_to_idp.lower() == 'tvs':
+    if settings.connect_to_idp.lower() == constants.IdPName.TVS:
         return bsn_response
 
-    if settings.connect_to_idp.lower() == 'digid':
+    if settings.connect_to_idp.lower() == constants.IdPName.DIGID:
         sector_split = bsn_response.split(':')
-        sector_number = SECTOR_CODES[sector_split[0]]
-        if sector_number != 'BSN':
+        sector_number = constants.SECTOR_CODES[sector_split[0]]
+        if sector_number != constants.SectorNumber.BSN:
             raise ValueError("Expected BSN number, received: {}".format(sector_number))
         return sector_split[1]
 
@@ -214,7 +214,7 @@ class Provider(OIDCProvider, SAMLProvider):
         # There is some special behavior defined on the auth_req when mocking. If we want identical
         # behavior through mocking with connect_to_idp=digid as without mocking, we need to
         # create a mock redirectresponse.
-        if settings.connect_to_idp.lower() == 'tvs'or settings.mock_digid.lower() == 'true':
+        if settings.connect_to_idp.lower() == constants.IdPName.TVS or settings.mock_digid.lower() == 'true':
             return HTMLResponse(content=self._login(LoginDigiDRequest(state=randstate)))
 
         req = _prepare_req(authorize_request)
