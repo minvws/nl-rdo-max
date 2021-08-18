@@ -143,10 +143,10 @@ def _prepare_req(auth_req: AuthorizeRequest):
     }
 
 def _get_bsn_from_art_resp(bsn_response: str) -> str:
-    if settings.connect_to_idp.lower() == constants.IdPName.TVS:
+    if settings.connect_to_idp.lower() == constants.IdPName.TVS.value:
         return bsn_response
 
-    if settings.connect_to_idp.lower() == constants.IdPName.DIGID:
+    if settings.connect_to_idp.lower() == constants.IdPName.DIGID.value:
         sector_split = bsn_response.split(':')
         sector_number = constants.SECTOR_CODES[sector_split[0]]
         if sector_number != constants.SectorNumber.BSN:
@@ -214,7 +214,7 @@ class Provider(OIDCProvider, SAMLProvider):
         # There is some special behavior defined on the auth_req when mocking. If we want identical
         # behavior through mocking with connect_to_idp=digid as without mocking, we need to
         # create a mock redirectresponse.
-        if settings.connect_to_idp.lower() == constants.IdPName.TVS or settings.mock_digid.lower() == 'true':
+        if settings.connect_to_idp.lower() == constants.IdPName.TVS.value or settings.mock_digid.lower() == 'true':
             return HTMLResponse(content=self._login(LoginDigiDRequest(state=randstate)))
 
         req = _prepare_req(authorize_request)
