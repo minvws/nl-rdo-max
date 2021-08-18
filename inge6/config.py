@@ -1,5 +1,5 @@
 import configparser
-
+from typing import Any
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -14,6 +14,12 @@ class Settings(configparser.ConfigParser):
 
         def __getattr__(self, name):
             return self._section[name]
+
+        def __setattr__(self, name: str, value: Any) -> None:
+            if name != '_section':
+                self._section[name] = value
+            else:
+                super().__setattr__(name, value)
 
     def __getattr__(self, name):
         if name in self._defaults:
