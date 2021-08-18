@@ -159,6 +159,7 @@ class IdPMetadata:
         self.keyname = self.template.find('.//md:IDPSSODescriptor//dsig:KeyName', NAMESPACES).text
 
     def _validate_md(self) -> bool:
+        # TODO: Validate metadata
         raise NotImplementedError("WIP")
 
     def find_in_md(self, name: str):
@@ -171,8 +172,11 @@ class IdPMetadata:
     def get_cert_pem_data(self) -> str:
         return f"""-----BEGIN CERTIFICATE-----\n{self.template.find('.//md:IDPSSODescriptor//dsig:X509Certificate', NAMESPACES).text}-----END CERTIFICATE-----"""
 
-    def get_sso(self) -> Dict[str, str]:
-        sso = self.find_in_md('SingleSignOnService')
+    def get_sso(self, binding='POST') -> Dict[str, str]:
+        sso = self.template.find(
+            f".//md:SingleSignOnService[@Binding='urn:oasis:names:tc:SAML:2.0:bindings:HTTP-{binding}']", 
+            {'md': "urn:oasis:names:tc:SAML:2.0:metadata"}
+        )
         return get_loc_bind(sso)
 
     def get_xml(self) -> bytes:

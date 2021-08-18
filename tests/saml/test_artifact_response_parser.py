@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
+from freezegun import freeze_time
 from lxml import etree
 
 from inge6.saml import ArtifactResponse
@@ -75,19 +76,19 @@ def update_time_values(xml_str):
 
 
 @pytest.fixture
-def response_custom_bsn():
+def response_custom_bsn_tvs():
     with open('tests/resources/artifact_response_custom_bsn.xml') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
     return update_time_values(art_resp_resource)
 
 @pytest.fixture
-def response_unedited():
+def response_unedited_tvs():
     with open('tests/resources/artifact_response.xml') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
     return art_resp_resource
 
 @pytest.fixture
-def response_authn_failed():
+def response_authn_failed_tvs():
     with open('tests/resources/artifact_resolve_response_authnfailed.xml') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
     return update_time_values(art_resp_resource)
@@ -96,19 +97,41 @@ def response_authn_failed():
 def saml_provider():
     return SAMLProvider()
 
+
 # pylint: disable=redefined-outer-name
-def test_get_bsn(response_custom_bsn, saml_provider, monkeypatch):
-    artifact_response = ArtifactResponse.from_string(response_custom_bsn, saml_provider, insecure=True)
+def test_get_bsn_tvs(response_custom_bsn_tvs, saml_provider, monkeypatch):
+    artifact_response = ArtifactResponse.from_string(response_custom_bsn_tvs, saml_provider, insecure=True)
 
     monkeypatch.setattr(saml_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
     assert artifact_response.get_bsn() == '900212640'
 
 # pylint: disable=redefined-outer-name
-def test_from_string(response_unedited, saml_provider):
-    ArtifactResponse.from_string(response_unedited, saml_provider, is_test_instance=True)
+def test_from_string_tvs(response_unedited_tvs, saml_provider):
+    ArtifactResponse.from_string(response_unedited_tvs, saml_provider, is_test_instance=True)
     assert True
 
 # pylint: disable=redefined-outer-name
-def test_authnfailed(response_authn_failed, saml_provider):
+def test_authnfailed_tvs(response_authn_failed_tvs, saml_provider):
     with pytest.raises(UserNotAuthenticated):
-        ArtifactResponse.from_string(response_authn_failed, saml_provider, insecure=True).raise_for_status()
+        ArtifactResponse.from_string(response_authn_failed_tvs, saml_provider, insecure=True).raise_for_status()
+
+
+@freeze_time("2021-08-17T14:05:29Z")
+def test_artifact_response_parse_digid(mocker):
+    with open('tests/resources/artifact_response_digid.xml') as resp_ex_f:
+        art_resp_resource = resp_ex_f.read().encode('utf-8')
+
+    mocker.patch('inge6.saml.provider.IdPMetadata.IDP_PATH', 'saml/digid/metadata/idp_metadata.xml')
+    saml_provider = SAMLProvider()
+
+    mocker.patch.dict(saml_provider.settings_dict, {
+        'sp': {
+            'entityId': 'https://siam1.test.anoigo.nl/aselectserver/server',
+            'assertionConsumerService': {
+                'url': 'https://siam1.test.anoigo.nl/aselectserver/server/saml20_assertion_digid'
+            }
+        }
+    })
+    art_resp = ArtifactResponse.from_string(art_resp_resource, saml_provider, insecure=True, saml_specification_version=3.5)
+    art_resp.raise_for_status()
+    assert art_resp.get_bsn() == 's00000000:900029365'

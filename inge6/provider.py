@@ -32,18 +32,19 @@ from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
 from .config import settings
 from .cache import get_redis_client, redis_cache
-from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link
+from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link, create_authn_post_context
 from .encrypt import Encrypt
 from .models import AuthorizeRequest, LoginDigiDRequest, SorryPageRequest
 from .exceptions import (
     TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin,
     ExpiredResourceError
 )
+from .constants import SECTOR_CODES
 
 from .saml.exceptions import UserNotAuthenticated
 from .saml.provider import Provider as SAMLProvider
 from .saml import (
-    AuthNRequest, ArtifactResolveRequest, ArtifactResponse
+    ArtifactResolveRequest, ArtifactResponse
 )
 
 from .oidc.provider import Provider as OIDCProvider
@@ -56,14 +57,6 @@ from .oidc.authorize import (
 log: Logger = logging.getLogger(__package__)
 
 _PROVIDER = None
-
-def _create_authn_post_context(relay_state: str, url: str, issuer_id) -> dict:
-    saml_request = AuthNRequest(url, issuer_id)
-    return {
-        'sso_url': url,
-        'saml_request': saml_request.get_base64_string().decode(),
-        'relay_state': relay_state
-    }
 
 def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_request: AuthorizeRequest) -> None:
     value = {
@@ -252,10 +245,10 @@ class Provider(OIDCProvider, SAMLProvider):
         issuer_id = self.sp_metadata.issuer_id
 
         if settings.mock_digid.lower() == "true" and not force_digid:
-            authn_post_ctx = _create_authn_post_context(relay_state=randstate, url=f'/digid-mock?state={randstate}', issuer_id=issuer_id)
+            authn_post_ctx = create_authn_post_context(relay_state=randstate, url=f'/digid-mock?state={randstate}', issuer_id=issuer_id)
         else:
             sso_url = self.idp_metadata.get_sso()['location']
-            authn_post_ctx = _create_authn_post_context(relay_state=randstate, url=sso_url, issuer_id=issuer_id)
+            authn_post_ctx = create_authn_post_context(relay_state=randstate, url=sso_url, issuer_id=issuer_id)
 
         return create_post_autosubmit_form(authn_post_ctx)
 
@@ -285,6 +278,16 @@ class Provider(OIDCProvider, SAMLProvider):
 
         return HTMLResponse(create_acs_redirect_link({"redirect_url": response_url}))
 
+    def _get_bsn_from_art_resp(self, bsn_response: str) -> str:
+        if settings.connect_to_idp.lower() == 'tvs':
+            return bsn_response
+        elif settings.connect_to_idp.lower() == 'digid':
+            sector_split = bsn_response.split(':')
+            sector_number = SECTOR_CODES[sector_split[0]]
+            if sector_number != 'BSN':
+                raise ValueError("Expected BSN number, received: {}".format(sector_number))
+            return sector_split[1]
+
     def _resolve_artifact(self, artifact: str) -> bytes:
         hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
         log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
@@ -309,7 +312,7 @@ class Provider(OIDCProvider, SAMLProvider):
         artifact_response.raise_for_status()
         log.debug('Validated sha256(artifact) %s', hashed_artifact)
 
-        bsn = artifact_response.get_bsn()
+        bsn = self._get_bsn_from_art_resp(artifact_response.get_bsn())
         encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
         return encrypted_bsn
 
