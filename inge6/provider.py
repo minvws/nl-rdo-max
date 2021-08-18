@@ -133,7 +133,7 @@ def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     error_desc = "The servers are too busy right now, please try again later."
     return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
 
-def prepare_req(auth_req: AuthorizeRequest):
+def _prepare_req(auth_req: AuthorizeRequest):
     return {
         'https': 'on',
         'http_host': settings.issuer,
@@ -141,6 +141,19 @@ def prepare_req(auth_req: AuthorizeRequest):
         'get_date': auth_req.dict(),
         'post_data': None
     }
+
+def _get_bsn_from_art_resp(bsn_response: str) -> str:
+    if settings.connect_to_idp.lower() == 'tvs':
+        return bsn_response
+
+    if settings.connect_to_idp.lower() == 'digid':
+        sector_split = bsn_response.split(':')
+        sector_number = SECTOR_CODES[sector_split[0]]
+        if sector_number != 'BSN':
+            raise ValueError("Expected BSN number, received: {}".format(sector_number))
+        return sector_split[1]
+
+    raise ValueError("Invalid value for connect_to_idp: {}".format(settings.connect_to_idp))
 
 class Provider(OIDCProvider, SAMLProvider):
     BSN_SIGN_KEY = settings.bsn.sign_key
@@ -198,15 +211,15 @@ class Provider(OIDCProvider, SAMLProvider):
         randstate = redis_cache.gen_token()
         _cache_auth_req(randstate, auth_req, authorize_request)
 
-        # TODO: There is some special behavior defined on the auth_req when mocking. If we want identical
-        # behavior through mocking with connect_to_idp=digid as without mocking, we need to 
+        # There is some special behavior defined on the auth_req when mocking. If we want identical
+        # behavior through mocking with connect_to_idp=digid as without mocking, we need to
         # create a mock redirectresponse.
         if settings.connect_to_idp.lower() == 'tvs'or settings.mock_digid.lower() == 'true':
             return HTMLResponse(content=self._login(LoginDigiDRequest(state=randstate)))
-        else:
-            req = prepare_req(authorize_request)
-            auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
-            return RedirectResponse(auth.login())
+
+        req = _prepare_req(authorize_request)
+        auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
+        return RedirectResponse(auth.login())
 
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
         code = parse_qs(body.decode())['code'][0]
@@ -278,16 +291,6 @@ class Provider(OIDCProvider, SAMLProvider):
 
         return HTMLResponse(create_acs_redirect_link({"redirect_url": response_url}))
 
-    def _get_bsn_from_art_resp(self, bsn_response: str) -> str:
-        if settings.connect_to_idp.lower() == 'tvs':
-            return bsn_response
-        elif settings.connect_to_idp.lower() == 'digid':
-            sector_split = bsn_response.split(':')
-            sector_number = SECTOR_CODES[sector_split[0]]
-            if sector_number != 'BSN':
-                raise ValueError("Expected BSN number, received: {}".format(sector_number))
-            return sector_split[1]
-
     def _resolve_artifact(self, artifact: str) -> bytes:
         hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
         log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
@@ -301,7 +304,7 @@ class Provider(OIDCProvider, SAMLProvider):
         resolve_artifact_req = ArtifactResolveRequest(artifact, sso_url, issuer_id).get_xml()
         url = self.idp_metadata.get_artifact_rs()['location']
         headers = {
-            'SOAPAction' : 'resolve_artifact', #TODO: DOES THIS WORK?
+            'SOAPAction' : 'resolve_artifact',
             'content-type': 'text/xml'
         }
         resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=(settings.saml.cert_path, settings.saml.key_path))
@@ -312,7 +315,7 @@ class Provider(OIDCProvider, SAMLProvider):
         artifact_response.raise_for_status()
         log.debug('Validated sha256(artifact) %s', hashed_artifact)
 
-        bsn = self._get_bsn_from_art_resp(artifact_response.get_bsn())
+        bsn = _get_bsn_from_art_resp(artifact_response.get_bsn())
         encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
         return encrypted_bsn
 

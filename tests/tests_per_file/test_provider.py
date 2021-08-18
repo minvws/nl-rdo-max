@@ -1,7 +1,5 @@
-from inge6.saml import provider
 from inge6.models import SorryPageRequest
 from inge6.provider import get_provider
-
 
 def test_sorry_too_busy():
     request = SorryPageRequest(

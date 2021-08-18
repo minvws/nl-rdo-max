@@ -1,17 +1,14 @@
-import pytest
 import base64
-from inge6.provider import Provider
-
-from lxml import etree
 
 import urllib.parse as urlparse
+
+from lxml import etree
 
 from starlette.datastructures import Headers
 from fastapi.responses import RedirectResponse, HTMLResponse
 
 from inge6.models import AuthorizeRequest
 from inge6.provider import Provider
-
 from inge6.config import settings
 
 from .test_utils import decode_base64_and_inflate
@@ -66,6 +63,7 @@ def test_authorize_endpoint_digid(digid_config, disable_digid_mock):
     assert all(key in query_params.keys() for key in ['SAMLRequest', 'RelayState', 'Signature', 'SigAlg'])
 
     generated_authnreq = decode_base64_and_inflate(query_params['SAMLRequest'][0]).decode()
+    # pylint: disable=c-extension-no-member
     parsed_authnreq = etree.fromstring(generated_authnreq).getroottree().getroot()
 
     assert parsed_authnreq.attrib['ID'] is not None
@@ -74,7 +72,6 @@ def test_authorize_endpoint_digid(digid_config, disable_digid_mock):
     assert parsed_authnreq.attrib['ProviderName'] is not None
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
 
-    #TODO: What should the issuer contain
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == settings.issuer
     assert parsed_authnreq.find('./samlp:RequestedAuthnContext', NAMESPACES).attrib['Comparison'] == 'minimum' is not None
     assert parsed_authnreq.find('.//saml:AuthnContextClassRef', NAMESPACES) is not None
@@ -119,6 +116,7 @@ def test_authorize_endpoint_tvs(tvs_config):
     """
 
     def get_post_params_from_html(html: str):
+        # pylint: disable=c-extension-no-member
         html_autosubmit = etree.fromstring(html)
         post_form = html_autosubmit.find('.//form')
         saml_req = post_form.find("./input[@name='SAMLRequest']").attrib['value']
@@ -146,6 +144,7 @@ def test_authorize_endpoint_tvs(tvs_config):
     resp: HTMLResponse = provider.authorize_endpoint(auth_req, headers, '0.0.0.0')
     saml_request = get_post_params_from_html(resp.body)['SAMLRequest']
     generated_authnreq = base64.b64decode(saml_request).decode()
+    # pylint: disable=c-extension-no-member
     parsed_authnreq = etree.fromstring(generated_authnreq).getroottree().getroot()
 
     assert parsed_authnreq.attrib['ID'] is not None
@@ -153,7 +152,6 @@ def test_authorize_endpoint_tvs(tvs_config):
     assert parsed_authnreq.attrib['AssertionConsumerServiceIndex'] is not None
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
 
-    #TODO: What should the issuer contain
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == settings.issuer
     assert parsed_authnreq.find('./ds:Signature', NAMESPACES) is not None
     assert parsed_authnreq.find('.//ds:SignatureValue', NAMESPACES) is not None

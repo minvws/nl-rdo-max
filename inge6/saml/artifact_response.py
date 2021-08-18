@@ -215,7 +215,7 @@ class ArtifactResponse:
         errors = []
 
         expected_response_dest = from_settings(self.provider.settings_dict, 'sp.assertionConsumerService.url')
-        # TODO: remove, or related to saml specification 3.5 vs 4.5?
+        # TODO: remove, or related to saml specification 3.5 vs 4.5? # pylint: disable=fixme
         if self.saml_specification_version >= 4.4:
             if expected_response_dest != self.response.attrib['Destination']:
                 errors.append(ValidationError('Response destination is not what was expected. Expected: {}, was {}'.format(expected_response_dest, self.response.attrib['Destination'])))

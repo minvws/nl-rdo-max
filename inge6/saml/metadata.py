@@ -174,7 +174,7 @@ class IdPMetadata:
 
     def get_sso(self, binding='POST') -> Dict[str, str]:
         sso = self.template.find(
-            f".//md:SingleSignOnService[@Binding='urn:oasis:names:tc:SAML:2.0:bindings:HTTP-{binding}']", 
+            f".//md:SingleSignOnService[@Binding='urn:oasis:names:tc:SAML:2.0:bindings:HTTP-{binding}']",
             {'md': "urn:oasis:names:tc:SAML:2.0:metadata"}
         )
         return get_loc_bind(sso)
