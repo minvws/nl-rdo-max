@@ -158,10 +158,6 @@ class IdPMetadata:
         self.entity_id = self.template.attrib['entityID']
         self.keyname = self.template.find('.//md:IDPSSODescriptor//dsig:KeyName', NAMESPACES).text
 
-    def _validate_md(self) -> bool:
-        # TODO: Validate metadata
-        raise NotImplementedError("WIP")
-
     def find_in_md(self, name: str):
         return self.template.find(f'.//md:{name}', {'md': "urn:oasis:names:tc:SAML:2.0:metadata"})
 
