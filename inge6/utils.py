@@ -1,4 +1,4 @@
-from typing import Text
+from typing import Text, Tuple
 from jinja2 import Template
 from .config import settings
 
@@ -31,8 +31,13 @@ def create_page_too_busy(page_template_head: str, page_template_tail: str, base_
     return page_template_head + base_url + page_template_tail
 
 
-def create_authn_post_context(relay_state: str, url: str, issuer_id) -> dict:
-    saml_request = AuthNRequest(url, issuer_id)
+def create_authn_post_context(
+    relay_state: str,
+    url: str,
+    issuer_id: str,
+    keypair: Tuple[str, str]
+) -> dict:
+    saml_request = AuthNRequest(url, issuer_id, keypair)
     return {
         'sso_url': url,
         'saml_request': saml_request.get_base64_string().decode(),

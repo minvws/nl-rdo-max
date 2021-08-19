@@ -24,7 +24,6 @@ from .provider import Provider as SAMLProvider
 
 RESPONSE_EXPIRES_IN = int(settings.saml.response_expires_in)
 
-PRIV_KEY_PATH = settings.saml.key_path
 CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
 
 log: Logger = logging.getLogger(__package__)

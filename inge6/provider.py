@@ -1,4 +1,5 @@
 import base64
+
 import json
 import logging
 from logging import Logger
@@ -7,7 +8,6 @@ from urllib import parse
 
 from urllib.parse import parse_qs, urlencode
 from typing import Text, List, Union
-from datetime import datetime
 
 import requests
 
@@ -32,7 +32,8 @@ from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
 from . import constants
 from .config import settings
-from .cache import get_redis_client, redis_cache
+from .cache import redis_cache
+from .rate_limiter import rate_limit_test
 from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link, create_authn_post_context
 from .encrypt import Encrypt
 from .models import AuthorizeRequest, LoginDigiDRequest, SorryPageRequest
@@ -42,6 +43,7 @@ from .exceptions import (
 )
 
 from .saml.exceptions import UserNotAuthenticated
+from .saml.id_provider import IdProvider
 from .saml.provider import Provider as SAMLProvider
 from .saml import (
     ArtifactResolveRequest, ArtifactResponse
@@ -58,20 +60,30 @@ log: Logger = logging.getLogger(__package__)
 
 _PROVIDER = None
 
-def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_request: AuthorizeRequest) -> None:
+def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_request: AuthorizeRequest,
+                    id_provider: str) -> None:
     value = {
         'auth_req': auth_req,
         'code_challenge': authorization_request.code_challenge,
-        'code_challenge_method': authorization_request.code_challenge_method
+        'code_challenge_method': authorization_request.code_challenge_method,
+        'id_provider': id_provider
     }
-    redis_cache.hset(randstate, 'auth_req', value)
 
-def _store_code_challenge(code: str, code_challenge: str, code_challenge_method: str) -> None:
+    redis_cache.hset(randstate, constants.RedisKeys.AUTH_REQ.value, value)
+
+def _cache_code_challenge(code: str, code_challenge: str, code_challenge_method: str) -> None:
     value = {
         'code_challenge': code_challenge,
         'code_challenge_method': code_challenge_method
     }
-    redis_cache.hset(code, 'cc_cm', value)
+    redis_cache.hset(code, constants.RedisKeys.CC_CM.value, value)
+
+def _cache_artifact(code: str, artifact: str, id_provider: str):
+    value = {
+        'artifact': artifact,
+        'id_provider': id_provider
+    }
+    redis_cache.hset(code, constants.RedisKeys.ARTI.value, value)
 
 def hget_from_redis(namespace, key):
     result = redis_cache.hget(namespace, key)
@@ -82,38 +94,6 @@ def hget_from_redis(namespace, key):
 def _create_redis_bsn_key(key: str, id_token: str, audience: List[Text]) -> str:
     jwt = validate_jwt_token(key, id_token, audience)
     return jwt['at_hash']
-
-def _rate_limit_test(ip_address: str, user_limit_key: str, ip_expire_s: int) -> None:
-    """
-    Test is we have passed the user limit defined in the redis-store. The rate limit
-    defines the number of users per second which we allow.
-
-    if no user_limit is found in the redis store, this check is treated as 'disabled'.
-
-    :param user_limit_key: the key in the redis store that defines the number of allowed users per 10th of a second
-    :raises: TooBusyError when the number of users exceeds the allowed number.
-    """
-    ip_key = "tvs:ipv4:" + ip_address
-    ip_key_exists = get_redis_client().incr(ip_key)
-    if ip_key_exists != 1:
-        raise TooManyRequestsFromOrigin(f"Too many requests from the same ip_address during the last {ip_expire_s} seconds.")
-    get_redis_client().expire(ip_key, ip_expire_s)
-
-    user_limit = get_redis_client().get(user_limit_key)
-
-    if user_limit is None:
-        return
-
-    user_limit = int(user_limit)
-    timeslot = int(datetime.utcnow().timestamp())
-
-    timeslot_key = "tvs:limiter:" + str(timeslot)
-    num_users = get_redis_client().incr(timeslot_key)
-
-    if num_users == 1:
-        get_redis_client().expire(timeslot_key, 2)
-    elif num_users >= user_limit:
-        raise TooBusyError("Servers are too busy at this point, please try again later")
 
 def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     """
@@ -142,11 +122,11 @@ def _prepare_req(auth_req: AuthorizeRequest):
         'post_data': None
     }
 
-def _get_bsn_from_art_resp(bsn_response: str) -> str:
-    if settings.connect_to_idp.lower() == constants.IdPName.TVS.value:
+def _get_bsn_from_art_resp(bsn_response: str, saml_spec_version: float) -> str:
+    if saml_spec_version >= 4.4:
         return bsn_response
 
-    if settings.connect_to_idp.lower() == constants.IdPName.DIGID.value:
+    if saml_spec_version == 3.5:
         sector_split = bsn_response.split(':')
         sector_number = constants.SECTOR_CODES[sector_split[0]]
         if sector_number != constants.SectorNumber.BSN:
@@ -187,8 +167,9 @@ class Provider(OIDCProvider, SAMLProvider):
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
         try:
+            connect_to_idp = settings.connect_to_idp
             if settings.mock_digid.lower() != 'true':
-                _rate_limit_test(ip_address, settings.ratelimit.user_limit_key, int(settings.ratelimit.ip_expire_in_s))
+                connect_to_idp = rate_limit_test(ip_address)
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
             log.warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
             query_params = {
@@ -209,13 +190,17 @@ class Provider(OIDCProvider, SAMLProvider):
             return Response(content='Something went wrong: {}'.format(str(invalid_auth_req)), status_code=400)
 
         randstate = redis_cache.gen_token()
-        _cache_auth_req(randstate, auth_req, authorize_request)
+        _cache_auth_req(randstate, auth_req, authorize_request, connect_to_idp)
 
         # There is some special behavior defined on the auth_req when mocking. If we want identical
         # behavior through mocking with connect_to_idp=digid as without mocking, we need to
         # create a mock redirectresponse.
-        if settings.connect_to_idp.lower() == constants.IdPName.TVS.value or settings.mock_digid.lower() == 'true':
-            return HTMLResponse(content=self._login(LoginDigiDRequest(state=randstate)))
+        id_provider = self.get_id_provider(connect_to_idp)
+        if id_provider.authn_binding.endswith('POST') or settings.mock_digid.lower() == 'true':
+            return HTMLResponse(content=self._login(
+                LoginDigiDRequest(state=randstate),
+                id_provider=id_provider
+            ))
 
         req = _prepare_req(authorize_request)
         auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
@@ -225,9 +210,12 @@ class Provider(OIDCProvider, SAMLProvider):
         code = parse_qs(body.decode())['code'][0]
 
         try:
-            artifact = hget_from_redis(code, 'arti')
+            cached_artifact = hget_from_redis(code, 'arti')
+            artifact = cached_artifact['artifact']
+            id_provider = cached_artifact['id_provider']
+
             token_response = accesstoken(self, body, headers)
-            encrypted_bsn = self._resolve_artifact(artifact)
+            encrypted_bsn = self._resolve_artifact(artifact, id_provider)
 
             access_key = _create_redis_bsn_key(self.key, token_response['id_token'].encode(), self.audience)
             redis_cache.set(access_key, encrypted_bsn)
@@ -251,17 +239,27 @@ class Provider(OIDCProvider, SAMLProvider):
         response = JSONResponse(jsonable_encoder(error_resp), status_code=400)
         return response
 
-    def _login(self, login_digid_req: LoginDigiDRequest) -> Text:
+    def _login(self, login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> Text:
         force_digid = login_digid_req.force_digid if login_digid_req.force_digid is not None else False
         randstate = login_digid_req.state
 
         issuer_id = self.sp_metadata.issuer_id
 
         if settings.mock_digid.lower() == "true" and not force_digid:
-            authn_post_ctx = create_authn_post_context(relay_state=randstate, url=f'/digid-mock?state={randstate}', issuer_id=issuer_id)
+            authn_post_ctx = create_authn_post_context(
+                relay_state=randstate,
+                url=f'/digid-mock?state={randstate}',
+                issuer_id=issuer_id,
+                keypair=id_provider.keypair_paths
+            )
         else:
             sso_url = self.idp_metadata.get_sso()['location']
-            authn_post_ctx = create_authn_post_context(relay_state=randstate, url=sso_url, issuer_id=issuer_id)
+            authn_post_ctx = create_authn_post_context(
+                relay_state=randstate,
+                url=sso_url,
+                issuer_id=issuer_id,
+                keypair=id_provider.keypair_paths
+            )
 
         return create_post_autosubmit_form(authn_post_ctx)
 
@@ -274,8 +272,8 @@ class Provider(OIDCProvider, SAMLProvider):
             redis_cache.set('DIGID_MOCK' + artifact, 'true')
 
         try:
-            auth_req_dict = hget_from_redis(state, 'auth_req')
-            auth_req = auth_req_dict['auth_req']
+            auth_req_dict = hget_from_redis(state, constants.RedisKeys.AUTH_REQ.value)
+            auth_req = auth_req_dict[constants.RedisKeys.AUTH_REQ.value]
         except ExpiredResourceError as expired_err:
             log.error('received invalid authn request for artifact %s. Reason: %s', artifact_hashed, expired_err, exc_info=True)
             return HTMLResponse('Session expired')
@@ -285,13 +283,34 @@ class Provider(OIDCProvider, SAMLProvider):
         code = authn_response['code']
 
         log.debug('Storing sha256(artifact) %s under code %s', artifact_hashed, code)
-        redis_cache.hset(code, 'arti', artifact)
-        _store_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
+        _cache_artifact(code, artifact, auth_req_dict['id_provider'])
+
+        _cache_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
         log.debug('Stored code challenge')
 
         return HTMLResponse(create_acs_redirect_link({"redirect_url": response_url}))
 
-    def _resolve_artifact(self, artifact: str) -> bytes:
+    def _perform_artifact_resolve_request(self, artifact, id_provider):
+        id_provider = self.get_id_provider(id_provider)
+
+        sso_url = id_provider.idp_metadata.get_sso()['location']
+        issuer_id = id_provider.sp_metadata.issuer_id
+        url = id_provider.idp_metadata.get_artifact_rs()['location']
+
+        resolve_artifact_req = ArtifactResolveRequest(artifact, sso_url, issuer_id, id_provider.keypair_paths)
+        headers = {
+            'SOAPAction' : 'resolve_artifact',
+            'content-type': 'text/xml'
+        }
+
+        return requests.post(
+            url,
+            headers=headers,
+            data=resolve_artifact_req.get_xml(),
+            cert=(id_provider.cert_path, id_provider.key_path)
+        )
+
+    def _resolve_artifact(self, artifact: str, id_provider: str) -> bytes:
         hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
         log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
 
@@ -299,15 +318,7 @@ class Provider(OIDCProvider, SAMLProvider):
         if settings.mock_digid.lower() == "true" and is_digid_mock is not None:
             return self.bsn_encrypt.symm_encrypt(artifact)
 
-        sso_url = self.idp_metadata.get_sso()['location']
-        issuer_id = self.sp_metadata.issuer_id
-        resolve_artifact_req = ArtifactResolveRequest(artifact, sso_url, issuer_id).get_xml()
-        url = self.idp_metadata.get_artifact_rs()['location']
-        headers = {
-            'SOAPAction' : 'resolve_artifact',
-            'content-type': 'text/xml'
-        }
-        resolved_artifact = requests.post(url, headers=headers, data=resolve_artifact_req, cert=(settings.saml.cert_path, settings.saml.key_path))
+        resolved_artifact = self._perform_artifact_resolve_request(artifact, id_provider)
 
         log.debug('Received a response for sha256(artifact) %s with status_code %s', hashed_artifact, resolved_artifact.status_code)
         artifact_response = ArtifactResponse.from_string(resolved_artifact.text, self)
@@ -315,7 +326,7 @@ class Provider(OIDCProvider, SAMLProvider):
         artifact_response.raise_for_status()
         log.debug('Validated sha256(artifact) %s', hashed_artifact)
 
-        bsn = _get_bsn_from_art_resp(artifact_response.get_bsn())
+        bsn = _get_bsn_from_art_resp(artifact_response.get_bsn(), id_provider.saml_spec_version)
         encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
         return encrypted_bsn
 

@@ -19,13 +19,5 @@
                 }
             ]
         }
-    },
-    "idp": {
-        "entityId": "https://was-preprod1.digid.nl/saml/idp/metadata",
-        "singleSignOnService": {
-            "url": "https://preprod1.digid.nl/saml/idp/request_authentication",
-            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
-        },
-        "x509cert": "<onelogin_connector_cert>"
     }
 }

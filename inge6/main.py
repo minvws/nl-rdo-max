@@ -20,24 +20,9 @@ def validate_startup():
     missing_files = []
     ssl_missing_files = []
 
-    if not os.path.isfile(settings.saml.cert_path):
+    if not os.path.isfile(settings.saml.identity_provider_settings):
         missing_files.append(
-            (settings.saml.cert_path, "SAML certificate file")
-        )
-
-    if not os.path.isfile(settings.saml.key_path):
-        missing_files.append(
-            (settings.saml.key_path, "SAML key file")
-        )
-
-    if not os.path.isfile(settings.saml.settings_path):
-        missing_files.append(
-            (settings.saml.settings_path, "SAML settings file")
-        )
-
-    if not os.path.isfile(settings.saml.idp_metadata_path):
-        missing_files.append(
-            (settings.saml.idp_metadata_path, "SAML Identity Provider Metadata")
+            (settings.saml.identity_provider_settings, "SAML Identity Providers file")
         )
 
     if not os.path.isfile(settings.oidc.clients_file):

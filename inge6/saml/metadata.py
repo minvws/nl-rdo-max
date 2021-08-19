@@ -1,6 +1,4 @@
 # pylint: disable=c-extension-no-member
-import json
-
 from typing import Dict, Optional
 
 from lxml import etree
@@ -26,23 +24,16 @@ def add_certs(root, cert_data: str) -> None:
 
 class SPMetadata(SAMLRequest):
     TEMPLATE_PATH = settings.saml.sp_template
-    SETTINGS_PATH = settings.saml.settings_path
-
-    DEFAULT_SLS_URL = settings.issuer + '/sls'
-    DEFAULT_SLS_BINDING = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
 
     DEFAULT_ACS_URL = settings.issuer + '/acs'
     DEFAULT_ACS_BINDING = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
 
-    def __init__(self) -> None:
-        super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())
-
-        with open(self.SETTINGS_PATH, 'r') as settings_file:
-            self.settings_dict = json.loads(settings_file.read())
-
+    def __init__(self, settings_dict, keypair_paths) -> None:
+        super().__init__(etree.parse(self.TEMPLATE_PATH).getroot(), keypair_paths)
+        self.settings_dict = settings_dict
         self.issuer_id = self.settings_dict['sp']['entityId']
 
-        with open(self.CERT_PATH, 'r') as cert_file:
+        with open(self.cert_path, 'r') as cert_file:
             self.cert_data = cert_file.read()
 
         self.keyname: Optional[str] = None
@@ -57,7 +48,7 @@ class SPMetadata(SAMLRequest):
         self._add_attribute_value()
         self._add_keynames()
 
-        sign(self.root, self.KEY_PATH)
+        sign(self.root, self.key_path)
 
     def _add_entity_id(self) -> None:
         self.entity_id = from_settings(self.settings_dict, 'sp.entityId')
@@ -75,17 +66,10 @@ class SPMetadata(SAMLRequest):
             keyname_elem.text = sha256_fingerprint
 
     def _add_service_details(self) -> None:
-        sls_elem = self.root.find('.//md:SingleLogoutService', NAMESPACES)
         acs_elem = self.root.find('.//md:AssertionConsumerService', NAMESPACES)
-
-        sls_loc = from_settings(self.settings_dict, 'sp.SingleLogoutService.url', self.DEFAULT_SLS_URL)
-        sls_binding = from_settings(self.settings_dict, 'sp.SingleLogoutService.binding', self.DEFAULT_SLS_BINDING)
 
         acs_binding = from_settings(self.settings_dict, 'sp.assertionConsumerService.binding', self.DEFAULT_ACS_URL)
         acs_loc = from_settings(self.settings_dict, 'sp.assertionConsumerService.url', self.DEFAULT_ACS_BINDING)
-
-        sls_elem.attrib['Location'] = sls_loc
-        sls_elem.attrib['Binding'] = sls_binding
 
         acs_elem.attrib['Location'] = acs_loc
         acs_elem.attrib['Binding'] = acs_binding
@@ -146,10 +130,9 @@ class SPMetadata(SAMLRequest):
         return errors
 
 class IdPMetadata:
-    IDP_PATH = settings.saml.idp_metadata_path
 
-    def __init__(self) -> None:
-        self.template = etree.parse(self.IDP_PATH).getroot()
+    def __init__(self, idp_metadata_path) -> None:
+        self.template = etree.parse(idp_metadata_path).getroot()
         new_root, valid_sign = has_valid_signatures(self.template, cert_data=self.get_cert_pem_data())
         if not valid_sign:
             raise xmlsec.VerificationError("Signature is invalid")
