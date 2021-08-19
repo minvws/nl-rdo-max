@@ -10,7 +10,6 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 
 from inge6.models import AuthorizeRequest
 from inge6.provider import Provider
-from inge6.config import settings
 
 from .test_utils import decode_base64_and_inflate
 
@@ -73,7 +72,7 @@ def test_authorize_endpoint_digid(digid_config, disable_digid_mock, redis_mock):
     assert parsed_authnreq.attrib['ProviderName'] is not None
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
 
-    with open(settings.saml.settings_path, 'r') as saml_settings:
+    with open('saml/digid/settings.json', 'r') as saml_settings:
         expected_issuer = json.loads(saml_settings.read())['sp']['entityId']
 
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == expected_issuer
@@ -157,7 +156,7 @@ def test_authorize_endpoint_tvs(tvs_config, redis_mock):
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
 
 
-    with open(settings.saml.settings_path, 'r') as saml_settings:
+    with open('saml/tvs/settings.json', 'r') as saml_settings:
         expected_issuer = json.loads(saml_settings.read())['sp']['entityId']
 
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == expected_issuer

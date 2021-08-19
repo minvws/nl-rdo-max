@@ -4,10 +4,10 @@ issuer = https://10.48.118.250:8006
 environment = development
 
 # TVS or DigiD?
-connect_to_idp = digid
+connect_to_idp_key = tvs:connect_to_idp
 
-# If connect_to_idp == tvs, then overflow is possible:
-enable_overflow = true
+# If IdP#1 is too busy, connect to IdP
+overflow_idp_key = tvs:overflow_idp
 
 # OIDC endpoints
 authorize_endpoint = /authorize
@@ -71,7 +71,7 @@ id_token_lifetime = 600
 [saml]
 # saml configuration relating saml request signing, verification and communication 
 # settings.
-identity_provider_settings = saml/identity_provider.json
+identity_provider_settings = saml/identity_providers.json
 
 # How long do we consider the response to be valid?
 response_expires_in = 600

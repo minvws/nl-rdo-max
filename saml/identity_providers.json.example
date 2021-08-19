@@ -1,5 +1,6 @@
 {
     "tvs": {
+        "saml_specification_version": 4.5,
         "base_dir": "saml/tvs",
         "cert_path": "saml/tvs/certs/sp.crt",
         "key_path": "saml/tvs/certs/sp.key",
@@ -7,6 +8,7 @@
         "idp_metadata_path": "saml/tvs/metadata/idp_metadata.xml"
     },
     "digid": {
+        "saml_specification_version": 3.5,
         "base_dir": "saml/digid",
         "cert_path": "saml/digid/certs/sp.crt",
         "key_path": "saml/digid/certs/sp.key",

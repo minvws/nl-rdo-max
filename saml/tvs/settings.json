@@ -19,5 +19,13 @@
                 }
             ]
         }
+    },
+    "idp": {
+        "entityId": "https://was-preprod1.overheid.nl/saml/idp/metadata",
+        "singleSignOnService": {
+            "url": "https://preprod1.overheid.nl/saml/idp/request_authentication",
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+        },
+        "x509cert": "<onelogin_connector_cert>"
     }
 }

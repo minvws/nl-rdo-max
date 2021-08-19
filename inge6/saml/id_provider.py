@@ -19,6 +19,9 @@ class IdProvider:
         with open(self.settings_path, 'r') as settings_file:
             self.settings_dict = json.loads(settings_file.read())
 
+        with open(self.key_path, 'r') as key_file:
+            self.priv_key = key_file.read()
+
         self._idp_metadata = IdPMetadata(self.idp_metadata_path)
         self._sp_metadata = SPMetadata(self.settings_dict, self.keypair_paths)
 

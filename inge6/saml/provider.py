@@ -1,6 +1,6 @@
 import json
 
-from typing import List
+from typing import Dict
 
 from .id_provider import IdProvider
 from ..config import settings
@@ -12,7 +12,7 @@ class Provider:
     def __init__(self) -> None:
         self.id_providers = self._parse_id_providers()
 
-    def _parse_id_providers(self) -> List[IdProvider]:
+    def _parse_id_providers(self) -> Dict[str, IdProvider]:
         with open(self.ID_PROVIDERS_PATH, 'r') as id_providers_file:
             id_providers = json.loads(id_providers_file.read())
 

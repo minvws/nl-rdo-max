@@ -43,13 +43,19 @@ def rate_limit_test(ip_address: str) -> str:
     """
     _ip_limit_test(ip_address=ip_address, ip_expire_s=int(settings.ratelimit.ip_expire_in_s))
 
-    if hasattr(settings, 'overflow_idp') and settings.overflow_idp.lower() != 'false':
+    connect_to_idp = get_redis_client().get(settings.connect_to_idp_key)
+    if connect_to_idp:
+        connect_to_idp = connect_to_idp.decode()
+    overflow_idp = get_redis_client().get(settings.overflow_idp_key)
+
+    if overflow_idp and overflow_idp.decode().lower() != 'false':
+        overflow_idp = overflow_idp.decode()
         try:
-            _user_limit_test(idp_prefix=settings.connect_to_idp, user_limit_key=settings.ratelimit.user_limit_key)
-            return settings.connect_to_idp
+            _user_limit_test(idp_prefix=connect_to_idp, user_limit_key=settings.ratelimit.user_limit_key)
+            return connect_to_idp
         except TooBusyError:
-            _user_limit_test(idp_prefix=settings.overflow_idp, user_limit_key=settings.ratelimit.user_limit_key)
-            return settings.overflow_idp
+            _user_limit_test(idp_prefix=overflow_idp, user_limit_key=settings.ratelimit.user_limit_key)
+            return overflow_idp
     else:
-        _user_limit_test(idp_prefix=settings.connect_to_idp, user_limit_key=settings.ratelimit.user_limit_key)
-        return settings.connect_to_idp
+        _user_limit_test(idp_prefix=connect_to_idp, user_limit_key=settings.ratelimit.user_limit_key)
+        return connect_to_idp

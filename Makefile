@@ -42,7 +42,10 @@ saml/digid/certs/sp.key:
 saml/digid/certs/sp.crt: saml/digid/certs/sp.key
 	openssl req -new -x509 -key saml/digid/certs/sp.key -out saml/digid/certs/sp.crt -days 360 -subj "/C=US/ST=SCA/L=SCA/O=Oracle/OU=Java/CN=test cert"
 
-setup: inge6.conf saml/tvs/settings.json secrets clients.json secrets/public.pem saml/tvs/certs/sp.crt saml/digid/certs/sp.crt
+saml/identity_providers:
+	cp saml/identity_providers.json.example saml/identity_providers.json
+
+setup: inge6.conf saml/tvs/settings.json secrets clients.json secrets/public.pem saml/tvs/certs/sp.crt saml/digid/certs/sp.crt saml/identity_providers
 
 fresh: clean_venv venv
 

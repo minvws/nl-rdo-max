@@ -20,7 +20,7 @@ from ..config import settings
 from .utils import from_settings, has_valid_signatures, remove_padding
 from .constants import NAMESPACES
 from .exceptions import UserNotAuthenticated, ValidationError
-from .provider import Provider as SAMLProvider
+from .id_provider import IdProvider
 
 RESPONSE_EXPIRES_IN = int(settings.saml.response_expires_in)
 
@@ -40,7 +40,7 @@ class ArtifactResponse:
 
     def __init__(self,
                  artifact_tree,
-                 provider: SAMLProvider,
+                 provider: IdProvider,
                  saml_specification_version: float = 4.5,
                  is_verified: bool = True,
                  is_test_instance: bool = False
@@ -71,13 +71,13 @@ class ArtifactResponse:
         self.validate()
 
     @classmethod
-    def from_string(cls, xml_response: str, provider: SAMLProvider, saml_specification_version: float = 4.5,
+    def from_string(cls, xml_response: str, provider: IdProvider, saml_specification_version: float = 4.5,
                     insecure=False, is_test_instance: bool=False):
         artifact_response_tree = etree.fromstring(xml_response).getroottree().getroot()
         return cls.parse(artifact_response_tree, provider, saml_specification_version, insecure, is_test_instance)
 
     @classmethod
-    def parse(cls, artifact_response_tree, provider: SAMLProvider, saml_specification_version: float = 4.5,
+    def parse(cls, artifact_response_tree, provider: IdProvider, saml_specification_version: float = 4.5,
               insecure=False, is_test_instance: bool=False):
         unverified_tree = artifact_response_tree.find('.//samlp:ArtifactResponse', NAMESPACES)
         if insecure:

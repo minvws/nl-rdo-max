@@ -32,7 +32,7 @@ from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
 from . import constants
 from .config import settings
-from .cache import redis_cache
+from .cache import get_redis_client, redis_cache
 from .rate_limiter import rate_limit_test
 from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link, create_authn_post_context
 from .encrypt import Encrypt
@@ -133,7 +133,50 @@ def _get_bsn_from_art_resp(bsn_response: str, saml_spec_version: float) -> str:
             raise ValueError("Expected BSN number, received: {}".format(sector_number))
         return sector_split[1]
 
-    raise ValueError("Invalid value for connect_to_idp: {}".format(settings.connect_to_idp))
+    raise ValueError("Unknown SAML specification, known: 3.5, >=4.4")
+
+
+def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> Text:
+    force_digid = login_digid_req.force_digid if login_digid_req.force_digid is not None else False
+    randstate = login_digid_req.state
+
+    issuer_id = id_provider.sp_metadata.issuer_id
+
+    if settings.mock_digid.lower() == "true" and not force_digid:
+        authn_post_ctx = create_authn_post_context(
+            relay_state=randstate,
+            url=f'/digid-mock?state={randstate}',
+            issuer_id=issuer_id,
+            keypair=id_provider.keypair_paths
+        )
+    else:
+        sso_url = id_provider.idp_metadata.get_sso()['location']
+        authn_post_ctx = create_authn_post_context(
+            relay_state=randstate,
+            url=sso_url,
+            issuer_id=issuer_id,
+            keypair=id_provider.keypair_paths
+        )
+
+    return create_post_autosubmit_form(authn_post_ctx)
+
+def _perform_artifact_resolve_request(artifact: str, id_provider: IdProvider):
+    sso_url = id_provider.idp_metadata.get_sso()['location']
+    issuer_id = id_provider.sp_metadata.issuer_id
+    url = id_provider.idp_metadata.get_artifact_rs()['location']
+
+    resolve_artifact_req = ArtifactResolveRequest(artifact, sso_url, issuer_id, id_provider.keypair_paths)
+    headers = {
+        'SOAPAction' : 'resolve_artifact',
+        'content-type': 'text/xml'
+    }
+
+    return requests.post(
+        url,
+        headers=headers,
+        data=resolve_artifact_req.get_xml(),
+        cert=(id_provider.cert_path, id_provider.key_path)
+    )
 
 class Provider(OIDCProvider, SAMLProvider):
     BSN_SIGN_KEY = settings.bsn.sign_key
@@ -167,7 +210,12 @@ class Provider(OIDCProvider, SAMLProvider):
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
         try:
-            connect_to_idp = settings.connect_to_idp
+            connect_to_idp = get_redis_client().get(settings.connect_to_idp_key)
+            if connect_to_idp:
+                connect_to_idp = connect_to_idp.decode()
+            else:
+                raise KeyError("Expected connect_to_idp_key to be set in redis, but wasn't")
+
             if settings.mock_digid.lower() != 'true':
                 connect_to_idp = rate_limit_test(ip_address)
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
@@ -197,13 +245,13 @@ class Provider(OIDCProvider, SAMLProvider):
         # create a mock redirectresponse.
         id_provider = self.get_id_provider(connect_to_idp)
         if id_provider.authn_binding.endswith('POST') or settings.mock_digid.lower() == 'true':
-            return HTMLResponse(content=self._login(
+            return HTMLResponse(content=_post_login(
                 LoginDigiDRequest(state=randstate),
                 id_provider=id_provider
             ))
 
         req = _prepare_req(authorize_request)
-        auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.saml.base_dir)
+        auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
         return RedirectResponse(auth.login())
 
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
@@ -239,30 +287,6 @@ class Provider(OIDCProvider, SAMLProvider):
         response = JSONResponse(jsonable_encoder(error_resp), status_code=400)
         return response
 
-    def _login(self, login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> Text:
-        force_digid = login_digid_req.force_digid if login_digid_req.force_digid is not None else False
-        randstate = login_digid_req.state
-
-        issuer_id = self.sp_metadata.issuer_id
-
-        if settings.mock_digid.lower() == "true" and not force_digid:
-            authn_post_ctx = create_authn_post_context(
-                relay_state=randstate,
-                url=f'/digid-mock?state={randstate}',
-                issuer_id=issuer_id,
-                keypair=id_provider.keypair_paths
-            )
-        else:
-            sso_url = self.idp_metadata.get_sso()['location']
-            authn_post_ctx = create_authn_post_context(
-                relay_state=randstate,
-                url=sso_url,
-                issuer_id=issuer_id,
-                keypair=id_provider.keypair_paths
-            )
-
-        return create_post_autosubmit_form(authn_post_ctx)
-
     def assertion_consumer_service(self, request: Request) -> Union[RedirectResponse, HTMLResponse]:
         state = request.query_params['RelayState']
         artifact = request.query_params['SAMLart']
@@ -290,27 +314,7 @@ class Provider(OIDCProvider, SAMLProvider):
 
         return HTMLResponse(create_acs_redirect_link({"redirect_url": response_url}))
 
-    def _perform_artifact_resolve_request(self, artifact, id_provider):
-        id_provider = self.get_id_provider(id_provider)
-
-        sso_url = id_provider.idp_metadata.get_sso()['location']
-        issuer_id = id_provider.sp_metadata.issuer_id
-        url = id_provider.idp_metadata.get_artifact_rs()['location']
-
-        resolve_artifact_req = ArtifactResolveRequest(artifact, sso_url, issuer_id, id_provider.keypair_paths)
-        headers = {
-            'SOAPAction' : 'resolve_artifact',
-            'content-type': 'text/xml'
-        }
-
-        return requests.post(
-            url,
-            headers=headers,
-            data=resolve_artifact_req.get_xml(),
-            cert=(id_provider.cert_path, id_provider.key_path)
-        )
-
-    def _resolve_artifact(self, artifact: str, id_provider: str) -> bytes:
+    def _resolve_artifact(self, artifact: str, id_provider_name: str) -> bytes:
         hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
         log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
 
@@ -318,10 +322,11 @@ class Provider(OIDCProvider, SAMLProvider):
         if settings.mock_digid.lower() == "true" and is_digid_mock is not None:
             return self.bsn_encrypt.symm_encrypt(artifact)
 
-        resolved_artifact = self._perform_artifact_resolve_request(artifact, id_provider)
+        id_provider: IdProvider = self.get_id_provider(id_provider_name)
+        resolved_artifact = _perform_artifact_resolve_request(artifact, id_provider)
 
         log.debug('Received a response for sha256(artifact) %s with status_code %s', hashed_artifact, resolved_artifact.status_code)
-        artifact_response = ArtifactResponse.from_string(resolved_artifact.text, self)
+        artifact_response = ArtifactResponse.from_string(resolved_artifact.text, id_provider)
         log.debug('ArtifactResponse for %s, received status_code %s', hashed_artifact, artifact_response._saml_status_code) # pylint: disable=protected-access
         artifact_response.raise_for_status()
         log.debug('Validated sha256(artifact) %s', hashed_artifact)
@@ -344,11 +349,15 @@ class Provider(OIDCProvider, SAMLProvider):
         encrypted_bsn = self.bsn_encrypt.from_symm_to_pub(bsn_dict)
         return Response(content=encrypted_bsn, status_code=200)
 
-    def metadata(self) -> Response:
-        errors = self.sp_metadata.validate()
+    def metadata(self, id_provider_name: str) -> Response:
+        try:
+            id_provider = self.get_id_provider(id_provider_name)
+        except ValueError as val_err:
+            raise HTTPException(status_code=404, detail="Page not found") from val_err
 
+        errors = id_provider.sp_metadata.validate()
         if len(errors) == 0:
-            return Response(content=self.sp_metadata.get_xml().decode(), media_type="application/xml")
+            return Response(content=id_provider.sp_metadata.get_xml().decode(), media_type="application/xml")
 
         raise HTTPException(status_code=500, detail=', '.join(errors))
 

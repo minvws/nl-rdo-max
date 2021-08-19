@@ -17,3 +17,4 @@ node_modules
 out/
 http_cache.sqlite
 clients.json
+saml/identity_providers.json
