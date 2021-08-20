@@ -90,7 +90,7 @@ If you didn't mean to enable ssl change this setting in your config (not recomme
 async def startup_event():
     get_provider()
 
-if __name__ == "__main__":
+def main():
     logging.basicConfig(
         level=getattr(logging, settings.loglevel.upper()),
         datefmt='%m/%d/%Y %I:%M:%S %p'
@@ -112,3 +112,6 @@ if __name__ == "__main__":
                 'inge6.main:app',
                 **run_kwargs
             )
+
+if __name__ == "__main__":
+    main()
