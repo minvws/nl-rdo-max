@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from .exceptions import TooManyRequestsFromOrigin, TooBusyError
+from .exceptions import TooManyRequestsFromOrigin, TooBusyError, ExpectedRedisValue
 from .cache import get_redis_client
 from .config import settings
 
@@ -44,8 +44,11 @@ def rate_limit_test(ip_address: str) -> str:
     _ip_limit_test(ip_address=ip_address, ip_expire_s=int(settings.ratelimit.ip_expire_in_s))
 
     connect_to_idp = get_redis_client().get(settings.connect_to_idp_key)
-    if connect_to_idp:
+    if connect_to_idp is not None:
         connect_to_idp = connect_to_idp.decode()
+    else:
+        raise ExpectedRedisValue("Expected {} key to be set in redis.".format(settings.connect_to_idp_key))
+
     overflow_idp = get_redis_client().get(settings.overflow_idp_key)
 
     if overflow_idp and overflow_idp.decode().lower() != 'false':

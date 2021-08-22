@@ -55,6 +55,12 @@ def _validate_saml_identity_provider_settings():
 def validate_startup():
     missing_files = []
     ssl_missing_files = []
+    required_settings = []
+
+    if not hasattr(settings, 'connect_to_idp_key') or settings.connect_to_idp_key == "":
+        required_settings.append(
+            ('settings.connect_to_idp_key', "expected to be defined in the config DEFAULT section")
+        )
 
     if not os.path.isfile(settings.saml.identity_provider_settings):
         missing_files.append(
@@ -93,11 +99,11 @@ def validate_startup():
                 (settings.ssl.key_file, "SSL key file")
             )
 
-
+    error_msg = ""
     if len(missing_files) > 0 or len(ssl_missing_files) > 0:
         missing_files.extend(ssl_missing_files)
 
-        error_msg = "There seem to be missing files, please check these paths:\n\n{}.\n\n".format("\n".join(f"{file[0]}\t\t{file[1]}" for file in missing_files))
+        error_msg += "There seem to be missing files, please check these paths:\n\n{}.\n\n".format("\n".join(f"{file[0]}\t\t{file[1]}" for file in missing_files))
 
         if len(ssl_missing_files) > 0:
             error_msg += """
@@ -105,6 +111,10 @@ Some of these files seem to be ssl related.
 If you didn't mean to enable ssl change this setting in your config (not recommended).
             """
 
+    if len(required_settings) > 0:
+        error_msg += "\n\nSome of the required settings seem to be missing, please have a look at:\n\n{}.\n\n".format("\n".join(f"{file[0]}\t\t{file[1]}" for file in required_settings))
+
+    if len(missing_files) > 0 or len(ssl_missing_files) > 0 or len(required_settings) > 0:
         log.error(error_msg)
         sys.exit(1)
 
