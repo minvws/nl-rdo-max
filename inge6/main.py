@@ -1,4 +1,6 @@
 import sys
+import json
+
 import os.path
 import logging
 
@@ -16,6 +18,40 @@ app = FastAPI(docs_url= None, redoc_url= None, openapi_url=None)
 app.include_router(router)
 
 
+def _validate_saml_identity_provider_settings():
+    missing_files = []
+    with open(settings.saml.identity_provider_settings) as providers_settings:
+        identity_providers = json.loads(providers_settings.read())
+
+    for provider, p_settings in identity_providers.items():
+        if not os.path.isfile(p_settings['base_dir']):
+            missing_files.append(
+                (p_settings['base_dir'], "{}: SAML Identity Providers base directory".format(provider))
+            )
+
+        if not os.path.isfile(p_settings['cert_path']):
+            missing_files.append(
+                (p_settings['cert_path'], "{}: SAML ID Provider certificate file".format(provider))
+            )
+
+        if not os.path.isfile(p_settings['key_path']):
+            missing_files.append(
+                (p_settings['key_path'], "{}: SAML ID Provider private key file".format(provider))
+            )
+
+        if not os.path.isfile(p_settings['settings_path']):
+            missing_files.append(
+                (p_settings['settings_path'], "{}: SAML ID Provider settings file".format(provider))
+            )
+
+        if not os.path.isfile(p_settings['idp_metadata_path']):
+            missing_files.append(
+                (p_settings['idp_metadata_path'], "{}: SAML ID Provider metadata file".format(provider))
+            )
+
+    return missing_files
+
+
 def validate_startup():
     missing_files = []
     ssl_missing_files = []
@@ -24,6 +60,7 @@ def validate_startup():
         missing_files.append(
             (settings.saml.identity_provider_settings, "SAML Identity Providers file")
         )
+        missing_files.extend(_validate_saml_identity_provider_settings())
 
     if not os.path.isfile(settings.oidc.clients_file):
         missing_files.append(
