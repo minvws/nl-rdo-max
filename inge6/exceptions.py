@@ -10,6 +10,9 @@ class TooManyRequestsFromOrigin(RuntimeError):
 class ExpiredResourceError(RuntimeError):
     pass
 
+class ExpectedRedisValue(RuntimeError):
+    pass
+
 # pylint: disable=too-many-ancestors
 class TokenSAMLErrorResponse(TokenErrorResponse):
     c_allowed_values = TokenErrorResponse.c_allowed_values.copy()
