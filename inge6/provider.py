@@ -258,7 +258,7 @@ class Provider(OIDCProvider, SAMLProvider):
         code = parse_qs(body.decode())['code'][0]
 
         try:
-            cached_artifact = hget_from_redis(code, 'arti')
+            cached_artifact = hget_from_redis(code, constants.RedisKeys.ARTI)
             artifact = cached_artifact['artifact']
             id_provider = cached_artifact['id_provider']
 
