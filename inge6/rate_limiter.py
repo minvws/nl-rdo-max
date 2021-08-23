@@ -57,7 +57,7 @@ def rate_limit_test(ip_address: str) -> str:
             _user_limit_test(idp_prefix=connect_to_idp, user_limit_key=settings.ratelimit.user_limit_key)
             return connect_to_idp
         except TooBusyError:
-            _user_limit_test(idp_prefix=overflow_idp, user_limit_key=settings.ratelimit.user_limit_key)
+            _user_limit_test(idp_prefix=overflow_idp, user_limit_key=settings.ratelimit.user_limit_key_overflow_idp)
             return overflow_idp
     else:
         _user_limit_test(idp_prefix=connect_to_idp, user_limit_key=settings.ratelimit.user_limit_key)
