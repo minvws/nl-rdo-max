@@ -6,6 +6,13 @@ from .config import settings
 
 
 def _ip_limit_test(ip_address: str, ip_expire_s: int) -> None:
+    """
+    Perform ip blocking. If the same IP-address accesses this service multiple times in
+    `ip_expire_s` seconds, block the flow.
+
+    :param ip_address: the ip address under consideration.
+    :param ip_expire_s: every ip address is only allowed one request per configured number of seconds.
+    """
     ip_key = "tvs:ipv4:" + ip_address
     ip_key_exists = get_redis_client().incr(ip_key)
     if ip_key_exists != 1:
@@ -14,6 +21,12 @@ def _ip_limit_test(ip_address: str, ip_expire_s: int) -> None:
 
 
 def _user_limit_test(idp_prefix: str, user_limit_key: str) -> None:
+    """
+    Test the user limit defined in redis under the user_limit_key, and tracking the current user load based on the used idp.
+
+    :param idp_prefix: the prefix for tracking the user load.
+    :param user_limit_key: the key in redis that has stored the user limit.
+    """
     user_limit = get_redis_client().get(user_limit_key)
 
     if user_limit is None:

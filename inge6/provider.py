@@ -62,6 +62,11 @@ _PROVIDER = None
 
 def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_request: AuthorizeRequest,
                     id_provider: str) -> None:
+    """
+    Method for assembling the data related to the auth request performed, including the code_challenge,
+    code_challenge_method and the to be used identity provider. and storing it in the RedisStore under the
+    constants.RedisKeys.AUTH_REQ enum. 
+    """
     value = {
         'auth_req': auth_req,
         'code_challenge': authorization_request.code_challenge,
@@ -72,6 +77,10 @@ def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_requ
     redis_cache.hset(randstate, constants.RedisKeys.AUTH_REQ.value, value)
 
 def _cache_code_challenge(code: str, code_challenge: str, code_challenge_method: str) -> None:
+    """
+    Method for assembling the data related to the upcoming accesstoken request, including the code, code_challenge
+    and code_challenge_method. and storing it in the RedisStore under the constants.RedisKeys.CC_CM enum.
+    """
     value = {
         'code_challenge': code_challenge,
         'code_challenge_method': code_challenge_method
@@ -79,6 +88,11 @@ def _cache_code_challenge(code: str, code_challenge: str, code_challenge_method:
     redis_cache.hset(code, constants.RedisKeys.CC_CM.value, value)
 
 def _cache_artifact(code: str, artifact: str, id_provider: str):
+    """
+    Method for assembling the data related to the upcoming accesstoken request, including the artifact and
+    identity_provider that has been used to retrieve the artifact. These are stored in the RedisStore under the
+    constants.RedisKeys.CC_CM enum.
+    """
     value = {
         'artifact': artifact,
         'id_provider': id_provider
@@ -86,12 +100,19 @@ def _cache_artifact(code: str, artifact: str, id_provider: str):
     redis_cache.hset(code, constants.RedisKeys.ARTI.value, value)
 
 def hget_from_redis(namespace, key):
+    """
+    Method to retrieve something from redis, and if no result is found, throw a resource has expired exception.
+    """
     result = redis_cache.hget(namespace, key)
     if result is None:
         raise ExpiredResourceError("Resource is not (any longer) available in redis")
     return result
 
 def _create_redis_bsn_key(key: str, id_token: str, audience: List[Text]) -> str:
+    """
+    Method retrieving the redis_bsn_key used to retrieve the bsn from redis. This is the hash of the id_token that has
+    been provided as a response to the accesstoken request.
+    """
     jwt = validate_jwt_token(key, id_token, audience)
     return jwt['at_hash']
 
@@ -114,6 +135,9 @@ def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
 
 def _prepare_req(auth_req: AuthorizeRequest):
+    """
+    Prepare a authorization request to use the OneLogin SAML library.
+    """
     return {
         'https': 'on',
         'http_host': settings.issuer,
@@ -123,6 +147,13 @@ def _prepare_req(auth_req: AuthorizeRequest):
     }
 
 def _get_bsn_from_art_resp(bsn_response: str, saml_spec_version: float) -> str:
+    """
+    Depending on the saml versioning the bsn is or is not prepended with a sectore code.
+
+    For saml specification 4.4 and 4.5 the bsn is encrypted, and not prepended with such codes.
+    For saml specification 3.5 the bsn is prepended with a sector_code representing its value to
+    be either a BSN number or SOFI number.
+    """
     if saml_spec_version >= 4.4:
         return bsn_response
 
@@ -137,6 +168,14 @@ def _get_bsn_from_art_resp(bsn_response: str, saml_spec_version: float) -> str:
 
 
 def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> Text:
+    """
+    Not all identity providers allow the HTTP-Redirect for performing authentication requests,
+    For those that require HTTP-POST, this method is created. It generates an auto-submit form
+    with the authentication request.
+
+    Further if the system is configured to be in mocking mode, the auto-submit form is configured
+    to use the mocking paths available.
+    """
     force_digid = login_digid_req.force_digid if login_digid_req.force_digid is not None else False
     randstate = login_digid_req.state
 
@@ -161,6 +200,11 @@ def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> 
     return create_post_autosubmit_form(authn_post_ctx)
 
 def _perform_artifact_resolve_request(artifact: str, id_provider: IdProvider):
+    """
+    Perform an artifact resolve request using the provided artifact and identity provider.
+    The identity provider tells us the locations of the endpoints needed for resolving the artifact,
+    and the artifact is needed for the provider to resolve the requested attribute.
+    """
     sso_url = id_provider.idp_metadata.get_sso()['location']
     issuer_id = id_provider.sp_metadata.issuer_id
     url = id_provider.idp_metadata.get_artifact_rs()['location']
@@ -179,6 +223,10 @@ def _perform_artifact_resolve_request(artifact: str, id_provider: IdProvider):
     )
 
 class Provider(OIDCProvider, SAMLProvider):
+    """
+    This provider is the bridge between OIDC and SAML. It implements the OIDC protocol
+    and connects to a configured SAML provider.
+    """
     BSN_SIGN_KEY = settings.bsn.sign_key
     BSN_ENCRYPT_KEY = settings.bsn.encrypt_key
     BSN_LOCAL_SYMM_KEY = settings.bsn.local_symm_key
