@@ -226,7 +226,12 @@ class Provider(OIDCProvider, SAMLProvider):
     """
     This provider is the bridge between OIDC and SAML. It implements the OIDC protocol
     and connects to a configured SAML provider.
+
+    Required grant_types = authorization_code
+    Required PKCE implementation by client (only supporting 'public' clients: https://datatracker.ietf.org/doc/html/rfc6749#section-2.1)
+
     """
+
     BSN_SIGN_KEY = settings.bsn.sign_key
     BSN_ENCRYPT_KEY = settings.bsn.encrypt_key
     BSN_LOCAL_SYMM_KEY = settings.bsn.local_symm_key
@@ -251,12 +256,24 @@ class Provider(OIDCProvider, SAMLProvider):
             self.audience = list(json.loads(clients_file.read()).keys())
 
     def sorry_too_busy(self, request: SorryPageRequest):
+        """
+        Endpoint serving the sorry to busy page. It includes a href button with error information
+        in the query parameters.
+        """
         allow_list = self.clients[request.client_id]['redirect_uris']
         redirect_uri = _get_too_busy_redirect_error_uri(request.redirect_uri, request.state, allow_list)
         too_busy_page = create_page_too_busy(self.too_busy_page_template_head, self.too_busy_page_template_tail, redirect_uri)
         return HTMLResponse(content=too_busy_page)
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
+        """
+        Handles requests made to the authorize endpoint. It requires an Identity Provider (IDP) to be defined in the redis store under the
+        key defined in the connect_to_idp_key setting. Further, ratelimiting is applied and, if the limit for the primary
+        idp has been reached, the secundary or 'overflow_idp' is used if the ratelimiter allows it.
+
+        Finally, the request is parsed and processed checking the query parameters against the client registration. If all is
+        valid, a Redirect response or auto-submit POST response is returned depending on the active IDP and its corresponding configuration.
+        """
         try:
             connect_to_idp = get_redis_client().get(settings.connect_to_idp_key)
             if connect_to_idp:
@@ -303,6 +320,24 @@ class Provider(OIDCProvider, SAMLProvider):
         return RedirectResponse(auth.login())
 
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
+        """
+        This method handles the accesstoken endpoint. After the client has obtained an authorization code, by
+        letting the resource owner login to the third party Identity Provider, this method processes the clients
+        final request for a token.
+
+        The request is handled by validating the urlencoded parameters in the body. Which include: grant_type, code,
+        redirect_uri, client_id and code_verifier. If all is valid, the artifact is resolved from the IDP by sending
+        an ArtifactResolve request and parsing its response. The response, containing the BSN, is encrypted and cached
+        in the redis store under the hash of the token it is returning as a final step of this function.
+
+        Validation of the accesstoken request includes:
+            - checking the client_id
+            - checking the redirect_uri configured for the client_id
+            - checking whether the provided code is known in the redis store
+            - checking whether the grant_type is as expected
+            - validating the code_verifier against the received code_challenge and code_challenge_method during the
+              authorize request.
+        """
         code = parse_qs(body.decode())['code'][0]
 
         try:
@@ -336,6 +371,12 @@ class Provider(OIDCProvider, SAMLProvider):
         return response
 
     def assertion_consumer_service(self, request: Request) -> Union[RedirectResponse, HTMLResponse]:
+        """
+        This callback function handles the redirects retrieved from the active IDP, once the resource owner
+        has logged into the active IDP, the IDP redirects the user to this endpoint with the provided artifact.
+        This artifact is stored, and the user is redirected to the configured redirect_uri. The retrieved artifact
+        is later used to verify the login, and retrieve the BSN.
+        """
         state = request.query_params['RelayState']
         artifact = request.query_params['SAMLart']
         artifact_hashed =  nacl.hash.sha256(artifact.encode()).decode()
@@ -363,6 +404,11 @@ class Provider(OIDCProvider, SAMLProvider):
         return HTMLResponse(create_acs_redirect_link({"redirect_url": response_url}))
 
     def _resolve_artifact(self, artifact: str, id_provider_name: str) -> bytes:
+        """
+        given the the artifact and active IDP name, perform an artifact resolve request to the
+        active Identity Provider. Retrieve the BSN and perform symmetric encryption to store it
+        in the redis store.
+        """
         hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
         log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
 
@@ -384,6 +430,10 @@ class Provider(OIDCProvider, SAMLProvider):
         return encrypted_bsn
 
     def bsn_attribute(self, request: Request) -> Response:
+        """
+        Handles the BSN claim on the accesstoken. Allows to retrieve a bsn
+        corresponding to a valid token.
+        """
         _, at_hash= is_authorized(self.key, request, self.audience)
 
         redis_bsn_key = at_hash
@@ -398,6 +448,9 @@ class Provider(OIDCProvider, SAMLProvider):
         return Response(content=encrypted_bsn, status_code=200)
 
     def metadata(self, id_provider_name: str) -> Response:
+        """
+        Endpoint retrieving metadata for the specified identity providers if configured properly.
+        """
         try:
             id_provider = self.get_id_provider(id_provider_name)
         except ValueError as val_err:
