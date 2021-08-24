@@ -4,7 +4,10 @@ issuer = https://10.48.118.250:8006
 environment = development
 
 # TVS or DigiD?
-connect_to_idp = digid
+connect_to_idp_key = tvs:connect_to_idp
+
+# If IdP#1 is too busy, connect to IdP
+overflow_idp_key = tvs:overflow_idp
 
 # OIDC endpoints
 authorize_endpoint = /authorize
@@ -36,6 +39,7 @@ loglevel = debug
 sorry_too_busy_page_head = static/templates/sorry-coronacheck_head.html
 sorry_too_busy_page_tail = static/templates/sorry-coronacheck_tail.html
 user_limit_key = tvs_connect_user_limit
+user_limit_key_overflow_idp = digid_connect_user_limit
 ip_expire_in_s = 10
 
 [bsn]
@@ -68,16 +72,10 @@ id_token_lifetime = 600
 [saml]
 # saml configuration relating saml request signing, verification and communication 
 # settings.
-base_dir = saml/tvs
-cert_path = saml/tvs/certs/sp.crt
-key_path = saml/tvs/certs/sp.key
-settings_path = saml/tvs/settings.json
+identity_provider_settings = saml/identity_providers.json
 
 # How long do we consider the response to be valid?
 response_expires_in = 600
-
-# IdP metadata file location
-idp_metadata_path = saml/tvs/metadata/idp_metadata.xml
 
 # template files:
 sp_template = saml/templates/xml/sp_metadata.xml

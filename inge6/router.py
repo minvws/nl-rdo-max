@@ -33,9 +33,9 @@ async def token_endpoint(request: Request):
     headers = request.headers
     return get_provider().token_endpoint(body, headers)
 
-@router.get('/metadata')
-def metadata():
-    return get_provider().metadata()
+@router.get('/metadata/{id_provider}')
+def metadata(id_provider: str):
+    return get_provider().metadata(id_provider)
 
 @router.get('/acs')
 def assertion_consumer_service(request: Request):
@@ -80,10 +80,12 @@ if settings.mock_digid.lower() == 'true':
     # pylint: disable=wrong-import-position, c-extension-no-member, wrong-import-order
     from lxml import etree
     from urllib.parse import parse_qs # pylint: disable=wrong-import-order
+    from .provider import _post_login
 
     @router.get('/login-digid')
     def login_digid(login_digid_req: LoginDigiDRequest = Depends()):
-        return HTMLResponse(content=get_provider()._login(login_digid_req)) # pylint: disable=protected-access
+        id_provider = get_provider().get_id_provider('tvs')
+        return HTMLResponse(content=_post_login(login_digid_req, id_provider)) # pylint: disable=protected-access
 
     @router.post('/digid-mock')
     async def digid_mock(digid_mock_req: DigiDMockRequest = Depends(DigiDMockRequest.from_request)):  # pylint: disable=invalid-name

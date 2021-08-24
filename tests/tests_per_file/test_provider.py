@@ -13,6 +13,6 @@ def test_sorry_too_busy():
     assert "Het is erg druk op dit moment, iets te druk zelfs." in response.body.decode()
 
 # pylint: disable=unused-argument
-def test_get_bsn_from_artresponse(digid_config):
+def test_get_bsn_from_artresponse():
     art_resp_sector = 's00000000:900029365'
-    assert _get_bsn_from_art_resp(art_resp_sector) == '900029365' # pylint: disable=protected-access
+    assert _get_bsn_from_art_resp(art_resp_sector, 3.5) == '900029365' # pylint: disable=protected-access

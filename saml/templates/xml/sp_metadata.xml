@@ -36,7 +36,6 @@
                 </ds:X509Data>
             </ds:KeyInfo>
         </md:KeyDescriptor>
-        <md:SingleLogoutService/>
         <md:AssertionConsumerService index="1" />
         <md:AttributeConsumingService index="1">
             <md:ServiceName xml:lang="en"></md:ServiceName>
