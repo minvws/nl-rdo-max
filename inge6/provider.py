@@ -1,3 +1,58 @@
+# pylint: disable=anomalous-backslash-in-string
+"""
+module: inge6/provider.py
+summary: provide a OIDC interface for OIDC clients to connect to a SAML provider. The core of Inge6
+
+
+
+                                                        ------------------
+                                              / - - - >| SorryTooBusyPage |
+                                              |         ------------------
+                                      | R |   |
+        /-------------\               | A |   |         /-------------\ Redirect/POST       /-------------------\
+        |             |   /authorize  | T |   |         |             |  end-user to login  |       SAML        |
+        |             | --------------| E |---*-------->|             |-------------------->|    IDProvider     |
+        |             |               | L |             |             |     Artifact        |                   |
+        |             |               | I |             |             |<--------------------| (e.g. DigiD/TVS)  |
+        |             |               | M |             |             |                     \-------------------/
+        |             |               | I |             |             |                             ^   |
+        |             |               | T |             |             |                             |   |
+        |    Some     |                                 |    Inge6    |                             |   |
+        | OIDC-Client |          response=code          | OIDC-Server |                             |   |
+        |             |<------------------------------- |   Provider  |                             |   | response=BSN
+        |             |                                 |             |                             |   |
+        |             |  /accesstoken                   |             |                             |   |
+        |             |-------------------------------->|             |     GET resolve_artifact    |   |
+        |             |                                 |             |-----------------------------/   |
+        |             |                                 |             |                                 |
+        |             |        response=JWT Token       |             |<--------------------------------/
+        |             |<--------------------------------|             |
+        |             |                                 |             |
+        \-------------/                                 \-------------/
+                                                               ^
+                                                               |
+                                                               |
+                                                               |
+                                                               V
+                                                        /-------------\
+                                                        |             |
+                                                        | Redis Cache |
+                                                        |             |
+                                                        \-------------/
+
+The depicted figure does not contain all requests, and is merely intended for a general/summary overview of the communcation with
+defined modules.
+
+The provider defined in this file is the core of Inge6, it handles all the OIDC requests. Initiating requests to the
+Identity Providers for third-party end-user logins, resolving artifacts and using the Redis Cache to track the users activity
+over time.
+
+required:
+    - redis-server
+    - settings ratelimiter
+    - settings identity providers
+
+"""
 import base64
 
 import json
@@ -62,6 +117,11 @@ _PROVIDER = None
 
 def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_request: AuthorizeRequest,
                     id_provider: str) -> None:
+    """
+    Method for assembling the data related to the auth request performed, including the code_challenge,
+    code_challenge_method and the to be used identity provider. and storing it in the RedisStore under the
+    constants.RedisKeys.AUTH_REQ enum.
+    """
     value = {
         'auth_req': auth_req,
         'code_challenge': authorization_request.code_challenge,
@@ -72,6 +132,10 @@ def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_requ
     redis_cache.hset(randstate, constants.RedisKeys.AUTH_REQ.value, value)
 
 def _cache_code_challenge(code: str, code_challenge: str, code_challenge_method: str) -> None:
+    """
+    Method for assembling the data related to the upcoming accesstoken request, including the code, code_challenge
+    and code_challenge_method. and storing it in the RedisStore under the constants.RedisKeys.CC_CM enum.
+    """
     value = {
         'code_challenge': code_challenge,
         'code_challenge_method': code_challenge_method
@@ -79,6 +143,11 @@ def _cache_code_challenge(code: str, code_challenge: str, code_challenge_method:
     redis_cache.hset(code, constants.RedisKeys.CC_CM.value, value)
 
 def _cache_artifact(code: str, artifact: str, id_provider: str):
+    """
+    Method for assembling the data related to the upcoming accesstoken request, including the artifact and
+    identity_provider that has been used to retrieve the artifact. These are stored in the RedisStore under the
+    constants.RedisKeys.CC_CM enum.
+    """
     value = {
         'artifact': artifact,
         'id_provider': id_provider
@@ -86,12 +155,19 @@ def _cache_artifact(code: str, artifact: str, id_provider: str):
     redis_cache.hset(code, constants.RedisKeys.ARTI.value, value)
 
 def hget_from_redis(namespace, key):
+    """
+    Method to retrieve something from redis, and if no result is found, throw a resource has expired exception.
+    """
     result = redis_cache.hget(namespace, key)
     if result is None:
         raise ExpiredResourceError("Resource is not (any longer) available in redis")
     return result
 
 def _create_redis_bsn_key(key: str, id_token: str, audience: List[Text]) -> str:
+    """
+    Method retrieving the redis_bsn_key used to retrieve the bsn from redis. This is the hash of the id_token that has
+    been provided as a response to the accesstoken request.
+    """
     jwt = validate_jwt_token(key, id_token, audience)
     return jwt['at_hash']
 
@@ -114,6 +190,9 @@ def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
 
 def _prepare_req(auth_req: AuthorizeRequest):
+    """
+    Prepare a authorization request to use the OneLogin SAML library.
+    """
     return {
         'https': 'on',
         'http_host': settings.issuer,
@@ -123,6 +202,13 @@ def _prepare_req(auth_req: AuthorizeRequest):
     }
 
 def _get_bsn_from_art_resp(bsn_response: str, saml_spec_version: float) -> str:
+    """
+    Depending on the saml versioning the bsn is or is not prepended with a sectore code.
+
+    For saml specification 4.4 and 4.5 the bsn is encrypted, and not prepended with such codes.
+    For saml specification 3.5 the bsn is prepended with a sector_code representing its value to
+    be either a BSN number or SOFI number.
+    """
     if saml_spec_version >= 4.4:
         return bsn_response
 
@@ -137,6 +223,14 @@ def _get_bsn_from_art_resp(bsn_response: str, saml_spec_version: float) -> str:
 
 
 def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> Text:
+    """
+    Not all identity providers allow the HTTP-Redirect for performing authentication requests,
+    For those that require HTTP-POST, this method is created. It generates an auto-submit form
+    with the authentication request.
+
+    Further if the system is configured to be in mocking mode, the auto-submit form is configured
+    to use the mocking paths available.
+    """
     force_digid = login_digid_req.force_digid if login_digid_req.force_digid is not None else False
     randstate = login_digid_req.state
 
@@ -161,6 +255,11 @@ def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> 
     return create_post_autosubmit_form(authn_post_ctx)
 
 def _perform_artifact_resolve_request(artifact: str, id_provider: IdProvider):
+    """
+    Perform an artifact resolve request using the provided artifact and identity provider.
+    The identity provider tells us the locations of the endpoints needed for resolving the artifact,
+    and the artifact is needed for the provider to resolve the requested attribute.
+    """
     sso_url = id_provider.idp_metadata.get_sso()['location']
     issuer_id = id_provider.sp_metadata.issuer_id
     url = id_provider.idp_metadata.get_artifact_rs()['location']
@@ -179,6 +278,15 @@ def _perform_artifact_resolve_request(artifact: str, id_provider: IdProvider):
     )
 
 class Provider(OIDCProvider, SAMLProvider):
+    """
+    This provider is the bridge between OIDC and SAML. It implements the OIDC protocol
+    and connects to a configured SAML provider.
+
+    Required grant_types = authorization_code
+    Required PKCE implementation by client (only supporting 'public' clients: https://datatracker.ietf.org/doc/html/rfc6749#section-2.1)
+
+    """
+
     BSN_SIGN_KEY = settings.bsn.sign_key
     BSN_ENCRYPT_KEY = settings.bsn.encrypt_key
     BSN_LOCAL_SYMM_KEY = settings.bsn.local_symm_key
@@ -203,12 +311,24 @@ class Provider(OIDCProvider, SAMLProvider):
             self.audience = list(json.loads(clients_file.read()).keys())
 
     def sorry_too_busy(self, request: SorryPageRequest):
+        """
+        Endpoint serving the sorry to busy page. It includes a href button with error information
+        in the query parameters.
+        """
         allow_list = self.clients[request.client_id]['redirect_uris']
         redirect_uri = _get_too_busy_redirect_error_uri(request.redirect_uri, request.state, allow_list)
         too_busy_page = create_page_too_busy(self.too_busy_page_template_head, self.too_busy_page_template_tail, redirect_uri)
         return HTMLResponse(content=too_busy_page)
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
+        """
+        Handles requests made to the authorize endpoint. It requires an Identity Provider (IDP) to be defined in the redis store under the
+        key defined in the connect_to_idp_key setting. Further, ratelimiting is applied and, if the limit for the primary
+        idp has been reached, the secundary or 'overflow_idp' is used if the ratelimiter allows it.
+
+        Finally, the request is parsed and processed checking the query parameters against the client registration. If all is
+        valid, a Redirect response or auto-submit POST response is returned depending on the active IDP and its corresponding configuration.
+        """
         try:
             connect_to_idp = get_redis_client().get(settings.connect_to_idp_key)
             if connect_to_idp:
@@ -255,6 +375,24 @@ class Provider(OIDCProvider, SAMLProvider):
         return RedirectResponse(auth.login())
 
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
+        """
+        This method handles the accesstoken endpoint. After the client has obtained an authorization code, by
+        letting the resource owner login to the third party Identity Provider, this method processes the clients
+        final request for a token.
+
+        The request is handled by validating the urlencoded parameters in the body. Which include: grant_type, code,
+        redirect_uri, client_id and code_verifier. If all is valid, the artifact is resolved from the IDP by sending
+        an ArtifactResolve request and parsing its response. The response, containing the BSN, is encrypted and cached
+        in the redis store under the hash of the token it is returning as a final step of this function.
+
+        Validation of the accesstoken request includes:
+            - checking the client_id
+            - checking the redirect_uri configured for the client_id
+            - checking whether the provided code is known in the redis store
+            - checking whether the grant_type is as expected
+            - validating the code_verifier against the received code_challenge and code_challenge_method during the
+              authorize request.
+        """
         code = parse_qs(body.decode())['code'][0]
 
         try:
@@ -288,6 +426,12 @@ class Provider(OIDCProvider, SAMLProvider):
         return response
 
     def assertion_consumer_service(self, request: Request) -> Union[RedirectResponse, HTMLResponse]:
+        """
+        This callback function handles the redirects retrieved from the active IDP, once the resource owner
+        has logged into the active IDP, the IDP redirects the user to this endpoint with the provided artifact.
+        This artifact is stored, and the user is redirected to the configured redirect_uri. The retrieved artifact
+        is later used to verify the login, and retrieve the BSN.
+        """
         state = request.query_params['RelayState']
         artifact = request.query_params['SAMLart']
         artifact_hashed =  nacl.hash.sha256(artifact.encode()).decode()
@@ -315,6 +459,11 @@ class Provider(OIDCProvider, SAMLProvider):
         return HTMLResponse(create_acs_redirect_link({"redirect_url": response_url}))
 
     def _resolve_artifact(self, artifact: str, id_provider_name: str) -> bytes:
+        """
+        given the the artifact and active IDP name, perform an artifact resolve request to the
+        active Identity Provider. Retrieve the BSN and perform symmetric encryption to store it
+        in the redis store.
+        """
         hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
         log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
 
@@ -336,6 +485,10 @@ class Provider(OIDCProvider, SAMLProvider):
         return encrypted_bsn
 
     def bsn_attribute(self, request: Request) -> Response:
+        """
+        Handles the BSN claim on the accesstoken. Allows to retrieve a bsn
+        corresponding to a valid token.
+        """
         _, at_hash= is_authorized(self.key, request, self.audience)
 
         redis_bsn_key = at_hash
@@ -350,6 +503,9 @@ class Provider(OIDCProvider, SAMLProvider):
         return Response(content=encrypted_bsn, status_code=200)
 
     def metadata(self, id_provider_name: str) -> Response:
+        """
+        Endpoint retrieving metadata for the specified identity providers if configured properly.
+        """
         try:
             id_provider = self.get_id_provider(id_provider_name)
         except ValueError as val_err:
