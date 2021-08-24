@@ -42,7 +42,7 @@ def assertion_consumer_service(request: Request):
     return get_provider().assertion_consumer_service(request)
 
 @router.post('/bsn_attribute')
-def bsn_attribute(request: Request):
+async def bsn_attribute(request: Request):
     return get_provider().bsn_attribute(request)
 
 @router.get('/.well-known/openid-configuration')
