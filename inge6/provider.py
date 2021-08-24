@@ -1,3 +1,58 @@
+# pylint: disable=anomalous-backslash-in-string
+"""
+module: inge6/provider.py
+summary: provide a OIDC interface for OIDC clients to connect to a SAML provider. The core of Inge6
+
+
+
+                                                        ------------------
+                                              / - - - >| SorryTooBusyPage |
+                                              |         ------------------
+                                      | R |   |
+        /-------------\               | A |   |         /-------------\ Redirect/POST       /-------------------\
+        |             |   /authorize  | T |   |         |             |  end-user to login  |       SAML        |
+        |             | --------------| E |---*-------->|             |-------------------->|    IDProvider     |
+        |             |               | L |             |             |     Artifact        |                   |
+        |             |               | I |             |             |<--------------------| (e.g. DigiD/TVS)  |
+        |             |               | M |             |             |                     \-------------------/
+        |             |               | I |             |             |                             ^   |
+        |             |               | T |             |             |                             |   |
+        |    Some     |                                 |    Inge6    |                             |   |
+        | OIDC-Client |          response=code          | OIDC-Server |                             |   |
+        |             |<------------------------------- |   Provider  |                             |   | response=BSN
+        |             |                                 |             |                             |   |
+        |             |  /accesstoken                   |             |                             |   |
+        |             |-------------------------------->|             |     GET resolve_artifact    |   |
+        |             |                                 |             |-----------------------------/   |
+        |             |                                 |             |                                 |
+        |             |        response=JWT Token       |             |<--------------------------------/
+        |             |<--------------------------------|             |
+        |             |                                 |             |
+        \-------------/                                 \-------------/
+                                                               ^
+                                                               |
+                                                               |
+                                                               |
+                                                               V
+                                                        /-------------\
+                                                        |             |
+                                                        | Redis Cache |
+                                                        |             |
+                                                        \-------------/
+
+The depicted figure does not contain all requests, and is merely intended for a general/summary overview of the communcation with
+defined modules.
+
+The provider defined in this file is the core of Inge6, it handles all the OIDC requests. Initiating requests to the
+Identity Providers for third-party end-user logins, resolving artifacts and using the Redis Cache to track the users activity
+over time.
+
+required:
+    - redis-server
+    - settings ratelimiter
+    - settings identity providers
+
+"""
 import base64
 
 import json
@@ -65,7 +120,7 @@ def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_requ
     """
     Method for assembling the data related to the auth request performed, including the code_challenge,
     code_challenge_method and the to be used identity provider. and storing it in the RedisStore under the
-    constants.RedisKeys.AUTH_REQ enum. 
+    constants.RedisKeys.AUTH_REQ enum.
     """
     value = {
         'auth_req': auth_req,
