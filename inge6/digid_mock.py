@@ -6,6 +6,7 @@ from .models import DigiDMockRequest, DigiDMockCatchRequest
 
 def digid_mock(digid_mock_request: DigiDMockRequest) -> HTMLResponse:
     state = digid_mock_request.state
+    authorize_request = digid_mock_request.authorize_request
     idp_name = digid_mock_request.idp_name
     relay_state = digid_mock_request.RelayState
     artifact = str(uuid.uuid4())
@@ -22,7 +23,7 @@ def digid_mock(digid_mock_request: DigiDMockRequest) -> HTMLResponse:
     </div>
     <a href='' id="submit_two" relayState="{relay_state}" samlArt="{artifact}" style='font-size:55; color: white; background-color:grey; display:box'> Login / Submit </a>
     <br />
-    <a href='/login-digid?force_digid=1&state={state}&idp_name={idp_name}' style='font-size:55; background-color:purple; display:box'>Actual DigiD</a>
+    <a href='/login-digid?force_digid=1&state={state}&idp_name={idp_name}&authorize_request={authorize_request}' style='font-size:55; background-color:purple; display:box'>Actual DigiD</a>
     <script>
         window.onload = function funLoad() {{
             bsn_input_listener()

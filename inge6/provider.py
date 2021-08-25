@@ -199,7 +199,6 @@ def _prepare_req(auth_req: BaseModel):
         'http_host': settings.issuer,
         'script_name': settings.authorize_endpoint,
         'get_data': auth_req.dict(),
-        'post_data': None
     }
 
 def _get_bsn_from_art_resp(bsn_response: str, saml_spec_version: float) -> str:
@@ -237,14 +236,15 @@ def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> 
 
     issuer_id = id_provider.sp_metadata.issuer_id
 
-    if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == "true" and not force_digid:
+    if settings.mock_digid.lower() == "true" and not force_digid:
         ##
         # Coming from /authorize in mocking mode we should always get in this fall into this branch
         # in which case login_digid_req only contains the randstate.
         ##
+        base64_authn_request = base64.b64encode(json.dumps(login_digid_req.authorize_request.dict()).encode()).decode()
         authn_post_ctx = create_authn_post_context(
             relay_state=randstate,
-            url=f'/digid-mock?state={randstate}&idp_name={id_provider.name}',
+            url=f'/digid-mock?state={randstate}&idp_name={id_provider.name}&authorize_request={base64_authn_request}',
             issuer_id=issuer_id,
             keypair=id_provider.keypair_paths
         )
@@ -262,13 +262,12 @@ def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> 
         return HTMLResponse(content=create_post_autosubmit_form(authn_post_ctx))
 
     if id_provider.authn_binding.endswith('Redirect'):
-        if login_digid_req.authorize_request is not None:
-            req = _prepare_req(login_digid_req.authorize_request)
-        else:
-            req = _prepare_req(login_digid_req)
+        if login_digid_req.authorize_request is None:
+            raise ValueError("AuthnRequest is None, which should not be possible")
 
+        req = _prepare_req(login_digid_req.authorize_request)
         auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
-        return RedirectResponse(auth.login())
+        return RedirectResponse(auth.login(return_to=login_digid_req.state))
 
     raise UnexpectedAuthnBinding("Unknown Authn binding {} configured in idp metadata: {}".format(id_provider.authn_binding, id_provider.name))
 
@@ -384,7 +383,7 @@ class Provider(OIDCProvider, SAMLProvider):
         # create a mock redirectresponse.
         id_provider = self.get_id_provider(connect_to_idp)
         return _post_login(
-            LoginDigiDRequest(state=randstate),
+            LoginDigiDRequest(state=randstate, authorize_request=authorize_request),
             id_provider=id_provider
         )
 

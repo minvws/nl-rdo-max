@@ -83,7 +83,7 @@ if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == 'true':
     from .provider import _post_login
 
     @router.get('/login-digid')
-    def login_digid(login_digid_req: LoginDigiDRequest = Depends()):
+    def login_digid(login_digid_req: LoginDigiDRequest = Depends(LoginDigiDRequest.from_request)):
         id_provider = get_provider().get_id_provider(login_digid_req.idp_name)
         return _post_login(login_digid_req, id_provider) # pylint: disable=protected-access
 

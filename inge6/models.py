@@ -1,9 +1,12 @@
 # pylint: disable=too-few-public-methods
 import html
+import json
+import base64
+
 from enum import Enum
 from typing import Optional
 
-from fastapi import Form, Query
+from fastapi import Form
 from pydantic import BaseModel, validator
 
 
@@ -25,7 +28,7 @@ class AuthorizeRequest(BaseModel):
 
 class LoginDigiDRequest(BaseModel):
     state: str
-    authorize_request: Optional[AuthorizeRequest] = None
+    authorize_request: AuthorizeRequest
     force_digid: Optional[bool] = None
     idp_name: Optional[str] = None
 
@@ -33,18 +36,35 @@ class LoginDigiDRequest(BaseModel):
     def convert_to_escaped_html(cls, text): # pylint: disable=no-self-argument, no-self-use
         return html.escape(text)
 
+    @classmethod
+    def from_request(
+        cls,
+        state: str,
+        authorize_request: str,
+        force_digid: Optional[bool] = None,
+        idp_name: Optional[str] = None
+    ) -> 'LoginDigiDRequest':
+        return LoginDigiDRequest.parse_obj({
+            'state': state,
+            'authorize_request': AuthorizeRequest(**json.loads(base64.b64decode(authorize_request))),
+            'force_digid': force_digid,
+            'idp_name': idp_name
+        })
+
 class DigiDMockRequest(BaseModel):
     state: str
     SAMLRequest: str
     RelayState: str
     idp_name: str
+    authorize_request: str
 
     # pylint: disable=invalid-name
     @classmethod
     def from_request(
         cls,
-        state: str = Query(""),
-        idp_name: str = Query("tvs"),
+        state: str,
+        idp_name: str,
+        authorize_request: str, # base64 encoded
         SAMLRequest: str = Form(...),
         RelayState: str = Form(...),
     ) -> 'DigiDMockRequest':
@@ -53,6 +73,7 @@ class DigiDMockRequest(BaseModel):
             'RelayState': RelayState,
             'idp_name': idp_name,
             'state': state,
+            'authorize_request': authorize_request,
         })
 
     @validator('state', 'RelayState', 'SAMLRequest')
