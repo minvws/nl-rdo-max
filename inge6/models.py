@@ -25,7 +25,9 @@ class AuthorizeRequest(BaseModel):
 
 class LoginDigiDRequest(BaseModel):
     state: str
+    authorize_request: Optional[AuthorizeRequest] = None
     force_digid: Optional[bool] = None
+    idp_name: Optional[str] = None
 
     @validator('state')
     def convert_to_escaped_html(cls, text): # pylint: disable=no-self-argument, no-self-use
@@ -35,19 +37,22 @@ class DigiDMockRequest(BaseModel):
     state: str
     SAMLRequest: str
     RelayState: str
+    idp_name: str
 
     # pylint: disable=invalid-name
     @classmethod
     def from_request(
         cls,
         state: str = Query(""),
+        idp_name: str = Query("tvs"),
         SAMLRequest: str = Form(...),
         RelayState: str = Form(...),
     ) -> 'DigiDMockRequest':
         return DigiDMockRequest.parse_obj({
             'SAMLRequest': SAMLRequest,
             'RelayState': RelayState,
-            'state': state
+            'idp_name': idp_name,
+            'state': state,
         })
 
     @validator('state', 'RelayState', 'SAMLRequest')

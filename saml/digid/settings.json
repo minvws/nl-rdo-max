@@ -2,9 +2,9 @@
     "strict": true,
     "debug": true,
     "sp": {
-        "entityId": "https://tvs.acc.coronacheck.nl/",
+        "entityId": "https://digid-connect.acc.coronacheck.nl/",
         "assertionConsumerService": {
-            "url": "https://tvs.acc.coronacheck.nl/acs",
+            "url": "https://digid.acc.coronacheck.nl/acs",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
         },
         "attributeConsumingService": {

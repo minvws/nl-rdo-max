@@ -8,7 +8,8 @@ from .utils import from_settings
 
 class IdProvider:
 
-    def __init__(self, idp_setting) -> None:
+    def __init__(self, name, idp_setting) -> None:
+        self.name = name
         self.saml_spec_version = idp_setting['saml_specification_version']
         self.base_dir = idp_setting['base_dir']
         self.cert_path = idp_setting['cert_path']

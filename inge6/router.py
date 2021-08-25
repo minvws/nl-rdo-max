@@ -84,8 +84,8 @@ if settings.mock_digid.lower() == 'true':
 
     @router.get('/login-digid')
     def login_digid(login_digid_req: LoginDigiDRequest = Depends()):
-        id_provider = get_provider().get_id_provider('tvs')
-        return HTMLResponse(content=_post_login(login_digid_req, id_provider)) # pylint: disable=protected-access
+        id_provider = get_provider().get_id_provider(login_digid_req.idp_name)
+        return _post_login(login_digid_req, id_provider) # pylint: disable=protected-access
 
     @router.post('/digid-mock')
     async def digid_mock(digid_mock_req: DigiDMockRequest = Depends(DigiDMockRequest.from_request)):  # pylint: disable=invalid-name

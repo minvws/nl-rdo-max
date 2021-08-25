@@ -18,7 +18,7 @@ class Provider:
 
         providers = {}
         for provider in id_providers.keys():
-            providers[provider] = IdProvider(id_providers[provider])
+            providers[provider] = IdProvider(provider, id_providers[provider])
 
         return providers
 

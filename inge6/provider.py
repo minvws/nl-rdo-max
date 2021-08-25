@@ -63,6 +63,7 @@ from urllib import parse
 
 from urllib.parse import parse_qs, urlencode
 from typing import Text, List, Union
+from pydantic.main import BaseModel
 
 import requests
 
@@ -94,7 +95,7 @@ from .encrypt import Encrypt
 from .models import AuthorizeRequest, LoginDigiDRequest, SorryPageRequest
 from .exceptions import (
     TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin,
-    ExpiredResourceError
+    ExpiredResourceError, UnexpectedAuthnBinding
 )
 
 from .saml.exceptions import UserNotAuthenticated
@@ -189,7 +190,7 @@ def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     error_desc = "The servers are too busy right now, please try again later."
     return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
 
-def _prepare_req(auth_req: AuthorizeRequest):
+def _prepare_req(auth_req: BaseModel):
     """
     Prepare a authorization request to use the OneLogin SAML library.
     """
@@ -197,7 +198,7 @@ def _prepare_req(auth_req: AuthorizeRequest):
         'https': 'on',
         'http_host': settings.issuer,
         'script_name': settings.authorize_endpoint,
-        'get_date': auth_req.dict(),
+        'get_data': auth_req.dict(),
         'post_data': None
     }
 
@@ -222,7 +223,7 @@ def _get_bsn_from_art_resp(bsn_response: str, saml_spec_version: float) -> str:
     raise ValueError("Unknown SAML specification, known: 3.5, >=4.4")
 
 
-def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> Text:
+def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> Response:
     """
     Not all identity providers allow the HTTP-Redirect for performing authentication requests,
     For those that require HTTP-POST, this method is created. It generates an auto-submit form
@@ -237,22 +238,40 @@ def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> 
     issuer_id = id_provider.sp_metadata.issuer_id
 
     if settings.mock_digid.lower() == "true" and not force_digid:
+        ##
+        # Coming from /authorize in mocking mode we should always get in this fall into this branch
+        # in which case login_digid_req only contains the randstate.
+        ##
         authn_post_ctx = create_authn_post_context(
             relay_state=randstate,
-            url=f'/digid-mock?state={randstate}',
+            url=f'/digid-mock?state={randstate}&idp_name={id_provider.name}',
             issuer_id=issuer_id,
             keypair=id_provider.keypair_paths
         )
-    else:
-        sso_url = id_provider.idp_metadata.get_sso()['location']
+
+        return HTMLResponse(content=create_post_autosubmit_form(authn_post_ctx))
+
+    sso_url = id_provider.idp_metadata.get_sso()['location']
+    if id_provider.authn_binding.endswith('POST'):
         authn_post_ctx = create_authn_post_context(
             relay_state=randstate,
             url=sso_url,
             issuer_id=issuer_id,
             keypair=id_provider.keypair_paths
         )
+        return HTMLResponse(content=create_post_autosubmit_form(authn_post_ctx))
 
-    return create_post_autosubmit_form(authn_post_ctx)
+    if id_provider.authn_binding.endswith('Redirect'):
+        if login_digid_req.authorize_request is not None:
+            req = _prepare_req(login_digid_req.authorize_request)
+        else:
+            req = _prepare_req(login_digid_req)
+
+        auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
+        return RedirectResponse(auth.login())
+
+    raise UnexpectedAuthnBinding("Unknown Authn binding {} configured in idp metadata: {}".format(id_provider.authn_binding, id_provider.name))
+
 
 def _perform_artifact_resolve_request(artifact: str, id_provider: IdProvider):
     """
@@ -364,15 +383,10 @@ class Provider(OIDCProvider, SAMLProvider):
         # behavior through mocking with connect_to_idp=digid as without mocking, we need to
         # create a mock redirectresponse.
         id_provider = self.get_id_provider(connect_to_idp)
-        if id_provider.authn_binding.endswith('POST') or settings.mock_digid.lower() == 'true':
-            return HTMLResponse(content=_post_login(
-                LoginDigiDRequest(state=randstate),
-                id_provider=id_provider
-            ))
-
-        req = _prepare_req(authorize_request)
-        auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
-        return RedirectResponse(auth.login())
+        return _post_login(
+            LoginDigiDRequest(state=randstate),
+            id_provider=id_provider
+        )
 
     def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
         """
@@ -396,7 +410,7 @@ class Provider(OIDCProvider, SAMLProvider):
         code = parse_qs(body.decode())['code'][0]
 
         try:
-            cached_artifact = hget_from_redis(code, constants.RedisKeys.ARTI)
+            cached_artifact = hget_from_redis(code, constants.RedisKeys.ARTI.value)
             artifact = cached_artifact['artifact']
             id_provider = cached_artifact['id_provider']
 

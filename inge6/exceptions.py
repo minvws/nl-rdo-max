@@ -13,6 +13,9 @@ class ExpiredResourceError(RuntimeError):
 class ExpectedRedisValue(RuntimeError):
     pass
 
+class UnexpectedAuthnBinding(RuntimeError):
+    pass
+
 # pylint: disable=too-many-ancestors
 class TokenSAMLErrorResponse(TokenErrorResponse):
     c_allowed_values = TokenErrorResponse.c_allowed_values.copy()

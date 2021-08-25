@@ -82,7 +82,7 @@ def test_authorize_endpoint_digid(digid_config, disable_digid_mock, redis_mock):
 
 
 # pylint: disable=redefined-outer-name, unused-argument
-def test_authorize_endpoint_tvs(tvs_config, redis_mock):
+def test_authorize_endpoint_tvs(tvs_config, redis_mock, disable_digid_mock):
     """
     Test if the generated authn request corresponds with the
     structure when connecting to tvs. e.g. a POST Binding:
