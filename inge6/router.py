@@ -76,7 +76,7 @@ def health() -> JSONResponse:
     return JSONResponse(content=jsonable_encoder(response), status_code=200 if healthy else 500)
 
 ## MOCK ENDPOINTS:
-if settings.mock_digid.lower() == 'true':
+if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == 'true':
     # pylint: disable=wrong-import-position, c-extension-no-member, wrong-import-order
     from lxml import etree
     from urllib.parse import parse_qs # pylint: disable=wrong-import-order

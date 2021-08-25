@@ -237,7 +237,7 @@ def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> 
 
     issuer_id = id_provider.sp_metadata.issuer_id
 
-    if settings.mock_digid.lower() == "true" and not force_digid:
+    if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == "true" and not force_digid:
         ##
         # Coming from /authorize in mocking mode we should always get in this fall into this branch
         # in which case login_digid_req only contains the randstate.
@@ -355,7 +355,7 @@ class Provider(OIDCProvider, SAMLProvider):
             else:
                 raise KeyError("Expected connect_to_idp_key to be set in redis, but wasn't")
 
-            if settings.mock_digid.lower() != 'true':
+            if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() != 'true':
                 connect_to_idp = rate_limit_test(ip_address)
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
             log.warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
@@ -450,7 +450,7 @@ class Provider(OIDCProvider, SAMLProvider):
         artifact = request.query_params['SAMLart']
         artifact_hashed =  nacl.hash.sha256(artifact.encode()).decode()
 
-        if 'mocking' in request.query_params and settings.mock_digid.lower() == 'true':
+        if 'mocking' in request.query_params and hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == 'true':
             redis_cache.set('DIGID_MOCK' + artifact, 'true')
 
         try:
@@ -482,7 +482,7 @@ class Provider(OIDCProvider, SAMLProvider):
         log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
 
         is_digid_mock = redis_cache.get('DIGID_MOCK' + artifact)
-        if settings.mock_digid.lower() == "true" and is_digid_mock is not None:
+        if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == "true" and is_digid_mock is not None:
             return self.bsn_encrypt.symm_encrypt(artifact)
 
         id_provider: IdProvider = self.get_id_provider(id_provider_name)

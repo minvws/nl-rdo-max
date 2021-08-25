@@ -9,11 +9,14 @@ CONFIG_FILE_PATH = str(BASE_DIR) + '/' + CONFIG_FILE_NAME
 # pylint: disable=too-many-ancestors, too-few-public-methods
 class Settings(configparser.ConfigParser):
     class SettingSection:
-        def __init__(self, section: dict):
+        def __init__(self, parent: str, section: dict):
             self._section: dict = section
+            self._parent: str = parent
 
         def __getattr__(self, name):
-            return self._section[name]
+            if name in self._section:
+                return self._section[name]
+            raise AttributeError("Setting {}.{} not found and not handled gracefully".format(self._parent, name))
 
         def __setattr__(self, name: str, value: Any) -> None:
             if name != '_section':
@@ -25,8 +28,8 @@ class Settings(configparser.ConfigParser):
         if name in self._defaults:
             return self._defaults[name]
         if name in self._sections:
-            return self.SettingSection(self._sections[name])
-        raise AttributeError("Attribute {} not found".format(name))
+            return self.SettingSection(name, self._sections[name])
+        raise AttributeError("Setting {} not found and not handled gracefully".format(name))
 
 settings = Settings()
 
