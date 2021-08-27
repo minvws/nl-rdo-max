@@ -42,6 +42,11 @@ $ make setup
 $ sh run_server.sh
 ```
 
+# Using the ratelimiter
+To activate an overflow IDP, secundairy IDP when primary is too busy, the following settings should be configured in the inge6.conf settings.
+- overflow_idp_key, this is the key in the redis store used to retrieve the secundairy IDP name.
+- user_limit_key_overflow_idp, (OPTIONAL) if the overflow idp needs an user limit, this key is used to retrieve the user limit from the redis store.
+
 # Contributions
 When contributing to inge6 a few Make commands should be considered to make sure linting, type-checking (MyPy) and tests are still valid:
 - `make lint`, check linting using pylint.

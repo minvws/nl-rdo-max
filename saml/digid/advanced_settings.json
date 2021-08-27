@@ -1,6 +1,6 @@
 {
     "security": {
-        "nameIdEncrypted": true,
+        "nameIdEncrypted": false,
         "authnRequestsSigned": true,
         "logoutRequestSigned": true,
         "logoutResponseSigned": false,
@@ -8,8 +8,8 @@
         "wantMessagesSigned": true,
         "wantAssertionsSigned": true,
         "wantNameId": true,
-        "wantNameIdEncrypted": true,
-        "wantAssertionsEncrypted": true,
+        "wantNameIdEncrypted": false,
+        "wantAssertionsEncrypted": false,
         "requestedAuthnContext": ["urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"],
         "requestedAuthnContextComparison": "minimum",
         "allowSingleLabelDomains": false,

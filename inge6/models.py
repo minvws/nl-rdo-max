@@ -46,7 +46,13 @@ class LoginDigiDRequest(BaseModel):
     ) -> 'LoginDigiDRequest':
         return LoginDigiDRequest.parse_obj({
             'state': state,
-            'authorize_request': AuthorizeRequest(**json.loads(base64.b64decode(authorize_request))),
+            'authorize_request': AuthorizeRequest(
+                **json.loads(
+                    base64.urlsafe_b64decode(
+                        authorize_request
+                    )
+                )
+            ),
             'force_digid': force_digid,
             'idp_name': idp_name
         })

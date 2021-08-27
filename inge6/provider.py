@@ -241,7 +241,7 @@ def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> 
         # Coming from /authorize in mocking mode we should always get in this fall into this branch
         # in which case login_digid_req only contains the randstate.
         ##
-        base64_authn_request = base64.b64encode(json.dumps(login_digid_req.authorize_request.dict()).encode()).decode()
+        base64_authn_request = base64.urlsafe_b64encode(json.dumps(login_digid_req.authorize_request.dict()).encode()).decode()
         authn_post_ctx = create_authn_post_context(
             relay_state=randstate,
             url=f'/digid-mock?state={randstate}&idp_name={id_provider.name}&authorize_request={base64_authn_request}',
@@ -267,7 +267,7 @@ def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> 
 
         req = _prepare_req(login_digid_req.authorize_request)
         auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
-        return RedirectResponse(auth.login(return_to=login_digid_req.state))
+        return RedirectResponse(auth.login(return_to=login_digid_req.state, force_authn=False, set_nameid_policy=False))
 
     raise UnexpectedAuthnBinding("Unknown Authn binding {} configured in idp metadata: {}".format(id_provider.authn_binding, id_provider.name))
 

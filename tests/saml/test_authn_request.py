@@ -154,6 +154,7 @@ def test_authorize_endpoint_tvs(tvs_config, redis_mock, disable_digid_mock):
     assert parsed_authnreq.attrib['IssueInstant'] is not None
     assert parsed_authnreq.attrib['AssertionConsumerServiceIndex'] is not None
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
+    assert parsed_authnreq.find('./samlp:NameIDPolicy', NAMESPACES) is None
 
 
     with open('saml/tvs/settings.json', 'r') as saml_settings:
@@ -184,20 +185,10 @@ def test_post_login_force_digid_mocking(digid_config, redis_mock):
     </samlp:AuthnRequest>
     """
     provider = Provider()
-    auth_req = AuthorizeRequest(
-        client_id="test_client",
-        redirect_uri="http://localhost:3000/login",
-        response_type="code",
-        nonce="n-0S6_WzA2Mj",
-        state="af0ifjsldkj",
-        scope="openid",
-        code_challenge="_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier = SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
-        code_challenge_method="S256",
-    )
 
-    login_digid_req = LoginDigiDRequest(
-        state='n-0S6_WzA2Mj',
-        authorize_request=auth_req,
+    login_digid_req = LoginDigiDRequest.from_request(
+        state='110c567bbee5f758043902920d4078841c2607d75f6bb2aceb074ad6e149da0f',
+        authorize_request="eyJjbGllbnRfaWQiOiAidGVzdF9jbGllbnQiLCAicmVkaXJlY3RfdXJpIjogImh0dHA6Ly9sb2NhbGhvc3Q6MzAwMC9sb2dpbiIsICJyZXNwb25zZV90eXBlIjogImNvZGUiLCAibm9uY2UiOiAibi0wUzZfV3pBMk1qIiwgInNjb3BlIjogIm9wZW5pZCIsICJzdGF0ZSI6ICJhZjBpZmpzbGRraiIsICJjb2RlX2NoYWxsZW5nZSI6ICJfMWY4dEZqQXR1NkQxRGYtR095RFBvTWpDSmRFdmFTV3NucVI2U0xwenN3IiwgImNvZGVfY2hhbGxlbmdlX21ldGhvZCI6ICJTMjU2In0=", # pylint: disable=line-too-long
         force_digid=True,
         idp_name='digid'
     )
@@ -209,7 +200,7 @@ def test_post_login_force_digid_mocking(digid_config, redis_mock):
     parsed_url = urlparse.urlparse(redirect_url)
     query_params = urlparse.parse_qs(parsed_url.query)
     assert all(key in query_params.keys() for key in ['SAMLRequest', 'RelayState', 'Signature', 'SigAlg'])
-    assert query_params['RelayState'][0] == 'n-0S6_WzA2Mj'
+    assert query_params['RelayState'][0] == '110c567bbee5f758043902920d4078841c2607d75f6bb2aceb074ad6e149da0f'
 
     generated_authnreq = decode_base64_and_inflate(query_params['SAMLRequest'][0]).decode()
     # pylint: disable=c-extension-no-member
@@ -220,6 +211,7 @@ def test_post_login_force_digid_mocking(digid_config, redis_mock):
     assert parsed_authnreq.attrib['AssertionConsumerServiceURL'] is not None
     assert parsed_authnreq.attrib['ProviderName'] is not None
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
+    assert parsed_authnreq.find('./samlp:NameIDPolicy', NAMESPACES) is None
 
     with open('saml/digid/settings.json', 'r') as saml_settings:
         expected_issuer = json.loads(saml_settings.read())['sp']['entityId']
