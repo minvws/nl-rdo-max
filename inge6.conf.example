@@ -38,8 +38,13 @@ loglevel = debug
 # an ip-address should be remembered in the redis-db
 sorry_too_busy_page_head = static/templates/sorry-coronacheck_head.html
 sorry_too_busy_page_tail = static/templates/sorry-coronacheck_tail.html
+
+# IDP#1: the key in redis containing the user limit for IDP#1
 user_limit_key = tvs_connect_user_limit
+# IDP#2: the key in redis containing the user limit for IDP#2
 user_limit_key_overflow_idp = digid_connect_user_limit
+
+# Amount of seconds needed per ip address
 ip_expire_in_s = 10
 
 [bsn]

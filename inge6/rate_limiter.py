@@ -46,21 +46,39 @@ def _user_limit_test(idp_prefix: str, user_limit_key: str) -> None:
 
 def rate_limit_test(ip_address: str) -> str:
     """
-    Test is we have passed the user limit defined in the redis-store. The rate limit
+    Tests if we have passed the user limit defined in the redis-store. The rate limit
     defines the number of users per second which we allow.
 
     if no user_limit is found in the redis store, this check is treated as 'disabled'.
 
+    Required settings:
+        - settings.ratelimit.ip_expire_in_s, setting defining the amount of seconds needed to expire a listed IP-address
+        - settings.connect_to_idp_key, the key in redis that stored the name of the primary IDP (as configured in the IDP configurations).
+
+    Optional settings:
+        - settings.overflow_idp_key, enable an overflow IDP. If the primary idp is limited, attempt this configuration.
+        the value stored in the redis store under this key, should be the name of one of the configured IDPs.
+        - settings.ratelimit.user_limit_key, if defined, the ratelimiter is active on the primary IDP and allows the number of connections
+        as defined in redis under this key.
+        - settings.ratelimit.user_limit_overflow_idp, if defined, the ratelimiter is active for the overflow idp as well. Defines, in the redis store,
+        the number of active connections allowed.
+
     :param user_limit_key: the key in the redis store that defines the number of allowed users per 10th of a second
     :raises: TooBusyError when the number of users exceeds the allowed number.
     """
-    _ip_limit_test(ip_address=ip_address, ip_expire_s=int(settings.ratelimit.ip_expire_in_s))
+    try:
+        _ip_limit_test(ip_address=ip_address, ip_expire_s=int(settings.ratelimit.ip_expire_in_s))
+    except TypeError as int_cast_err:
+        raise ExpectedRedisValue(
+            "Expected {} key to be set in redis. \
+             Please check the ratelimit.ip_expire_in_s setting".format(settings.ratelimit.ip_expire_in_s)
+        ) from int_cast_err
 
     connect_to_idp = get_redis_client().get(settings.connect_to_idp_key)
     if connect_to_idp is not None:
         connect_to_idp = connect_to_idp.decode()
     else:
-        raise ExpectedRedisValue("Expected {} key to be set in redis.".format(settings.connect_to_idp_key))
+        raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the connect_to_idp_key setting".format(settings.connect_to_idp_key))
 
     overflow_idp = get_redis_client().get(settings.overflow_idp_key)
 

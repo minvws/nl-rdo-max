@@ -23,6 +23,13 @@ def add_certs(root, cert_data: str) -> None:
 
 
 class SPMetadata(SAMLRequest):
+    """
+    Ability to generate metadata needed for IDPs. It uses the template defined in the template path.
+
+    Required settings:
+        - settings.saml.sp_template, path to the sp metadata template
+        - settings.issuer, name of the issuer
+    """
     TEMPLATE_PATH = settings.saml.sp_template
 
     DEFAULT_ACS_URL = settings.issuer + '/acs'

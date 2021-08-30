@@ -15,6 +15,27 @@ REDIS_TTL = int(settings.redis.object_ttl)
 
 # pylint: disable=too-few-public-methods
 class Provider:
+    """
+    OIDC provider configuration. Allowing to handle authorize requests and supply JWT tokens.
+
+    Required settings:
+        - settings.issuer
+        - settings.authorize_endpoint
+        - settings.jwks_endpoint
+        - settings.accesstoken_endpoint
+
+        - settings.oidc.rsa_private_key
+        - settings.oidc.rsa_public_key
+        - settings.oidc.subject_id_hash_salt
+        - settings.oidc.id_token_lifetime
+
+        - settings.redis.host
+        - settings.redis.port
+        - settings.redis.code_namespace
+        - settings.redis.token_namespace
+        - settings.redis.refresh_token_namespace
+        - settings.redis.sub_id_namespace
+    """
 
     def __init__(self) -> None:
         issuer = settings.issuer

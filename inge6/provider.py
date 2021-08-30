@@ -48,9 +48,13 @@ Identity Providers for third-party end-user logins, resolving artifacts and usin
 over time.
 
 required:
-    - redis-server
-    - settings ratelimiter
-    - settings identity providers
+    - Configured a redis server
+    - settings.redis
+    - settings.ratelimiter
+    - settings.identity providers
+
+    - settings.issuer, issuer of the tokens
+    - settings.authorize_endpoint, endpoint used for initiating an authorization request.
 
 """
 import base64
@@ -303,6 +307,17 @@ class Provider(OIDCProvider, SAMLProvider):
     Required grant_types = authorization_code
     Required PKCE implementation by client (only supporting 'public' clients: https://datatracker.ietf.org/doc/html/rfc6749#section-2.1)
 
+
+    Required settings:
+        - settings.ratelimit.sorry_too_busy_page_head, head part HTML sorry-too-busy-page
+        - settings.ratelimit.sorry_too_busy_page_tail, tail part HTML sorry-too-busy-page
+
+        - `settings.connect_to_idp_key`: Primary IDP to be used. Make sure this IDP is also configured in the
+        Identity Providers JSON file, path configured in the `settings.saml.identity_provider_settings`.
+        - `settings.oidc.clients_file`: file containing the registered clients and their OIDC configuration.
+        - `settings.bsn.sign_key`: private key used for signing the transmitted BSN
+        - `settings.bsn.encrypt_key`: public key used for encrypting the transmitted BSN
+        - `settings.bsn.local_symm_key`: symmetric key used for encrypting the BSN stored in the Redis-store
     """
 
     BSN_SIGN_KEY = settings.bsn.sign_key

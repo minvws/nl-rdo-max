@@ -7,6 +7,12 @@ from ..config import settings
 
 # pylint: disable=too-few-public-methods
 class Provider:
+    """
+    Given a path to the identity provider settings, parse all identity providers.
+
+    Required settings:
+        - settings.saml.identity_provider_settings, path to the configuration for all identity providers.
+    """
     ID_PROVIDERS_PATH = settings.saml.identity_provider_settings
 
     def __init__(self) -> None:

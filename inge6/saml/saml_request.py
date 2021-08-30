@@ -70,6 +70,12 @@ class SAMLRequest:
         return self.root
 
 class AuthNRequest(SAMLRequest):
+    """
+    Creates an AuthnRequest based on an Authn request template.
+
+    Required settings:
+        - settings.saml.authn_request_template, path to authn request template
+    """
     TEMPLATE_PATH = settings.saml.authn_request_template
 
     def __init__(self, sso_url, issuer_id, keypair) -> None:
@@ -83,6 +89,12 @@ class AuthNRequest(SAMLRequest):
         sign(self.root, self.key_path)
 
 class ArtifactResolveRequest(SAMLRequest):
+    """
+    Creates an ArtifactResolveRequest based on an Artifact resolve template.
+
+    Required settings:
+        - settings.saml.artifactresolve_request_template, path to artifact resolve request template
+    """
     TEMPLATE_PATH = settings.saml.artifactresolve_request_template
 
     def __init__(self, artifact_code, sso_url, issuer_id, keypair) -> None:

@@ -1,3 +1,9 @@
+"""
+Handles parsing of Artifact responses, validating the signature among other validity checks.
+
+Required settings:
+    - settings.saml.response_expires_in, number of seconds a generated artifact response is considered valid
+"""
 # pylint: disable=c-extension-no-member
 from typing import Text, List
 

@@ -1,3 +1,11 @@
+"""
+Module contains all the commands regarding redis caching. Prepending prefixes, and defining Time To Live.
+
+Required settings:
+    - settings.redis.default_cache_namespace, prefix all redis cache keys.
+    - settings.redis.object_ttl, time to live for all objects stored in cache
+"""
+
 from typing import Any, Text, Optional
 import pickle
 

@@ -1,3 +1,11 @@
+"""
+Utilities creating strings to be returned to a user or endpoint.
+
+Required:
+    - settings.saml.authn_request_html_template
+    - Template in location 'saml/templates/html/assertion_consumer_service.html'
+"""
+
 from typing import Text, Tuple
 from jinja2 import Template
 from .config import settings
