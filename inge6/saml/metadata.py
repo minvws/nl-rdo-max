@@ -14,12 +14,15 @@ from .constants import NAMESPACES
 from .utils import get_loc_bind, has_valid_signatures, from_settings
 from ..config import settings
 
+def _strip_cert(cert_data):
+    return "\n".join(cert_data.strip().split('\n')[1:-1])
 
 def add_certs(root, cert_data: str) -> None:
     certifi_elems = root.findall('.//ds:X509Certificate', NAMESPACES)
+    stripped_cert = _strip_cert(cert_data)
 
     for elem in certifi_elems:
-        elem.text = "\n".join(cert_data.split('\n')[1:-1])
+        elem.text = stripped_cert
 
 
 class SPMetadata(SAMLRequest):
