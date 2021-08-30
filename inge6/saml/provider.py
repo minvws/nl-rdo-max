@@ -8,10 +8,10 @@ class Provider:
     PRIV_KEY_PATH = settings.saml.key_path
 
     def __init__(self) -> None:
-        with open(self.SETTINGS_PATH, 'r') as settings_file:
+        with open(self.SETTINGS_PATH, 'r', encoding='utf-8') as settings_file:
             self.settings_dict = json.loads(settings_file.read())
 
-        with open(self.PRIV_KEY_PATH, 'r') as key_file:
+        with open(self.PRIV_KEY_PATH, 'r', encoding='utf-8') as key_file:
             self.priv_key = key_file.read()
 
         self._idp_metadata = IdPMetadata()

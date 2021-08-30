@@ -24,5 +24,5 @@ class Settings(configparser.ConfigParser):
 
 settings = Settings()
 
-with open(CONFIG_FILE_PATH) as conf_file:
+with open(CONFIG_FILE_PATH, 'r', encoding='utf-8') as conf_file:
     settings.read_file(conf_file)

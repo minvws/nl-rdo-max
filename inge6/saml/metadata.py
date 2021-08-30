@@ -37,12 +37,12 @@ class SPMetadata(SAMLRequest):
     def __init__(self) -> None:
         super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())
 
-        with open(self.SETTINGS_PATH, 'r') as settings_file:
+        with open(self.SETTINGS_PATH, 'r', encoding='utf-8') as settings_file:
             self.settings_dict = json.loads(settings_file.read())
 
         self.issuer_id = self.settings_dict['sp']['entityId']
 
-        with open(self.CERT_PATH, 'r') as cert_file:
+        with open(self.CERT_PATH, 'r', encoding='utf-8') as cert_file:
             self.cert_data = cert_file.read()
 
         self.keyname: Optional[str] = None
