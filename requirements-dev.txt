@@ -107,7 +107,7 @@ toml==0.10.2
     #   pytest-cov
 tomli==1.2.1
     # via black
-types-redis==3.5.6
+types-redis==3.5.7
     # via -r requirements-dev.in
 types-requests==2.25.6
     # via -r requirements-dev.in
