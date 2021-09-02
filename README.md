@@ -34,6 +34,13 @@ Redis is the store of this service. It is used to temporarily store data acquire
 ## SSL (local development)
 An SSL connection is usually required, also in an development environment. To set this up, please define where to find the certificates and keys in the settings file under the `ssl` header.
 
+# Dependencies
+
+Make sure to install the following dependencies: 
+```
+sudo apt-get update && sudo apt-get install libxmlsec1-dev
+```
+
 # Running the service
 Make sure you followed the steps for the regular Setup, then run:
 ```bash

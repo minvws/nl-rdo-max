@@ -33,7 +33,7 @@ Inge6->RD_BC:/resolve?artifact
 Inge6<--RD_BC:resolved artifact?attributes
 Inge6->Inge6:validate artifactResponse
 
-Inge6->Redis:store(get_cookie[h(token)], attributes)
+Inge6->Redis:store(h(token), attributes)
 
 Inge6-->App:JSONResponse(access_token)
 App->App:remember[access_token]
