@@ -69,9 +69,8 @@ def rate_limit_test(ip_address: str) -> str:
     try:
         _ip_limit_test(ip_address=ip_address, ip_expire_s=int(settings.ratelimit.ip_expire_in_s))
     except TypeError as int_cast_err:
-        raise ExpectedRedisValue(
-            "Expected {} key to be set in redis. \
-             Please check the ratelimit.ip_expire_in_s setting".format(settings.ratelimit.ip_expire_in_s)
+        raise ValueError(
+             "Please check the ratelimit.ip_expire_in_s setting, can it be parsed as integer?"
         ) from int_cast_err
 
     connect_to_idp = get_redis_client().get(settings.connect_to_idp_key)

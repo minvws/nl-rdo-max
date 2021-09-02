@@ -17,14 +17,13 @@ log = logging.getLogger(__package__)
 app = FastAPI(docs_url= None, redoc_url= None, openapi_url=None)
 app.include_router(router)
 
-
 def _validate_saml_identity_provider_settings():
     missing_files = []
     with open(settings.saml.identity_provider_settings) as providers_settings:
         identity_providers = json.loads(providers_settings.read())
 
     for provider, p_settings in identity_providers.items():
-        if not os.path.isfile(p_settings['base_dir']):
+        if not os.path.isdir(p_settings['base_dir']):
             missing_files.append(
                 (p_settings['base_dir'], "{}: SAML Identity Providers base directory".format(provider))
             )
@@ -66,6 +65,7 @@ def validate_startup():
         missing_files.append(
             (settings.saml.identity_provider_settings, "SAML Identity Providers file")
         )
+    else:
         missing_files.extend(_validate_saml_identity_provider_settings())
 
     if not os.path.isfile(settings.oidc.clients_file):
@@ -116,7 +116,9 @@ If you didn't mean to enable ssl change this setting in your config (not recomme
 
     if len(missing_files) > 0 or len(ssl_missing_files) > 0 or len(required_settings) > 0:
         log.error(error_msg)
-        sys.exit(1)
+        return False
+
+    return True
 
 @app.on_event("startup")
 async def startup_event():
@@ -127,7 +129,9 @@ if __name__ == "__main__":
         level=getattr(logging, settings.loglevel.upper()),
         datefmt='%m/%d/%Y %I:%M:%S %p'
     )
-    validate_startup()
+
+    if not validate_startup():
+        sys.exit(1)
 
     run_kwargs = {
         'host': settings.host,

@@ -8,6 +8,7 @@ __pycache__
 *.key
 *.crt
 .coverage*
+cov.xml
 *.egg-info
 *.pytest_cache*
 dump.rdb

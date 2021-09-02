@@ -99,7 +99,7 @@ from .encrypt import Encrypt
 from .models import AuthorizeRequest, LoginDigiDRequest, SorryPageRequest
 from .exceptions import (
     TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin,
-    ExpiredResourceError, UnexpectedAuthnBinding
+    ExpiredResourceError, UnexpectedAuthnBinding, ExpectedRedisValue
 )
 
 from .saml.exceptions import UserNotAuthenticated
@@ -367,7 +367,7 @@ class Provider(OIDCProvider, SAMLProvider):
             if connect_to_idp:
                 connect_to_idp = connect_to_idp.decode()
             else:
-                raise KeyError("Expected connect_to_idp_key to be set in redis, but wasn't")
+                raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the connect_to_idp_key setting".format(settings.connect_to_idp_key))
 
             if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() != 'true':
                 connect_to_idp = rate_limit_test(ip_address)
@@ -438,16 +438,16 @@ class Provider(OIDCProvider, SAMLProvider):
             return JSONResponse(content=json_content_resp)
         except UserNotAuthenticated as user_not_authenticated:
             log.debug('invalid client authentication at token endpoint', exc_info=True)
-            error_resp = TokenSAMLErrorResponse(error=user_not_authenticated.oauth_error, error_description=str(user_not_authenticated)).to_json()
+            error_resp = TokenSAMLErrorResponse(error=user_not_authenticated.oauth_error, error_description=str(user_not_authenticated)).to_dict()
         except InvalidClientAuthentication as invalid_client_auth:
             log.debug('invalid client authentication at token endpoint', exc_info=True)
-            error_resp = TokenErrorResponse(error='invalid_client', error_description=str(invalid_client_auth)).to_json()
+            error_resp = TokenErrorResponse(error='invalid_client', error_description=str(invalid_client_auth)).to_dict()
         except OAuthError as oauth_error:
             log.debug('invalid request: %s', str(oauth_error), exc_info=True)
-            error_resp = TokenErrorResponse(error=oauth_error.oauth_error, error_description=str(oauth_error)).to_json()
+            error_resp = TokenErrorResponse(error=oauth_error.oauth_error, error_description=str(oauth_error)).to_dict()
         except ExpiredResourceError as expired_err:
             log.debug('invalid request: %s', str(expired_err), exc_info=True)
-            error_resp = TokenErrorResponse(error='invalid_request', error_description=str(expired_err)).to_json()
+            error_resp = TokenErrorResponse(error='invalid_request', error_description=str(expired_err)).to_dict()
 
         # Error has occurred
         response = JSONResponse(jsonable_encoder(error_resp), status_code=400)

@@ -20,7 +20,7 @@ NAMESPACES = {
 }
 
 # pylint: disable=redefined-outer-name, unused-argument
-def test_authorize_endpoint_digid(digid_config, disable_digid_mock, redis_mock):
+def test_authorize_endpoint_digid(digid_config, digid_mock_disable, redis_mock):
     """
     Test if the generated authn request corresponds with the
     expected values when connecting to digid. e.g. a Redirect Binding:
@@ -82,7 +82,7 @@ def test_authorize_endpoint_digid(digid_config, disable_digid_mock, redis_mock):
 
 
 # pylint: disable=redefined-outer-name, unused-argument
-def test_authorize_endpoint_tvs(tvs_config, redis_mock, disable_digid_mock):
+def test_authorize_endpoint_tvs(tvs_config, redis_mock, digid_mock_disable):
     """
     Test if the generated authn request corresponds with the
     structure when connecting to tvs. e.g. a POST Binding:
@@ -147,6 +147,7 @@ def test_authorize_endpoint_tvs(tvs_config, redis_mock, disable_digid_mock):
     resp: HTMLResponse = provider.authorize_endpoint(auth_req, headers, '0.0.0.0')
     saml_request = get_post_params_from_html(resp.body)['SAMLRequest']
     generated_authnreq = base64.b64decode(saml_request).decode()
+    generated_authnreq = generated_authnreq.split('<?xml version="1.0" encoding="UTF-8"?>\n')[-1]
     # pylint: disable=c-extension-no-member
     parsed_authnreq = etree.fromstring(generated_authnreq).getroottree().getroot()
 

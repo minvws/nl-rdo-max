@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from inge6.main import app
 from inge6.models import AuthorizeRequest
 
+
 def test_login_digid():
     client = TestClient(app)
 
