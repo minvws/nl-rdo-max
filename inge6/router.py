@@ -81,6 +81,7 @@ if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == 'true':
     from lxml import etree
     from urllib.parse import parse_qs # pylint: disable=wrong-import-order
     from .provider import _post_login
+    from io import StringIO
 
     @router.get('/login-digid')
     def login_digid(login_digid_req: LoginDigiDRequest = Depends(LoginDigiDRequest.from_request)):
@@ -106,9 +107,9 @@ if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == 'true':
                 raise HTTPException(status_code=400, detail='200 expected, got {} with redirect uri: {}'.format(status_code, redirect))
             raise HTTPException(status_code=400, detail='detail authorize response status code was {}, but 200 was expected'.format(status_code))
 
-        # Turns out etree cannot parse a tree with a href including multiple query parameters. Alternative solution, splitting:
-        relay_state_tree = etree.fromstring(response.body.decode().split('\n')[4]).getroottree().getroot()
-        relay_state = relay_state_tree.attrib['value']
+        parser = etree.HTMLParser()
+        tree   = etree.parse(StringIO(response.body.decode()), parser)
+        relay_state = tree.getroot().find('.//input[@name="RelayState"]').attrib['value']
 
         # pylint: disable=too-few-public-methods, too-many-ancestors, super-init-not-called
         class AcsReq(Request):
