@@ -1,5 +1,6 @@
 # pylint: disable=c-extension-no-member
 from typing import Dict, Optional
+import textwrap
 
 from lxml import etree
 import xmlsec
@@ -13,6 +14,9 @@ from .saml_request import (
 from .constants import NAMESPACES
 from .utils import get_loc_bind, has_valid_signatures, from_settings
 from ..config import settings
+
+def _enforce_cert_newlines(cert_data):
+    return "\n".join(textwrap.wrap(cert_data.replace('\n', ''), 64))
 
 def _strip_cert(cert_data):
     return "\n".join(cert_data.strip().split('\n')[1:-1])
@@ -159,7 +163,9 @@ class IdPMetadata:
         return get_loc_bind(resolution_service)
 
     def get_cert_pem_data(self) -> str:
-        return f"""-----BEGIN CERTIFICATE-----\n{self.template.find('.//md:IDPSSODescriptor//dsig:X509Certificate', NAMESPACES).text}-----END CERTIFICATE-----"""
+        cert_data = self.template.find('.//md:IDPSSODescriptor//dsig:X509Certificate', NAMESPACES).text
+        cert_data = _enforce_cert_newlines(cert_data)
+        return f"""-----BEGIN CERTIFICATE-----\n{cert_data}\n-----END CERTIFICATE-----"""
 
     def get_sso(self, binding='POST') -> Dict[str, str]:
         sso = self.template.find(
