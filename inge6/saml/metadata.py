@@ -68,7 +68,7 @@ class SPMetadata(SAMLRequest):
         self.entity_id = from_settings(self.settings_dict, 'sp.entityId')
         if self.entity_id is None:
             raise ValueError('Please specify the sp.entityId attribute in settings.json')
-        self.root.attrib['EntityID'] = self.entity_id
+        self.root.attrib['entityID'] = self.entity_id
 
     def _add_keynames(self) -> None:
         cert = load_certificate(FILETYPE_PEM, self.cert_data)

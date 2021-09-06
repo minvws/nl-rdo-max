@@ -1,4 +1,8 @@
+import pytest
+
 from inge6.saml.metadata import IdPMetadata, _strip_cert
+from inge6.saml.constants import NAMESPACES
+from inge6.saml.id_provider import IdProvider
 
 # pylint: disable=unused-argument
 def test_idp_metadata_bindings_tvs(tvs_config):
@@ -32,3 +36,16 @@ def test_cert_strip():
     assert "BEGIN CERTIFICATE" not in _strip_cert(CERT_NO_NEWLINE)
     assert "BEGIN CERTIFICATE" not in _strip_cert(CERT_NEWLINE)
     assert _strip_cert(CERT_NEWLINE) == _strip_cert(CERT_NO_NEWLINE)
+
+
+
+def test_metadata_required_root_attrs(tvs_config, tvs_provider_settings):
+    tvs_provider = IdProvider('tvs', tvs_provider_settings)
+    assert tvs_provider.sp_metadata.root.attrib['entityID'] is not None
+    with pytest.raises(KeyError):
+        tvs_provider.sp_metadata.root.attrib['EntityID'] # pylint: disable=pointless-statement
+
+    assert tvs_provider.sp_metadata.root.attrib['ID'] is not None
+    assert tvs_provider.sp_metadata.root.find('./ds:Signature', NAMESPACES) is not None
+    assert tvs_provider.sp_metadata.root.find('.//md:KeyDescriptor[@use="encryption"]', NAMESPACES) is not None
+    assert tvs_provider.sp_metadata.root.find('.//md:KeyDescriptor[@use="signing"]', NAMESPACES) is not None
