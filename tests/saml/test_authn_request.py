@@ -8,8 +8,12 @@ from lxml import etree
 from starlette.datastructures import Headers
 from fastapi.responses import RedirectResponse, HTMLResponse
 
+from oic.oic.message import AuthorizationRequest as OICAuthRequest
 from inge6.models import AuthorizeRequest, LoginDigiDRequest
 from inge6.provider import Provider, _post_login
+from inge6 import constants
+from inge6.cache import get_redis_client, redis_cache
+from inge6.config import settings
 
 from .test_utils import decode_base64_and_inflate
 
@@ -41,15 +45,15 @@ def test_authorize_endpoint_digid(digid_config, digid_mock_disable, redis_mock):
     </samlp:AuthnRequest>
     """
     provider: Provider = Provider()
-
+    code_challenge = "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw"
     auth_req = AuthorizeRequest(
         client_id="test_client",
         redirect_uri="http://localhost:3000/login",
-        response_type="code",
         nonce="n-0S6_WzA2Mj",
         state="af0ifjsldkj",
         scope="openid",
-        code_challenge="_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier = SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
+        response_type="code",
+        code_challenge=code_challenge, # code_verifier = SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
         code_challenge_method="S256",
     )
 
@@ -79,6 +83,19 @@ def test_authorize_endpoint_digid(digid_config, digid_mock_disable, redis_mock):
     assert parsed_authnreq.find('./samlp:RequestedAuthnContext', NAMESPACES).attrib['Comparison'] == 'minimum' is not None
     assert parsed_authnreq.find('.//saml:AuthnContextClassRef', NAMESPACES) is not None
     assert parsed_authnreq.find('.//saml:AuthnContextClassRef', NAMESPACES).text == 'urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract'
+
+    # Test redis data
+    rand_state = query_params.get("RelayState")[0]
+    redis = redis_cache.hget(rand_state, constants.RedisKeys.AUTH_REQ.value)
+    assert redis
+    assert isinstance(redis.get('auth_req'), OICAuthRequest)
+    assert redis.get("code_challenge", code_challenge)
+    assert redis.get("code_challenge_method", "S256")
+    assert redis.get("id_provider", "digid")
+
+    # Test if time to life / expiry is set correctly
+    # pylint: disable=protected-access
+    assert get_redis_client().ttl(redis_cache._get_namespace(rand_state)) == int(settings.redis.object_ttl)
 
 
 # pylint: disable=redefined-outer-name, unused-argument
@@ -131,21 +148,23 @@ def test_authorize_endpoint_tvs(tvs_config, redis_mock, digid_mock_disable):
         }
 
     provider: Provider = Provider()
+    code_challenge = "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw"
     auth_req = AuthorizeRequest(
         client_id="test_client",
-        redirect_uri="http://localhost:3000/login",
         response_type="code",
+        redirect_uri="http://localhost:3000/login",
         nonce="n-0S6_WzA2Mj",
         state="af0ifjsldkj",
         scope="openid",
-        code_challenge="_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier = SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
+        code_challenge=code_challenge, # code_verifier = SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
         code_challenge_method="S256",
     )
 
     headers = Headers()
-
     resp: HTMLResponse = provider.authorize_endpoint(auth_req, headers, '0.0.0.0')
-    saml_request = get_post_params_from_html(resp.body)['SAMLRequest']
+    parms = get_post_params_from_html(resp.body)
+    saml_request = parms['SAMLRequest']
+    relay_state = parms['relay_state']
     generated_authnreq = base64.b64decode(saml_request).decode()
     generated_authnreq = generated_authnreq.split('<?xml version="1.0" encoding="UTF-8"?>\n')[-1]
     # pylint: disable=c-extension-no-member
@@ -157,13 +176,25 @@ def test_authorize_endpoint_tvs(tvs_config, redis_mock, digid_mock_disable):
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
     assert parsed_authnreq.find('./samlp:NameIDPolicy', NAMESPACES) is None
 
-
     with open('saml/tvs/settings.json', 'r') as saml_settings:
         expected_issuer = json.loads(saml_settings.read())['sp']['entityId']
 
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == expected_issuer
     assert parsed_authnreq.find('./ds:Signature', NAMESPACES) is not None
     assert parsed_authnreq.find('.//ds:SignatureValue', NAMESPACES) is not None
+
+    # Test redis data
+    redis = redis_cache.hget(relay_state, constants.RedisKeys.AUTH_REQ.value)
+    assert redis
+    assert isinstance(redis.get('auth_req'), OICAuthRequest)
+    assert redis.get("code_challenge", code_challenge)
+    assert redis.get("code_challenge_method", "S256")
+    assert redis.get("id_provider", "tvs")
+
+    # Test if time to life / expiry is set correctly
+    # pylint: disable=protected-access
+    assert get_redis_client().ttl(redis_cache._get_namespace(relay_state)) == int(settings.redis.object_ttl)
+
 
 def test_post_login_force_digid_mocking(digid_config, redis_mock):
     """
