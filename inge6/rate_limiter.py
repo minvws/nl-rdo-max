@@ -53,7 +53,7 @@ def rate_limit_test(ip_address: str) -> str:
 
     Required settings:
         - settings.ratelimit.ip_expire_in_s, setting defining the amount of seconds needed to expire a listed IP-address
-        - settings.connect_to_idp_key, the key in redis that stored the name of the primary IDP (as configured in the IDP configurations).
+        - settings.primary_idp_key, the key in redis that stored the name of the primary IDP (as configured in the IDP configurations).
 
     Optional settings:
         - settings.overflow_idp_key, enable an overflow IDP. If the primary idp is limited, attempt this configuration.
@@ -73,22 +73,22 @@ def rate_limit_test(ip_address: str) -> str:
              "Please check the ratelimit.ip_expire_in_s setting, can it be parsed as integer?"
         ) from int_cast_err
 
-    connect_to_idp = get_redis_client().get(settings.connect_to_idp_key)
-    if connect_to_idp is not None:
-        connect_to_idp = connect_to_idp.decode()
+    primary_idp = get_redis_client().get(settings.primary_idp_key)
+    if primary_idp is not None:
+        primary_idp = primary_idp.decode()
     else:
-        raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the connect_to_idp_key setting".format(settings.connect_to_idp_key))
+        raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the primary_idp_key setting".format(settings.primary_idp_key))
 
     overflow_idp = get_redis_client().get(settings.overflow_idp_key)
 
     if overflow_idp and overflow_idp.decode().lower() != 'false':
         overflow_idp = overflow_idp.decode()
         try:
-            _user_limit_test(idp_prefix=connect_to_idp, user_limit_key=settings.ratelimit.user_limit_key)
-            return connect_to_idp
+            _user_limit_test(idp_prefix=primary_idp, user_limit_key=settings.ratelimit.user_limit_key)
+            return primary_idp
         except TooBusyError:
             _user_limit_test(idp_prefix=overflow_idp, user_limit_key=settings.ratelimit.user_limit_key_overflow_idp)
             return overflow_idp
     else:
-        _user_limit_test(idp_prefix=connect_to_idp, user_limit_key=settings.ratelimit.user_limit_key)
-        return connect_to_idp
+        _user_limit_test(idp_prefix=primary_idp, user_limit_key=settings.ratelimit.user_limit_key)
+        return primary_idp

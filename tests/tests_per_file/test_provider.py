@@ -46,7 +46,7 @@ def test_get_bsn_from_artresponse():
 
 
 def test_authorize_ratelimit(redis_mock, fake_redis_user_limit_key, digid_mock_disable):
-    get_redis_client().set('tvs:connect_to_idp', 'digid')
+    get_redis_client().set('tvs:primary_idp', 'digid')
     get_redis_client().set('user_limit_key', 3)
 
     authorize_params = {
@@ -113,8 +113,8 @@ def test_authorize_invalid_request(digid_mock_disable, redis_mock, digid_config)
     assert f"state={authorize_params['state']}" in resp.headers['location']
 
 # pylint: disable=unused-argument
-def test_expected_redis_connect_to_idp(redis_mock):
-    get_redis_client().delete(settings.connect_to_idp_key)
+def test_expected_redis_primary_idp(redis_mock):
+    get_redis_client().delete(settings.primary_idp_key)
 
     authorize_params = {
         'client_id': "some_unknown_client",

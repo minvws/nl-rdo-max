@@ -21,7 +21,7 @@ def test_rate_limiter_user_limit(redis_mock, fake_redis_user_limit_key, disable_
         rate_limit_test('0.0.0.4')
 
 def test_rate_limiter_overflow(redis_mock, fake_redis_user_limit_key, fake_redis_overflow_userlimit_key):
-    get_redis_client().set('tvs:connect_to_idp', 'tvs')
+    get_redis_client().set('tvs:primary_idp', 'tvs')
     get_redis_client().set('tvs:overflow_idp', 'digid')
     get_redis_client().set('user_limit_key', 1)
     get_redis_client().set('overflow_userlimit', 3)

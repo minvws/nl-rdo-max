@@ -28,12 +28,12 @@ def redis_mock(redisdb):
 # pylint: disable=redefined-outer-name, unused-argument
 @pytest.fixture
 def digid_config(redis_mock):
-    get_redis_client().set(settings.connect_to_idp_key, 'digid')
+    get_redis_client().set(settings.primary_idp_key, 'digid')
 
 # pylint: disable=redefined-outer-name, unused-argument
 @pytest.fixture
 def tvs_config(redis_mock):
-    get_redis_client().set(settings.connect_to_idp_key, 'tvs')
+    get_redis_client().set(settings.primary_idp_key, 'tvs')
 
 @pytest.fixture
 def digid_mock_disable():

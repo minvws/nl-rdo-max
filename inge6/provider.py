@@ -312,7 +312,7 @@ class Provider(OIDCProvider, SAMLProvider):
         - settings.ratelimit.sorry_too_busy_page_head, head part HTML sorry-too-busy-page
         - settings.ratelimit.sorry_too_busy_page_tail, tail part HTML sorry-too-busy-page
 
-        - `settings.connect_to_idp_key`: Primary IDP to be used. Make sure this IDP is also configured in the
+        - `settings.primary_idp_key`: Primary IDP to be used. Make sure this IDP is also configured in the
         Identity Providers JSON file, path configured in the `settings.saml.identity_provider_settings`.
         - `settings.oidc.clients_file`: file containing the registered clients and their OIDC configuration.
         - `settings.bsn.sign_key`: private key used for signing the transmitted BSN
@@ -356,21 +356,21 @@ class Provider(OIDCProvider, SAMLProvider):
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
         """
         Handles requests made to the authorize endpoint. It requires an Identity Provider (IDP) to be defined in the redis store under the
-        key defined in the connect_to_idp_key setting. Further, ratelimiting is applied and, if the limit for the primary
+        key defined in the primary_idp_key setting. Further, ratelimiting is applied and, if the limit for the primary
         idp has been reached, the secundary or 'overflow_idp' is used if the ratelimiter allows it.
 
         Finally, the request is parsed and processed checking the query parameters against the client registration. If all is
         valid, a Redirect response or auto-submit POST response is returned depending on the active IDP and its corresponding configuration.
         """
         try:
-            connect_to_idp = get_redis_client().get(settings.connect_to_idp_key)
-            if connect_to_idp:
-                connect_to_idp = connect_to_idp.decode()
+            primary_idp = get_redis_client().get(settings.primary_idp_key)
+            if primary_idp:
+                primary_idp = primary_idp.decode()
             else:
-                raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the connect_to_idp_key setting".format(settings.connect_to_idp_key))
+                raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the primary_idp_key setting".format(settings.primary_idp_key))
 
             if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() != 'true':
-                connect_to_idp = rate_limit_test(ip_address)
+                primary_idp = rate_limit_test(ip_address)
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
             log.warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
             query_params = {
@@ -391,12 +391,12 @@ class Provider(OIDCProvider, SAMLProvider):
             return Response(content='Something went wrong: {}'.format(str(invalid_auth_req)), status_code=400)
 
         randstate = redis_cache.gen_token()
-        _cache_auth_req(randstate, auth_req, authorize_request, connect_to_idp)
+        _cache_auth_req(randstate, auth_req, authorize_request, primary_idp)
 
         # There is some special behavior defined on the auth_req when mocking. If we want identical
-        # behavior through mocking with connect_to_idp=digid as without mocking, we need to
+        # behavior through mocking with primary_idp=digid as without mocking, we need to
         # create a mock redirectresponse.
-        id_provider = self.get_id_provider(connect_to_idp)
+        id_provider = self.get_id_provider(primary_idp)
         return _post_login(
             LoginDigiDRequest(state=randstate, authorize_request=authorize_request),
             id_provider=id_provider

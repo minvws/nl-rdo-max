@@ -4,7 +4,7 @@ issuer = https://10.48.118.250:8006
 environment = development
 
 # TVS or DigiD?
-connect_to_idp_key = tvs:connect_to_idp
+primary_idp_key = tvs:primary_idp
 
 # If IdP#1 is too busy, connect to IdP
 overflow_idp_key = tvs:overflow_idp

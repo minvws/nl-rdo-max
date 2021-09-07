@@ -56,9 +56,9 @@ def validate_startup():
     ssl_missing_files = []
     required_settings = []
 
-    if not hasattr(settings, 'connect_to_idp_key') or settings.connect_to_idp_key == "":
+    if not hasattr(settings, 'primary_idp_key') or settings.primary_idp_key == "":
         required_settings.append(
-            ('settings.connect_to_idp_key', "expected to be defined in the config DEFAULT section")
+            ('settings.primary_idp_key', "expected to be defined in the config DEFAULT section")
         )
 
     if not os.path.isfile(settings.saml.identity_provider_settings):
