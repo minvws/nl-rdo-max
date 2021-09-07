@@ -59,7 +59,9 @@ class SAMLRequest:
         self.cert_path = keypair[0]
         self.key_path = keypair[1]
 
-    def get_xml(self) -> bytes:
+    def get_xml(self, xml_declaration: bool = False) -> bytes:
+        if xml_declaration:
+            return b'<?xml version="1.0" encoding="UTF-8"?>\n' + etree.tostring(self.root)
         return etree.tostring(self.root)
 
     def get_base64_string(self) -> bytes:

@@ -125,7 +125,7 @@ def test_authnfailed_tvs(response_authn_failed_tvs, tvs_provider_settings):
 @freeze_time("2021-08-17T14:05:29Z")
 def test_artifact_response_parse_digid(mocker, digid_provider_settings):
     with open('tests/resources/artifact_response_digid.xml') as resp_ex_f:
-        art_resp_resource = resp_ex_f.read().encode('utf-8')
+        art_resp_resource = resp_ex_f.read()
 
     digid_provider = IdProvider('digid', digid_provider_settings)
     mocker.patch.dict(digid_provider.settings_dict, {
@@ -140,3 +140,36 @@ def test_artifact_response_parse_digid(mocker, digid_provider_settings):
     art_resp.raise_for_status()
     assert art_resp.get_bsn() == 's00000000:900029365'
     assert art_resp.provider.saml_spec_version == 3.5
+
+
+def test_etree_parse_fail():
+    test_xml_parse_decl = """<?xml version="1.0" encoding="UTF-8"?>
+    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+        <soapenv:Body>
+        </soapenv:Body>
+    </soapenv:Envelope>
+    """
+
+    test_xml_parse_no_decl = """
+    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+        <soapenv:Body>
+        </soapenv:Body>
+    </soapenv:Envelope>
+    """
+
+    with pytest.raises(ValueError) as exc_info:
+        etree.fromstring(test_xml_parse_decl)
+
+    assert exc_info.value.args[0] == "Unicode strings with encoding declaration are not supported. Please use bytes input or XML fragments without declaration."
+
+    # Split works with decleration
+    assert etree.fromstring(test_xml_parse_decl.rsplit('<?xml version="1.0" encoding="UTF-8"?>', maxsplit=1)[-1]) is not None
+
+    # Split works without decleration
+    nodecl_tree_splitted = etree.fromstring(test_xml_parse_no_decl.rsplit('<?xml version="1.0" encoding="UTF-8"?>', maxsplit=1)[-1])
+    nodecl_tree = etree.fromstring(test_xml_parse_no_decl)
+    assert nodecl_tree_splitted.tag == nodecl_tree.tag
+    assert nodecl_tree_splitted.text == nodecl_tree.text
+    assert nodecl_tree_splitted.tail == nodecl_tree.tail
+    assert nodecl_tree_splitted.attrib == nodecl_tree.attrib
+    assert len(nodecl_tree_splitted) == len(nodecl_tree)

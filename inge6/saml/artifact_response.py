@@ -77,6 +77,8 @@ class ArtifactResponse:
     @classmethod
     def from_string(cls, xml_response: str, provider: IdProvider,
                     insecure=False, is_test_instance: bool=False):
+        # Remove XML declaration if exists, appears etree doesn't handle it too well.
+        xml_response = xml_response.split('<?xml version="1.0" encoding="UTF-8"?>\n')[-1]
         artifact_response_tree = etree.fromstring(xml_response).getroottree().getroot()
         return cls.parse(artifact_response_tree, provider, insecure, is_test_instance)
 

@@ -295,7 +295,7 @@ def _perform_artifact_resolve_request(artifact: str, id_provider: IdProvider):
     return requests.post(
         url,
         headers=headers,
-        data=resolve_artifact_req.get_xml(),
+        data=resolve_artifact_req.get_xml(xml_declaration=True),
         cert=(id_provider.cert_path, id_provider.key_path)
     )
 
