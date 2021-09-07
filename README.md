@@ -1,6 +1,9 @@
 # System summary
  Inge6 is build as a bridge between the CoronaCheck app and TVS (Toegang Verlenings Service) or DigiD. It allows a end-user to login into digid and provide the app with a token, which can be used to retrieve the BSN of that same end-user. This BSN is used in inge4 to retrieve the related vaccination and test data from the existing provider.
 
+# Dependency:
+Forked repo: https://github.com/maxxiefjv/pyop/tree/feature/allow-redis-tls
+
 # Setup
 
 As Inge6 is a OIDC <-> SAML bridge, one has to have files for both. Each file is described below. Further, one needs to create an `inge6.conf` to define all settings. An example is found in inge6.conf.example with the corresponding explanations

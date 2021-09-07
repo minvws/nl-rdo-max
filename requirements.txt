@@ -63,7 +63,7 @@ pyjwt==2.1.0
     # via -r requirements.in
 pynacl==1.4.0
     # via -r requirements.in
-pyop==3.2.0
+git+git://github.com/IdentityPython/pyop@master
     # via -r requirements.in
 pyopenssl==20.0.1
     # via -r requirements.in

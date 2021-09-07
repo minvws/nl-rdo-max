@@ -6,7 +6,9 @@
 fastapi
 redis
 redis-collections
-pyop==3.2.0 # pip won't use the newest version implicitly
+# pyop==3.2.0 # pip won't use the newest version implicitly
+git+git://github.com/IdentityPython/pyop@master
+
 pycryptodome
 pyOpenSSL
 pyjwt

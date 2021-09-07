@@ -40,6 +40,16 @@ secrets/ssl/certs/apache-selfsigned.crt: secrets/ssl
 secrets/ssl/private/apache-selfsigned.key: secrets/ssl/certs/apache-selfsigned.crt
 	openssl rsa -in secrets/ssl/certs/apache-selfsigned.crt -pubout -out secrets/ssl/private/apache-selfsigned.key
 
+secrets-redis-certs:
+	mkdir -p secrets/redis/certs
+	mkdir -p secrets/redis/private
+
+	openssl genrsa -out secrets/redis/private/cacert.key 4096
+	openssl req -x509 -new -nodes -key secrets/redis/private/cacert.key -sha256 -days 1024 -out secrets/redis/certs/cacert.crt -subj "/CN=US/CN=inge6.redisserver.ca"
+	openssl genrsa -out secrets/redis/private/redis_key.key 2048
+	openssl req -new -sha256 -key secrets/redis/private/redis_key.key -subj "/C=US/CN=inge6.redisserver" -out secrets/redis/certs/redis_key.csr
+	openssl x509 -req -in secrets/redis/certs/redis_key.csr -CA secrets/redis/certs/cacert.crt -CAkey secrets/redis/private/cacert.key -CAcreateserial -out secrets/redis/certs/cert.crt -days 500 -sha256
+
 saml/tvs/certs/sp.key:
 	openssl genrsa -out saml/tvs/certs/sp.key 2048
 saml/tvs/certs/sp.crt: saml/tvs/certs/sp.key
@@ -57,7 +67,7 @@ saml-files: saml/tvs/certs/sp.crt saml/digid/certs/sp.crt saml/identity_provider
 
 secret-files: secrets/public.pem secrets/ssl/private/apache-selfsigned.key
 
-setup: inge6.conf clients.json saml secret-files saml-files
+setup: inge6.conf clients.json saml secret-files saml-files secrets-redis-certs
 
 fresh: clean_venv venv
 
