@@ -136,6 +136,7 @@ def test_artifact_response_parse_digid(mocker, digid_provider_settings):
             }
         }
     })
-    art_resp = ArtifactResponse.from_string(art_resp_resource, digid_provider, insecure=True, saml_specification_version=3.5)
+    art_resp = ArtifactResponse.from_string(art_resp_resource, digid_provider, insecure=True)
     art_resp.raise_for_status()
     assert art_resp.get_bsn() == 's00000000:900029365'
+    assert art_resp.provider.saml_spec_version == 3.5

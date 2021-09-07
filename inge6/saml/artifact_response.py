@@ -47,12 +47,10 @@ class ArtifactResponse:
     def __init__(self,
                  artifact_tree,
                  provider: IdProvider,
-                 saml_specification_version: float = 4.5,
                  is_verified: bool = True,
                  is_test_instance: bool = False
         ) -> None:
 
-        self.saml_specification_version = saml_specification_version
         self.provider = provider
         self.is_verifeid = is_verified
         self.is_test_instance = is_test_instance
@@ -77,20 +75,20 @@ class ArtifactResponse:
         self.validate()
 
     @classmethod
-    def from_string(cls, xml_response: str, provider: IdProvider, saml_specification_version: float = 4.5,
+    def from_string(cls, xml_response: str, provider: IdProvider,
                     insecure=False, is_test_instance: bool=False):
         artifact_response_tree = etree.fromstring(xml_response).getroottree().getroot()
-        return cls.parse(artifact_response_tree, provider, saml_specification_version, insecure, is_test_instance)
+        return cls.parse(artifact_response_tree, provider, insecure, is_test_instance)
 
     @classmethod
-    def parse(cls, artifact_response_tree, provider: IdProvider, saml_specification_version: float = 4.5,
+    def parse(cls, artifact_response_tree, provider: IdProvider,
               insecure=False, is_test_instance: bool=False):
         unverified_tree = artifact_response_tree.find('.//samlp:ArtifactResponse', NAMESPACES)
         if insecure:
-            return cls(unverified_tree, provider, saml_specification_version, False, is_test_instance)
+            return cls(unverified_tree, provider, False, is_test_instance)
 
         verified_tree = verify_signatures(artifact_response_tree, provider.idp_metadata.get_cert_pem_data())
-        return cls(verified_tree, provider, saml_specification_version, True, is_test_instance)
+        return cls(verified_tree, provider, True, is_test_instance)
 
     @property
     def root(self):
@@ -187,7 +185,7 @@ class ArtifactResponse:
         if response_conditions_aud.text != expected_entity_id:
             errors.append(ValidationError('Invalid audience in response Conditions. Expected {}, but was {}'.format(expected_entity_id, response_conditions_aud.text)))
 
-        if self.saml_specification_version >= 4.4:
+        if self.provider.saml_spec_version >= 4.4:
             response_advice_encrypted_key_aud = self.assertion_attribute_enc_key
             if response_advice_encrypted_key_aud.attrib['Recipient'] != expected_entity_id:
                 errors.append(ValidationError('Invalid audience in encrypted key. Expected {}, but was {}'.format(expected_entity_id, response_advice_encrypted_key_aud.attrib['Recipient'])))
@@ -221,7 +219,7 @@ class ArtifactResponse:
 
         expected_response_dest = from_settings(self.provider.settings_dict, 'sp.assertionConsumerService.url')
         # TODO: remove, or related to saml specification 3.5 vs 4.5? # pylint: disable=fixme
-        if self.saml_specification_version >= 4.4:
+        if self.provider.saml_spec_version >= 4.4:
             if expected_response_dest != self.response.attrib['Destination']:
                 errors.append(ValidationError('Response destination is not what was expected. Expected: {}, was {}'.format(expected_response_dest, self.response.attrib['Destination'])))
 
@@ -317,7 +315,7 @@ class ArtifactResponse:
             errors += self.validate_in_response_to()
             errors += self.validate_authn_statement()
 
-            if self.saml_specification_version >= 4.4:
+            if self.provider.saml_spec_version >= 4.4:
                 errors += self.validate_attribute_statements()
 
         if len(errors) != 0:
@@ -347,7 +345,7 @@ class ArtifactResponse:
         return self.assertion_subject.find('./saml:NameID', NAMESPACES)
 
     def get_bsn(self) -> Text:
-        if self.saml_specification_version >= 4.4:
+        if self.provider.saml_spec_version >= 4.4:
             bsn_element = self._decrypt_bsn()
         else:
             bsn_element = self._plaintext_bsn()
