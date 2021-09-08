@@ -24,7 +24,7 @@ def add_reference(root, id_hash: str) -> None:
 def add_certs(root, cert_path: str) -> None:
     cert_node = root.find('.//ds:X509Certificate', {'ds': 'http://www.w3.org/2000/09/xmldsig#'})
 
-    with open(cert_path, 'r') as cert_file:
+    with open(cert_path, 'r', encoding='utf-8') as cert_file:
         cert_node.text = base64.b64encode(cert_file.read().encode())
 
 def add_issuer(root, issuer_id):

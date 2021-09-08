@@ -58,7 +58,7 @@ class Provider:
         }
 
         userinfo_db = Userinfo({'test_client': {'test': 'test_client'}})
-        with open(settings.oidc.clients_file) as clients_file:
+        with open(settings.oidc.clients_file, 'r', encoding='utf-8') as clients_file:
             clients = json.load(clients_file)
 
         signing_key = RSAKey(key=rsa_load(settings.oidc.rsa_private_key), alg='RS256', )
@@ -92,7 +92,7 @@ class Provider:
         self.provider = PyopProvider(signing_key, configuration_information,
                             authz_state, clients, userinfo_db, id_token_lifetime= int(settings.oidc.id_token_lifetime))
 
-        with open(settings.oidc.rsa_public_key) as rsa_pub_key:
+        with open(settings.oidc.rsa_public_key, 'r', encoding='utf-8') as rsa_pub_key:
             self.key = rsa_pub_key.read()
 
     def __getattr__(self, name: str) -> Any:

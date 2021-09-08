@@ -48,7 +48,7 @@ class SPMetadata(SAMLRequest):
         self.settings_dict = settings_dict
         self.issuer_id = self.settings_dict['sp']['entityId']
 
-        with open(self.cert_path, 'r') as cert_file:
+        with open(self.cert_path, 'r', encoding='utf-8') as cert_file:
             self.cert_data = cert_file.read()
 
         self.keyname: Optional[str] = None

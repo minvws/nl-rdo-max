@@ -21,7 +21,7 @@ def _fill_template(template_txt: str, context: dict):
 
 
 def _fill_template_from_file(filename: str, context: dict) -> Text:
-    with open(filename, 'r') as template_file:
+    with open(filename, 'r', encoding='utf-8') as template_file:
         template_txt = template_file.read()
 
     return _fill_template(template_txt, context)
