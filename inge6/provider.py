@@ -194,13 +194,13 @@ def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     error_desc = "The servers are too busy right now, please try again later."
     return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
 
-def _prepare_req(auth_req: BaseModel):
+def _prepare_req(auth_req: BaseModel, idp_name: str):
     """
     Prepare a authorization request to use the OneLogin SAML library.
     """
     return {
         'https': 'on',
-        'http_host': settings.issuer,
+        'http_host': f'https://{idp_name}.{settings.issuer}',
         'script_name': settings.authorize_endpoint,
         'get_data': auth_req.dict(),
     }
@@ -269,7 +269,7 @@ def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> 
         if login_digid_req.authorize_request is None:
             raise ValueError("AuthnRequest is None, which should not be possible")
 
-        req = _prepare_req(login_digid_req.authorize_request)
+        req = _prepare_req(login_digid_req.authorize_request, id_provider.name)
         auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
         return RedirectResponse(auth.login(return_to=login_digid_req.state, force_authn=False, set_nameid_policy=False))
 

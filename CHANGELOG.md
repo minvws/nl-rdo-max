@@ -6,8 +6,12 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+### Added
+- added expected redis key value pairs explanation in the README
+
 ### Changed
 - config setting `connect_to_idp_key` to `primary_idp_key`.
+- config setting definition of `issuer`. This is just the domain, without https or http and subdomain
 
 ### Fixed
 - update entity and urls for digid metadata

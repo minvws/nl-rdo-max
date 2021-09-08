@@ -24,7 +24,7 @@ class IdProvider:
             self.priv_key = key_file.read()
 
         self._idp_metadata = IdPMetadata(self.idp_metadata_path)
-        self._sp_metadata = SPMetadata(self.settings_dict, self.keypair_paths)
+        self._sp_metadata = SPMetadata(self.settings_dict, self.keypair_paths, name)
 
     @cached_property
     def authn_binding(self):

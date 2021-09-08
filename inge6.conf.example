@@ -1,6 +1,8 @@
 [DEFAULT]
 app_name = "CoronaCheck TVS - Digid login"
-issuer = https://10.48.118.250:8006
+
+# No longer prefix with https, occurs in code (always TLS)
+issuer = 10.48.118.250:8006
 environment = development
 
 # TVS or DigiD?

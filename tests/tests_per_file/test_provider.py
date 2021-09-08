@@ -1,4 +1,5 @@
 import json
+import re
 
 import uuid
 import urllib.parse as urlparse
@@ -195,19 +196,24 @@ def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock
             "RelayState": relay_state,
             "SAMLart": artifact
         }
-    get_provider().assertion_consumer_service(DummyRequest())
+    acs_resp = get_provider().assertion_consumer_service(DummyRequest())
+
+    redirect_url = re.search(r"<meta http-equiv=\"refresh\" content=\"0;url=(.*?)\" />", acs_resp.body.decode())
+    parsed_url = urlparse.urlparse(redirect_url[1])
+    query_params = urlparse.parse_qs(parsed_url.query)
+    expected_code = query_params['code'][0]
 
     # Grabbing the generated code from redis, this could be cleaner / better
     items = get_redis_client().scan(0)[1]
     code = None
     for item in items:
         item = item.decode("utf-8")
-        temp_code = str(item).rsplit(':', maxsplit=1)[-1]
-        if 'tvs-connect:' in item and len(temp_code) == 32:
+        temp_code = item[len(settings.redis.default_cache_namespace):]
+        if settings.redis.default_cache_namespace in item and len(temp_code) == 32:
             code = temp_code
             break
 
-    assert code
+    assert code == expected_code
     artifact_redis = redis_cache.hget(code, constants.RedisKeys.ARTI.value)
     assert artifact_redis
     assert artifact_redis.get("artifact", artifact)

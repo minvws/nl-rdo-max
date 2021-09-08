@@ -25,6 +25,8 @@ In the configured `identity_provider_settings` file, please make sure that these
 - `settings_path`, a file containing the SAML settings for creating our metadata and requests, and parsing the IdP metadata. An example is provided in saml/settings-dist.json, this file also includes an explanation of the options.
 - `idp_metadata_path`, the location of the metadata of the IdP
 
+**note: each idp configured idp is expected to have a subdomain to the configured issuer (with TLS support).**
+
 Template files (these are included in the repository):
 - `sp_template`, saml/templates/xml/sp_metadata.xml
 - `authn_request_template`, saml/templates/xml/authn_request.xml
@@ -33,6 +35,14 @@ Template files (these are included in the repository):
 
 ## Redis
 Redis is the store of this service. It is used to temporarily store data acquired during the BSN retrieval process. A redis-server should be setup, and the configuration should be copied in the settings file under the `redis` header.
+
+Further redis expects the keys configured in the config to have a valid value. The keys expected to be set are defined in the config under the following names:
+- `primary_idp_key`
+- `user_limit_key` (if there is an user limit to be handled by the ratelimiter)
+
+To enable ratelimit overflow, the extra keys are expected to be set. The names of these keys are defined in the config under the following config names:
+- `overflow_idp_key`
+- `user_limit_key_overflow_idp` (if there is an user limit on the overflow idp to be handled by the ratelimiter)
 
 ## SSL (local development)
 An SSL connection is usually required, also in an development environment. To set this up, please define where to find the certificates and keys in the settings file under the `ssl` header.

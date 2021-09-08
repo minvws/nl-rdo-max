@@ -39,11 +39,12 @@ class SPMetadata(SAMLRequest):
     """
     TEMPLATE_PATH = settings.saml.sp_template
 
-    DEFAULT_ACS_URL = settings.issuer + '/acs'
-    DEFAULT_ACS_BINDING = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
 
-    def __init__(self, settings_dict, keypair_paths) -> None:
+    def __init__(self, settings_dict, keypair_paths, idp_name) -> None:
         super().__init__(etree.parse(self.TEMPLATE_PATH).getroot(), keypair_paths)
+        self.default_acs_url = f'https://{idp_name}.{settings.issuer}/acs'
+        self.default_acs_binding = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+
         self.settings_dict = settings_dict
         self.issuer_id = self.settings_dict['sp']['entityId']
 
@@ -82,8 +83,8 @@ class SPMetadata(SAMLRequest):
     def _add_service_details(self) -> None:
         acs_elem = self.root.find('.//md:AssertionConsumerService', NAMESPACES)
 
-        acs_binding = from_settings(self.settings_dict, 'sp.assertionConsumerService.binding', self.DEFAULT_ACS_URL)
-        acs_loc = from_settings(self.settings_dict, 'sp.assertionConsumerService.url', self.DEFAULT_ACS_BINDING)
+        acs_binding = from_settings(self.settings_dict, 'sp.assertionConsumerService.binding', self.default_acs_url)
+        acs_loc = from_settings(self.settings_dict, 'sp.assertionConsumerService.url', self.default_acs_binding)
 
         acs_elem.attrib['Location'] = acs_loc
         acs_elem.attrib['Binding'] = acs_binding
