@@ -102,7 +102,7 @@ def hset(namespace: str, key: str, value: Any) -> None:
         # It allows the redis debugger to search for specific key_types, and
         # redis db inspection shows better keys
         namespace = f'{namespace}:{key}'
-    
+
     get_redis_client().hset(namespace, key, serialized_value)
     get_redis_client().expire(name=namespace, time=EXPIRES_IN_S)
 

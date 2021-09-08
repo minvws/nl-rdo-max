@@ -1,5 +1,4 @@
 from typing import Optional
-import logging
 
 from redis import StrictRedis
 from ..config import settings
