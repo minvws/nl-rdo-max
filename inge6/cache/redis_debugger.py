@@ -27,7 +27,6 @@ class RedisGetDebugger(threading.Thread):
 
     def __init__(self, redis_client, *args, **kwargs) -> None:
         threading.Thread.__init__(self, *args, **kwargs)
-
         self.psubscribe = '__keyevent@0__:expired'
         self.redis_client = redis_client
 
@@ -66,7 +65,6 @@ class RedisGetDebugger(threading.Thread):
             isretrieved = self.redis_client.get(expected_retrieved_key) is not None
             if not isretrieved:
                 logging.getLogger().debug("Key %s has expired, but was never retrieved", set_key)
-
 
     def run(self):
         logging.getLogger().debug("Start listening for redis events: %s.", self.psubscribe)
