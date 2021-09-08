@@ -17,10 +17,10 @@ class IdProvider:
         self.settings_path = idp_setting['settings_path']
         self.idp_metadata_path = idp_setting['idp_metadata_path']
 
-        with open(self.settings_path, 'r') as settings_file:
+        with open(self.settings_path, 'r', encoding='utf-8') as settings_file:
             self.settings_dict = json.loads(settings_file.read())
 
-        with open(self.key_path, 'r') as key_file:
+        with open(self.key_path, 'r', encoding='utf-8') as key_file:
             self.priv_key = key_file.read()
 
         self._idp_metadata = IdPMetadata(self.idp_metadata_path)

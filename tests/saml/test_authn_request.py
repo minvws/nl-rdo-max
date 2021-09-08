@@ -76,7 +76,7 @@ def test_authorize_endpoint_digid(digid_config, digid_mock_disable, redis_mock):
     assert parsed_authnreq.attrib['ProviderName'] is not None
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
 
-    with open('saml/digid/settings.json', 'r') as saml_settings:
+    with open('saml/digid/settings.json', 'r', encoding='utf-8') as saml_settings:
         expected_issuer = json.loads(saml_settings.read())['sp']['entityId']
 
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == expected_issuer
@@ -176,7 +176,7 @@ def test_authorize_endpoint_tvs(tvs_config, redis_mock, digid_mock_disable):
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
     assert parsed_authnreq.find('./samlp:NameIDPolicy', NAMESPACES) is None
 
-    with open('saml/tvs/settings.json', 'r') as saml_settings:
+    with open('saml/tvs/settings.json', 'r', encoding='utf-8') as saml_settings:
         expected_issuer = json.loads(saml_settings.read())['sp']['entityId']
 
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == expected_issuer
@@ -245,7 +245,7 @@ def test_post_login_force_digid_mocking(digid_config, redis_mock):
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES) is not None
     assert parsed_authnreq.find('./samlp:NameIDPolicy', NAMESPACES) is None
 
-    with open('saml/digid/settings.json', 'r') as saml_settings:
+    with open('saml/digid/settings.json', 'r', encoding='utf-8') as saml_settings:
         expected_issuer = json.loads(saml_settings.read())['sp']['entityId']
 
     assert parsed_authnreq.find('./saml:Issuer', NAMESPACES).text == expected_issuer

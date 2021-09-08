@@ -78,19 +78,19 @@ def update_time_values(xml_str):
 
 @pytest.fixture
 def response_custom_bsn_tvs():
-    with open('tests/resources/artifact_response_custom_bsn.xml') as resp_ex_f:
+    with open('tests/resources/artifact_response_custom_bsn.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
     return art_resp_resource
 
 @pytest.fixture
 def response_unedited_tvs():
-    with open('tests/resources/artifact_response.xml') as resp_ex_f:
+    with open('tests/resources/artifact_response.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
     return art_resp_resource
 
 @pytest.fixture
 def response_authn_failed_tvs():
-    with open('tests/resources/artifact_resolve_response_authnfailed.xml') as resp_ex_f:
+    with open('tests/resources/artifact_resolve_response_authnfailed.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
     return art_resp_resource
 
@@ -124,7 +124,7 @@ def test_authnfailed_tvs(response_authn_failed_tvs, tvs_provider_settings):
 
 @freeze_time("2021-08-17T14:05:29Z")
 def test_artifact_response_parse_digid(mocker, digid_provider_settings):
-    with open('tests/resources/artifact_response_digid.xml') as resp_ex_f:
+    with open('tests/resources/artifact_response_digid.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
 
     digid_provider = IdProvider('digid', digid_provider_settings)

@@ -19,7 +19,7 @@ app.include_router(router)
 
 def _validate_saml_identity_provider_settings():
     missing_files = []
-    with open(settings.saml.identity_provider_settings) as providers_settings:
+    with open(settings.saml.identity_provider_settings, encoding='utf-8') as providers_settings:
         identity_providers = json.loads(providers_settings.read())
 
     for provider, p_settings in identity_providers.items():
