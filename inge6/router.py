@@ -33,9 +33,9 @@ async def token_endpoint(request: Request):
     headers = request.headers
     return get_provider().token_endpoint(body, headers)
 
-@router.get('/metadata')
-def metadata():
-    return get_provider().metadata()
+@router.get('/metadata/{id_provider}')
+def metadata(id_provider: str):
+    return get_provider().metadata(id_provider)
 
 @router.get('/acs')
 def assertion_consumer_service(request: Request):
@@ -76,14 +76,17 @@ def health() -> JSONResponse:
     return JSONResponse(content=jsonable_encoder(response), status_code=200 if healthy else 500)
 
 ## MOCK ENDPOINTS:
-if settings.mock_digid.lower() == 'true':
+if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == 'true':
     # pylint: disable=wrong-import-position, c-extension-no-member, wrong-import-order
     from lxml import etree
     from urllib.parse import parse_qs # pylint: disable=wrong-import-order
+    from .provider import _post_login
+    from io import StringIO
 
     @router.get('/login-digid')
-    def login_digid(login_digid_req: LoginDigiDRequest = Depends()):
-        return HTMLResponse(content=get_provider()._login(login_digid_req)) # pylint: disable=protected-access
+    def login_digid(login_digid_req: LoginDigiDRequest = Depends(LoginDigiDRequest.from_request)):
+        id_provider = get_provider().get_id_provider(login_digid_req.idp_name)
+        return _post_login(login_digid_req, id_provider) # pylint: disable=protected-access
 
     @router.post('/digid-mock')
     async def digid_mock(digid_mock_req: DigiDMockRequest = Depends(DigiDMockRequest.from_request)):  # pylint: disable=invalid-name
@@ -104,8 +107,9 @@ if settings.mock_digid.lower() == 'true':
                 raise HTTPException(status_code=400, detail='200 expected, got {} with redirect uri: {}'.format(status_code, redirect))
             raise HTTPException(status_code=400, detail='detail authorize response status code was {}, but 200 was expected'.format(status_code))
 
-        response_tree = etree.fromstring(response.__dict__['body'].decode()).getroottree().getroot()
-        relay_state = response_tree.find('.//input[@name="RelayState"]').attrib['value']
+        parser = etree.HTMLParser()
+        tree   = etree.parse(StringIO(response.body.decode()), parser)
+        relay_state = tree.getroot().find('.//input[@name="RelayState"]').attrib['value']
 
         # pylint: disable=too-few-public-methods, too-many-ancestors, super-init-not-called
         class AcsReq(Request):

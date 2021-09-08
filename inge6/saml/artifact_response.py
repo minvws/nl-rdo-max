@@ -1,3 +1,9 @@
+"""
+Handles parsing of Artifact responses, validating the signature among other validity checks.
+
+Required settings:
+    - settings.saml.response_expires_in, number of seconds a generated artifact response is considered valid
+"""
 # pylint: disable=c-extension-no-member
 from typing import Text, List
 
@@ -20,11 +26,10 @@ from ..config import settings
 from .utils import from_settings, has_valid_signatures, remove_padding
 from .constants import NAMESPACES
 from .exceptions import UserNotAuthenticated, ValidationError
-from .provider import Provider as SAMLProvider
+from .id_provider import IdProvider
 
 RESPONSE_EXPIRES_IN = int(settings.saml.response_expires_in)
 
-PRIV_KEY_PATH = settings.saml.key_path
 CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
 
 log: Logger = logging.getLogger(__package__)
@@ -39,7 +44,13 @@ def verify_signatures(tree, cert_data):
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
 class ArtifactResponse:
 
-    def __init__(self, artifact_tree, provider: SAMLProvider, is_verified: bool = True, is_test_instance: bool = False) -> None:
+    def __init__(self,
+                 artifact_tree,
+                 provider: IdProvider,
+                 is_verified: bool = True,
+                 is_test_instance: bool = False
+        ) -> None:
+
         self.provider = provider
         self.is_verifeid = is_verified
         self.is_test_instance = is_test_instance
@@ -64,12 +75,16 @@ class ArtifactResponse:
         self.validate()
 
     @classmethod
-    def from_string(cls, xml_response: str, provider: SAMLProvider, insecure=False, is_test_instance: bool=False):
+    def from_string(cls, xml_response: str, provider: IdProvider,
+                    insecure=False, is_test_instance: bool=False):
+        # Remove XML declaration if exists, appears etree doesn't handle it too well.
+        xml_response = xml_response.split('<?xml version="1.0" encoding="UTF-8"?>\n')[-1]
         artifact_response_tree = etree.fromstring(xml_response).getroottree().getroot()
         return cls.parse(artifact_response_tree, provider, insecure, is_test_instance)
 
     @classmethod
-    def parse(cls, artifact_response_tree, provider: SAMLProvider, insecure=False, is_test_instance: bool=False):
+    def parse(cls, artifact_response_tree, provider: IdProvider,
+              insecure=False, is_test_instance: bool=False):
         unverified_tree = artifact_response_tree.find('.//samlp:ArtifactResponse', NAMESPACES)
         if insecure:
             return cls(unverified_tree, provider, False, is_test_instance)
@@ -141,8 +156,12 @@ class ArtifactResponse:
         return self.advice_assertion.find('./saml:Issuer', NAMESPACES)
 
     @cached_property
+    def assertion_subject(self):
+        return self.response_assertion.find('./saml:Subject', NAMESPACES)
+
+    @cached_property
     def assertion_subject_confdata(self):
-        return self.response_assertion.find('./saml:Subject//saml:SubjectConfirmationData', NAMESPACES)
+        return self.assertion_subject.find('.//saml:SubjectConfirmationData', NAMESPACES)
 
     @cached_property
     def assertion_subject_audrestriction(self):
@@ -168,12 +187,13 @@ class ArtifactResponse:
         if response_conditions_aud.text != expected_entity_id:
             errors.append(ValidationError('Invalid audience in response Conditions. Expected {}, but was {}'.format(expected_entity_id, response_conditions_aud.text)))
 
-        response_advice_encrypted_key_aud = self.assertion_attribute_enc_key
-        if response_advice_encrypted_key_aud.attrib['Recipient'] != expected_entity_id:
-            errors.append(ValidationError('Invalid audience in encrypted key. Expected {}, but was {}'.format(expected_entity_id, response_advice_encrypted_key_aud.attrib['Recipient'])))
+        if self.provider.saml_spec_version >= 4.4:
+            response_advice_encrypted_key_aud = self.assertion_attribute_enc_key
+            if response_advice_encrypted_key_aud.attrib['Recipient'] != expected_entity_id:
+                errors.append(ValidationError('Invalid audience in encrypted key. Expected {}, but was {}'.format(expected_entity_id, response_advice_encrypted_key_aud.attrib['Recipient'])))
 
-        if self.assertion_subject_audrestriction.text != expected_entity_id:
-            errors.append(ValidationError('Invalid issuer in artifact assertion_subject_audrestriction. Expected {}, but was {}'.format(expected_entity_id, self.assertion_subject_audrestriction.text)))
+            if self.assertion_subject_audrestriction.text != expected_entity_id:
+                errors.append(ValidationError('Invalid issuer in artifact assertion_subject_audrestriction. Expected {}, but was {}'.format(expected_entity_id, self.assertion_subject_audrestriction.text)))
 
         return errors
 
@@ -200,8 +220,10 @@ class ArtifactResponse:
         errors = []
 
         expected_response_dest = from_settings(self.provider.settings_dict, 'sp.assertionConsumerService.url')
-        if expected_response_dest != self.response.attrib['Destination']:
-            errors.append(ValidationError('Response destination is not what was expected. Expected: {}, was {}'.format(expected_response_dest, self.response.attrib['Destination'])))
+        # TODO: remove, or related to saml specification 3.5 vs 4.5? # pylint: disable=fixme
+        if self.provider.saml_spec_version >= 4.4:
+            if expected_response_dest != self.response.attrib['Destination']:
+                errors.append(ValidationError('Response destination is not what was expected. Expected: {}, was {}'.format(expected_response_dest, self.response.attrib['Destination'])))
 
         if self.status == 'saml_success':
             if expected_response_dest != self.assertion_subject_confdata.attrib['Recipient']:
@@ -231,7 +253,7 @@ class ArtifactResponse:
         for elem in issue_instant_els:
             not_on_or_after = dateutil.parser.parse(elem.attrib['NotOnOrAfter'], ignoretz=True)
             if current_instant >= not_on_or_after:
-                errors.append(ValidationError("Message should not be processed before {}, but is processed at time: {}".format(not_on_or_after, current_instant)))
+                errors.append(ValidationError("Message should not be processed on or after {}, but is processed at time: {}".format(not_on_or_after, current_instant)))
 
         return errors
 
@@ -293,8 +315,10 @@ class ArtifactResponse:
 
         if self.status == 'saml_success':
             errors += self.validate_in_response_to()
-            errors += self.validate_attribute_statements()
             errors += self.validate_authn_statement()
+
+            if self.provider.saml_spec_version >= 4.4:
+                errors += self.validate_attribute_statements()
 
         if len(errors) != 0:
             log.error(errors)
@@ -313,8 +337,18 @@ class ArtifactResponse:
         plaintext = cipher.decrypt(enc_data)
         return remove_padding(plaintext)
 
-    def get_bsn(self) -> Text:
+    def _decrypt_bsn(self):
         aes_key = self._decrypt_enc_key()
         bsn_element_raw = self._decrypt_enc_data(aes_key)
         bsn_element = etree.fromstring(bsn_element_raw.decode())
+        return bsn_element
+
+    def _plaintext_bsn(self):
+        return self.assertion_subject.find('./saml:NameID', NAMESPACES)
+
+    def get_bsn(self) -> Text:
+        if self.provider.saml_spec_version >= 4.4:
+            bsn_element = self._decrypt_bsn()
+        else:
+            bsn_element = self._plaintext_bsn()
         return bsn_element.text

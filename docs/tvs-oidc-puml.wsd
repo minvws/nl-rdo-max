@@ -6,16 +6,26 @@ skinparam participantBackgroundColor #EEEBDC
 skinparam noteBackgroundColor #EEE
 
 participant RD_BC
-participant IDPx
+participant IdPx
 participant App
 
 App->Inge6:/authorize?redirect_uri&code_challenge&code_method=h
 Inge6->Redis:store(randstate, {code, code_challenge,code_method,state,nonce})
-Inge6-->App:HTMLResponse(form: AuthnRequest + RelayState=randstate, onload(submit))
 
-App->IDPx:post(AuthnRequest, Relaystate)
-note over App, IDPx:user does login
-IDPx-->App:redirect(/acs?SAMLArt=artifact)
+alt ITVS configuration
+
+    Inge6-->App:HTMLResponse(form: AuthnRequest + RelayState=randstate, onload(submit))
+    App->IdPx:post(AuthnRequest, Relaystate)
+
+else DigiD
+
+    Inge6-->App:RedirectResponse(/digid-authn-endpoint?SAMLRequest=XXX&RelayStat=XXX&Signature=XXX&SigAlg=XXX)
+    App->IdPx:redirect(AuthnRequest, Relaystate)
+
+end
+
+note over App, IdPx:user does login
+IdPx-->App:redirect(/acs?SAMLArt=artifact)
 App->Inge6:/acs?SAMLArt=artifact&RelayState=randstate
 
 Inge6<->Redis:get(randstate)

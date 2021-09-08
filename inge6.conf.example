@@ -1,7 +1,15 @@
 [DEFAULT]
 app_name = "CoronaCheck TVS - Digid login"
-issuer = https://10.48.118.250:8006
+
+# No longer prefix with https, occurs in code (always TLS)
+issuer = 10.48.118.250:8006
 environment = development
+
+# TVS or DigiD?
+primary_idp_key = tvs:primary_idp
+
+# If IdP#1 is too busy, connect to IdP
+overflow_idp_key = tvs:overflow_idp
 
 # OIDC endpoints
 authorize_endpoint = /authorize
@@ -32,7 +40,13 @@ loglevel = debug
 # an ip-address should be remembered in the redis-db
 sorry_too_busy_page_head = static/templates/sorry-coronacheck_head.html
 sorry_too_busy_page_tail = static/templates/sorry-coronacheck_tail.html
+
+# IDP#1: the key in redis containing the user limit for IDP#1
 user_limit_key = tvs_connect_user_limit
+# IDP#2: the key in redis containing the user limit for IDP#2
+user_limit_key_overflow_idp = digid_connect_user_limit
+
+# Amount of seconds needed per ip address
 ip_expire_in_s = 10
 
 [bsn]
@@ -65,16 +79,10 @@ id_token_lifetime = 600
 [saml]
 # saml configuration relating saml request signing, verification and communication 
 # settings.
-base_dir = saml
-cert_path = saml/certs/sp.crt
-key_path = saml/certs/sp.key
-settings_path = saml/settings.json
+identity_provider_settings = saml/identity_providers.json
 
 # How long do we consider the response to be valid?
 response_expires_in = 600
-
-# IdP metadata file location
-idp_path = saml/metadata/idp_metadata.xml
 
 # template files:
 sp_template = saml/templates/xml/sp_metadata.xml
@@ -88,7 +96,7 @@ host = localhost
 port = 6379
 
 # SSL settings, to create a TLS connection to the redis store.
-ssl = True
+ssl = False
 key = secrets/redis/private/redis_key.key
 cert = secrets/redis/certs/cert.crt
 cafile = secrets/redis/certs/cacert.crt

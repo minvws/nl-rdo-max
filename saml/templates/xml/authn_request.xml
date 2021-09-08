@@ -1,4 +1,4 @@
-<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Version="2.0" ForceAuthn="true" AssertionConsumerServiceIndex="1" AttributeConsumingServiceIndex="1">
+<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Version="2.0" ForceAuthn="false" AssertionConsumerServiceIndex="1" AttributeConsumingServiceIndex="1">
     <saml:Issuer></saml:Issuer>
     <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
         <ds:SignedInfo>
@@ -21,4 +21,7 @@
             </ds:X509Data>
         </ds:KeyInfo>
     </ds:Signature>
+    <samlp:RequestedAuthnContext Comparison="minimum">
+        <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract</saml:AuthnContextClassRef>
+    </samlp:RequestedAuthnContext>
 </samlp:AuthnRequest>

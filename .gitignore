@@ -8,6 +8,7 @@ __pycache__
 *.key
 *.crt
 .coverage*
+cov.xml
 *.egg-info
 *.pytest_cache*
 dump.rdb
@@ -17,3 +18,5 @@ node_modules
 out/
 http_cache.sqlite
 clients.json
+saml/identity_providers.json
+tmp

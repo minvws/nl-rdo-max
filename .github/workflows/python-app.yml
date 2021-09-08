@@ -42,8 +42,9 @@ jobs:
           python-version: 3.8
       - name: Install dependencies
         run: |
+          sudo add-apt-repository ppa:redislabs/redis
           sudo apt-get update
-          sudo apt-get install libxmlsec1-dev pkg-config
+          sudo apt-get install libxmlsec1-dev pkg-config redis-server
           python -m pip install --upgrade pip setuptools wheel
           make venv
       - name: Setup settings and secrets

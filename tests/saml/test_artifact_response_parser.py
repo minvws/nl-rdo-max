@@ -3,9 +3,11 @@ from datetime import datetime, timedelta
 
 import pytest
 
+from freezegun import freeze_time
 from lxml import etree
 
 from inge6.saml import ArtifactResponse
+from inge6.saml.id_provider import IdProvider
 from inge6.saml.provider import Provider as SAMLProvider
 from inge6.saml.exceptions import UserNotAuthenticated
 from inge6.saml.constants import NAMESPACES
@@ -75,40 +77,99 @@ def update_time_values(xml_str):
 
 
 @pytest.fixture
-def response_custom_bsn():
-    with open('tests/resources/artifact_response_custom_bsn.xml') as resp_ex_f:
-        art_resp_resource = resp_ex_f.read()
-    return update_time_values(art_resp_resource)
-
-@pytest.fixture
-def response_unedited():
-    with open('tests/resources/artifact_response.xml') as resp_ex_f:
+def response_custom_bsn_tvs():
+    with open('tests/resources/artifact_response_custom_bsn.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
     return art_resp_resource
 
 @pytest.fixture
-def response_authn_failed():
-    with open('tests/resources/artifact_resolve_response_authnfailed.xml') as resp_ex_f:
+def response_unedited_tvs():
+    with open('tests/resources/artifact_response.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
-    return update_time_values(art_resp_resource)
+    return art_resp_resource
+
+@pytest.fixture
+def response_authn_failed_tvs():
+    with open('tests/resources/artifact_resolve_response_authnfailed.xml', 'r', encoding='utf-8') as resp_ex_f:
+        art_resp_resource = resp_ex_f.read()
+    return art_resp_resource
 
 @pytest.fixture
 def saml_provider():
     return SAMLProvider()
 
+@freeze_time("2021-06-01 12:44:06")
 # pylint: disable=redefined-outer-name
-def test_get_bsn(response_custom_bsn, saml_provider, monkeypatch):
-    artifact_response = ArtifactResponse.from_string(response_custom_bsn, saml_provider, insecure=True)
+def test_get_bsn_tvs(response_custom_bsn_tvs, monkeypatch, tvs_provider_settings):
+    tvs_provider = IdProvider('tvs', tvs_provider_settings)
+    artifact_response = ArtifactResponse.from_string(response_custom_bsn_tvs, tvs_provider, insecure=True)
 
-    monkeypatch.setattr(saml_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
+    monkeypatch.setattr(tvs_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
     assert artifact_response.get_bsn() == '900212640'
 
+@freeze_time("2021-08-18 16:35:24.335248")
 # pylint: disable=redefined-outer-name
-def test_from_string(response_unedited, saml_provider):
-    ArtifactResponse.from_string(response_unedited, saml_provider, is_test_instance=True)
+def test_from_string_tvs(response_unedited_tvs, tvs_provider_settings):
+    tvs_provider = IdProvider('tvs', tvs_provider_settings)
+    ArtifactResponse.from_string(response_unedited_tvs, tvs_provider, is_test_instance=True)
     assert True
 
 # pylint: disable=redefined-outer-name
-def test_authnfailed(response_authn_failed, saml_provider):
+@freeze_time("2021-06-06 11:40:11")
+def test_authnfailed_tvs(response_authn_failed_tvs, tvs_provider_settings):
+    tvs_provider = IdProvider('tvs', tvs_provider_settings)
     with pytest.raises(UserNotAuthenticated):
-        ArtifactResponse.from_string(response_authn_failed, saml_provider, insecure=True).raise_for_status()
+        ArtifactResponse.from_string(response_authn_failed_tvs, tvs_provider, insecure=True).raise_for_status()
+
+
+@freeze_time("2021-08-17T14:05:29Z")
+def test_artifact_response_parse_digid(mocker, digid_provider_settings):
+    with open('tests/resources/artifact_response_digid.xml', 'r', encoding='utf-8') as resp_ex_f:
+        art_resp_resource = resp_ex_f.read()
+
+    digid_provider = IdProvider('digid', digid_provider_settings)
+    mocker.patch.dict(digid_provider.settings_dict, {
+        'sp': {
+            'entityId': 'https://siam1.test.anoigo.nl/aselectserver/server',
+            'assertionConsumerService': {
+                'url': 'https://siam1.test.anoigo.nl/aselectserver/server/saml20_assertion_digid'
+            }
+        }
+    })
+    art_resp = ArtifactResponse.from_string(art_resp_resource, digid_provider, insecure=True)
+    art_resp.raise_for_status()
+    assert art_resp.get_bsn() == 's00000000:900029365'
+    assert art_resp.provider.saml_spec_version == 3.5
+
+
+def test_etree_parse_fail():
+    test_xml_parse_decl = """<?xml version="1.0" encoding="UTF-8"?>
+    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+        <soapenv:Body>
+        </soapenv:Body>
+    </soapenv:Envelope>
+    """
+
+    test_xml_parse_no_decl = """
+    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+        <soapenv:Body>
+        </soapenv:Body>
+    </soapenv:Envelope>
+    """
+
+    with pytest.raises(ValueError) as exc_info:
+        etree.fromstring(test_xml_parse_decl)
+
+    assert exc_info.value.args[0] == "Unicode strings with encoding declaration are not supported. Please use bytes input or XML fragments without declaration."
+
+    # Split works with decleration
+    assert etree.fromstring(test_xml_parse_decl.rsplit('<?xml version="1.0" encoding="UTF-8"?>', maxsplit=1)[-1]) is not None
+
+    # Split works without decleration
+    nodecl_tree_splitted = etree.fromstring(test_xml_parse_no_decl.rsplit('<?xml version="1.0" encoding="UTF-8"?>', maxsplit=1)[-1])
+    nodecl_tree = etree.fromstring(test_xml_parse_no_decl)
+    assert nodecl_tree_splitted.tag == nodecl_tree.tag
+    assert nodecl_tree_splitted.text == nodecl_tree.text
+    assert nodecl_tree_splitted.tail == nodecl_tree.tail
+    assert nodecl_tree_splitted.attrib == nodecl_tree.attrib
+    assert len(nodecl_tree_splitted) == len(nodecl_tree)
