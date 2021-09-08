@@ -5,9 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: [ develop, master, digid-base ]
+    branches: [ develop, master ]
   pull_request:
-    branches: [ develop, master, digid-base ]
+    branches: [ develop, master ]
 
 jobs:
   code-quality:
