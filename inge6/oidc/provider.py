@@ -65,17 +65,6 @@ class Provider:
 
         signing_key = RSAKey(key=rsa_load(settings.oidc.rsa_private_key), alg='RS256', )
 
-<<<<<<< HEAD
-        if settings.redis.ssl.lower() == 'true':
-            redis_db_uri = 'rediss://' + redis_db_uri
-        else:
-            redis_db_uri = 'redis://' + redis_db_uri
-
-        authorization_code_db = RedisWrapper(db_uri=redis_db_uri, collection=settings.redis.code_namespace, ttl=REDIS_TTL)
-        access_token_db = RedisWrapper(db_uri=redis_db_uri, collection=settings.redis.token_namespace, ttl=REDIS_TTL)
-        refresh_token_db = RedisWrapper(db_uri=redis_db_uri, collection=settings.redis.refresh_token_namespace, ttl=REDIS_TTL)
-        subject_identifier_db = RedisWrapper(db_uri=redis_db_uri, collection=settings.redis.sub_id_namespace, ttl=REDIS_TTL)
-=======
         redis_db_uri = f'{settings.redis.host}:{settings.redis.port}'
         redis_kwargs = {}
 
@@ -93,7 +82,6 @@ class Provider:
         access_token_db = RedisWrapper(db_uri=redis_db_uri, collection=settings.redis.token_namespace, ttl=REDIS_TTL, extra_options={'redis_kwargs': redis_kwargs})
         refresh_token_db = RedisWrapper(db_uri=redis_db_uri, collection=settings.redis.refresh_token_namespace, ttl=REDIS_TTL, extra_options={'redis_kwargs': redis_kwargs})
         subject_identifier_db = RedisWrapper(db_uri=redis_db_uri, collection=settings.redis.sub_id_namespace, ttl=REDIS_TTL, extra_options={'redis_kwargs': redis_kwargs})
->>>>>>> develop
 
         authz_state = AuthorizationState(
             HashBasedSubjectIdentifierFactory(settings.oidc.subject_id_hash_salt),

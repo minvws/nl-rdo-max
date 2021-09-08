@@ -94,6 +94,10 @@ authn_request_html_template = saml/templates/html/authn_request.html
 # Connecting to the redis server through parameters:
 host = localhost
 port = 6379
+# Enable the RedisDebugger thread
+enable_debugger = True
+# This setting retrieves from redis the keytype we want to debug
+debug_keytype_key = tvs:debug_keytype 
 
 # SSL settings, to create a TLS connection to the redis store.
 ssl = False
@@ -104,10 +108,6 @@ cafile = secrets/redis/certs/cacert.crt
 # How long do values live in redis?
 object_ttl = 600
 
-# This setting retrieves from redis the keytype we want to debug
-debug_keytype_key = tvs:debug_keytype 
-
-default_cache_namespace = tvs-connect
 # prefix to cached key-value pairs stored using this service
 default_cache_namespace = tvs-connect:
 
