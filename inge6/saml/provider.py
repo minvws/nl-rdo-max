@@ -19,7 +19,7 @@ class Provider:
         self.id_providers = self._parse_id_providers()
 
     def _parse_id_providers(self) -> Dict[str, IdProvider]:
-        with open(self.ID_PROVIDERS_PATH, 'r') as id_providers_file:
+        with open(self.ID_PROVIDERS_PATH, 'r', encoding='utf-8') as id_providers_file:
             id_providers = json.loads(id_providers_file.read())
 
         providers = {}
