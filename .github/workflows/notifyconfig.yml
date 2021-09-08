@@ -1,0 +1,34 @@
+name: Notify RDObeheer on config-changes
+
+on:
+  push:
+    branches: [ main, master ]
+    paths: [ 'inge6.conf.example', 'clients.json' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Diff configfiles
+        run: git diff master~1:inge6.conf.example inge6.conf.example > inge6.conf.diff
+      - name: Diff configfiles
+        run: git diff master~1:clients.json clients.json > clients.json.diff
+      - name: Send mail
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.prolocation.net
+          server_port: 587
+          username: ${{secrets.MAIL_USERNAME}}
+          password: ${{secrets.MAIL_PASSWORD}}
+          subject: Github Actions ${{github.repository}}
+          to: fyi@rdobeheer.nl
+          from: Github actions <${{secrets.MAIL_USERNAME}}>
+          secure: false
+          body: >
+             Config change in ${{github.repository}}
+          attachments: inge6.conf.diff,clients.json.diff
+          ignore_cert: false
+          convert_markdown: false

@@ -3,8 +3,8 @@ skinparam backgroundColor white
 skinparam participantBackgroundColor #EEEBDC
 skinparam noteBackgroundColor #EEE
 
-Inge4->Inge6:/get_attributes?id_token
+Inge4->Inge6:/bsn_attribute?id_token
 Inge6->Redis:get(id_token)
-Redis-->Inge6:attributes
-Inge6-->Inge4:attributes
+Redis-->Inge6:encrypt_symm(bsn)
+Inge6-->Inge4:encrypt_pub(bsn)
 @enduml

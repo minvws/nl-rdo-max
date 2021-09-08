@@ -6,7 +6,9 @@
 fastapi
 redis
 redis-collections
-pyop==3.1.1
+# pyop==3.2.0 # pip won't use the newest version implicitly
+git+git://github.com/IdentityPython/pyop@master
+
 pycryptodome
 pyOpenSSL
 pyjwt
@@ -24,7 +26,8 @@ types-python-dateutil
 itsdangerous
 
 # Communication with services
-python3-saml==1.10.1
-zeep==4.0.0
-unidecode==1.1.2
-requests==2.25.1
+python3-saml==1.12.0
+requests==2.26.0
+
+# Force version for dev-req compatibility
+idna==3.2

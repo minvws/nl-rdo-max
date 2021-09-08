@@ -12,6 +12,15 @@ def get_redis_client() -> StrictRedis:
     """
     Global function to retrieve the connection with the redis-server.
 
+    Required settings:
+        - settings.redis.host
+        - settings.redis.port
+
+    Optional settings:
+        - settings.redis.key, path to the private key
+        - settings.redis.cert, path to the certificate
+        - settings.redis.cafile, path to a CAFile
+
     :returns: StrictRedis object having a connection with the configured redis server.
     """
     global _REDIS_CLIENT

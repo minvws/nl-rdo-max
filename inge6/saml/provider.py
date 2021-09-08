@@ -1,26 +1,34 @@
 import json
 
-from .metadata import IdPMetadata, SPMetadata
+from typing import Dict
+
+from .id_provider import IdProvider
 from ..config import settings
 
+# pylint: disable=too-few-public-methods
 class Provider:
-    SETTINGS_PATH = settings.saml.settings_path
-    PRIV_KEY_PATH = settings.saml.key_path
+    """
+    Given a path to the identity provider settings, parse all identity providers.
+
+    Required settings:
+        - settings.saml.identity_provider_settings, path to the configuration for all identity providers.
+    """
+    ID_PROVIDERS_PATH = settings.saml.identity_provider_settings
 
     def __init__(self) -> None:
-        with open(self.SETTINGS_PATH, 'r') as settings_file:
-            self.settings_dict = json.loads(settings_file.read())
+        self.id_providers = self._parse_id_providers()
 
-        with open(self.PRIV_KEY_PATH, 'r') as key_file:
-            self.priv_key = key_file.read()
+    def _parse_id_providers(self) -> Dict[str, IdProvider]:
+        with open(self.ID_PROVIDERS_PATH, 'r', encoding='utf-8') as id_providers_file:
+            id_providers = json.loads(id_providers_file.read())
 
-        self._idp_metadata = IdPMetadata()
-        self._sp_metadata = SPMetadata()
+        providers = {}
+        for provider in id_providers.keys():
+            providers[provider] = IdProvider(provider, id_providers[provider])
 
-    @property
-    def sp_metadata(self) -> SPMetadata:
-        return self._sp_metadata
+        return providers
 
-    @property
-    def idp_metadata(self) -> IdPMetadata:
-        return self._idp_metadata
+    def get_id_provider(self, name):
+        if name in self.id_providers:
+            return self.id_providers[name]
+        raise ValueError("Provider not known: {}, please check your configs.")

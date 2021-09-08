@@ -1,45 +1,48 @@
 import logging
+from logging import Logger
 
-from typing import Optional
+import re
 
 import redis.exceptions
 
-from fastapi import APIRouter, Depends, Request, HTTPException, Form
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
 from .config import settings
 from .cache import get_redis_client
-from .models import AuthorizeRequest, DigiDMockRequest, DigiDMockCatchRequest, SorryPageRequest
+from .models import AuthorizeRequest, DigiDMockRequest, DigiDMockCatchRequest, LoginDigiDRequest, SorryPageRequest
 from .provider import get_provider
 from .digid_mock import (
     digid_mock as dmock,
     digid_mock_catch as dmock_catch
 )
 
+log: Logger = logging.getLogger(__package__)
+
 router = APIRouter()
 
-@router.get('/authorize')
+@router.get(settings.authorize_endpoint)
 def authorize(request: Request, authorize_req: AuthorizeRequest = Depends()):
     return get_provider().authorize_endpoint(authorize_req, request.headers, request.client.host)
 
-@router.post('/accesstoken')
+@router.post(settings.accesstoken_endpoint)
 async def token_endpoint(request: Request):
     ''' Expect a request with a body containing the grant_type.'''
     body = await request.body()
     headers = request.headers
     return get_provider().token_endpoint(body, headers)
 
-@router.get('/metadata')
-def metadata():
-    return get_provider().metadata()
+@router.get('/metadata/{id_provider}')
+def metadata(id_provider: str):
+    return get_provider().metadata(id_provider)
 
 @router.get('/acs')
 def assertion_consumer_service(request: Request):
     return get_provider().assertion_consumer_service(request)
 
 @router.post('/bsn_attribute')
-def bsn_attribute(request: Request):
+async def bsn_attribute(request: Request):
     return get_provider().bsn_attribute(request)
 
 @router.get('/.well-known/openid-configuration')
@@ -47,7 +50,7 @@ def provider_configuration():
     json_content = jsonable_encoder(get_provider().provider_configuration.to_dict())
     return JSONResponse(content=json_content)
 
-@router.get('/jwks')
+@router.get(settings.jwks_endpoint)
 def jwks_uri():
     json_content = jsonable_encoder(get_provider().jwks)
     return JSONResponse(content=json_content)
@@ -60,12 +63,12 @@ def sorry_too_busy(request: SorryPageRequest = Depends()):
 def read_root():
     return HTMLResponse("TVS bridge")
 
-@router.get("/health")
+@router.get(settings.health_endpoint)
 def health() -> JSONResponse:
     try:
         redis_healthy = get_redis_client().ping()
     except redis.exceptions.RedisError as exception:
-        logging.getLogger().exception('Redis server is not reachable. Attempted: %s:%s, ssl=%s', settings.redis.host, settings.redis.port, settings.redis.ssl, exc_info=exception)
+        log.exception('Redis server is not reachable. Attempted: %s:%s, ssl=%s', settings.redis.host, settings.redis.port, settings.redis.ssl, exc_info=exception)
         redis_healthy = False
 
     healthy = redis_healthy
@@ -73,22 +76,21 @@ def health() -> JSONResponse:
     return JSONResponse(content=jsonable_encoder(response), status_code=200 if healthy else 500)
 
 ## MOCK ENDPOINTS:
-if settings.mock_digid.lower() == 'true':
+if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == 'true':
     # pylint: disable=wrong-import-position, c-extension-no-member, wrong-import-order
     from lxml import etree
     from urllib.parse import parse_qs # pylint: disable=wrong-import-order
+    from .provider import _post_login
+    from io import StringIO
 
     @router.get('/login-digid')
-    def login_digid(state: str, force_digid: Optional[bool] = None):
-        return HTMLResponse(content=get_provider()._login(state, force_digid)) # pylint: disable=protected-access
+    def login_digid(login_digid_req: LoginDigiDRequest = Depends(LoginDigiDRequest.from_request)):
+        id_provider = get_provider().get_id_provider(login_digid_req.idp_name)
+        return _post_login(login_digid_req, id_provider) # pylint: disable=protected-access
 
     @router.post('/digid-mock')
-    async def digid_mock(state: str, SAMLRequest: str = Form(...), RelayState: str = Form(...)):  # pylint: disable=invalid-name
-        return dmock(DigiDMockRequest.parse_obj({
-            'SAMLRequest': SAMLRequest,
-            'RelayState': RelayState,
-            'state': state
-        }))
+    async def digid_mock(digid_mock_req: DigiDMockRequest = Depends(DigiDMockRequest.from_request)):  # pylint: disable=invalid-name
+        return dmock(digid_mock_req)
 
     @router.get('/digid-mock-catch')
     async def digid_mock_catch(request: DigiDMockCatchRequest = Depends()):
@@ -99,14 +101,15 @@ if settings.mock_digid.lower() == 'true':
         response = get_provider().authorize_endpoint(authorize_req, request.headers, request.client.host)
         status_code = response.status_code
         if status_code != 200:
-            logging.debug('Status code 200 was expected, but was %s', response.status_code)
+            log.debug('Status code 200 was expected, but was %s', response.status_code)
             if 300 <= status_code < 400:
                 redirect = response.raw_headers[0][1].decode()
                 raise HTTPException(status_code=400, detail='200 expected, got {} with redirect uri: {}'.format(status_code, redirect))
             raise HTTPException(status_code=400, detail='detail authorize response status code was {}, but 200 was expected'.format(status_code))
 
-        response_tree = etree.fromstring(response.__dict__['body'].decode()).getroottree().getroot()
-        relay_state = response_tree.find('.//input[@name="RelayState"]').attrib['value']
+        parser = etree.HTMLParser()
+        tree   = etree.parse(StringIO(response.body.decode()), parser)
+        relay_state = tree.getroot().find('.//input[@name="RelayState"]').attrib['value']
 
         # pylint: disable=too-few-public-methods, too-many-ancestors, super-init-not-called
         class AcsReq(Request):
@@ -122,6 +125,10 @@ if settings.mock_digid.lower() == 'true':
             }
 
         response = get_provider().assertion_consumer_service(AcsReq())
-        response_qargs = parse_qs(response.headers["location"].split('?')[1])
+        redirect_url = re.search(r"<meta http-equiv=\"refresh\" content=\"0;url=(.*?)\" />", response.body.decode())
+        if redirect_url is None:
+            raise HTTPException(status_code=400, detail="No valid refresh url found")
+
+        response_qargs = parse_qs(redirect_url[1].split('?')[1])
         content = jsonable_encoder(response_qargs)
         return JSONResponse(content=content)
