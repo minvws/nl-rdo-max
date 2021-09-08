@@ -129,15 +129,9 @@ types-redis==3.5.7
 types-requests==2.25.6
     # via -r requirements-dev.in
 typing-extensions==3.10.0.0
-<<<<<<< HEAD
-    # via mypy
-urllib3==1.26.6
-    # via requests
-=======
     # via
     #   black
     #   mypy
->>>>>>> f12e4d641fd4b4bbd1491e698364e34ec0c080c1
 uvicorn==0.15.0
     # via -r requirements-dev.in
 wrapt==1.12.1
