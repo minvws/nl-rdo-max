@@ -13,6 +13,7 @@ KEY_PREFIX: str = settings.redis.default_cache_namespace
 def debug_get(redis_client, key, value):
     if value is None:
         logging.getLogger().debug('Retrieved expired value with key: %s', key)
+        return
 
     debug_keyname = f'{KEY_PREFIX}:retrieved:{key}'
     redis_client.set(debug_keyname, value, ex=DEBUG_SET_EXPIRY)
