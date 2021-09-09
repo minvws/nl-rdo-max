@@ -34,3 +34,12 @@ def test_rate_limiter_overflow(redis_mock, fake_redis_user_limit_key, fake_redis
     assert active_idp == 'digid'
     active_idp = rate_limit_test('0.0.0.4')
     assert active_idp == 'digid'
+
+
+def test_rate_limiter_overflow_limit_0(redis_mock, fake_redis_user_limit_key, fake_redis_overflow_userlimit_key):
+    get_redis_client().set('tvs:primary_idp', 'tvs')
+    get_redis_client().set('tvs:overflow_idp', 'digid')
+    get_redis_client().set('user_limit_key', 0)
+
+    active_idp = rate_limit_test('0.0.0.1')
+    assert active_idp == 'digid'
