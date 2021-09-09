@@ -2,13 +2,14 @@ import logging
 import time
 import pytest
 from inge6 import constants
-from inge6.cache import redis_cache
+from inge6.cache import get_redis_client, redis_cache
 
 
 @pytest.fixture
 def fake_expire():
+    get_redis_client().config_set("notify-keyspace-events", "AKE")
     current_seconds = redis_cache.EXPIRES_IN_S
-    redis_cache.EXPIRES_IN_S = 2
+    redis_cache.EXPIRES_IN_S = 1
     yield
     redis_cache.EXPIRES_IN_S = current_seconds
 
@@ -24,7 +25,7 @@ def test_redis_debugger_no_retrieve_with_redis_cache_hset(capture_logging, fake_
 
     # Set value but don't retrieve
     redis_cache.hset("7f2fa9a48d8f4aef95a5fffb695d8f20", constants.RedisKeys.CC_CM.value, "test-value")
-    time.sleep(3)
+    time.sleep(2)
 
     # Should be in log:
     assert 'Attempting retrieval of debug-key: tvs-connect::retrieved:tvs-connect::' in capture_logging.text
@@ -36,7 +37,7 @@ def test_redis_debugger_retrieve_with_redis_cache_hget(capture_logging, fake_exp
     # Set value and retrieve:
     redis_cache.hset("1a1bc9t25d2f4oly52i3pabc241d1f10", constants.RedisKeys.CC_CM.value, "test-value")
     redis_cache.hget("1a1bc9t25d2f4oly52i3pabc241d1f10", constants.RedisKeys.CC_CM.value)
-    time.sleep(3)
+    time.sleep(2)
 
     # Should not be in log:
     assert 'Attempting retrieval of debug-key: tvs-connect::retrieved:tvs-connect::' in capture_logging.text
@@ -45,7 +46,7 @@ def test_redis_debugger_retrieve_with_redis_cache_hget(capture_logging, fake_exp
 # pylint: disable=redefined-outer-name, unused-argument
 def test_redis_debugger_no_retrieve_with_redis_cache_set(capture_logging, fake_expire):
     redis_cache.set('test-key', 'true')
-    time.sleep(4)
+    time.sleep(2)
     assert 'Attempting retrieval of debug-key: tvs-connect::retrieved:tvs-connect::test-key' in capture_logging.text
 
     # Should be in log:
@@ -54,7 +55,7 @@ def test_redis_debugger_no_retrieve_with_redis_cache_set(capture_logging, fake_e
 def test_redis_debugger_no_retrieve_with_redis_cache_get(capture_logging, fake_expire):
     redis_cache.set('test-key', 'true')
     redis_cache.get('test-key')
-    time.sleep(3)
+    time.sleep(2)
 
     assert 'Attempting retrieval of debug-key: tvs-connect::retrieved:tvs-connect::test-key' in capture_logging.text
 
