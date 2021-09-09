@@ -6,6 +6,9 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 
 ## Unreleased
 
+### Fixed
+- User limit of 0 is still a user limit, before a limit of zero was not working
+
 
 ## [v1.1.0] - 2021-09-08
 
