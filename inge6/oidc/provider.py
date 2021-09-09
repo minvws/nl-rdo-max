@@ -61,8 +61,6 @@ class Provider:
         with open(settings.oidc.clients_file, 'r', encoding='utf-8') as clients_file:
             clients = json.load(clients_file)
 
-        redis_db_uri = f'{settings.redis.host}:{settings.redis.port}'
-
         signing_key = RSAKey(key=rsa_load(settings.oidc.rsa_private_key), alg='RS256', )
 
         redis_db_uri = f'{settings.redis.host}:{settings.redis.port}'
