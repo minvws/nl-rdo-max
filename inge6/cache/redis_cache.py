@@ -6,6 +6,8 @@ Required settings:
     - settings.redis.object_ttl, time to live for all objects stored in cache
 """
 
+import os
+from os import name
 from typing import Any, Text, Optional
 import pickle
 
@@ -57,8 +59,7 @@ def set(key: str, value: Any) -> None:
     key = _get_namespace(key)
     serialized_value = _serialize(value)
 
-    if settings.redis.enable_debugger:
-        # TODO: This is not great here, needs fix in redis_debugger retrieval method
+    if settings.redis.enable_debugger or os.getenv("ENABLE_REDIS_DEBUGGER"):
         # If in debugging mode, prepend namespace with key for better debugging.
         # It allows the redis debugger to search for specific key_types, and
         # redis db inspection shows better keys
@@ -78,7 +79,7 @@ def get(key: str) -> Any:
     key = _get_namespace(key)
     value = get_redis_client().get(key)
 
-    if settings.redis.enable_debugger and value:
+    if settings.redis.enable_debugger or os.getenv("ENABLE_REDIS_DEBUGGER") and value :
         debug_get(get_redis_client(), key, value)
 
     deserialized_value = _deserialize(value)
@@ -97,7 +98,7 @@ def hset(namespace: str, key: str, value: Any) -> None:
     serialized_value = _serialize(value)
     namespace = _get_namespace(namespace)
 
-    if settings.redis.enable_debugger:
+    if settings.redis.enable_debugger or os.getenv("ENABLE_REDIS_DEBUGGER"):
         # If in debugging mode, prepend namespace with key for better debugging.
         # It allows the redis debugger to search for specific key_types, and
         # redis db inspection shows better keys
@@ -114,7 +115,7 @@ def hget(namespace, key) -> Any:
     """
     namespace = _get_namespace(namespace)
 
-    if settings.redis.enable_debugger:
+    if settings.redis.enable_debugger or os.getenv("ENABLE_REDIS_DEBUGGER"):
         # If in debugging mode, namespace is prepended with the key for better debugging.
         # It allows the redis debugger to search for specific key_types, and
         # redis db inspection shows better keys
