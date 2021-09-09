@@ -6,7 +6,6 @@ Required settings:
     - settings.redis.object_ttl, time to live for all objects stored in cache
 """
 
-import os
 from typing import Any, Text, Optional
 import pickle
 
