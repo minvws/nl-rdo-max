@@ -8,13 +8,11 @@ from inge6.cache import get_redis_client, redis_cache
 
 @pytest.fixture
 def setup_debugger(monkeypatch):
-    monkeypatch.setenv('ENABLE_REDIS_DEBUGGER', '1')
-    get_redis_client().config_set("notify-keyspace-events", "AKE")
     existing_value = config.settings.redis.enable_debugger
     config.settings.redis.enable_debugger = True
+    get_redis_client().config_set("notify-keyspace-events", "AKE")
     yield
     config.settings.redis.enable_debugger = existing_value
-    monkeypatch.delenv('ENABLE_REDIS_DEBUGGER')
 
 @pytest.fixture
 def fake_expire():

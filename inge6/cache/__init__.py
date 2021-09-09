@@ -37,7 +37,7 @@ def get_redis_client() -> StrictRedis:
         else:
             _REDIS_CLIENT = StrictRedis(host=settings.redis.host, port=settings.redis.port, db=0)
 
-        if settings.redis.enable_debugger or os.getenv("ENABLE_REDIS_DEBUGGER"):
+        if settings.redis.enable_debugger:
             log_expiration_events_thread = RedisGetDebugger(_REDIS_CLIENT, daemon=True)
             log_expiration_events_thread.start()
 
