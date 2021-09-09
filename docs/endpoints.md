@@ -76,3 +76,10 @@ Content-Type: application/x-www-form-urlencoded
     &grant_type=authorization_code
     &redirect_uri=localhost:8006/attrs
 ```
+
+# GET `/bsn_attribute`
+
+### Authorization Header
+> AuthorizationAuthorization: Bearer 'id_token'
+
+Where the id_token is a base64 encoded JWT token containing a signature by the Inge6 instance retrieved during the authorization code flow.
