@@ -109,7 +109,7 @@ cafile = secrets/redis/certs/cacert.crt
 object_ttl = 600
 
 # prefix to cached key-value pairs stored using this service
-default_cache_namespace = tvs-connect:
+default_cache_namespace = tvs-connect
 
 # prefix to tokens, subjects and codes stored in the redis database by the OIDC library
 token_namespace = tvs_token
