@@ -7,7 +7,6 @@ Required settings:
 """
 
 import os
-from os import name
 from typing import Any, Text, Optional
 import pickle
 
