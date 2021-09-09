@@ -8,7 +8,7 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 
 ### Fixed
 - User limit of 0 is still a user limit, before a limit of zero was not working
-
+- The SAML issuer and inge6 issuer are now seperated in the config, solving the issue regarding the openid-configuration discovery
 
 ## [v1.1.0] - 2021-09-08
 
