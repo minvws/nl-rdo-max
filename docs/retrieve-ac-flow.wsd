@@ -1,5 +1,5 @@
 @startuml
-title tvs-connect.acc.coroncheck.nl
+title retrieve-ac-flow
 
 skinparam backgroundColor white
 skinparam participantBackgroundColor #EEEBDC
@@ -9,15 +9,15 @@ participant RD_BC
 participant IdPx
 participant App
 
-App->Inge6:/authorize?redirect_uri&code_challenge&code_method=h
-Inge6->Redis:store(randstate, {code, code_challenge,code_method,state,nonce})
+App->Inge6:/authorize?redirect_uri&client_id&code_challenge&...
+Inge6->Redis:store(randstate, {code, authorize_query_params})
 
-alt ITVS configuration
+alt SAML >4.4 specification
 
     Inge6-->App:HTMLResponse(form: AuthnRequest + RelayState=randstate, onload(submit))
     App->IdPx:post(AuthnRequest, Relaystate)
 
-else DigiD
+else SAML 3.5 specification
 
     Inge6-->App:RedirectResponse(/digid-authn-endpoint?SAMLRequest=XXX&RelayStat=XXX&Signature=XXX&SigAlg=XXX)
     App->IdPx:redirect(AuthnRequest, Relaystate)
