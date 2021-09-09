@@ -2,7 +2,7 @@
 app_name = "CoronaCheck TVS - Digid login"
 
 # Needs to be a https full URL
-issuer = 10.48.118.250:8006
+issuer = https://10.48.118.250:8006
 environment = development
 
 # TVS or DigiD?
