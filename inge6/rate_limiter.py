@@ -40,7 +40,8 @@ def _user_limit_test(idp_prefix: str, user_limit_key: str) -> None:
 
     if num_users == 1:
         get_redis_client().expire(timeslot_key, 2)
-    elif num_users > user_limit:
+
+    if num_users > user_limit:
         raise TooBusyError("Servers are too busy at this point, please try again later")
 
 
