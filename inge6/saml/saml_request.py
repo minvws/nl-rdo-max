@@ -47,17 +47,17 @@ def add_artifact(root, artifact_code) -> None:
 
 class SAMLRequest:
 
-    def __init__(self, root, keypair: Tuple[str, str]) -> None:
+    def __init__(self, root, keypair_sign: Tuple[str, str]) -> None:
         """
         Initiate a SAMLRequest with a parsed xml tree and keypair for signing
 
         :param root: parsed XML tree
-        :param keypair: (cert_path, key_path) tuple.
+        :param keypair: (cert_path, key_path) tuple for signing of the messages.
         """
         self._id_hash = "_" + secrets.token_hex(41) # total length 42.
         self.root = root
-        self.cert_path = keypair[0]
-        self.key_path = keypair[1]
+        self.signing_cert_path = keypair_sign[0]
+        self.signing_key_path = keypair_sign[1]
 
     def get_xml(self, xml_declaration: bool = False) -> bytes:
         if xml_declaration:
@@ -87,8 +87,8 @@ class AuthNRequest(SAMLRequest):
         add_issuer(self.root, issuer_id)
         add_root_issue_instant(self.root)
         add_reference(self.root, self._id_hash)
-        add_certs(self.root, self.cert_path)
-        sign(self.root, self.key_path)
+        add_certs(self.root, self.signing_cert_path)
+        sign(self.root, self.signing_key_path)
 
 class ArtifactResolveRequest(SAMLRequest):
     """
@@ -108,9 +108,9 @@ class ArtifactResolveRequest(SAMLRequest):
         add_destination(self.saml_resolve_req, sso_url)
         add_issuer(self.saml_resolve_req, issuer_id)
         add_reference(self.saml_resolve_req, self._id_hash)
-        add_certs(self.saml_resolve_req, self.cert_path)
+        add_certs(self.saml_resolve_req, self.signing_cert_path)
         add_artifact(self.saml_resolve_req, artifact_code)
-        sign(self.saml_resolve_req, self.key_path)
+        sign(self.saml_resolve_req, self.signing_key_path)
 
     @property
     def saml_elem(self):

@@ -508,9 +508,14 @@ class Provider(OIDCProvider, SAMLProvider):
         artifact_response.raise_for_status()
         log.debug('Validated sha256(artifact) %s', hashed_artifact)
 
-        bsn = _get_bsn_from_art_resp(artifact_response.get_bsn(), id_provider.saml_spec_version)
-        encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
-        return encrypted_bsn
+        if id_provider.sp_metadata.enc_pubkey is None:
+            # We are able to decrypt the message, and we will
+            bsn = _get_bsn_from_art_resp(artifact_response.get_bsn(), id_provider.saml_spec_version)
+            encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
+            return encrypted_bsn
+
+        # Encryption done by another party, gather relevant info
+        return base64.b64encode(json.dumps(artifact_response.get_enc_key_and_enc_data()).encode())
 
     def bsn_attribute(self, request: Request) -> Response:
         """
@@ -527,6 +532,11 @@ class Provider(OIDCProvider, SAMLProvider):
 
         decoded_json = base64.b64decode(attributes).decode()
         bsn_dict = json.loads(decoded_json)
+
+        if all(k in bsn_dict for k in ['key', 'data']):
+            # We never decrypted the message, we cannot re-encrypt.
+            return Response(content=bsn_dict, status_code=200)
+
         encrypted_bsn = self.bsn_encrypt.from_symm_to_pub(bsn_dict)
         return Response(content=encrypted_bsn, status_code=200)
 

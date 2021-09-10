@@ -352,3 +352,26 @@ class ArtifactResponse:
         else:
             bsn_element = self._plaintext_bsn()
         return bsn_element.text
+
+
+    def get_enc_key_and_enc_data(self):
+        encrypted_keyname = self.assertion_attribute_enc_key.find('.//ds:KeyName', NAMESPACES).text
+        encrypted_key = self.assertion_attribute_enc_key.find('.//xenc:CipherValue', NAMESPACES).text
+        encrypted_keyalg = self.assertion_attribute_enc_key.find('./xenc:EncryptionMethod', NAMESPACES).attrib['Algorithm']
+        encrypted_keydig = self.assertion_attribute_enc_key.find('.//ds:DigestMethod', NAMESPACES).attrib['Algorithm']
+
+        encrypted_data = self.assertion_attribute_enc_data.find('.//xenc:CipherValue', NAMESPACES).text
+        encrypted_data_method = self.assertion_attribute_enc_data.find('.//xenc:EncryptionMethod', NAMESPACES).attrib['Algorithm']
+
+        return {
+            'key': {
+                'name': encrypted_keyname,
+                'alg': encrypted_keyalg,
+                'dig': encrypted_keydig,
+                'value': encrypted_key
+            },
+            'data': {
+                'alg': encrypted_data_method,
+                'value': encrypted_data
+            }
+        }
