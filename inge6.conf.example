@@ -1,8 +1,8 @@
 [DEFAULT]
 app_name = "CoronaCheck TVS - Digid login"
 
-# No longer prefix with https, occurs in code (always TLS)
-issuer = 10.48.118.250:8006
+# Needs to be a https full URL
+issuer = https://10.48.118.250:8006
 environment = development
 
 # TVS or DigiD?
@@ -77,6 +77,9 @@ subject_id_hash_salt = somesalt
 id_token_lifetime = 600
 
 [saml]
+# The domain which contains the subdomains of the configured Identity providers
+base_issuer = localhost:8007
+
 # saml configuration relating saml request signing, verification and communication 
 # settings.
 identity_provider_settings = saml/identity_providers.json

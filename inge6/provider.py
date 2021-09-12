@@ -200,7 +200,7 @@ def _prepare_req(auth_req: BaseModel, idp_name: str):
     """
     return {
         'https': 'on',
-        'http_host': f'https://{idp_name}.{settings.issuer}',
+        'http_host': f'https://{idp_name}.{settings.saml.base_issuer}',
         'script_name': settings.authorize_endpoint,
         'get_data': auth_req.dict(),
     }

@@ -50,4 +50,3 @@ def test_authorize_request_redirect(mock_clients_db, digid_config, digid_mock_di
     assert "RelayState" in response.headers['location']
     assert "Signature" in response.headers['location']
     assert "SigAlg" in response.headers['location']
-

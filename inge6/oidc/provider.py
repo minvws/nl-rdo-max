@@ -38,7 +38,7 @@ class Provider:
     """
 
     def __init__(self) -> None:
-        issuer = f'https://{settings.issuer}'
+        issuer = settings.issuer
         authentication_endpoint = settings.authorize_endpoint
         jwks_uri = settings.jwks_endpoint
         token_endpoint = settings.accesstoken_endpoint

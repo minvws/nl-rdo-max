@@ -42,7 +42,7 @@ class SPMetadata(SAMLRequest):
 
     def __init__(self, settings_dict, keypair_paths, idp_name) -> None:
         super().__init__(etree.parse(self.TEMPLATE_PATH).getroot(), keypair_paths)
-        self.default_acs_url = f'https://{idp_name}.{settings.issuer}/acs'
+        self.default_acs_url = f'https://{idp_name}.{settings.saml.base_issuer}/acs'
         self.default_acs_binding = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
 
         self.settings_dict = settings_dict
