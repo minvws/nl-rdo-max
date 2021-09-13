@@ -3,7 +3,7 @@ import pytest
 @pytest.fixture
 def tvs_provider_settings():
     return {
-        "saml_specification_version": 4.5,
+        "saml_specification_version": "4.5",
         "base_dir": "saml/tvs",
         "cert_path": "saml/tvs/certs/sp.crt",
         "key_path": "saml/tvs/certs/sp.key",
@@ -15,7 +15,7 @@ def tvs_provider_settings():
 @pytest.fixture
 def digid_provider_settings():
     return {
-        "saml_specification_version": 3.5,
+        "saml_specification_version": "3.5",
         "base_dir": "saml/digid",
         "cert_path": "saml/digid/certs/sp.crt",
         "key_path": "saml/digid/certs/sp.key",
