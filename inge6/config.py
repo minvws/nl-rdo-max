@@ -15,7 +15,14 @@ class Settings(configparser.ConfigParser):
 
         def __getattr__(self, name):
             if name in self._section:
-                return self._section[name]
+                value = self._section[name]
+                if str(value).lower() == "true":
+                    return True
+
+                if str(value).lower() == "false":
+                    return False
+
+                return value
             raise AttributeError("Setting {}.{} not found and not handled gracefully".format(self._parent, name))
 
         def __setattr__(self, name: str, value: Any) -> None:

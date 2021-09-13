@@ -66,7 +66,7 @@ class Provider:
         redis_db_uri = f'{settings.redis.host}:{settings.redis.port}'
         redis_kwargs = {}
 
-        if settings.redis.ssl.lower() == 'true':
+        if settings.redis.ssl:
             redis_db_uri = 'rediss://' + redis_db_uri
             redis_kwargs = {
                 'ssl_keyfile': settings.redis.key,

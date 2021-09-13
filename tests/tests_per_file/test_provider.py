@@ -214,7 +214,7 @@ def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock
     code = None
     for item in items:
         item = item.decode("utf-8")
-        temp_code = item[len(settings.redis.default_cache_namespace):]
+        temp_code = item[len(settings.redis.default_cache_namespace):].replace(":", "")
         if settings.redis.default_cache_namespace in item and len(temp_code) == 32:
             code = temp_code
             break

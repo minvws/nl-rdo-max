@@ -68,7 +68,10 @@ cafile = secrets/redis/certs/cacert.crt
 
 object_ttl = 600
 
-default_cache_namespace = tvs-connect:
+# This setting retrieves from redis the keytype we want to debug
+debug_keytype_key = tvs:debug_keytype 
+
+default_cache_namespace = tvs-connect
 
 token_namespace = tvs_token
 refresh_token_namespace = tvs_refresh_token
