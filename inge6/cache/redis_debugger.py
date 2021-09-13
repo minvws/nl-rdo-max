@@ -19,11 +19,6 @@ def debug_get(redis_client, key, value):
     redis_client.set(debug_keyname, value, ex=DEBUG_SET_EXPIRY)
 
 
-def get_debug_keytype(redis_client) -> str:
-    res = redis_client.get(DEBUG_KEYTYPE_KEY)
-    return res if res is not None else ''
-
-
 class RedisGetDebugger(threading.Thread):
 
     def __init__(self, redis_client, *args, **kwargs) -> None:
@@ -48,17 +43,13 @@ class RedisGetDebugger(threading.Thread):
 
         # Once a event has launched, retrieve a msg
         for msg in pubsub.listen():
-            # what type of keys are we looking for
-            key_type = get_debug_keytype(self.redis_client)
-            key_filter = f"{KEY_PREFIX}:{key_type}"
-
             set_key = msg['data']
             if isinstance(set_key, bytes):
                 set_key = set_key.decode()
             else:
                 set_key = str(set_key)
 
-            if not set_key.startswith(key_filter):
+            if not set_key.startswith(f"{KEY_PREFIX}:"):
                 continue
 
             expected_retrieved_key = f'{KEY_PREFIX}:retrieved:{set_key}'
