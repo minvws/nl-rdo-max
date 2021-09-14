@@ -124,7 +124,7 @@ If you didn't mean to enable ssl change this setting in your config (not recomme
 async def startup_event():
     get_provider()
 
-def main():
+def main(app_link: str = 'inge6.main:app'):
     logging.basicConfig(
         level=getattr(logging, settings.loglevel.upper()),
         datefmt='%m/%d/%Y %I:%M:%S %p'
@@ -145,7 +145,7 @@ def main():
         run_kwargs['ssl_certfile'] = settings.ssl.base_dir + '/' + settings.ssl.cert_file
 
     uvicorn.run(
-                'inge6.main:app',
+                app_link,
                 **run_kwargs
             )
 
