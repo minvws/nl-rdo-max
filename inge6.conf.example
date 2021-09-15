@@ -99,8 +99,6 @@ host = localhost
 port = 6379
 # Enable the RedisDebugger thread
 enable_debugger = False
-# This setting retrieves from redis the keytype we want to debug
-debug_keytype_key = tvs:debug_keytype 
 
 # SSL settings, to create a TLS connection to the redis store.
 ssl = False

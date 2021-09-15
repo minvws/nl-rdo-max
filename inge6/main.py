@@ -50,6 +50,16 @@ def _validate_saml_identity_provider_settings():
 
     return missing_files
 
+def validate_settings(section, keys):
+    required_settings = []
+    current_settings = getattr(settings, section)
+    for key in keys:
+        if not hasattr(current_settings, key) or getattr(current_settings, key) == "":
+            required_settings.append(
+                ('{}.{}'.format(section, key), 'expected to be defined in the config {} section'.format(section))
+            )
+
+    return required_settings
 
 def validate_startup():
     missing_files = []
@@ -98,6 +108,44 @@ def validate_startup():
             ssl_missing_files.append(
                 (settings.ssl.key_file, "SSL key file")
             )
+
+    required_settings += validate_settings("redis", [
+            "host",
+            "port",
+            "enable_debugger",
+            "object_ttl",
+            "default_cache_namespace",
+            "code_namespace",
+            "token_namespace",
+            "refresh_token_namespace",
+            "sub_id_namespace"
+        ])
+
+    if not isinstance(settings.redis.enable_debugger, bool):
+        required_settings.append(
+            ('redis.enable_debugger', 'is incorrectly defined, must be True or False')
+        )
+
+    if not isinstance(settings.redis.ssl, bool):
+        required_settings.append(
+            ('redis.ssl', 'is incorrectly defined, must be True or False')
+        )
+
+    if settings.redis.ssl:
+        # Check if ssl settings are defined
+        required_settings += validate_settings("redis", [
+                "ssl",
+                "key",
+                "cert",
+                "cafile"
+            ])
+
+        # Check if ssl certs exist on disk
+        for key in ['key', 'cert', 'cafile']:
+            if not os.path.exists(getattr(settings.redis, key)):
+                required_settings.append(
+                    ('redis.{}'.format(key), 'does not exist on disk')
+                )
 
     error_msg = ""
     if len(missing_files) > 0 or len(ssl_missing_files) > 0:

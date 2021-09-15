@@ -5,8 +5,6 @@ from ..config import settings
 
 # live 5 minutes longer than regular redis objects
 DEBUG_SET_EXPIRY: int = int(settings.redis.object_ttl) + 300
-DEBUG_KEYTYPE_KEY: str = settings.redis.debug_keytype_key
-
 KEY_PREFIX: str = settings.redis.default_cache_namespace
 
 

@@ -7,7 +7,7 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 ## [v1.1.1] - 2021-09-12
 
 ### Added
-- Redis debugger, ability to log unresolved artifacts and other unretrieved values in redis. Optionally, the `debug_keytype_key` setting may contain the name of the key in redis holding the prefix for the keys to watch for expiration.
+- Redis debugger, ability to log unresolved artifacts and other unretrieved values in redis.
 
 ### Fixed
 - User limit of 0 is still a user limit, before a limit of zero was not working
