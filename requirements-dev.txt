@@ -6,7 +6,7 @@
 #
 asgiref==3.4.1
     # via uvicorn
-astroid==2.7.2
+astroid==2.8.0
     # via pylint
 attrs==21.2.0
     # via pytest
@@ -76,7 +76,7 @@ py==1.10.0
     # via pytest
 pyflakes==2.3.1
     # via autoflake
-pylint==2.10.2
+pylint==2.11.1
     # via -r requirements-dev.in
 pyparsing==2.4.7
     # via packaging
@@ -130,8 +130,10 @@ types-requests==2.25.6
     # via -r requirements-dev.in
 typing-extensions==3.10.0.0
     # via
+    #   astroid
     #   black
     #   mypy
+    #   pylint
 urllib3==1.26.6
     # via requests
 uvicorn==0.15.0
