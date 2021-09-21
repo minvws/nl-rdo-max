@@ -61,7 +61,7 @@ class SAMLRequest:
 
     def get_xml(self, xml_declaration: bool = False) -> bytes:
         if xml_declaration:
-            return b'<?xml version="1.0" encoding="UTF-8"?>\n' + etree.tostring(self.root)
+            return etree.tostring(self.root, xml_declaration=True, encoding='UTF-8')
         return etree.tostring(self.root)
 
     def get_base64_string(self) -> bytes:

@@ -35,10 +35,9 @@ secrets/public.pem: secrets/private_unencrypted.pem
 secrets/ssl:
 	mkdir -p secrets/ssl/certs
 	mkdir -p secrets/ssl/private
-secrets/ssl/certs/apache-selfsigned.crt: secrets/ssl
-	openssl genrsa -out secrets/ssl/certs/apache-selfsigned.crt 2048
-secrets/ssl/private/apache-selfsigned.key: secrets/ssl/certs/apache-selfsigned.crt
-	openssl rsa -in secrets/ssl/certs/apache-selfsigned.crt -pubout -out secrets/ssl/private/apache-selfsigned.key
+
+secrets/ssl/private/apache-selfsigned.key: secrets/ssl
+	openssl req -newkey rsa:2048 -nodes -keyout secrets/ssl/private/apache-selfsigned.key -x509 -days 365 -out secrets/ssl/certs/apache-selfsigned.crt  -subj '/CN=inge6/C=NL'
 
 secrets-redis-certs:
 	mkdir -p secrets/redis/certs
@@ -63,11 +62,11 @@ saml/digid/certs/sp.crt: saml/digid/certs/sp.key
 saml/identity_providers:
 	cp saml/identity_providers.json.example saml/identity_providers.json
 
-saml-files: saml/tvs/certs/sp.crt saml/digid/certs/sp.crt saml/identity_providers saml/tvs/settings.json 
+saml-files: saml/tvs/certs/sp.crt saml/digid/certs/sp.crt saml/identity_providers saml/tvs/settings.json
 
 secret-files: secrets/public.pem secrets/ssl/private/apache-selfsigned.key
 
-setup: inge6.conf clients.json saml secret-files saml-files secrets-redis-certs
+setup: inge6.conf clients.json saml secrets/ssl secret-files saml-files secrets-redis-certs
 
 fresh: clean_venv venv
 
