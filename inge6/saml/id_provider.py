@@ -8,7 +8,7 @@ from .utils import from_settings
 
 class IdProvider:
 
-    def __init__(self, name, idp_setting) -> None:
+    def __init__(self, name, idp_setting, jinja_env) -> None:
         self.name = name
         self.saml_spec_version = idp_setting['saml_specification_version']
         self.base_dir = idp_setting['base_dir']
@@ -24,7 +24,7 @@ class IdProvider:
             self.priv_key = key_file.read()
 
         self._idp_metadata = IdPMetadata(self.idp_metadata_path)
-        self._sp_metadata = SPMetadata(self.settings_dict, self.keypair_paths, name)
+        self._sp_metadata = SPMetadata(self.settings_dict, self.keypair_paths, jinja_env)
 
     @cached_property
     def authn_binding(self):

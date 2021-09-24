@@ -1,0 +1,6 @@
+{
+    "cibg": {
+        "saml_enc_key_path": "",
+        "userinfo_endpoint": ""
+    }   
+}

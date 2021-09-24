@@ -149,7 +149,7 @@ def test_resolve_artifact_tvs(requests_mock, mocker, redis_mock, tvs_config): # 
 
     # Allow the decryption of the BSN using a custom privkey, and force the key name used along with that privkey
     mocker.patch.object(id_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
-    mocker.patch.object(id_provider.sp_metadata, 'keyname', '70c7065d4ad1bec9f57e4bd3dfd6812af6035d57e1ec3496b600491d8c238081')
+    mocker.patch.object(id_provider.sp_metadata, 'dv_keynames', ['70c7065d4ad1bec9f57e4bd3dfd6812af6035d57e1ec3496b600491d8c238081'])
 
     # Do not re-encrypt, not the purpose of this test
     mocker.patch.object(provider.bsn_encrypt, 'symm_encrypt', mock_symm_encrypt)

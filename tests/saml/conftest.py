@@ -1,5 +1,9 @@
 import pytest
 
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+from inge6.config import settings
+
 @pytest.fixture
 def tvs_provider_settings():
     return {
@@ -22,3 +26,10 @@ def digid_provider_settings():
         "settings_path": "saml/digid/settings.json",
         "idp_metadata_path": "saml/digid/metadata/idp_metadata.xml"
     }
+
+@pytest.fixture
+def jinja_env():
+    return Environment(
+        loader=FileSystemLoader(settings.saml.templates),
+        autoescape=select_autoescape()
+    )

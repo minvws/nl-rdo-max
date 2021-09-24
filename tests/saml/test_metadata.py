@@ -1,8 +1,9 @@
 import pytest
 
-from inge6.saml.metadata import IdPMetadata, _strip_cert
+from inge6.saml.metadata import IdPMetadata
 from inge6.saml.constants import NAMESPACES
 from inge6.saml.id_provider import IdProvider
+from inge6.config import settings
 
 # pylint: disable=unused-argument
 def test_idp_metadata_bindings_tvs(tvs_config):
@@ -22,25 +23,10 @@ def test_idp_metadata_bindings_digid(digid_config):
     assert idp_metadata.get_sso(binding='Redirect')['binding'].endswith('Redirect')
     assert idp_metadata.get_sso(binding='Redirect')['location'] != ""
 
-CERT_NEWLINE = """-----BEGIN CERTIFICATE-----
-FSGDSGDFGDF
------END CERTIFICATE-----\n\n"""
 
-CERT_NO_NEWLINE = """-----BEGIN CERTIFICATE-----
-FSGDSGDFGDF
------END CERTIFICATE-----"""
+def test_metadata_required_root_attrs(tvs_config, tvs_provider_settings, jinja_env):
 
-def test_cert_strip():
-    assert "END CERTIFICATE" not in _strip_cert(CERT_NO_NEWLINE)
-    assert "END CERTIFICATE" not in _strip_cert(CERT_NEWLINE)
-    assert "BEGIN CERTIFICATE" not in _strip_cert(CERT_NO_NEWLINE)
-    assert "BEGIN CERTIFICATE" not in _strip_cert(CERT_NEWLINE)
-    assert _strip_cert(CERT_NEWLINE) == _strip_cert(CERT_NO_NEWLINE)
-
-
-
-def test_metadata_required_root_attrs(tvs_config, tvs_provider_settings):
-    tvs_provider = IdProvider('tvs', tvs_provider_settings)
+    tvs_provider = IdProvider('tvs', tvs_provider_settings, jinja_env)
     assert tvs_provider.sp_metadata.root.attrib['entityID'] is not None
     with pytest.raises(KeyError):
         tvs_provider.sp_metadata.root.attrib['EntityID'] # pylint: disable=pointless-statement

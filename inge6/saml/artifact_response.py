@@ -268,9 +268,9 @@ class ArtifactResponse:
         if not self.is_test_instance and self.is_verifeid:
             # Only perform this validation if it is verified, and not a test instance.
             keyname = root.find('.//ds:KeyName', NAMESPACES).text
-            expected_keyname = self.provider.sp_metadata.keyname
-            if keyname != expected_keyname:
-                errors.append(ValidationError("KeyName does not comply with specified keyname. Expected {}, was {}".format(expected_keyname, keyname)))
+            possible_keynames = self.provider.sp_metadata.dv_keynames
+            if keyname not in possible_keynames:
+                errors.append(ValidationError("KeyName does not comply with one of the specified keynames. Expected list {}, was {}".format(possible_keynames, keyname)))
 
         return errors
 
@@ -375,3 +375,6 @@ class ArtifactResponse:
                 'value': encrypted_data
             }
         }
+
+    def to_string(self) -> str:
+        return etree.tostring(self.root)
