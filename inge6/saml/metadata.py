@@ -87,13 +87,13 @@ class SPMetadata(SAMLRequest):
         return from_settings(self.settings_dict, 'sp.assertionConsumerService.binding')
 
     def get_cert_data(self, key: Optional[str]):
-        if self.cluster_settings is None:
-            # This should never happen, but makes mypy happy
-            raise RuntimeError("Cluster settings dict seems to be None, initilization failed.")
-
         if key is None:
             cert_path = self.signing_cert_path
         else:
+            if self.cluster_settings is None:
+                # This should never happen (key cannot exist without cluster settings), but makes mypy happy
+                raise RuntimeError("Cluster settings dict seems to be None, initilization failed.")
+
             cert_path = self.cluster_settings[key]['cert_path']
 
         with open(cert_path, 'r', encoding='utf-8') as cert_file:
