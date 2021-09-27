@@ -187,7 +187,7 @@ class ArtifactResponse:
         if response_conditions_aud.text != expected_entity_id:
             errors.append(ValidationError('Invalid audience in response Conditions. Expected {}, but was {}'.format(expected_entity_id, response_conditions_aud.text)))
 
-        if self.provider.saml_spec_version >= 4.4:
+        if self.provider.saml_is_new_version:
             response_advice_encrypted_key_aud = self.assertion_attribute_enc_key
             if response_advice_encrypted_key_aud.attrib['Recipient'] != expected_entity_id:
                 errors.append(ValidationError('Invalid audience in encrypted key. Expected {}, but was {}'.format(expected_entity_id, response_advice_encrypted_key_aud.attrib['Recipient'])))
@@ -221,7 +221,7 @@ class ArtifactResponse:
 
         expected_response_dest = from_settings(self.provider.settings_dict, 'sp.assertionConsumerService.url')
         # TODO: remove, or related to saml specification 3.5 vs 4.5? # pylint: disable=fixme
-        if self.provider.saml_spec_version >= 4.4:
+        if self.provider.saml_is_new_version:
             if expected_response_dest != self.response.attrib['Destination']:
                 errors.append(ValidationError('Response destination is not what was expected. Expected: {}, was {}'.format(expected_response_dest, self.response.attrib['Destination'])))
 
@@ -317,7 +317,7 @@ class ArtifactResponse:
             errors += self.validate_in_response_to()
             errors += self.validate_authn_statement()
 
-            if self.provider.saml_spec_version >= 4.4:
+            if self.provider.saml_is_new_version:
                 errors += self.validate_attribute_statements()
 
         if len(errors) != 0:
@@ -347,7 +347,7 @@ class ArtifactResponse:
         return self.assertion_subject.find('./saml:NameID', NAMESPACES)
 
     def get_bsn(self) -> Text:
-        if self.provider.saml_spec_version >= 4.4:
+        if self.provider.saml_is_new_version:
             bsn_element = self._decrypt_bsn()
         else:
             bsn_element = self._plaintext_bsn()

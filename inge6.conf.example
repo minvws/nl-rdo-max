@@ -1,8 +1,8 @@
 [DEFAULT]
 app_name = "CoronaCheck TVS - Digid login"
 
-# No longer prefix with https, occurs in code (always TLS)
-issuer = 10.48.118.250:8006
+# Needs to be a https full URL
+issuer = https://10.48.118.250:8006
 environment = development
 
 # TVS or DigiD?
@@ -77,6 +77,9 @@ subject_id_hash_salt = somesalt
 id_token_lifetime = 600
 
 [saml]
+# The domain which contains the subdomains of the configured Identity providers
+base_issuer = localhost:8007
+
 # saml configuration relating saml request signing, verification and communication 
 # settings.
 identity_provider_settings = saml/identity_providers.json
@@ -94,6 +97,8 @@ authn_request_html_template = saml/templates/html/authn_request.html
 # Connecting to the redis server through parameters:
 host = localhost
 port = 6379
+# Enable the RedisDebugger thread
+enable_debugger = False
 
 # SSL settings, to create a TLS connection to the redis store.
 ssl = False
@@ -105,7 +110,7 @@ cafile = secrets/redis/certs/cacert.crt
 object_ttl = 600
 
 # prefix to cached key-value pairs stored using this service
-default_cache_namespace = tvs-connect:
+default_cache_namespace = tvs-connect
 
 # prefix to tokens, subjects and codes stored in the redis database by the OIDC library
 token_namespace = tvs_token

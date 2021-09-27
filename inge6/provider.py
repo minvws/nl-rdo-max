@@ -200,12 +200,12 @@ def _prepare_req(auth_req: BaseModel, idp_name: str):
     """
     return {
         'https': 'on',
-        'http_host': f'https://{idp_name}.{settings.issuer}',
+        'http_host': f'https://{idp_name}.{settings.saml.base_issuer}',
         'script_name': settings.authorize_endpoint,
         'get_data': auth_req.dict(),
     }
 
-def _get_bsn_from_art_resp(bsn_response: str, saml_spec_version: float) -> str:
+def _get_bsn_from_art_resp(bsn_response: str, id_provider: IdProvider) -> str:
     """
     Depending on the saml versioning the bsn is or is not prepended with a sectore code.
 
@@ -213,10 +213,11 @@ def _get_bsn_from_art_resp(bsn_response: str, saml_spec_version: float) -> str:
     For saml specification 3.5 the bsn is prepended with a sector_code representing its value to
     be either a BSN number or SOFI number.
     """
-    if saml_spec_version >= 4.4:
+
+    if id_provider.saml_is_new_version:
         return bsn_response
 
-    if saml_spec_version == 3.5:
+    if id_provider.saml_is_legacy_version:
         sector_split = bsn_response.split(':')
         sector_number = constants.SECTOR_CODES[sector_split[0]]
         if sector_number != constants.SectorNumber.BSN:
@@ -510,7 +511,7 @@ class Provider(OIDCProvider, SAMLProvider):
 
         if id_provider.sp_metadata.cluster_settings is None:
             # We are able to decrypt the message, and we will
-            bsn = _get_bsn_from_art_resp(artifact_response.get_bsn(), id_provider.saml_spec_version)
+            bsn = _get_bsn_from_art_resp(artifact_response.get_bsn(), id_provider)
             encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
             return encrypted_bsn
 

@@ -3,11 +3,16 @@
 
  ![system overview](docs/images/retrieve-ac-flow.png "Inge6 retrieve access token")
  *Flow of retrieving an access token. Throughout the first part of the flow (after /authorize), the call is directly linked to some randstate (generated directly after the first call). The latter part of the flow that same user is linked using the generated code coupled to that randstate. Using these random state parameters we track the user throughout the complete flow, and seperate that user from other users interacting with the system*
+
 # Setup
 
 As Inge6 is a OIDC <-> SAML bridge, one has to have files for both. Each file is described below. Further, one needs to create an `inge6.conf` to define all settings. An example is found in inge6.conf.example with the corresponding explanations. To make use of all default settings, a single run of `make setup` should be sufficient. Allowing you to run the service on all default settings. 
 
 For a more detailed view on the setup, please have a look in the `/docs` folder.
+
+## Ubuntu dependencies
+Some Ubuntu dependencies that should be installed:
+`libxmlsec1-dev pkg-config`
 
 # Using the ratelimiter
 To activate an overflow IDP, secundairy IDP when primary is too busy, the following settings should be configured in the inge6.conf settings.
