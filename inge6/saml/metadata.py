@@ -1,4 +1,6 @@
 # pylint: disable=c-extension-no-member
+import json
+
 from typing import Dict, Optional
 import secrets
 
@@ -43,7 +45,7 @@ class SPMetadata(SAMLRequest):
         self.cluster_settings = None
         if 'clustered' in settings_dict and settings_dict['clustered'] != "":
             with open(settings_dict['clustered'], 'r', encoding='utf-8') as cluster_settings_file:
-                self.cluster_settings = cluster_settings_file.read()
+                self.cluster_settings = json.loads(cluster_settings_file.read())
 
         self._root = etree.fromstring(self.render_template())
         add_reference(self.root, self._id_hash)
@@ -123,7 +125,6 @@ class SPMetadata(SAMLRequest):
         template = self.jinja_env.get_template(self.CLUSTER_TEMPLATE_NAME)
         clustered_context = {
             'id': self._id_hash,
-            'entity_id': self.entity_id,
             'dv_descriptors': self.create_cluster_entity_descriptor(),
             'lc_descriptor': self.create_entity_descriptor(None)
         }
@@ -176,11 +177,15 @@ class SPMetadata(SAMLRequest):
     def validate(self) -> list:
         errors = []
 
-        if self.root.tag != '{%s}EntityDescriptor' % NAMESPACES['md']:
-            errors.append('Root is not an EntityDescriptor')
+        if self.cluster_settings is None:
+            if self.root.tag != '{%s}EntityDescriptor' % NAMESPACES['md']:
+                errors.append('Root is not an EntityDescriptor')
 
-        if len(self.root.findall('.//md:SPSSODescriptor', NAMESPACES)) != 1:
-            errors.append('Only one SPSSO Descriptor allowed')
+            if len(self.root.findall('.//md:SPSSODescriptor', NAMESPACES)) != 1:
+                errors.append('Only one SPSSO Descriptor allowed')
+        else:
+            if self.root.tag != '{%s}EntitiesDescriptor' % NAMESPACES['md']:
+                errors.append('Root is not an EntityDescriptor')
 
         if not self._has_correct_bindings():
             errors.append('Incorrect bindings for SPSSO services')
