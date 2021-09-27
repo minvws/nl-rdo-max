@@ -1,7 +1,7 @@
 # pylint: disable=c-extension-no-member
 import json
 
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 import secrets
 
 from lxml import etree
@@ -40,9 +40,9 @@ class SPMetadata(SAMLRequest):
         self.jinja_env = jinja_env
         self.settings_dict = settings_dict
 
-        self.dv_keynames = []
+        self.dv_keynames: List[str] = []
 
-        self.cluster_settings = None
+        self.cluster_settings: Optional[Dict[str, Dict[str, str]]] = None
         if 'clustered' in settings_dict and settings_dict['clustered'] != "":
             with open(settings_dict['clustered'], 'r', encoding='utf-8') as cluster_settings_file:
                 self.cluster_settings = json.loads(cluster_settings_file.read())
@@ -87,6 +87,10 @@ class SPMetadata(SAMLRequest):
         return from_settings(self.settings_dict, 'sp.assertionConsumerService.binding')
 
     def get_cert_data(self, key: Optional[str]):
+        if self.cluster_settings is None:
+            # This should never happen, but makes mypy happy
+            raise RuntimeError("Cluster settings dict seems to be None, initilization failed.")
+
         if key is None:
             cert_path = self.signing_cert_path
         else:
@@ -109,6 +113,10 @@ class SPMetadata(SAMLRequest):
         }
 
     def create_entity_descriptor(self, key: Optional[str]):
+        if self.cluster_settings is None:
+            # This should never happen, but makes mypy happy
+            raise RuntimeError("Cluster settings dict seems to be None, initilization failed.")
+
         return {
             'id': "_" + secrets.token_hex(41), # total length 42.
             'entity_id': self.entity_id if key is None else self.cluster_settings[key]['entity_id'],
