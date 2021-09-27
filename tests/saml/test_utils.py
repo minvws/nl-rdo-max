@@ -21,4 +21,3 @@ def test_cert_strip():
     assert "BEGIN CERTIFICATE" not in strip_cert(CERT_NO_NEWLINE)
     assert "BEGIN CERTIFICATE" not in strip_cert(CERT_NEWLINE)
     assert strip_cert(CERT_NEWLINE) == strip_cert(CERT_NO_NEWLINE)
-

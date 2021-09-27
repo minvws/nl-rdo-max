@@ -1,4 +1,3 @@
-from tests.saml.conftest import jinja_env
 import pytest
 # pylint: disable=c-extension-no-member
 import xmlsec

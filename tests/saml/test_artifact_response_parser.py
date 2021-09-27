@@ -7,14 +7,11 @@ from freezegun import freeze_time
 from lxml import etree
 from packaging.version import Version
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-
 from inge6.saml import ArtifactResponse
 from inge6.saml.id_provider import IdProvider
 from inge6.saml.provider import Provider as SAMLProvider
 from inge6.saml.exceptions import UserNotAuthenticated
 from inge6.saml.constants import NAMESPACES
-from inge6.config import settings
 
 # pylint: disable=pointless-string-statement
 """

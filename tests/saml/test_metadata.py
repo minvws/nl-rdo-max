@@ -3,7 +3,6 @@ import pytest
 from inge6.saml.metadata import IdPMetadata
 from inge6.saml.constants import NAMESPACES
 from inge6.saml.id_provider import IdProvider
-from inge6.config import settings
 
 # pylint: disable=unused-argument
 def test_idp_metadata_bindings_tvs(tvs_config):

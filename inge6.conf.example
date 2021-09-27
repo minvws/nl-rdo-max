@@ -88,6 +88,7 @@ identity_provider_settings = saml/identity_providers.json
 response_expires_in = 600
 
 # template files:
+templates = saml/templates/xml
 sp_template = saml/templates/xml/sp_metadata.xml
 authn_request_template = saml/templates/xml/authn_request.xml
 artifactresolve_request_template = saml/templates/xml/artifactresolve_request.xml
