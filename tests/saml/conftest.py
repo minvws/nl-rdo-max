@@ -20,8 +20,8 @@ def tvs_clustered_provider_settings():
     return {
         "saml_specification_version": "4.5",
         "base_dir": "tests/resources/saml_provider_settings/tvs_clustered",
-        "cert_path": "tests/resources/saml_provider_settings/tvs_clustered/certs/sp.crt",
-        "key_path": "tests/resources/saml_provider_settings/tvs_clustered/certs/sp.key",
+        "cert_path": "saml/tvs/certs/sp.crt",
+        "key_path": "saml/tvs/certs/sp.key",
         "settings_path": "tests/resources/saml_provider_settings/tvs_clustered/settings.json",
         "idp_metadata_path": "tests/resources/saml_provider_settings/tvs_clustered/metadata/idp_metadata.xml"
     }
