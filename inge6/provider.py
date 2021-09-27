@@ -535,7 +535,7 @@ class Provider(OIDCProvider, SAMLProvider):
 
         if all(k in bsn_dict for k in ['key', 'data']):
             # We never decrypted the message, we cannot re-encrypt.
-            return Response(content=bsn_dict, status_code=200)
+            return Response(content=bsn_dict, status_code=200, headers={'Content-Type': 'application/xml'})
 
         encrypted_bsn = self.bsn_encrypt.from_symm_to_pub(bsn_dict)
         return Response(content=encrypted_bsn, status_code=200)

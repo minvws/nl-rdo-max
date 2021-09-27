@@ -1,6 +1,7 @@
 {
     "cibg": {
         "saml_enc_key_path": "",
-        "userinfo_endpoint": ""
+        "userinfo_endpoint": "",
+        "entity_id": ""
     }   
 }
