@@ -268,9 +268,9 @@ class ArtifactResponse:
         if not self.is_test_instance and self.is_verifeid:
             # Only perform this validation if it is verified, and not a test instance.
             keyname = root.find('.//ds:KeyName', NAMESPACES).text
-            expected_keyname = self.provider.sp_metadata.keyname
-            if keyname != expected_keyname:
-                errors.append(ValidationError("KeyName does not comply with specified keyname. Expected {}, was {}".format(expected_keyname, keyname)))
+            possible_keynames = self.provider.sp_metadata.dv_keynames
+            if keyname not in possible_keynames:
+                errors.append(ValidationError("KeyName does not comply with one of the specified keynames. Expected list {}, was {}".format(possible_keynames, keyname)))
 
         return errors
 
@@ -352,3 +352,29 @@ class ArtifactResponse:
         else:
             bsn_element = self._plaintext_bsn()
         return bsn_element.text
+
+
+    def get_enc_key_and_enc_data(self):
+        encrypted_keyname = self.assertion_attribute_enc_key.find('.//ds:KeyName', NAMESPACES).text
+        encrypted_key = self.assertion_attribute_enc_key.find('.//xenc:CipherValue', NAMESPACES).text
+        encrypted_keyalg = self.assertion_attribute_enc_key.find('./xenc:EncryptionMethod', NAMESPACES).attrib['Algorithm']
+        encrypted_keydig = self.assertion_attribute_enc_key.find('.//ds:DigestMethod', NAMESPACES).attrib['Algorithm']
+
+        encrypted_data = self.assertion_attribute_enc_data.find('.//xenc:CipherValue', NAMESPACES).text
+        encrypted_data_method = self.assertion_attribute_enc_data.find('.//xenc:EncryptionMethod', NAMESPACES).attrib['Algorithm']
+
+        return {
+            'key': {
+                'name': encrypted_keyname,
+                'alg': encrypted_keyalg,
+                'dig': encrypted_keydig,
+                'value': encrypted_key
+            },
+            'data': {
+                'alg': encrypted_data_method,
+                'value': encrypted_data
+            }
+        }
+
+    def to_string(self) -> str:
+        return etree.tostring(self.root)

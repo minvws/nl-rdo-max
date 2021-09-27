@@ -1,4 +1,5 @@
 # pylint: disable=c-extension-no-member
+from abc import abstractmethod
 import base64
 import secrets
 from typing import Optional, Any, Tuple
@@ -47,17 +48,16 @@ def add_artifact(root, artifact_code) -> None:
 
 class SAMLRequest:
 
-    def __init__(self, root, keypair: Tuple[str, str]) -> None:
+    def __init__(self, keypair_sign: Tuple[str, str]) -> None:
         """
         Initiate a SAMLRequest with a parsed xml tree and keypair for signing
 
         :param root: parsed XML tree
-        :param keypair: (cert_path, key_path) tuple.
+        :param keypair: (cert_path, key_path) tuple for signing of the messages.
         """
         self._id_hash = "_" + secrets.token_hex(41) # total length 42.
-        self.root = root
-        self.cert_path = keypair[0]
-        self.key_path = keypair[1]
+        self.signing_cert_path = keypair_sign[0]
+        self.signing_key_path = keypair_sign[1]
 
     def get_xml(self, xml_declaration: bool = False) -> bytes:
         if xml_declaration:
@@ -66,6 +66,11 @@ class SAMLRequest:
 
     def get_base64_string(self) -> bytes:
         return base64.b64encode(self.get_xml())
+
+    @property
+    @abstractmethod
+    def root(self):
+        pass
 
     @property
     def saml_elem(self):
@@ -81,14 +86,20 @@ class AuthNRequest(SAMLRequest):
     TEMPLATE_PATH = settings.saml.authn_request_template
 
     def __init__(self, sso_url, issuer_id, keypair) -> None:
-        super().__init__(etree.parse(self.TEMPLATE_PATH).getroot(), keypair)
+        super().__init__(keypair)
+        self._root = etree.parse(self.TEMPLATE_PATH).getroot()
+
         add_root_id(self.root, self._id_hash)
         add_destination(self.root, sso_url)
         add_issuer(self.root, issuer_id)
         add_root_issue_instant(self.root)
         add_reference(self.root, self._id_hash)
-        add_certs(self.root, self.cert_path)
-        sign(self.root, self.key_path)
+        add_certs(self.root, self.signing_cert_path)
+        sign(self.root, self.signing_key_path)
+
+    @property
+    def root(self):
+        return self._root
 
 class ArtifactResolveRequest(SAMLRequest):
     """
@@ -100,7 +111,8 @@ class ArtifactResolveRequest(SAMLRequest):
     TEMPLATE_PATH = settings.saml.artifactresolve_request_template
 
     def __init__(self, artifact_code, sso_url, issuer_id, keypair) -> None:
-        super().__init__(etree.parse(self.TEMPLATE_PATH).getroot(), keypair)
+        super().__init__(keypair)
+        self._root = etree.parse(self.TEMPLATE_PATH).getroot()
         self.saml_resolve_req = self.root.find('.//samlp:ArtifactResolve', {'samlp': "urn:oasis:names:tc:SAML:2.0:protocol"})
 
         add_root_id(self.saml_resolve_req, self._id_hash)
@@ -108,10 +120,14 @@ class ArtifactResolveRequest(SAMLRequest):
         add_destination(self.saml_resolve_req, sso_url)
         add_issuer(self.saml_resolve_req, issuer_id)
         add_reference(self.saml_resolve_req, self._id_hash)
-        add_certs(self.saml_resolve_req, self.cert_path)
+        add_certs(self.saml_resolve_req, self.signing_cert_path)
         add_artifact(self.saml_resolve_req, artifact_code)
-        sign(self.saml_resolve_req, self.key_path)
+        sign(self.saml_resolve_req, self.signing_key_path)
 
     @property
     def saml_elem(self):
         return self.saml_resolve_req
+
+    @property
+    def root(self):
+        return self._root
