@@ -64,7 +64,6 @@ import logging
 from logging import Logger
 
 from urllib import parse
-import urllib
 
 from urllib.parse import parse_qs, urlencode
 from typing import Text, List, Union
@@ -382,7 +381,9 @@ class Provider(OIDCProvider, SAMLProvider):
                 'state': authorize_request.state
             }
             return RedirectResponse('/sorry-too-busy?' + parse.urlencode(query_params))
-        except:
+        except ExpectedRedisValue as exp_redis:
+            raise exp_redis
+        except: # pylint: disable=bare-except
             log.error("Some unhandled error appeard", exc_info=True)
             query_params = {
                 'error': "request_not_supported",
@@ -402,7 +403,7 @@ class Provider(OIDCProvider, SAMLProvider):
             error_resp = AuthorizationErrorResponse(error='invalid_request_object', error_message=str('Something went wrong: {}'.format(str(invalid_auth_req))),
                                                     state=invalid_auth_req.request.get('state'))
             return RedirectResponse(error_resp.request(invalid_auth_req.request.redirect_uri, False), status_code=302)
-        except:
+        except: # pylint: disable=bare-except
             log.error("Some unhandled error appeard", exc_info=True)
             query_params = {
                 'error': "request_not_supported",
