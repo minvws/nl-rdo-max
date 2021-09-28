@@ -376,8 +376,8 @@ class Provider(OIDCProvider, SAMLProvider):
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
             log.warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
             query_params = {
-                'error': authorize_request.client_id,
-                'error_desc'
+                'redirect_uri': authorize_request.redirect_uri,
+                'client_id': authorize_request.client_id,
                 'state': authorize_request.state
             }
             return RedirectResponse('/sorry-too-busy?' + parse.urlencode(query_params))
