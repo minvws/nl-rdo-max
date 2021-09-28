@@ -64,6 +64,7 @@ import logging
 from logging import Logger
 
 from urllib import parse
+import urllib
 
 from urllib.parse import parse_qs, urlencode
 from typing import Text, List, Union
@@ -80,6 +81,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from oic.oic.message import (
+    AuthorizationErrorResponse,
     AuthorizationRequest as OICAuthRequest,
     TokenErrorResponse
 )
@@ -374,11 +376,19 @@ class Provider(OIDCProvider, SAMLProvider):
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
             log.warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
             query_params = {
-                'redirect_uri': authorize_request.redirect_uri,
-                'client_id': authorize_request.client_id,
+                'error': authorize_request.client_id,
+                'error_desc'
                 'state': authorize_request.state
             }
             return RedirectResponse('/sorry-too-busy?' + parse.urlencode(query_params))
+        except:
+            log.error("Some unhandled error appeard", exc_info=True)
+            query_params = {
+                'error': "request_not_supported",
+                'error_description': "Some unhandled error. Unclear what went wrong",
+                'state': authorize_request.state
+            }
+            return RedirectResponse(authorize_request.redirect_uri + '?' + parse.urlencode(query_params))
 
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
@@ -388,7 +398,17 @@ class Provider(OIDCProvider, SAMLProvider):
             if error_url:
                 return RedirectResponse(error_url, status_code=303)
 
-            return Response(content='Something went wrong: {}'.format(str(invalid_auth_req)), status_code=400)
+            error_resp = AuthorizationErrorResponse(error='invalid_request_object', error_message=str('Something went wrong: {}'.format(str(invalid_auth_req))),
+                                                    state=invalid_auth_req.request.get('state'))
+            return RedirectResponse(error_resp.request(invalid_auth_req.request.redirect_uri, False), status_code=302)
+        except:
+            log.error("Some unhandled error appeard", exc_info=True)
+            query_params = {
+                'error': "request_not_supported",
+                'error_description': "Some unhandled error. Unclear what went wrong",
+                'state': authorize_request.state
+            }
+            return RedirectResponse(authorize_request.redirect_uri + '?' + parse.urlencode(query_params))
 
         randstate = redis_cache.gen_token()
         _cache_auth_req(randstate, auth_req, authorize_request, primary_idp)

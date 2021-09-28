@@ -20,3 +20,5 @@ http_cache.sqlite
 clients.json
 saml/identity_providers.json
 tmp
+.DS_Store
+cluster.tvs.json
