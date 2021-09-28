@@ -387,10 +387,12 @@ class Provider(OIDCProvider, SAMLProvider):
             log.error("Some unhandled error appeard", exc_info=True)
             query_params = {
                 'error': "request_not_supported",
-                'error_description': "Some unhandled error. Unclear what went wrong",
+                'error_description': "Some unhandled error in the rate limit tester. Unclear what went wrong",
                 'state': authorize_request.state
             }
-            return RedirectResponse(authorize_request.redirect_uri + '?' + parse.urlencode(query_params))
+            redirect_url = authorize_request.redirect_uri + '?' + parse.urlencode(query_params)
+            log.error("redirecting to: %s", redirect_url)
+            return RedirectResponse(redirect_url, status_code=303)
 
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
@@ -402,15 +404,19 @@ class Provider(OIDCProvider, SAMLProvider):
 
             error_resp = AuthorizationErrorResponse(error='invalid_request_object', error_message=str('Something went wrong: {}'.format(str(invalid_auth_req))),
                                                     state=invalid_auth_req.request.get('state'))
-            return RedirectResponse(error_resp.request(invalid_auth_req.request.redirect_uri, False), status_code=302)
+            redirect_url = error_resp.request(invalid_auth_req.request.redirect_uri, False)
+            log.error("redirecting to: %s", redirect_url)
+            return RedirectResponse(redirect_url, status_code=303)
         except: # pylint: disable=bare-except
             log.error("Some unhandled error appeard", exc_info=True)
             query_params = {
                 'error': "request_not_supported",
-                'error_description': "Some unhandled error. Unclear what went wrong",
+                'error_description': "Some unhandled error when parsing the authentication. Unclear what went wrong",
                 'state': authorize_request.state
             }
-            return RedirectResponse(authorize_request.redirect_uri + '?' + parse.urlencode(query_params))
+            redirect_url = authorize_request.redirect_uri + '?' + parse.urlencode(query_params)
+            log.error("redirecting to: %s", redirect_url)
+            return RedirectResponse(redirect_url, status_code=303)
 
         randstate = redis_cache.gen_token()
         _cache_auth_req(randstate, auth_req, authorize_request, primary_idp)
