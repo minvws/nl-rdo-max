@@ -1,6 +1,10 @@
 # pylint: disable=c-extension-no-member
 from typing import Dict, Tuple, Any, Optional, Union
+import textwrap
+
 import xmlsec
+
+from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 
 from .constants import NAMESPACES
 
@@ -68,3 +72,17 @@ def has_valid_signatures(root, cert_data: str = None, cert_path: str = 'saml/cer
 
 def remove_padding(enc_data: bytes) -> bytes:
     return enc_data[:-enc_data[-1]]
+
+
+def compute_keyname(cert):
+    cert = load_certificate(FILETYPE_PEM, cert)
+    sha256_fingerprint = cert.digest("sha256").decode().replace(":", "").lower()
+    return sha256_fingerprint
+
+
+def enforce_cert_newlines(cert_data):
+    return "\n".join(textwrap.wrap(cert_data.replace('\n', ''), 64))
+
+
+def strip_cert(cert_data):
+    return "\n".join(cert_data.strip().split('\n')[1:-1])

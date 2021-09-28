@@ -2,6 +2,8 @@ import json
 
 from typing import Dict
 
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
 from .id_provider import IdProvider
 from ..config import settings
 
@@ -14,8 +16,13 @@ class Provider:
         - settings.saml.identity_provider_settings, path to the configuration for all identity providers.
     """
     ID_PROVIDERS_PATH = settings.saml.identity_provider_settings
+    SAML_TEMPLATES_PATH = settings.saml.templates
 
     def __init__(self) -> None:
+        self.jinja_env = Environment(
+            loader=FileSystemLoader(self.SAML_TEMPLATES_PATH),
+            autoescape=select_autoescape()
+        )
         self.id_providers = self._parse_id_providers()
 
     def _parse_id_providers(self) -> Dict[str, IdProvider]:
@@ -24,7 +31,7 @@ class Provider:
 
         providers = {}
         for provider in id_providers.keys():
-            providers[provider] = IdProvider(provider, id_providers[provider])
+            providers[provider] = IdProvider(provider, id_providers[provider], self.jinja_env)
 
         return providers
 

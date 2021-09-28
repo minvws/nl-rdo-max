@@ -4,6 +4,7 @@ import re
 import uuid
 import urllib.parse as urlparse
 import pytest
+import packaging
 
 from freezegun import freeze_time
 
@@ -43,7 +44,12 @@ def test_sorry_too_busy():
 # pylint: disable=unused-argument
 def test_get_bsn_from_artresponse():
     art_resp_sector = 's00000000:900029365'
-    assert _get_bsn_from_art_resp(art_resp_sector, 3.5) == '900029365' # pylint: disable=protected-access
+    provider = get_provider()
+    id_provider = provider.get_id_provider('tvs')
+    original_version = id_provider.saml_spec_version
+    id_provider.saml_spec_version = packaging.version.Version("3.5")
+    assert _get_bsn_from_art_resp(art_resp_sector, id_provider) == '900029365' # pylint: disable=protected-access
+    id_provider.saml_spec_version = original_version
 
 
 def test_authorize_ratelimit(redis_mock, fake_redis_user_limit_key, digid_mock_disable):
@@ -149,7 +155,7 @@ def test_resolve_artifact_tvs(requests_mock, mocker, redis_mock, tvs_config): # 
 
     # Allow the decryption of the BSN using a custom privkey, and force the key name used along with that privkey
     mocker.patch.object(id_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
-    mocker.patch.object(id_provider.sp_metadata, 'keyname', '70c7065d4ad1bec9f57e4bd3dfd6812af6035d57e1ec3496b600491d8c238081')
+    mocker.patch.object(id_provider.sp_metadata, 'dv_keynames', ['70c7065d4ad1bec9f57e4bd3dfd6812af6035d57e1ec3496b600491d8c238081'])
 
     # Do not re-encrypt, not the purpose of this test
     mocker.patch.object(provider.bsn_encrypt, 'symm_encrypt', mock_symm_encrypt)
@@ -208,7 +214,7 @@ def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock
     code = None
     for item in items:
         item = item.decode("utf-8")
-        temp_code = item[len(settings.redis.default_cache_namespace):]
+        temp_code = item[len(settings.redis.default_cache_namespace):].replace(":", "")
         if settings.redis.default_cache_namespace in item and len(temp_code) == 32:
             code = temp_code
             break

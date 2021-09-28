@@ -1,5 +1,5 @@
+import logging
 import pytest
-
 from inge6.main import validate_startup
 from inge6.config import settings
 
@@ -12,6 +12,44 @@ def mock_use_ssl():
     settings.use_ssl = 'true'
     yield
     settings.use_ssl = tmp
+
+@pytest.fixture
+def capture_logging(caplog):
+    caplog.set_level(logging.DEBUG)
+
+    yield caplog
+    caplog.clear()
+
+@pytest.fixture
+def invalid_redis_settings():
+    existing_redis_ssl = settings.redis.ssl
+    settings.redis.ssl = True
+    keys = [
+        "host",
+        "port",
+        "enable_debugger",
+        "key",
+        "cert",
+        "cafile",
+        "object_ttl",
+        "default_cache_namespace",
+        "token_namespace",
+        "refresh_token_namespace",
+        "sub_id_namespace",
+        "code_namespace"
+    ]
+    original_values = {}
+
+    for key in keys:
+        original_values[key] = getattr(settings.redis, key)
+        setattr(settings.redis, key, "")
+
+    yield
+
+    settings.redis.ssl = existing_redis_ssl
+
+    for item in original_values.items():
+        setattr(settings.redis, item[0], item[1])
 
 @pytest.mark.parametrize("section,setting",
     [
@@ -84,3 +122,25 @@ def test_identity_providers_example_errorneous(mock_invalid_id_provider_setting_
         assert not validate_startup()
         mock_logger.error.assert_called()
         settings.saml.identity_provider_settings = tmp
+
+
+def test_redis_settings_errorneous(capture_logging, invalid_redis_settings): # pylint: disable=unused-argument, redefined-outer-name
+    assert not validate_startup()
+    keys = [
+        "host",
+        "port",
+        "enable_debugger",
+        "key",
+        "cert",
+        "cafile",
+        "object_ttl",
+        "default_cache_namespace",
+        "token_namespace",
+        "refresh_token_namespace",
+        "sub_id_namespace",
+        "code_namespace"
+    ]
+    for key in keys:
+        assert 'redis.{}'.format(key) in capture_logging.text
+
+    capture_logging.clear()

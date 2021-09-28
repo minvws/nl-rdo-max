@@ -2,8 +2,11 @@ import pytest
 # pylint: disable=c-extension-no-member
 import xmlsec
 
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
 from inge6.saml import AuthNRequest, ArtifactResolveRequest
 from inge6.saml.metadata import SPMetadata
+from inge6.config import settings
 
 SETTINGS_DICT = {
     "strict": True,
@@ -46,10 +49,15 @@ def test_artifact_value():
 
     assert artifact_node.text == expected
 
+JINJA_ENV = Environment(
+    loader=FileSystemLoader(settings.saml.templates),
+    autoescape=select_autoescape()
+)
+
 @pytest.mark.parametrize("saml_request", [
     AuthNRequest(sso_url='test_url', issuer_id='test_id', keypair=keypair_path),
     ArtifactResolveRequest('some_artifact_code', sso_url='test_url', issuer_id='test_id', keypair=keypair_path),
-    SPMetadata(SETTINGS_DICT, keypair_path, 'tvs')])
+    SPMetadata(SETTINGS_DICT, keypair_path, JINJA_ENV)])
 def test_verify_requests(saml_request): # pylint: disable=unused-argument
     getroot =saml_request.saml_elem
     # xmlsec.tree.add_ids(getroot, ["ID"])
