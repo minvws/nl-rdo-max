@@ -403,8 +403,8 @@ class Provider(OIDCProvider, SAMLProvider):
                 return RedirectResponse(error_url, status_code=303)
 
             error_resp = AuthorizationErrorResponse(error='invalid_request_object', error_message=str('Something went wrong: {}'.format(str(invalid_auth_req))),
-                                                    state=invalid_auth_req.request.get('state'))
-            redirect_url = error_resp.request(invalid_auth_req.request.redirect_uri, False)
+                                                    state=authorize_request.state)
+            redirect_url = error_resp.request(authorize_request.redirect_uri, False)
             log.error("redirecting to: %s", redirect_url)
             return RedirectResponse(redirect_url, status_code=303)
         except: # pylint: disable=bare-except
