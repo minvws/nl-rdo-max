@@ -88,6 +88,7 @@ identity_provider_settings = saml/identity_providers.json
 response_expires_in = 600
 
 # template files:
+templates = saml/templates/xml
 sp_template = saml/templates/xml/sp_metadata.xml
 authn_request_template = saml/templates/xml/authn_request.xml
 artifactresolve_request_template = saml/templates/xml/artifactresolve_request.xml
@@ -97,6 +98,8 @@ authn_request_html_template = saml/templates/html/authn_request.html
 # Connecting to the redis server through parameters:
 host = localhost
 port = 6379
+# Enable the RedisDebugger thread
+enable_debugger = False
 
 # SSL settings, to create a TLS connection to the redis store.
 ssl = False
@@ -108,7 +111,7 @@ cafile = secrets/redis/certs/cacert.crt
 object_ttl = 600
 
 # prefix to cached key-value pairs stored using this service
-default_cache_namespace = tvs-connect:
+default_cache_namespace = tvs-connect
 
 # prefix to tokens, subjects and codes stored in the redis database by the OIDC library
 token_namespace = tvs_token
