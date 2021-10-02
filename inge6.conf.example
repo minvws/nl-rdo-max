@@ -40,6 +40,8 @@ loglevel = debug
 # an ip-address should be remembered in the redis-db
 sorry_too_busy_page_head = static/templates/sorry-coronacheck_head.html
 sorry_too_busy_page_tail = static/templates/sorry-coronacheck_tail.html
+outage_page_head = static/templates/storing-coronacheck_head.html
+outage_page_tail = static/templates/storing-coronacheck_tail.html
 
 # IDP#1: the key in redis containing the user limit for IDP#1
 user_limit_key = tvs_connect_user_limit
