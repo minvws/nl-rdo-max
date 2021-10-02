@@ -341,6 +341,12 @@ class Provider(OIDCProvider, SAMLProvider):
         with open(settings.ratelimit.sorry_too_busy_page_tail, 'r', encoding='utf-8') as too_busy_file:
             self.too_busy_page_template_tail = too_busy_file.read()
 
+        with open(settings.ratelimit.outage_page_head, 'r', encoding='utf-8') as outage_file_file:
+            self.outage_page_template_head = outage_file.read()
+
+        with open(settings.ratelimit.outage_page_tail, 'r', encoding='utf-8') as outage_file_file:
+            self.outage_page_template_tail = outage_file.read()
+
         with open(settings.oidc.clients_file, 'r', encoding='utf-8') as clients_file:
             self.audience = list(json.loads(clients_file.read()).keys())
 
