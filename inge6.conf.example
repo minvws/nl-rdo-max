@@ -48,6 +48,9 @@ user_limit_key_overflow_idp = digid_connect_user_limit
 
 # Amount of seconds needed per ip address
 ip_expire_in_s = 10
+# Amount of attempts per ip address
+nof_attempts_s = 3
+
 
 [bsn]
 # Once the bsn is retrieved it is encrypted and stored in the redis database. This encryption
