@@ -24,7 +24,7 @@ click==8.0.1
     # via
     #   black
     #   uvicorn
-coverage==5.5
+coverage==6.0
     # via
     #   -r requirements-dev.in
     #   pytest-cov
