@@ -436,7 +436,7 @@ class Provider(OIDCProvider, SAMLProvider):
             access_key = _create_redis_bsn_key(self.key, token_response['id_token'].encode(), self.audience)
             redis_cache.set(access_key, encrypted_bsn)
 
-            log.info(' User has returned from %s and we received a response (Mocking mode is %s)', id_provider, settings.mock_digid)
+            log.info(' User has returned from %s and we received a response (Mocking mode is %s)', id_provider.upper(), settings.mock_digid.upper())
 
             json_content_resp = jsonable_encoder(token_response.to_dict())
             return JSONResponse(content=json_content_resp)
