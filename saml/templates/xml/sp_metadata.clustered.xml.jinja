@@ -1,4 +1,4 @@
-<md:EntitiesDescriptor xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" ID="{{ id }}">
+<md:EntitiesDescriptor xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" ID="{{ id }}" validUntil="{{ valid_until }}">
     <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
         <ds:SignedInfo>
             <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
@@ -27,6 +27,14 @@
                     <ds:KeyName>{{ lc_descriptor.spsso.keyname }}</ds:KeyName>
                     <ds:X509Data>
                         <ds:X509Certificate>{{ lc_descriptor.spsso.cert }}</ds:X509Certificate>
+                    </ds:X509Data>
+                </ds:KeyInfo>
+            </md:KeyDescriptor>
+            <md:KeyDescriptor use="signing">
+                <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                    <ds:KeyName>{{ keyname_tls }}</ds:KeyName>
+                    <ds:X509Data>
+                        <ds:X509Certificate>{{ cert_tls }}</ds:X509Certificate>
                     </ds:X509Data>
                 </ds:KeyInfo>
             </md:KeyDescriptor>

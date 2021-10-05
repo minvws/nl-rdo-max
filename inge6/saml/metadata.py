@@ -1,5 +1,6 @@
 # pylint: disable=c-extension-no-member
 import json
+import datetime
 
 from typing import Dict, Optional, List
 import secrets
@@ -22,6 +23,7 @@ class SPMetadata(SAMLRequest):
     """
     TEMPLATE_NAME = 'sp_metadata.xml.jinja'
     CLUSTER_TEMPLATE_NAME = 'sp_metadata.clustered.xml.jinja'
+    DELTA_DAYS_VALID_UNTIL = 365
 
 
     def __init__(self, settings_dict, keypair_sign, jinja_env) -> None:
@@ -42,7 +44,7 @@ class SPMetadata(SAMLRequest):
 
         self.dv_keynames: List[str] = []
 
-        self.cluster_settings: Optional[Dict[str, Dict[str, str]]] = None
+        self.cluster_settings = None
         if 'clustered' in settings_dict and settings_dict['clustered'] != "":
             with open(settings_dict['clustered'], 'r', encoding='utf-8') as cluster_settings_file:
                 self.cluster_settings = json.loads(cluster_settings_file.read())
@@ -86,23 +88,23 @@ class SPMetadata(SAMLRequest):
     def acs_binding(self):
         return from_settings(self.settings_dict, 'sp.assertionConsumerService.binding')
 
-    def get_cert_data(self, key: Optional[str]):
-        if key is None:
+    def get_cert_data(self, cluster_name: Optional[str]):
+        if cluster_name is None:
             cert_path = self.signing_cert_path
         else:
             if self.cluster_settings is None:
                 # This should never happen (key cannot exist without cluster settings), but makes mypy happy
                 raise RuntimeError("Cluster settings dict seems to be None, initilization failed.")
 
-            cert_path = self.cluster_settings[key]['cert_path']
+            cert_path = self.cluster_settings['connections'][cluster_name]['cert_path']
 
         with open(cert_path, 'r', encoding='utf-8') as cert_file:
             cert_data = cert_file.read()
 
         return cert_data
 
-    def get_spsso(self, key: Optional[str]):
-        cert = self.get_cert_data(key)
+    def get_spsso(self, cluster_name: Optional[str]):
+        cert = self.get_cert_data(cluster_name)
         keyname = compute_keyname(cert)
         self.dv_keynames.append(keyname)
         return {
@@ -112,29 +114,37 @@ class SPMetadata(SAMLRequest):
             'acs_url': self.acs_url,
         }
 
-    def create_entity_descriptor(self, key: Optional[str]):
+    def create_entity_descriptor(self, cluster_name: Optional[str]):
         if self.cluster_settings is None:
             # This should never happen, but makes mypy happy
             raise RuntimeError("Cluster settings dict seems to be None, initilization failed.")
 
         return {
             'id': "_" + secrets.token_hex(41), # total length 42.
-            'entity_id': self.entity_id if key is None else self.cluster_settings[key]['entity_id'],
-            'spsso': self.get_spsso(key)
+            'entity_id': self.entity_id if cluster_name is None else self.cluster_settings['connections'][cluster_name]['entity_id'],
+            'spsso': self.get_spsso(cluster_name)
         }
 
     def create_cluster_entity_descriptor(self):
         return {
-            'clustered_' + key: self.create_entity_descriptor(key)
-            for key, _ in self.cluster_settings.items()
+            'clustered_' + cluster_name: self.create_entity_descriptor(cluster_name)
+            for cluster_name, _ in self.cluster_settings['connections'].items()
         }
 
     def render_clustered_template(self):
+        with open(self.cluster_settings['tls_keypath'], 'r', encoding='utf-8') as tls_keyfile:
+            cert_tls = tls_keyfile.read()
+
+        keyname_tls = compute_keyname(cert_tls)
+
         template = self.jinja_env.get_template(self.CLUSTER_TEMPLATE_NAME)
         clustered_context = {
             'id': self._id_hash,
+            'valid_until': datetime.datetime.now() + datetime.timedelta(days=self.DELTA_DAYS_VALID_UNTIL),
             'dv_descriptors': self.create_cluster_entity_descriptor(),
-            'lc_descriptor': self.create_entity_descriptor(None)
+            'lc_descriptor': self.create_entity_descriptor(None),
+            'cert_tls': strip_cert(cert_tls),
+            'keyname_tls': keyname_tls,
         }
 
         return template.render(clustered_context)
