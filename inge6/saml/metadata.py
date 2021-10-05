@@ -51,6 +51,11 @@ class SPMetadata(SAMLRequest):
 
         self._root = etree.fromstring(self.render_template())
         add_reference(self.root, self._id_hash)
+
+        with open(self.signing_cert_path, 'r', encoding='utf-8') as cert_file:
+            cert_data = cert_file.read()
+        self.root.find('.//ds:Signature/ds:KeyInfo//ds:X509Certificate', NAMESPACES).text = strip_cert(cert_data)
+
         sign(self.root, self.signing_key_path)
 
     @property

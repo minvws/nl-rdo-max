@@ -41,8 +41,6 @@ def sign(root, key_path):
     with open(key_path, 'r', encoding='utf-8') as key_file:
         key_data = key_file.read()
 
-    root.find('.//ds:Signature/ds:KeyInfo//ds:X509Certificate', NAMESPACES).text = strip_cert(key_data)
-
     signature_node = xmlsec.tree.find_node(root, xmlsec.constants.NodeSignature)
     ctx = xmlsec.SignatureContext()
     key = xmlsec.Key.from_memory(key_data, xmlsec.constants.KeyDataFormatPem)
