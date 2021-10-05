@@ -380,11 +380,10 @@ class ArtifactResponse:
         return etree.tostring(self.root)
 
     def to_envelope_string(self) -> str:
-        return f"""
-            <?xml version="1.0"?>
-            <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-                <soapenv:Body>
-                    {self.to_string()}
-                </soapenv:Body>
-            </soapenv:Envelope>
-        """
+        return f"""<?xml version="1.0"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+    <soapenv:Body>
+        {self.to_string()}
+    </soapenv:Body>
+</soapenv:Envelope>
+"""
