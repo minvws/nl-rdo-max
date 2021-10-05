@@ -24,7 +24,7 @@ click==8.0.1
     # via
     #   black
     #   uvicorn
-coverage[toml]==5.5
+coverage==6.0
     # via
     #   -r requirements-dev.in
     #   pytest-cov
@@ -124,9 +124,9 @@ toml==0.10.2
     #   pytest
 tomli==1.2.1
     # via black
-types-redis==3.5.8
+types-redis==3.5.9
     # via -r requirements-dev.in
-types-requests==2.25.6
+types-requests==2.25.9
     # via -r requirements-dev.in
 typing-extensions==3.10.0.0
     # via
