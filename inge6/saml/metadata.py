@@ -44,7 +44,7 @@ class SPMetadata(SAMLRequest):
 
         self.dv_keynames: List[str] = []
 
-        self.cluster_settings: Optional[Dict[str, Dict[str, str]]] = None
+        self.cluster_settings = None
         if 'clustered' in settings_dict and settings_dict['clustered'] != "":
             with open(settings_dict['clustered'], 'r', encoding='utf-8') as cluster_settings_file:
                 self.cluster_settings = json.loads(cluster_settings_file.read())
