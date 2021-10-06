@@ -145,7 +145,7 @@ class SPMetadata(SAMLRequest):
         template = self.jinja_env.get_template(self.CLUSTER_TEMPLATE_NAME)
         clustered_context = {
             'id': self._id_hash,
-            'valid_until': datetime.datetime.now() + datetime.timedelta(days=self.DELTA_DAYS_VALID_UNTIL),
+            'valid_until': (datetime.datetime.utcnow() + datetime.timedelta(days=self.DELTA_DAYS_VALID_UNTIL)).strftime("%Y-%m-%dT%H:%M:%SZ"),
             'dv_descriptors': self.create_cluster_entity_descriptor(),
             'lc_descriptor': self.create_entity_descriptor(None),
             'cert_tls': strip_cert(cert_tls),
