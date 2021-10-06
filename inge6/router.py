@@ -61,7 +61,7 @@ def sorry_too_busy(request: SorryPageRequest = Depends()):
 
 @router.get("/")
 def read_root():
-    return HTMLResponse("TVS bridge")
+    return HTMLResponse("MinVWS RDO MAX Bridge")
 
 @router.get(settings.health_endpoint)
 def health() -> JSONResponse:
