@@ -92,7 +92,7 @@ from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
 from . import constants
 from .config import get_settings
-from .cache import get_redis_client, redis_cache
+from .cache import get_redis_client, RedisCache
 from .rate_limiter import rate_limit_test
 from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link, create_authn_post_context
 from .encrypt import Encrypt
@@ -120,7 +120,7 @@ log: Logger = logging.getLogger(__package__)
 
 _PROVIDER = None
 
-def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_request: AuthorizeRequest,
+def _cache_auth_req(redis_cache: RedisCache, randstate: str, auth_req: OICAuthRequest, authorization_request: AuthorizeRequest,
                     id_provider: str) -> None:
     """
     Method for assembling the data related to the auth request performed, including the code_challenge,
@@ -136,7 +136,7 @@ def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_requ
 
     redis_cache.hset(randstate, constants.RedisKeys.AUTH_REQ.value, value)
 
-def _cache_code_challenge(code: str, code_challenge: str, code_challenge_method: str) -> None:
+def _cache_code_challenge(redis_cache: RedisCache, code: str, code_challenge: str, code_challenge_method: str) -> None:
     """
     Method for assembling the data related to the upcoming accesstoken request, including the code, code_challenge
     and code_challenge_method. and storing it in the RedisStore under the constants.RedisKeys.CC_CM enum.
@@ -147,7 +147,7 @@ def _cache_code_challenge(code: str, code_challenge: str, code_challenge_method:
     }
     redis_cache.hset(code, constants.RedisKeys.CC_CM.value, value)
 
-def _cache_artifact(code: str, artifact: str, id_provider: str):
+def _cache_artifact(redis_cache: RedisCache, code: str, artifact: str, id_provider: str):
     """
     Method for assembling the data related to the upcoming accesstoken request, including the artifact and
     identity_provider that has been used to retrieve the artifact. These are stored in the RedisStore under the
@@ -159,7 +159,7 @@ def _cache_artifact(code: str, artifact: str, id_provider: str):
     }
     redis_cache.hset(code, constants.RedisKeys.ARTI.value, value)
 
-def hget_from_redis(namespace, key):
+def hget_from_redis(redis_cache: RedisCache, namespace, key):
     """
     Method to retrieve something from redis, and if no result is found, throw a resource has expired exception.
     """
@@ -335,6 +335,8 @@ class Provider(OIDCProvider, SAMLProvider):
             raw_local_enc_key=self.BSN_LOCAL_SYMM_KEY
         )
 
+        self.redis_cache = RedisCache()
+
         with open(get_settings().ratelimit.sorry_too_busy_page_head, 'r', encoding='utf-8') as too_busy_file:
             self.too_busy_page_template_head = too_busy_file.read()
 
@@ -391,8 +393,8 @@ class Provider(OIDCProvider, SAMLProvider):
 
             return Response(content='Something went wrong: {}'.format(str(invalid_auth_req)), status_code=400)
 
-        randstate = redis_cache.gen_token()
-        _cache_auth_req(randstate, auth_req, authorize_request, primary_idp)
+        randstate = self.redis_cache.gen_token()
+        _cache_auth_req(self.redis_cache, randstate, auth_req, authorize_request, primary_idp)
 
         # There is some special behavior defined on the auth_req when mocking. If we want identical
         # behavior through mocking with primary_idp=digid as without mocking, we need to
@@ -425,7 +427,7 @@ class Provider(OIDCProvider, SAMLProvider):
         code = parse_qs(body.decode())['code'][0]
 
         try:
-            cached_artifact = hget_from_redis(code, constants.RedisKeys.ARTI.value)
+            cached_artifact = hget_from_redis(self.redis_cache, code, constants.RedisKeys.ARTI.value)
             artifact = cached_artifact['artifact']
             id_provider = cached_artifact['id_provider']
 
@@ -433,7 +435,7 @@ class Provider(OIDCProvider, SAMLProvider):
             encrypted_bsn = self._resolve_artifact(artifact, id_provider)
 
             access_key = _create_redis_bsn_key(self.key, token_response['id_token'].encode(), self.audience)
-            redis_cache.set(access_key, encrypted_bsn)
+            self.redis_cache.set(access_key, encrypted_bsn)
 
             json_content_resp = jsonable_encoder(token_response.to_dict())
             return JSONResponse(content=json_content_resp)
@@ -466,10 +468,10 @@ class Provider(OIDCProvider, SAMLProvider):
         artifact_hashed =  nacl.hash.sha256(artifact.encode()).decode()
 
         if 'mocking' in request.query_params and hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() == 'true':
-            redis_cache.set('DIGID_MOCK' + artifact, 'true')
+            self.redis_cache.set('DIGID_MOCK' + artifact, 'true')
 
         try:
-            auth_req_dict = hget_from_redis(state, constants.RedisKeys.AUTH_REQ.value)
+            auth_req_dict = hget_from_redis(self.redis_cache, state, constants.RedisKeys.AUTH_REQ.value)
             auth_req = auth_req_dict[constants.RedisKeys.AUTH_REQ.value]
         except ExpiredResourceError as expired_err:
             log.error('received invalid authn request for artifact %s. Reason: %s', artifact_hashed, expired_err, exc_info=True)
@@ -480,9 +482,9 @@ class Provider(OIDCProvider, SAMLProvider):
         code = authn_response['code']
 
         log.debug('Storing sha256(artifact) %s under code %s', artifact_hashed, code)
-        _cache_artifact(code, artifact, auth_req_dict['id_provider'])
+        _cache_artifact(self.redis_cache, code, artifact, auth_req_dict['id_provider'])
 
-        _cache_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
+        _cache_code_challenge(self.redis_cache, code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
         log.debug('Stored code challenge')
 
         return HTMLResponse(create_acs_redirect_link({"redirect_url": response_url}))
@@ -496,7 +498,7 @@ class Provider(OIDCProvider, SAMLProvider):
         hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
         log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
 
-        is_digid_mock = redis_cache.get('DIGID_MOCK' + artifact)
+        is_digid_mock = self.redis_cache.get('DIGID_MOCK' + artifact)
         if hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() == "true" and is_digid_mock is not None:
             return self.bsn_encrypt.symm_encrypt(artifact)
 
@@ -526,7 +528,7 @@ class Provider(OIDCProvider, SAMLProvider):
         _, at_hash= is_authorized(self.key, request, self.audience)
 
         redis_bsn_key = at_hash
-        attributes = redis_cache.get(redis_bsn_key)
+        attributes = self.redis_cache.get(redis_bsn_key)
 
         if attributes is None:
             raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )

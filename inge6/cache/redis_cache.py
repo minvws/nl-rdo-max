@@ -136,5 +136,3 @@ class RedisCache:
         Generate a random string, useful to generate unique keys that should be stored in the redis database.
         """
         return get_redis_client().acl_genpass()
-
-redis_cache = RedisCache()

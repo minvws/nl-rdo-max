@@ -24,11 +24,13 @@ from inge6 import constants
 from inge6.provider import Provider
 from inge6.models import AuthorizeRequest, SorryPageRequest
 from inge6.provider import get_provider, _get_bsn_from_art_resp
-from inge6.cache import get_redis_client, redis_cache
+from inge6.cache import get_redis_client, RedisCache, redis_cache
 from inge6.config import get_settings
 from inge6.router import consume_bsn_for_token
 
 from ..saml.test_artifact_response_parser import PRIV_KEY_BSN_AES_KEY
+
+redis_cache = RedisCache()
 
 def test_sorry_too_busy():
     request = SorryPageRequest(

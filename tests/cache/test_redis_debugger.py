@@ -3,7 +3,9 @@ import time
 import pytest
 import inge6
 from inge6 import config, constants
-from inge6.cache import get_redis_client, redis_cache
+from inge6.cache import get_redis_client, RedisCache, redis_cache
+
+redis_cache = RedisCache()
 
 
 @pytest.fixture

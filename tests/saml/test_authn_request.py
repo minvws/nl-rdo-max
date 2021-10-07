@@ -12,10 +12,12 @@ from oic.oic.message import AuthorizationRequest as OICAuthRequest
 from inge6.models import AuthorizeRequest, LoginDigiDRequest
 from inge6.provider import Provider, _post_login
 from inge6 import constants
-from inge6.cache import get_redis_client, redis_cache
+from inge6.cache import get_redis_client, RedisCache
 from inge6.config import get_settings
 
 from .test_utils import decode_base64_and_inflate
+
+redis_cache = RedisCache()
 
 NAMESPACES = {
     'saml': 'urn:oasis:names:tc:SAML:2.0:assertion',
