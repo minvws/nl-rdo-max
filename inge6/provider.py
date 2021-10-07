@@ -117,7 +117,7 @@ from .oidc.authorize import (
 )
 
 log: Logger = logging.getLogger(__package__)
-log.setLevel(getattr(logging, settings.loglevel.upper()))
+log.setLevel(getattr(logging, get_settings().loglevel.upper()))
 
 _PROVIDER = None
 
