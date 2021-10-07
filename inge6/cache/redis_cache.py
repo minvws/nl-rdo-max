@@ -20,7 +20,7 @@ class RedisCache:
         self.settings = get_settings() if settings is None else settings
         self.key_prefix: str = self.settings.redis.default_cache_namespace
         self.expires_in_s: int = int(self.settings.redis.object_ttl)
-        self.redis_debugger = RedisGetDebugger(get_redis_client(), settings=settings)
+        self.redis_debugger = RedisGetDebugger(self.settings, settings=settings)
 
     def _serialize(self, value: Any) -> bytes:
         """
