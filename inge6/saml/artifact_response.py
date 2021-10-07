@@ -33,6 +33,7 @@ RESPONSE_EXPIRES_IN = int(get_settings().saml.response_expires_in)
 CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
 
 log: Logger = logging.getLogger(__package__)
+log.setLevel(getattr(logging, get_settings().loglevel.upper()))
 
 def verify_signatures(tree, cert_data):
     root, valid = has_valid_signatures(tree, cert_data=cert_data)

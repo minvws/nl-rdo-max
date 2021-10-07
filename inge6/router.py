@@ -19,6 +19,7 @@ from .digid_mock import (
 )
 
 log: Logger = logging.getLogger(__package__)
+log.setLevel(getattr(logging, get_settings().loglevel.upper()))
 
 router = APIRouter()
 

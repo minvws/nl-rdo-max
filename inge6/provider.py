@@ -117,6 +117,7 @@ from .oidc.authorize import (
 )
 
 log: Logger = logging.getLogger(__package__)
+log.setLevel(getattr(logging, get_settings().loglevel.upper()))
 
 _PROVIDER = None
 
@@ -436,6 +437,8 @@ class Provider(OIDCProvider, SAMLProvider):
 
             access_key = _create_redis_bsn_key(self.key, token_response['id_token'].encode(), self.audience)
             self.redis_cache.set(access_key, encrypted_bsn)
+
+            log.info(' User has returned from %s and we received a response (Mocking mode is %s)', id_provider.upper(), get_settings().mock_digid.upper())
 
             json_content_resp = jsonable_encoder(token_response.to_dict())
             return JSONResponse(content=json_content_resp)
