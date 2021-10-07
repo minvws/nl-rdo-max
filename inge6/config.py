@@ -51,7 +51,7 @@ def _create_settings(config_path):
     return settings
 
 def get_settings(config_path: str = CONFIG_FILE_NAME):
-    global SETTINGS
+    global SETTINGS # pylint: disable=global-statement
     if SETTINGS is None:
         SETTINGS = _create_settings(config_path)
     return SETTINGS
