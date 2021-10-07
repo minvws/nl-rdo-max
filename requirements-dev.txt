@@ -89,7 +89,7 @@ pytest==6.2.5
     #   pytest-redis
 pytest-asyncio==0.15.1
     # via -r requirements-dev.in
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements-dev.in
 pytest-mock==3.6.1
     # via -r requirements-dev.in
@@ -118,10 +118,10 @@ stevedore==3.3.0
     # via bandit
 toml==0.10.2
     # via
+    #   coverage
     #   mypy
     #   pylint
     #   pytest
-    #   pytest-cov
 tomli==1.2.1
     # via black
 types-redis==3.5.9
