@@ -8,9 +8,6 @@ from datetime import datetime
 import xmlsec
 from lxml import etree
 
-from inge6.saml.constants import NAMESPACES
-from inge6.saml.utils import strip_cert
-
 from ..config import settings
 
 def add_root_issue_instant(root) -> None:
