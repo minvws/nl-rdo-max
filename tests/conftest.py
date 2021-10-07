@@ -20,10 +20,10 @@ def mock_clients_db(mocker):
 def redis_mock(redisdb):
     # pylint: disable=W0212
     # Access to a protected member
-    client = cache._REDIS_CLIENT
-    cache._REDIS_CLIENT = redisdb
+    client = cache.redis_client._REDIS_CLIENT
+    cache.redis_client._REDIS_CLIENT = redisdb
     yield
-    cache._REDIS_CLIENT = client
+    cache.redis_client._REDIS_CLIENT = client
 
 # pylint: disable=redefined-outer-name, unused-argument
 @pytest.fixture

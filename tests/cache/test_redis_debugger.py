@@ -11,7 +11,7 @@ def setup_debugger(monkeypatch):
     existing_value = config.get_settings().redis.enable_debugger
     # Resetting the redis client here to make sure that the debugger thread starts
     # pylinst: disable=protected-access
-    inge6.cache._REDIS_CLIENT = None
+    inge6.cache.redis_client._REDIS_CLIENT = None
     config.get_settings().redis.enable_debugger = True
     get_redis_client().config_set("notify-keyspace-events", "AKE")
     yield
@@ -19,10 +19,10 @@ def setup_debugger(monkeypatch):
 
 @pytest.fixture
 def fake_expire():
-    current_seconds = redis_cache.EXPIRES_IN_S
-    redis_cache.EXPIRES_IN_S = 1
+    current_seconds = redis_cache.expires_in_s
+    redis_cache.expires_in_s = 1
     yield
-    redis_cache.EXPIRES_IN_S = current_seconds
+    redis_cache.expires_in_s = current_seconds
 
 @pytest.fixture
 def capture_logging(caplog):
