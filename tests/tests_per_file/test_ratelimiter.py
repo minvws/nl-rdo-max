@@ -3,7 +3,7 @@ import pytest
 
 from inge6.cache import get_redis_client
 from inge6.exceptions import TooBusyError, TooManyRequestsFromOrigin
-from inge6.config import settings
+from inge6.config import get_settings
 from inge6.rate_limiter import rate_limit_test
 
 #pylint: disable=unused-argument
@@ -47,8 +47,8 @@ def test_rate_limiter_overflow_limit_0(redis_mock, fake_redis_user_limit_key, fa
 #pylint: disable=unused-argument
 def test_multiple_attempts_per_ip(redis_mock):
     get_redis_client().set('tvs:primary_idp', 'tvs')
-    tmp = settings.ratelimit.nof_attempts_s
-    settings.ratelimit.nof_attempts_s = 3
+    tmp = get_settings().ratelimit.nof_attempts_s
+    get_settings().ratelimit.nof_attempts_s = 3
     rate_limit_test('0.0.0.1')
     rate_limit_test('0.0.0.1')
     rate_limit_test('0.0.0.1')
@@ -56,27 +56,27 @@ def test_multiple_attempts_per_ip(redis_mock):
     with pytest.raises(TooManyRequestsFromOrigin):
         rate_limit_test('0.0.0.1')
 
-    settings.ratelimit.nof_attempts_s = tmp
+    get_settings().ratelimit.nof_attempts_s = tmp
 
 
 #pylint: disable=unused-argument
 def test_multiple_attempts_per_ip_default(redis_mock):
     get_redis_client().set('tvs:primary_idp', 'tvs')
-    tmp_attempts = settings.ratelimit.nof_attempts_s
-    del settings.ratelimit.nof_attempts_s
+    tmp_attempts = get_settings().ratelimit.nof_attempts_s
+    del get_settings().ratelimit.nof_attempts_s
 
     ip_address = '0.0.0.1'
     rate_limit_test(ip_address)
     with pytest.raises(TooManyRequestsFromOrigin):
         rate_limit_test(ip_address)
 
-    settings.ratelimit.nof_attempts_s = tmp_attempts
+    get_settings().ratelimit.nof_attempts_s = tmp_attempts
 
 #pylint: disable=unused-argument
 def test_ratelimit_ip_ttl(redis_mock):
     get_redis_client().set('tvs:primary_idp', 'tvs')
-    tmp_ip_ttl = settings.ratelimit.ip_expire_in_s
-    settings.ratelimit.ip_expire_in_s = 1
+    tmp_ip_ttl = get_settings().ratelimit.ip_expire_in_s
+    get_settings().ratelimit.ip_expire_in_s = 1
 
     ip_address = '0.0.0.1'
     ip_key = "tvs:ipv4:" + ip_address
@@ -86,7 +86,7 @@ def test_ratelimit_ip_ttl(redis_mock):
     time.sleep(1)
     assert get_redis_client().get(ip_key) is None
 
-    settings.ratelimit.ip_expire_in_s = tmp_ip_ttl
+    get_settings().ratelimit.ip_expire_in_s = tmp_ip_ttl
 
 
 #pylint: disable=unused-argument
@@ -95,8 +95,8 @@ def test_ratelimit_ip_ttl_multi_attempts(redis_mock):
         This test shows that the TTL of an IP address in redis does not refresh when a new login attempt is requested.
     """
     get_redis_client().set('tvs:primary_idp', 'tvs')
-    tmp_ip_ttl = settings.ratelimit.ip_expire_in_s
-    settings.ratelimit.ip_expire_in_s = 3
+    tmp_ip_ttl = get_settings().ratelimit.ip_expire_in_s
+    get_settings().ratelimit.ip_expire_in_s = 3
 
     ip_address = '0.0.0.1'
     ip_key = "tvs:ipv4:" + ip_address
@@ -108,4 +108,4 @@ def test_ratelimit_ip_ttl_multi_attempts(redis_mock):
     assert get_redis_client().ttl(ip_key) <= 2
 
 
-    settings.ratelimit.ip_expire_in_s = tmp_ip_ttl
+    get_settings().ratelimit.ip_expire_in_s = tmp_ip_ttl

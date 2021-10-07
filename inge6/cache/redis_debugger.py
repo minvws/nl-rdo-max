@@ -1,11 +1,11 @@
 import logging
 import threading
 
-from ..config import settings
+from ..config import get_settings
 
 # live 5 minutes longer than regular redis objects
-DEBUG_SET_EXPIRY: int = int(settings.redis.object_ttl) + 300
-KEY_PREFIX: str = settings.redis.default_cache_namespace
+DEBUG_SET_EXPIRY: int = int(get_settings().redis.object_ttl) + 300
+KEY_PREFIX: str = get_settings().redis.default_cache_namespace
 
 
 def debug_get(redis_client, key, value):

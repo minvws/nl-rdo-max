@@ -8,7 +8,7 @@ import uvicorn
 
 from fastapi import FastAPI
 
-from .config import settings
+from .config import get_settings
 from .router import router
 from .provider import get_provider
 
@@ -19,7 +19,7 @@ app.include_router(router)
 
 def _validate_saml_identity_provider_settings():
     missing_files = []
-    with open(settings.saml.identity_provider_settings, encoding='utf-8') as providers_settings:
+    with open(get_settings().saml.identity_provider_settings, encoding='utf-8') as providers_settings:
         identity_providers = json.loads(providers_settings.read())
 
     for provider, p_settings in identity_providers.items():
@@ -52,7 +52,7 @@ def _validate_saml_identity_provider_settings():
 
 def validate_settings(section, keys):
     required_settings = []
-    current_settings = getattr(settings, section)
+    current_settings = getattr(get_settings(), section)
     for key in keys:
         if not hasattr(current_settings, key) or getattr(current_settings, key) == "":
             required_settings.append(
@@ -66,47 +66,47 @@ def validate_startup():
     ssl_missing_files = []
     required_settings = []
 
-    if not hasattr(settings, 'primary_idp_key') or settings.primary_idp_key == "":
+    if not hasattr(get_settings(), 'primary_idp_key') or get_settings().primary_idp_key == "":
         required_settings.append(
             ('settings.primary_idp_key', "expected to be defined in the config DEFAULT section")
         )
 
-    if not os.path.isfile(settings.saml.identity_provider_settings):
+    if not os.path.isfile(get_settings().saml.identity_provider_settings):
         missing_files.append(
-            (settings.saml.identity_provider_settings, "SAML Identity Providers file")
+            (get_settings().saml.identity_provider_settings, "SAML Identity Providers file")
         )
     else:
         missing_files.extend(_validate_saml_identity_provider_settings())
 
-    if not os.path.isfile(settings.oidc.clients_file):
+    if not os.path.isfile(get_settings().oidc.clients_file):
         missing_files.append(
-            (settings.oidc.clients_file, "OIDC clients file")
+            (get_settings().oidc.clients_file, "OIDC clients file")
         )
 
-    if not os.path.isfile(settings.oidc.rsa_private_key):
+    if not os.path.isfile(get_settings().oidc.rsa_private_key):
         missing_files.append(
-            (settings.oidc.rsa_private_key, "OIDC private key file path")
+            (get_settings().oidc.rsa_private_key, "OIDC private key file path")
         )
 
-    if not os.path.isfile(settings.oidc.rsa_public_key):
+    if not os.path.isfile(get_settings().oidc.rsa_public_key):
         missing_files.append(
-            (settings.oidc.rsa_private_key, "OIDC public key file path")
+            (get_settings().oidc.rsa_private_key, "OIDC public key file path")
         )
 
-    if settings.use_ssl.lower() == 'true':
-        if not os.path.isdir(settings.ssl.base_dir):
+    if get_settings().use_ssl.lower() == 'true':
+        if not os.path.isdir(get_settings().ssl.base_dir):
             ssl_missing_files.append(
-                (settings.ssl.base_dir, "SSL base_dir does not exist")
+                (get_settings().ssl.base_dir, "SSL base_dir does not exist")
             )
 
-        if not os.path.isfile(settings.ssl.base_dir + '/' + settings.ssl.cert_file):
+        if not os.path.isfile(get_settings().ssl.base_dir + '/' + get_settings().ssl.cert_file):
             ssl_missing_files.append(
-                (settings.ssl.cert_file, "SSL certificate file")
+                (get_settings().ssl.cert_file, "SSL certificate file")
             )
 
-        if not os.path.isfile(settings.ssl.base_dir + '/' + settings.ssl.key_file):
+        if not os.path.isfile(get_settings().ssl.base_dir + '/' + get_settings().ssl.key_file):
             ssl_missing_files.append(
-                (settings.ssl.key_file, "SSL key file")
+                (get_settings().ssl.key_file, "SSL key file")
             )
 
     required_settings += validate_settings("redis", [
@@ -121,17 +121,17 @@ def validate_startup():
             "sub_id_namespace"
         ])
 
-    if not isinstance(settings.redis.enable_debugger, bool):
+    if not isinstance(get_settings().redis.enable_debugger, bool):
         required_settings.append(
             ('redis.enable_debugger', 'is incorrectly defined, must be True or False')
         )
 
-    if not isinstance(settings.redis.ssl, bool):
+    if not isinstance(get_settings().redis.ssl, bool):
         required_settings.append(
             ('redis.ssl', 'is incorrectly defined, must be True or False')
         )
 
-    if settings.redis.ssl:
+    if get_settings().redis.ssl:
         # Check if ssl settings are defined
         required_settings += validate_settings("redis", [
                 "ssl",
@@ -142,7 +142,7 @@ def validate_startup():
 
         # Check if ssl certs exist on disk
         for key in ['key', 'cert', 'cafile']:
-            if not os.path.exists(getattr(settings.redis, key)):
+            if not os.path.exists(getattr(get_settings().redis, key)):
                 required_settings.append(
                     ('redis.{}'.format(key), 'does not exist on disk')
                 )
@@ -174,7 +174,7 @@ async def startup_event():
 
 def main(app_link: str = 'inge6.main:app'):
     logging.basicConfig(
-        level=getattr(logging, settings.loglevel.upper()),
+        level=getattr(logging, get_settings().loglevel.upper()),
         datefmt='%m/%d/%Y %I:%M:%S %p'
     )
 
@@ -182,15 +182,15 @@ def main(app_link: str = 'inge6.main:app'):
         sys.exit(1)
 
     run_kwargs = {
-        'host': settings.host,
-        'port': int(settings.port),
-        'reload': settings.debug == "True",
+        'host': get_settings().host,
+        'port': int(get_settings().port),
+        'reload': get_settings().debug == "True",
         'proxy_headers': True,
     }
 
-    if hasattr(settings, 'use_ssl') and settings.use_ssl.lower() == 'true':
-        run_kwargs['ssl_keyfile'] = settings.ssl.base_dir + '/' + settings.ssl.key_file
-        run_kwargs['ssl_certfile'] = settings.ssl.base_dir + '/' + settings.ssl.cert_file
+    if hasattr(get_settings(), 'use_ssl') and get_settings().use_ssl.lower() == 'true':
+        run_kwargs['ssl_keyfile'] = get_settings().ssl.base_dir + '/' + get_settings().ssl.key_file
+        run_kwargs['ssl_certfile'] = get_settings().ssl.base_dir + '/' + get_settings().ssl.cert_file
 
     uvicorn.run(
                 app_link,

@@ -11,7 +11,7 @@ from lxml import etree
 from inge6.saml.constants import NAMESPACES
 from inge6.saml.utils import strip_cert
 
-from ..config import settings
+from ..config import get_settings
 
 def add_root_issue_instant(root) -> None:
     root.attrib['IssueInstant'] = datetime.utcnow().isoformat().split('.')[0] + 'Z'
@@ -91,7 +91,7 @@ class AuthNRequest(SAMLRequest):
     Required settings:
         - settings.saml.authn_request_template, path to authn request template
     """
-    TEMPLATE_PATH = settings.saml.authn_request_template
+    TEMPLATE_PATH = get_settings().saml.authn_request_template
 
     def __init__(self, sso_url, issuer_id, keypair) -> None:
         super().__init__(keypair)
@@ -116,7 +116,7 @@ class ArtifactResolveRequest(SAMLRequest):
     Required settings:
         - settings.saml.artifactresolve_request_template, path to artifact resolve request template
     """
-    TEMPLATE_PATH = settings.saml.artifactresolve_request_template
+    TEMPLATE_PATH = get_settings().saml.artifactresolve_request_template
 
     def __init__(self, artifact_code, sso_url, issuer_id, keypair) -> None:
         super().__init__(keypair)

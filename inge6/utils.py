@@ -8,7 +8,7 @@ Required:
 
 from typing import Text, Tuple
 from jinja2 import Template
-from .config import settings
+from .config import get_settings
 
 from .saml import AuthNRequest
 
@@ -28,7 +28,7 @@ def _fill_template_from_file(filename: str, context: dict) -> Text:
 
 
 def create_post_autosubmit_form(context: dict) -> Text:
-    return _fill_template_from_file(settings.saml.authn_request_html_template, context)
+    return _fill_template_from_file(get_settings().saml.authn_request_html_template, context)
 
 
 def create_acs_redirect_link(context: dict) -> Text:

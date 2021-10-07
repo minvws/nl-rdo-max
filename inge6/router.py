@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
-from .config import settings
+from .config import get_settings
 from .cache import get_redis_client
 from .models import AuthorizeRequest, DigiDMockRequest, DigiDMockCatchRequest, LoginDigiDRequest, SorryPageRequest
 from .provider import get_provider
@@ -22,11 +22,11 @@ log: Logger = logging.getLogger(__package__)
 
 router = APIRouter()
 
-@router.get(settings.authorize_endpoint)
+@router.get(get_settings().authorize_endpoint)
 def authorize(request: Request, authorize_req: AuthorizeRequest = Depends()):
     return get_provider().authorize_endpoint(authorize_req, request.headers, request.client.host)
 
-@router.post(settings.accesstoken_endpoint)
+@router.post(get_settings().accesstoken_endpoint)
 async def token_endpoint(request: Request):
     ''' Expect a request with a body containing the grant_type.'''
     body = await request.body()
@@ -50,7 +50,7 @@ def provider_configuration():
     json_content = jsonable_encoder(get_provider().provider_configuration.to_dict())
     return JSONResponse(content=json_content)
 
-@router.get(settings.jwks_endpoint)
+@router.get(get_settings().jwks_endpoint)
 def jwks_uri():
     json_content = jsonable_encoder(get_provider().jwks)
     return JSONResponse(content=json_content)
@@ -63,12 +63,12 @@ def sorry_too_busy(request: SorryPageRequest = Depends()):
 def read_root():
     return HTMLResponse("Many Authentication eXchange")
 
-@router.get(settings.health_endpoint)
+@router.get(get_settings().health_endpoint)
 def health() -> JSONResponse:
     try:
         redis_healthy = get_redis_client().ping()
     except redis.exceptions.RedisError as exception:
-        log.exception('Redis server is not reachable. Attempted: %s:%s, ssl=%s', settings.redis.host, settings.redis.port, settings.redis.ssl, exc_info=exception)
+        log.exception('Redis server is not reachable. Attempted: %s:%s, ssl=%s', get_settings().redis.host, get_settings().redis.port, get_settings().redis.ssl, exc_info=exception)
         redis_healthy = False
 
     healthy = redis_healthy
@@ -76,7 +76,7 @@ def health() -> JSONResponse:
     return JSONResponse(content=jsonable_encoder(response), status_code=200 if healthy else 500)
 
 ## MOCK ENDPOINTS:
-if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == 'true':
+if hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() == 'true':
     # pylint: disable=wrong-import-position, c-extension-no-member, wrong-import-order
     from lxml import etree
     from urllib.parse import parse_qs # pylint: disable=wrong-import-order

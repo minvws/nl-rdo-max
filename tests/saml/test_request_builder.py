@@ -6,7 +6,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from inge6.saml import AuthNRequest, ArtifactResolveRequest
 from inge6.saml.metadata import SPMetadata
-from inge6.config import settings
+from inge6.config import get_settings
 
 SETTINGS_DICT = {
     "strict": True,
@@ -50,7 +50,7 @@ def test_artifact_value():
     assert artifact_node.text == expected
 
 JINJA_ENV = Environment(
-    loader=FileSystemLoader(settings.saml.templates),
+    loader=FileSystemLoader(get_settings().saml.templates),
     autoescape=select_autoescape()
 )
 

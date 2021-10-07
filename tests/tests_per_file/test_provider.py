@@ -25,7 +25,7 @@ from inge6.provider import Provider
 from inge6.models import AuthorizeRequest, SorryPageRequest
 from inge6.provider import get_provider, _get_bsn_from_art_resp
 from inge6.cache import get_redis_client, redis_cache
-from inge6.config import settings
+from inge6.config import get_settings
 from inge6.router import consume_bsn_for_token
 
 from ..saml.test_artifact_response_parser import PRIV_KEY_BSN_AES_KEY
@@ -121,7 +121,7 @@ def test_authorize_invalid_request(digid_mock_disable, redis_mock, digid_config)
 
 # pylint: disable=unused-argument
 def test_expected_redis_primary_idp(redis_mock):
-    get_redis_client().delete(settings.primary_idp_key)
+    get_redis_client().delete(get_settings().primary_idp_key)
 
     authorize_params = {
         'client_id': "some_unknown_client",
@@ -214,8 +214,8 @@ def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock
     code = None
     for item in items:
         item = item.decode("utf-8")
-        temp_code = item[len(settings.redis.default_cache_namespace):].replace(":", "")
-        if settings.redis.default_cache_namespace in item and len(temp_code) == 32:
+        temp_code = item[len(get_settings().redis.default_cache_namespace):].replace(":", "")
+        if get_settings().redis.default_cache_namespace in item and len(temp_code) == 32:
             code = temp_code
             break
 
@@ -232,7 +232,7 @@ def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock
 
     # Test if time to life / expiry is set correctly on the Redis namespace
     # pylint: disable=protected-access
-    assert get_redis_client().ttl(redis_cache._get_namespace(code))== int(settings.redis.object_ttl)
+    assert get_redis_client().ttl(redis_cache._get_namespace(code))== int(get_settings().redis.object_ttl)
 
 # pylint: disable=unused-argument
 def mock_is_authorized(key, request, audience):

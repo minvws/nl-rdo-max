@@ -8,11 +8,11 @@ from pyop.provider import Provider as PyopProvider
 from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
 from pyop.userinfo import Userinfo
 
-from ..config import settings
+from ..config import get_settings
 from ..cache import get_redis_client
 from .storage import RedisWrapper
 
-REDIS_TTL = int(settings.redis.object_ttl)
+REDIS_TTL = int(get_settings().redis.object_ttl)
 
 # pylint: disable=too-few-public-methods
 class Provider:
@@ -39,10 +39,10 @@ class Provider:
     """
 
     def __init__(self) -> None:
-        issuer = settings.issuer
-        authentication_endpoint = settings.authorize_endpoint
-        jwks_uri = settings.jwks_endpoint
-        token_endpoint = settings.accesstoken_endpoint
+        issuer = get_settings().issuer
+        authentication_endpoint = get_settings().authorize_endpoint
+        jwks_uri = get_settings().jwks_endpoint
+        token_endpoint = get_settings().accesstoken_endpoint
 
         configuration_information = {
             'issuer': issuer,
@@ -59,18 +59,18 @@ class Provider:
         }
 
         userinfo_db = Userinfo({'test_client': {'test': 'test_client'}})
-        with open(settings.oidc.clients_file, 'r', encoding='utf-8') as clients_file:
+        with open(get_settings().oidc.clients_file, 'r', encoding='utf-8') as clients_file:
             clients = json.load(clients_file)
 
-        signing_key = RSAKey(key=rsa_load(settings.oidc.rsa_private_key), alg='RS256', )
+        signing_key = RSAKey(key=rsa_load(get_settings().oidc.rsa_private_key), alg='RS256', )
 
-        authorization_code_db = RedisWrapper(redis_client=get_redis_client(), collection=settings.redis.code_namespace, ttl=REDIS_TTL)
-        access_token_db = RedisWrapper(redis_client=get_redis_client(), collection=settings.redis.token_namespace, ttl=REDIS_TTL)
-        refresh_token_db = RedisWrapper(redis_client=get_redis_client(), collection=settings.redis.refresh_token_namespace, ttl=REDIS_TTL)
-        subject_identifier_db = RedisWrapper(redis_client=get_redis_client(), collection=settings.redis.sub_id_namespace, ttl=REDIS_TTL)
+        authorization_code_db = RedisWrapper(redis_client=get_redis_client(), collection=get_settings().redis.code_namespace, ttl=REDIS_TTL)
+        access_token_db = RedisWrapper(redis_client=get_redis_client(), collection=get_settings().redis.token_namespace, ttl=REDIS_TTL)
+        refresh_token_db = RedisWrapper(redis_client=get_redis_client(), collection=get_settings().redis.refresh_token_namespace, ttl=REDIS_TTL)
+        subject_identifier_db = RedisWrapper(redis_client=get_redis_client(), collection=get_settings().redis.sub_id_namespace, ttl=REDIS_TTL)
 
         authz_state = AuthorizationState(
-            HashBasedSubjectIdentifierFactory(settings.oidc.subject_id_hash_salt),
+            HashBasedSubjectIdentifierFactory(get_settings().oidc.subject_id_hash_salt),
             authorization_code_db=authorization_code_db,
             access_token_db=access_token_db,
             refresh_token_db=refresh_token_db,
@@ -78,9 +78,9 @@ class Provider:
         )
 
         self.provider = PyopProvider(signing_key, configuration_information,
-                            authz_state, clients, userinfo_db, id_token_lifetime= int(settings.oidc.id_token_lifetime))
+                            authz_state, clients, userinfo_db, id_token_lifetime= int(get_settings().oidc.id_token_lifetime))
 
-        with open(settings.oidc.rsa_public_key, 'r', encoding='utf-8') as rsa_pub_key:
+        with open(get_settings().oidc.rsa_public_key, 'r', encoding='utf-8') as rsa_pub_key:
             self.key = rsa_pub_key.read()
 
     def __getattr__(self, name: str) -> Any:

@@ -1,6 +1,6 @@
 import pytest
 from inge6 import cache
-from inge6.config import settings
+from inge6.config import get_settings
 from inge6.cache import get_redis_client
 from inge6.provider import get_provider
 
@@ -28,27 +28,27 @@ def redis_mock(redisdb):
 # pylint: disable=redefined-outer-name, unused-argument
 @pytest.fixture
 def digid_config(redis_mock):
-    get_redis_client().set(settings.primary_idp_key, 'digid')
+    get_redis_client().set(get_settings().primary_idp_key, 'digid')
 
 # pylint: disable=redefined-outer-name, unused-argument
 @pytest.fixture
 def tvs_config(redis_mock):
-    get_redis_client().set(settings.primary_idp_key, 'tvs')
+    get_redis_client().set(get_settings().primary_idp_key, 'tvs')
 
 @pytest.fixture
 def digid_mock_disable():
-    tmp = settings.mock_digid
-    settings.mock_digid = 'false'
+    tmp = get_settings().mock_digid
+    get_settings().mock_digid = 'false'
     yield
-    settings.mock_digid = tmp
+    get_settings().mock_digid = tmp
 
 
 @pytest.fixture
 def digid_mock_enable():
-    tmp = settings.mock_digid
-    settings.mock_digid = 'true'
+    tmp = get_settings().mock_digid
+    get_settings().mock_digid = 'true'
     yield
-    settings.mock_digid = tmp
+    get_settings().mock_digid = tmp
 
 def get_mock_tvs_idp_settings_data(
     saml_spec_version = 4.5,

@@ -2,7 +2,7 @@ from datetime import datetime
 
 from .exceptions import TooManyRequestsFromOrigin, TooBusyError, ExpectedRedisValue
 from .cache import get_redis_client
-from .config import settings
+from .config import get_settings
 
 
 def _ip_limit_test(ip_address: str, ip_expire_s: int, nof_attempts_s: int = 1) -> None:
@@ -70,11 +70,11 @@ def rate_limit_test(ip_address: str) -> str:
     :raises: TooBusyError when the number of users exceeds the allowed number.
     """
     try:
-        ip_cache_in_s: int  = int(settings.ratelimit.ip_expire_in_s)
+        ip_cache_in_s: int  = int(get_settings().ratelimit.ip_expire_in_s)
 
-        if hasattr(settings.ratelimit, "nof_attempts_s") and settings.ratelimit.nof_attempts_s != "":
+        if hasattr(get_settings().ratelimit, "nof_attempts_s") and get_settings().ratelimit.nof_attempts_s != "":
             # Optional config setting
-            nof_attempts_s: int = int(settings.ratelimit.nof_attempts_s)
+            nof_attempts_s: int = int(get_settings().ratelimit.nof_attempts_s)
             _ip_limit_test(ip_address=ip_address, ip_expire_s=ip_cache_in_s, nof_attempts_s=nof_attempts_s)
         else:
             _ip_limit_test(ip_address=ip_address, ip_expire_s=ip_cache_in_s)
@@ -83,22 +83,22 @@ def rate_limit_test(ip_address: str) -> str:
              "Please check the ratelimit.ip_expire_in_s setting, can it be parsed as integer?"
         ) from int_cast_err
 
-    primary_idp = get_redis_client().get(settings.primary_idp_key)
+    primary_idp = get_redis_client().get(get_settings().primary_idp_key)
     if primary_idp is not None:
         primary_idp = primary_idp.decode()
     else:
-        raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the primary_idp_key setting".format(settings.primary_idp_key))
+        raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the primary_idp_key setting".format(get_settings().primary_idp_key))
 
-    overflow_idp = get_redis_client().get(settings.overflow_idp_key)
+    overflow_idp = get_redis_client().get(get_settings().overflow_idp_key)
 
     if overflow_idp and overflow_idp.decode().lower() != 'false':
         overflow_idp = overflow_idp.decode()
         try:
-            _user_limit_test(idp_prefix=primary_idp, user_limit_key=settings.ratelimit.user_limit_key)
+            _user_limit_test(idp_prefix=primary_idp, user_limit_key=get_settings().ratelimit.user_limit_key)
             return primary_idp
         except TooBusyError:
-            _user_limit_test(idp_prefix=overflow_idp, user_limit_key=settings.ratelimit.user_limit_key_overflow_idp)
+            _user_limit_test(idp_prefix=overflow_idp, user_limit_key=get_settings().ratelimit.user_limit_key_overflow_idp)
             return overflow_idp
     else:
-        _user_limit_test(idp_prefix=primary_idp, user_limit_key=settings.ratelimit.user_limit_key)
+        _user_limit_test(idp_prefix=primary_idp, user_limit_key=get_settings().ratelimit.user_limit_key)
         return primary_idp

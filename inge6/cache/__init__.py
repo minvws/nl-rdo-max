@@ -1,7 +1,7 @@
 from typing import Optional
 
 from redis import StrictRedis
-from ..config import settings
+from ..config import get_settings
 from .redis_debugger import RedisGetDebugger
 
 # pylint: disable=global-statement
@@ -24,19 +24,19 @@ def get_redis_client() -> StrictRedis:
     """
     global _REDIS_CLIENT
     if _REDIS_CLIENT is None:
-        use_ssl = settings.redis.ssl
+        use_ssl = get_settings().redis.ssl
 
         if use_ssl:
             _REDIS_CLIENT = StrictRedis(
-                                host=settings.redis.host, port=settings.redis.port, db=0,
+                                host=get_settings().redis.host, port=get_settings().redis.port, db=0,
                                 ssl=True,
-                                ssl_keyfile=settings.redis.key, ssl_certfile=settings.redis.cert,
-                                ssl_ca_certs=settings.redis.cafile
+                                ssl_keyfile=get_settings().redis.key, ssl_certfile=get_settings().redis.cert,
+                                ssl_ca_certs=get_settings().redis.cafile
                             )
         else:
-            _REDIS_CLIENT = StrictRedis(host=settings.redis.host, port=settings.redis.port, db=0)
+            _REDIS_CLIENT = StrictRedis(host=get_settings().redis.host, port=get_settings().redis.port, db=0)
 
-        if settings.redis.enable_debugger:
+        if get_settings().redis.enable_debugger:
             log_expiration_events_thread = RedisGetDebugger(_REDIS_CLIENT, daemon=True)
             log_expiration_events_thread.start()
 

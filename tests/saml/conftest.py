@@ -2,7 +2,7 @@ import pytest
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from inge6.config import settings
+from inge6.config import get_settings
 
 @pytest.fixture
 def tvs_provider_settings():
@@ -40,6 +40,6 @@ def digid_provider_settings():
 @pytest.fixture
 def jinja_env():
     return Environment(
-        loader=FileSystemLoader(settings.saml.templates),
+        loader=FileSystemLoader(get_settings().saml.templates),
         autoescape=select_autoescape()
     )

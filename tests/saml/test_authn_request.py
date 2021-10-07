@@ -13,7 +13,7 @@ from inge6.models import AuthorizeRequest, LoginDigiDRequest
 from inge6.provider import Provider, _post_login
 from inge6 import constants
 from inge6.cache import get_redis_client, redis_cache
-from inge6.config import settings
+from inge6.config import get_settings
 
 from .test_utils import decode_base64_and_inflate
 
@@ -95,7 +95,7 @@ def test_authorize_endpoint_digid(digid_config, digid_mock_disable, redis_mock):
 
     # Test if time to life / expiry is set correctly
     # pylint: disable=protected-access
-    assert get_redis_client().ttl(redis_cache._get_namespace(rand_state)) == int(settings.redis.object_ttl)
+    assert get_redis_client().ttl(redis_cache._get_namespace(rand_state)) == int(get_settings().redis.object_ttl)
 
 
 # pylint: disable=redefined-outer-name, unused-argument
@@ -193,7 +193,7 @@ def test_authorize_endpoint_tvs(tvs_config, redis_mock, digid_mock_disable):
 
     # Test if time to life / expiry is set correctly
     # pylint: disable=protected-access
-    assert get_redis_client().ttl(redis_cache._get_namespace(relay_state)) == int(settings.redis.object_ttl)
+    assert get_redis_client().ttl(redis_cache._get_namespace(relay_state)) == int(get_settings().redis.object_ttl)
 
 
 def test_post_login_force_digid_mocking(digid_config, redis_mock):

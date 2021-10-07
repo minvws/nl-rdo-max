@@ -22,13 +22,13 @@ from lxml import etree
 
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
-from ..config import settings
+from ..config import get_settings
 from .utils import from_settings, has_valid_signatures, remove_padding
 from .constants import NAMESPACES
 from .exceptions import UserNotAuthenticated, ValidationError
 from .id_provider import IdProvider
 
-RESPONSE_EXPIRES_IN = int(settings.saml.response_expires_in)
+RESPONSE_EXPIRES_IN = int(get_settings().saml.response_expires_in)
 
 CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
 

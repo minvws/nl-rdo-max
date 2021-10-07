@@ -91,7 +91,7 @@ from pyop.exceptions import (
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
 from . import constants
-from .config import settings
+from .config import get_settings
 from .cache import get_redis_client, redis_cache
 from .rate_limiter import rate_limit_test
 from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link, create_authn_post_context
@@ -200,8 +200,8 @@ def _prepare_req(auth_req: BaseModel, idp_name: str):
     """
     return {
         'https': 'on',
-        'http_host': f'https://{idp_name}.{settings.saml.base_issuer}',
-        'script_name': settings.authorize_endpoint,
+        'http_host': f'https://{idp_name}.{get_settings().saml.base_issuer}',
+        'script_name': get_settings().authorize_endpoint,
         'get_data': auth_req.dict(),
     }
 
@@ -241,7 +241,7 @@ def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> 
 
     issuer_id = id_provider.sp_metadata.issuer_id
 
-    if settings.mock_digid.lower() == "true" and not force_digid:
+    if get_settings().mock_digid.lower() == "true" and not force_digid:
         ##
         # Coming from /authorize in mocking mode we should always get in this fall into this branch
         # in which case login_digid_req only contains the randstate.
@@ -321,9 +321,9 @@ class Provider(OIDCProvider, SAMLProvider):
         - `settings.bsn.local_symm_key`: symmetric key used for encrypting the BSN stored in the Redis-store
     """
 
-    BSN_SIGN_KEY = settings.bsn.sign_key
-    BSN_ENCRYPT_KEY = settings.bsn.encrypt_key
-    BSN_LOCAL_SYMM_KEY = settings.bsn.local_symm_key
+    BSN_SIGN_KEY = get_settings().bsn.sign_key
+    BSN_ENCRYPT_KEY = get_settings().bsn.encrypt_key
+    BSN_LOCAL_SYMM_KEY = get_settings().bsn.local_symm_key
 
     def __init__(self) -> None:
         OIDCProvider.__init__(self)
@@ -335,13 +335,13 @@ class Provider(OIDCProvider, SAMLProvider):
             raw_local_enc_key=self.BSN_LOCAL_SYMM_KEY
         )
 
-        with open(settings.ratelimit.sorry_too_busy_page_head, 'r', encoding='utf-8') as too_busy_file:
+        with open(get_settings().ratelimit.sorry_too_busy_page_head, 'r', encoding='utf-8') as too_busy_file:
             self.too_busy_page_template_head = too_busy_file.read()
 
-        with open(settings.ratelimit.sorry_too_busy_page_tail, 'r', encoding='utf-8') as too_busy_file:
+        with open(get_settings().ratelimit.sorry_too_busy_page_tail, 'r', encoding='utf-8') as too_busy_file:
             self.too_busy_page_template_tail = too_busy_file.read()
 
-        with open(settings.oidc.clients_file, 'r', encoding='utf-8') as clients_file:
+        with open(get_settings().oidc.clients_file, 'r', encoding='utf-8') as clients_file:
             self.audience = list(json.loads(clients_file.read()).keys())
 
     def sorry_too_busy(self, request: SorryPageRequest):
@@ -364,13 +364,13 @@ class Provider(OIDCProvider, SAMLProvider):
         valid, a Redirect response or auto-submit POST response is returned depending on the active IDP and its corresponding configuration.
         """
         try:
-            primary_idp = get_redis_client().get(settings.primary_idp_key)
+            primary_idp = get_redis_client().get(get_settings().primary_idp_key)
             if primary_idp:
                 primary_idp = primary_idp.decode()
             else:
-                raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the primary_idp_key setting".format(settings.primary_idp_key))
+                raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the primary_idp_key setting".format(get_settings().primary_idp_key))
 
-            if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() != 'true':
+            if hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() != 'true':
                 primary_idp = rate_limit_test(ip_address)
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
             log.warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
@@ -465,7 +465,7 @@ class Provider(OIDCProvider, SAMLProvider):
         artifact = request.query_params['SAMLart']
         artifact_hashed =  nacl.hash.sha256(artifact.encode()).decode()
 
-        if 'mocking' in request.query_params and hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == 'true':
+        if 'mocking' in request.query_params and hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() == 'true':
             redis_cache.set('DIGID_MOCK' + artifact, 'true')
 
         try:
@@ -497,7 +497,7 @@ class Provider(OIDCProvider, SAMLProvider):
         log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
 
         is_digid_mock = redis_cache.get('DIGID_MOCK' + artifact)
-        if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == "true" and is_digid_mock is not None:
+        if hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() == "true" and is_digid_mock is not None:
             return self.bsn_encrypt.symm_encrypt(artifact)
 
         id_provider: IdProvider = self.get_id_provider(id_provider_name)

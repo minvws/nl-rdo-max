@@ -5,7 +5,7 @@ from typing import Dict
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .id_provider import IdProvider
-from ..config import settings
+from ..config import get_settings
 
 # pylint: disable=too-few-public-methods
 class Provider:
@@ -15,8 +15,8 @@ class Provider:
     Required settings:
         - settings.saml.identity_provider_settings, path to the configuration for all identity providers.
     """
-    ID_PROVIDERS_PATH = settings.saml.identity_provider_settings
-    SAML_TEMPLATES_PATH = settings.saml.templates
+    ID_PROVIDERS_PATH = get_settings().saml.identity_provider_settings
+    SAML_TEMPLATES_PATH = get_settings().saml.templates
 
     def __init__(self) -> None:
         self.jinja_env = Environment(
