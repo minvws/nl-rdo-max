@@ -12,8 +12,6 @@ from ..config import get_settings
 from ..cache import get_redis_client
 from .storage import RedisWrapper
 
-REDIS_TTL = int(get_settings().redis.object_ttl)
-
 # pylint: disable=too-few-public-methods
 class Provider:
     """
@@ -39,6 +37,8 @@ class Provider:
     """
 
     def __init__(self) -> None:
+        self.redis_ttl = int(get_settings().redis.object_ttl)
+
         issuer = get_settings().issuer
         authentication_endpoint = get_settings().authorize_endpoint
         jwks_uri = get_settings().jwks_endpoint
@@ -64,10 +64,10 @@ class Provider:
 
         signing_key = RSAKey(key=rsa_load(get_settings().oidc.rsa_private_key), alg='RS256', )
 
-        authorization_code_db = RedisWrapper(redis_client=get_redis_client(), collection=get_settings().redis.code_namespace, ttl=REDIS_TTL)
-        access_token_db = RedisWrapper(redis_client=get_redis_client(), collection=get_settings().redis.token_namespace, ttl=REDIS_TTL)
-        refresh_token_db = RedisWrapper(redis_client=get_redis_client(), collection=get_settings().redis.refresh_token_namespace, ttl=REDIS_TTL)
-        subject_identifier_db = RedisWrapper(redis_client=get_redis_client(), collection=get_settings().redis.sub_id_namespace, ttl=REDIS_TTL)
+        authorization_code_db = RedisWrapper(redis_client=get_redis_client(), collection=get_settings().redis.code_namespace, ttl=self.redis_ttl)
+        access_token_db = RedisWrapper(redis_client=get_redis_client(), collection=get_settings().redis.token_namespace, ttl=self.redis_ttl)
+        refresh_token_db = RedisWrapper(redis_client=get_redis_client(), collection=get_settings().redis.refresh_token_namespace, ttl=self.redis_ttl)
+        subject_identifier_db = RedisWrapper(redis_client=get_redis_client(), collection=get_settings().redis.sub_id_namespace, ttl=self.redis_ttl)
 
         authz_state = AuthorizationState(
             HashBasedSubjectIdentifierFactory(get_settings().oidc.subject_id_hash_salt),

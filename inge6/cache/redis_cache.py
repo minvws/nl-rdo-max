@@ -21,6 +21,7 @@ class RedisCache:
         self.key_prefix: str = self.settings.redis.default_cache_namespace
         self.expires_in_s: int = int(self.settings.redis.object_ttl)
         self.redis_debugger = RedisGetDebugger(self.settings, settings=settings)
+        self.redis_client = get_redis_client(settings)
 
     def _serialize(self, value: Any) -> bytes:
         """
@@ -62,13 +63,13 @@ class RedisCache:
         key = self._get_namespace(key)
         serialized_value = self._serialize(value)
 
-        if get_settings().redis.enable_debugger:
+        if self.settings.redis.enable_debugger:
             # If in debugging mode, prepend namespace with key for better debugging.
             # It allows the redis debugger to search for specific key_types, and
             # redis db inspection shows better keys
             key = f'{key}:{key}'
 
-        get_redis_client().set(key, serialized_value, ex=self.expires_in_s)
+        self.redis_client.set(key, serialized_value, ex=self.expires_in_s)
 
     # pylint: disable=redefined-builtin
     def get(self, key: str) -> Any:
@@ -80,9 +81,9 @@ class RedisCache:
         :returns: the value belonging to the specified key
         """
         key = self._get_namespace(key)
-        value = get_redis_client().get(key)
+        value = self.redis_client.get(key)
 
-        if get_settings().redis.enable_debugger and value :
+        if self.settings.redis.enable_debugger and value :
             self.redis_debugger.debug_get(key, value)
 
         deserialized_value = self._deserialize(value)
@@ -107,8 +108,8 @@ class RedisCache:
             # redis db inspection shows better keys
             namespace = f'{namespace}:{key}'
 
-        get_redis_client().hset(namespace, key, serialized_value)
-        get_redis_client().expire(name=namespace, time=self.expires_in_s)
+        self.redis_client.hset(namespace, key, serialized_value)
+        self.redis_client.expire(name=namespace, time=self.expires_in_s)
 
     def hget(self, namespace, key) -> Any:
         """
@@ -123,10 +124,10 @@ class RedisCache:
             # It allows the redis debugger to search for specific key_types, and
             # redis db inspection shows better keys
             namespace = f'{namespace}:{key}'
-            value = get_redis_client().hget(namespace, key)
+            value = self.redis_client.hget(namespace, key)
             self.redis_debugger.debug_get(namespace, value)
         else:
-            value = get_redis_client().hget(namespace, key)
+            value = self.redis_client.hget(namespace, key)
 
         deserialized_value = self._deserialize(value)
         return deserialized_value
@@ -135,4 +136,4 @@ class RedisCache:
         """
         Generate a random string, useful to generate unique keys that should be stored in the redis database.
         """
-        return get_redis_client().acl_genpass()
+        return self.redis_client.acl_genpass()
