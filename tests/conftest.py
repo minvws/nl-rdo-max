@@ -26,7 +26,7 @@ def redis_mock(redisdb):
     cache.redis_client._REDIS_CLIENT = client
 
 @pytest.fixture()
-def redis_cache(redis_mock):
+def redis_cache(redis_mock): # pylint: disable=redefined-outer-name, unused-argument
     # pylint: disable=W0212
     # Access to a protected member
     yield cache.redis_cache.RedisCache()

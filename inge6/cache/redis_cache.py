@@ -9,10 +9,29 @@ Required settings:
 from typing import Any, Text, Optional
 import pickle
 
-from . import get_redis_client
+from .redis_client import get_redis_client
 from .redis_debugger import RedisGetDebugger
 
 from ..config import get_settings
+
+def _serialize(value: Any) -> bytes:
+    """
+    Function that specifies how the data should be serialized into the redis-server.
+
+    :param value: Any value that should be storen in a redis database
+    :returns: Serialized value, a pickle dump.
+    """
+    return pickle.dumps(value)
+
+def _deserialize(serialized_value: Optional[Any]) -> Any:
+    """
+    Specifies the opposite of the serialize function, expects the output of a redis GET command. And
+    returns the deserialized version of that output.
+
+    :param serialized_value: value retrieved from our redis-server connection
+    :returns: deserialized version of the object stored in redis.
+    """
+    return pickle.loads(serialized_value) if serialized_value else None
 
 class RedisCache:
 
@@ -23,24 +42,6 @@ class RedisCache:
         self.redis_debugger = RedisGetDebugger(self.settings, settings=settings)
         self.redis_client = get_redis_client(settings)
 
-    def _serialize(self, value: Any) -> bytes:
-        """
-        Function that specifies how the data should be serialized into the redis-server.
-
-        :param value: Any value that should be storen in a redis database
-        :returns: Serialized value, a pickle dump.
-        """
-        return pickle.dumps(value)
-
-    def _deserialize(self, serialized_value: Optional[Any]) -> Any:
-        """
-        Specifies the opposite of the serialize function, expects the output of a redis GET command. And
-        returns the deserialized version of that output.
-
-        :param serialized_value: value retrieved from our redis-server connection
-        :returns: deserialized version of the object stored in redis.
-        """
-        return pickle.loads(serialized_value) if serialized_value else None
 
     def _get_namespace(self, namespace: str) -> str:
         """
@@ -61,7 +62,7 @@ class RedisCache:
         :param value: value we want to store
         """
         key = self._get_namespace(key)
-        serialized_value = self._serialize(value)
+        serialized_value = _serialize(value)
 
         if self.settings.redis.enable_debugger:
             # If in debugging mode, prepend namespace with key for better debugging.
@@ -86,7 +87,7 @@ class RedisCache:
         if self.settings.redis.enable_debugger and value :
             self.redis_debugger.debug_get(key, value)
 
-        deserialized_value = self._deserialize(value)
+        deserialized_value = _deserialize(value)
         return deserialized_value
 
     def hset(self, namespace: str, key: str, value: Any) -> None:
@@ -99,7 +100,7 @@ class RedisCache:
         :param key: the key to store with your value
         :param value: the value to store in the redis database
         """
-        serialized_value = self._serialize(value)
+        serialized_value = _serialize(value)
         namespace = self._get_namespace(namespace)
 
         if self.settings.redis.enable_debugger:
@@ -129,7 +130,7 @@ class RedisCache:
         else:
             value = self.redis_client.hget(namespace, key)
 
-        deserialized_value = self._deserialize(value)
+        deserialized_value = _deserialize(value)
         return deserialized_value
 
     def gen_token(self) -> Text:
