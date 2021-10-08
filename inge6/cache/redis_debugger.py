@@ -1,12 +1,14 @@
 import logging
 import threading
 
+from redis import StrictRedis
+
 from ..config import get_settings
 
 
 class RedisGetDebugger(threading.Thread):
 
-    def __init__(self, redis_client, *args, settings = None, **kwargs) -> None:
+    def __init__(self, redis_client: StrictRedis, *args, settings = None, **kwargs) -> None:
         threading.Thread.__init__(self, *args, **kwargs)
         self.settings = get_settings() if settings is None else settings
 
