@@ -407,7 +407,8 @@ class Provider(OIDCProvider, SAMLProvider):
             redirect_url = error_resp.request(authorize_request.redirect_uri, False)
             log.error("redirecting to: %s", redirect_url)
             return RedirectResponse(redirect_url, status_code=303)
-        except: # pylint: disable=bare-except
+        except Exception as exception: # pylint: disable=broad-except
+            log.error("Handling error: %s", exception)
             log.error("Some unhandled error appeard", exc_info=True)
             query_params = {
                 'error': "request_not_supported",
