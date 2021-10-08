@@ -376,7 +376,7 @@ class ArtifactResponse:
             }
         }
 
-    def to_string(self) -> str:
+    def to_string(self) -> bytes:
         return etree.tostring(self.root)
 
     def to_envelope_string(self) -> str:
