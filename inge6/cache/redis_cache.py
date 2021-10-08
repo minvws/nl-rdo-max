@@ -39,8 +39,8 @@ class RedisCache:
         self.settings = get_settings() if settings is None else settings
         self.key_prefix: str = self.settings.redis.default_cache_namespace
         self.expires_in_s: int = int(self.settings.redis.object_ttl)
-        self.redis_debugger = RedisGetDebugger(self.settings, settings=settings)
         self.redis_client = get_redis_client(settings)
+        self.redis_debugger = RedisGetDebugger(redis_client=self.redis_client, settings=self.settings)
 
 
     def _get_namespace(self, namespace: str) -> str:
