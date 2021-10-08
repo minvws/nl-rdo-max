@@ -29,7 +29,8 @@ from inge6.router import consume_bsn_for_token
 
 from ..saml.test_artifact_response_parser import PRIV_KEY_BSN_AES_KEY
 
-def test_sorry_too_busy():
+# pylint: disable=unused-argument
+def test_sorry_too_busy(redis_mock):
     request = SorryPageRequest(
         state = "state",
         redirect_uri = "uri",

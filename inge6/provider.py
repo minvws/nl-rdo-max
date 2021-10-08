@@ -371,10 +371,10 @@ class Provider(OIDCProvider, SAMLProvider):
         redirect_uri = _get_too_busy_redirect_error_uri(request.redirect_uri, request.state, allow_list)
 
         if self._is_outage():
-            too_busy_page = create_page_outage(self.too_busy_page_template_head, self.too_busy_page_template_tail, redirect_uri)
+            too_busy_page = create_page_outage(self.outage_page_template_head, self.outage_page_template_tail, redirect_uri)
             return HTMLResponse(content=too_busy_page)
 
-        too_busy_page = create_page_outage(self.outage_page_template_head, self.outage_page_template_tail, redirect_uri)
+        too_busy_page = create_page_outage(self.too_busy_page_template_head, self.too_busy_page_template_tail, redirect_uri)
         return HTMLResponse(content=too_busy_page)
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
