@@ -212,7 +212,7 @@ def test_assertion_consumer_service(mocker, digid_config, digid_mock_disable, re
             "RelayState": relay_state,
             "SAMLart": artifact
         }
-    acs_resp = get_provider().assertion_consumer_service(DummyRequest())
+    acs_resp = provider.assertion_consumer_service(DummyRequest())
 
     redirect_url = re.search(r"<meta http-equiv=\"refresh\" content=\"0;url=(.*?)\" />", acs_resp.body.decode())
     parsed_url = urlparse.urlparse(redirect_url[1])
