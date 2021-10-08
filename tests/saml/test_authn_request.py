@@ -17,8 +17,6 @@ from inge6.config import get_settings
 
 from .test_utils import decode_base64_and_inflate
 
-redis_cache = RedisCache()
-
 NAMESPACES = {
     'saml': 'urn:oasis:names:tc:SAML:2.0:assertion',
     'samlp': 'urn:oasis:names:tc:SAML:2.0:protocol',
@@ -46,6 +44,8 @@ def test_authorize_endpoint_digid(digid_config, digid_mock_disable, redis_mock):
         </samlp:RequestedAuthnContext>
     </samlp:AuthnRequest>
     """
+    redis_cache = RedisCache()
+
     provider: Provider = Provider()
     code_challenge = "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw"
     auth_req = AuthorizeRequest(
@@ -136,6 +136,8 @@ def test_authorize_endpoint_tvs(tvs_config, redis_mock, digid_mock_disable):
         </ds:Signature>
     </samlp:AuthnRequest>
     """
+    redis_cache = RedisCache()
+
 
     def get_post_params_from_html(html: str):
         # pylint: disable=c-extension-no-member

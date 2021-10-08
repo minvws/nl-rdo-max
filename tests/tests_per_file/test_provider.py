@@ -24,13 +24,11 @@ from inge6 import constants
 from inge6.provider import Provider
 from inge6.models import AuthorizeRequest, SorryPageRequest
 from inge6.provider import get_provider, _get_bsn_from_art_resp
-from inge6.cache import get_redis_client, RedisCache, redis_cache
 from inge6.config import get_settings
 from inge6.router import consume_bsn_for_token
 
 from ..saml.test_artifact_response_parser import PRIV_KEY_BSN_AES_KEY
 
-redis_cache = RedisCache()
 
 def test_sorry_too_busy():
     request = SorryPageRequest(
@@ -54,9 +52,14 @@ def test_get_bsn_from_artresponse():
     id_provider.saml_spec_version = original_version
 
 
-def test_authorize_ratelimit(redis_mock, fake_redis_user_limit_key, digid_mock_disable):
-    get_redis_client().set('tvs:primary_idp', 'digid')
-    get_redis_client().set('user_limit_key', 3)
+def test_authorize_ratelimit(mocker, redis_cache, fake_redis_user_limit_key, digid_mock_disable):
+    redis_mock = redis_cache.redis_client
+
+    redis_mock.set('tvs:primary_idp', 'digid')
+    redis_mock.set('user_limit_key', 3)
+
+    provider = get_provider()
+    mocker.patch.object(provider, 'redis_cache',  redis_cache)
 
     authorize_params = {
         'client_id': "test_client",
@@ -73,15 +76,15 @@ def test_authorize_ratelimit(redis_mock, fake_redis_user_limit_key, digid_mock_d
     auth_req = AuthorizeRequest(**authorize_params)
 
     # First three calls no problem
-    resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.1')
+    resp = provider.authorize_endpoint(auth_req, headers, '0.0.0.1')
     assert not ('location' in resp.headers and resp.headers['location'].startswith('/sorry-too-busy'))
-    resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.2')
+    resp = provider.authorize_endpoint(auth_req, headers, '0.0.0.2')
     assert not ('location' in resp.headers and resp.headers['location'].startswith('/sorry-too-busy'))
-    resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.3')
+    resp = provider.authorize_endpoint(auth_req, headers, '0.0.0.3')
     assert not ('location' in resp.headers and resp.headers['location'].startswith('/sorry-too-busy'))
 
     # Fourth is the limit.
-    resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.4')
+    resp = provider.authorize_endpoint(auth_req, headers, '0.0.0.4')
     assert resp.headers['location'].startswith('/sorry-too-busy')
 
 
@@ -123,7 +126,7 @@ def test_authorize_invalid_request(digid_mock_disable, redis_mock, digid_config)
 
 # pylint: disable=unused-argument
 def test_expected_redis_primary_idp(redis_mock):
-    get_redis_client().delete(get_settings().primary_idp_key)
+    redis_mock.delete(get_settings().primary_idp_key)
 
     authorize_params = {
         'client_id': "some_unknown_client",
@@ -176,8 +179,13 @@ def test_resolve_artifact_tvs(requests_mock, mocker, redis_mock, tvs_config): # 
     bsn = provider._resolve_artifact('XXX', 'tvs')
     assert bsn == '900212640'
 
-def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock):
+def test_assertion_consumer_service(mocker, digid_config, digid_mock_disable, redis_cache):
+    redis_mock = redis_cache.redis_client
+
     provider: Provider = Provider()
+    mocker.patch.object(provider, 'redis_cache', redis_cache)
+
+
     code_challenge = "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw"
     auth_req = AuthorizeRequest(
         code_challenge_method="S256",
@@ -212,7 +220,7 @@ def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock
     expected_code = query_params['code'][0]
 
     # Grabbing the generated code from redis, this could be cleaner / better
-    items = get_redis_client().scan(0)[1]
+    items = redis_mock.scan(0)[1]
     code = None
     for item in items:
         item = item.decode("utf-8")
@@ -234,7 +242,10 @@ def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock
 
     # Test if time to life / expiry is set correctly on the Redis namespace
     # pylint: disable=protected-access
-    assert get_redis_client().ttl(redis_cache._get_namespace(code))== int(get_settings().redis.object_ttl)
+    assert _approx_eq(redis_mock.ttl(redis_cache._get_namespace(code)), int(get_settings().redis.object_ttl), 5)
+
+def _approx_eq(dynam_val: int, stat_val: int, delta: int):
+    return dynam_val >= stat_val - delta or dynam_val <= stat_val + delta
 
 # pylint: disable=unused-argument
 def mock_is_authorized(key, request, audience):
@@ -289,10 +300,11 @@ def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, moc
     }
 
 # pytest: disable=unused-argument
-def test_bsn_attribute(mocker, redis_mock):
-    mocker.patch('inge6.provider.is_authorized', mock_is_authorized)
-
+def test_bsn_attribute(mocker, redis_cache):
     provider = get_provider()
+
+    mocker.patch('inge6.provider.is_authorized', mock_is_authorized)
+    mocker.patch.object(provider, 'redis_cache', redis_cache)
 
     bsn = "123456789"
     encrypted_bsn_object = provider.bsn_encrypt.symm_encrypt(bsn)
