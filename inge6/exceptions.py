@@ -7,6 +7,9 @@ class TooBusyError(RuntimeError):
 class TooManyRequestsFromOrigin(RuntimeError):
     pass
 
+class DependentServiceOutage(RuntimeError):
+    pass
+
 class ExpiredResourceError(RuntimeError):
     pass
 

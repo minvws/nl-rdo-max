@@ -55,9 +55,9 @@ def jwks_uri():
     json_content = jsonable_encoder(get_provider().jwks)
     return JSONResponse(content=json_content)
 
-@router.get('/sorry-too-busy')
-def sorry_too_busy(request: SorryPageRequest = Depends()):
-    return get_provider().sorry_too_busy(request)
+@router.get('/sorry-something-went-wrong')
+def sorry_something_went_wrong(request: SorryPageRequest = Depends()):
+    return get_provider().sorry_something_went_wrong(request)
 
 @router.get("/")
 def read_root():
