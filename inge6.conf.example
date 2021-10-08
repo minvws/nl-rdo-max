@@ -38,6 +38,8 @@ loglevel = debug
 # second. It will lookup the number of allowed requests per second in the redis database under the 
 # key defined in the user_limit_key setting. Finally, the ip_expire_in_s defined the number of seconds
 # an ip-address should be remembered in the redis-db
+
+outage_key = inge6:outage
 sorry_too_busy_page_head = static/templates/sorry-coronacheck_head.html
 sorry_too_busy_page_tail = static/templates/sorry-coronacheck_tail.html
 outage_page_head = static/templates/storing-coronacheck_head.html
