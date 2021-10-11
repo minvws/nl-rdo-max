@@ -19,6 +19,7 @@ from .digid_mock import (
 )
 
 log: Logger = logging.getLogger(__package__)
+log.setLevel(getattr(logging, settings.loglevel.upper()))
 
 router = APIRouter()
 
@@ -61,7 +62,7 @@ def sorry_too_busy(request: SorryPageRequest = Depends()):
 
 @router.get("/")
 def read_root():
-    return HTMLResponse("TVS bridge")
+    return HTMLResponse("Many Authentication eXchange")
 
 @router.get(settings.health_endpoint)
 def health() -> JSONResponse:

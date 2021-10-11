@@ -117,6 +117,7 @@ from .oidc.authorize import (
 )
 
 log: Logger = logging.getLogger(__package__)
+log.setLevel(getattr(logging, settings.loglevel.upper()))
 
 _PROVIDER = None
 
@@ -435,6 +436,8 @@ class Provider(OIDCProvider, SAMLProvider):
             access_key = _create_redis_bsn_key(self.key, token_response['id_token'].encode(), self.audience)
             redis_cache.set(access_key, encrypted_bsn)
 
+            log.info(' User has returned from %s and we received a response (Mocking mode is %s)', id_provider.upper(), settings.mock_digid.upper())
+
             json_content_resp = jsonable_encoder(token_response.to_dict())
             return JSONResponse(content=json_content_resp)
         except UserNotAuthenticated as user_not_authenticated:
@@ -509,9 +512,14 @@ class Provider(OIDCProvider, SAMLProvider):
         artifact_response.raise_for_status()
         log.debug('Validated sha256(artifact) %s', hashed_artifact)
 
-        bsn = _get_bsn_from_art_resp(artifact_response.get_bsn(), id_provider)
-        encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
-        return encrypted_bsn
+        if id_provider.sp_metadata.cluster_settings is None:
+            # We are able to decrypt the message, and we will
+            bsn = _get_bsn_from_art_resp(artifact_response.get_bsn(), id_provider)
+            encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
+            return encrypted_bsn
+
+        # Encryption done by another party, gather relevant info
+        return base64.b64encode(artifact_response.to_string().encode())
 
     def bsn_attribute(self, request: Request) -> Response:
         """
@@ -528,6 +536,11 @@ class Provider(OIDCProvider, SAMLProvider):
 
         decoded_json = base64.b64decode(attributes).decode()
         bsn_dict = json.loads(decoded_json)
+
+        if all(k in bsn_dict for k in ['key', 'data']):
+            # We never decrypted the message, we cannot re-encrypt.
+            return Response(content=bsn_dict, status_code=200, headers={'Content-Type': 'application/xml'})
+
         encrypted_bsn = self.bsn_encrypt.from_symm_to_pub(bsn_dict)
         return Response(content=encrypted_bsn, status_code=200)
 

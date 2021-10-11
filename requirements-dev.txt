@@ -6,7 +6,7 @@
 #
 asgiref==3.4.1
     # via uvicorn
-astroid==2.8.0
+astroid==2.8.2
     # via pylint
 attrs==21.2.0
     # via pytest
@@ -24,11 +24,12 @@ click==8.0.1
     # via
     #   black
     #   uvicorn
-coverage==5.5
+coverage[toml]==5.5
     # via
     #   -r requirements-dev.in
+    #   coverage-badge
     #   pytest-cov
-coverage-badge==1.0.1
+coverage-badge==1.0.2
     # via -r requirements-dev.in
 freezegun==1.1.0
     # via -r requirements-dev.in
@@ -89,7 +90,7 @@ pytest==6.2.5
     #   pytest-redis
 pytest-asyncio==0.15.1
     # via -r requirements-dev.in
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements-dev.in
 pytest-mock==3.6.1
     # via -r requirements-dev.in
@@ -118,15 +119,15 @@ stevedore==3.3.0
     # via bandit
 toml==0.10.2
     # via
+    #   coverage
     #   mypy
     #   pylint
     #   pytest
-    #   pytest-cov
 tomli==1.2.1
     # via black
-types-redis==3.5.8
+types-redis==3.5.9
     # via -r requirements-dev.in
-types-requests==2.25.6
+types-requests==2.25.9
     # via -r requirements-dev.in
 typing-extensions==3.10.0.0
     # via

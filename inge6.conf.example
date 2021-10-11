@@ -48,6 +48,9 @@ user_limit_key_overflow_idp = digid_connect_user_limit
 
 # Amount of seconds needed per ip address
 ip_expire_in_s = 10
+# Amount of attempts per ip address
+nof_attempts_s = 3
+
 
 [bsn]
 # Once the bsn is retrieved it is encrypted and stored in the redis database. This encryption
@@ -88,6 +91,7 @@ identity_provider_settings = saml/identity_providers.json
 response_expires_in = 600
 
 # template files:
+templates = saml/templates/xml
 sp_template = saml/templates/xml/sp_metadata.xml
 authn_request_template = saml/templates/xml/authn_request.xml
 artifactresolve_request_template = saml/templates/xml/artifactresolve_request.xml

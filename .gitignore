@@ -21,3 +21,4 @@ clients.json
 .DS_Store
 saml/identity_providers.json
 tmp
+cluster.tvs.json
