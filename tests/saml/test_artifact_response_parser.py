@@ -174,3 +174,25 @@ def test_etree_parse_fail():
     assert nodecl_tree_splitted.tail == nodecl_tree.tail
     assert nodecl_tree_splitted.attrib == nodecl_tree.attrib
     assert len(nodecl_tree_splitted) == len(nodecl_tree)
+
+
+@freeze_time("2021-08-17T14:05:29Z")
+def test_artifact_response_output_parseable(mocker, digid_provider_settings, jinja_env):
+    with open('tests/resources/artifact_response_digid.xml', 'r', encoding='utf-8') as resp_ex_f:
+        art_resp_resource = resp_ex_f.read()
+
+    digid_provider = IdProvider('digid', digid_provider_settings, jinja_env)
+    mocker.patch.dict(digid_provider.settings_dict, {
+        'sp': {
+            'entityId': 'https://siam1.test.anoigo.nl/aselectserver/server',
+            'assertionConsumerService': {
+                'url': 'https://siam1.test.anoigo.nl/aselectserver/server/saml20_assertion_digid'
+            }
+        }
+    })
+    art_resp = ArtifactResponse.from_string(art_resp_resource, digid_provider, insecure=True)
+    art_resp_reloaded = ArtifactResponse.from_string(art_resp.to_envelope_string(), digid_provider, insecure=True)
+
+    assert art_resp.issuer.text == art_resp_reloaded.issuer.text
+    assert art_resp.response_issuer.text == art_resp_reloaded.response_issuer.text
+    assert art_resp.status == art_resp_reloaded.status

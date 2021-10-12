@@ -377,14 +377,14 @@ class ArtifactResponse:
             }
         }
 
-    def to_string(self) -> str:
+    def to_string(self) -> bytes:
         return etree.tostring(self.root)
 
     def to_envelope_string(self) -> str:
         return f"""<?xml version="1.0"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
     <soapenv:Body>
-        {self.to_string()}
+        {self.to_string().decode()}
     </soapenv:Body>
 </soapenv:Envelope>
 """
