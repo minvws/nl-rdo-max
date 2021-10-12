@@ -10,7 +10,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 
 from oic.oic.message import AuthorizationRequest as OICAuthRequest
 from inge6.models import AuthorizeRequest, LoginDigiDRequest
-from inge6.provider import Provider, _post_login
+from inge6.provider import Provider
 from inge6 import constants
 from inge6.cache import RedisCache
 from inge6.config import get_settings
@@ -230,7 +230,7 @@ def test_post_login_force_digid_mocking(digid_config, redis_mock):
     )
 
     id_provider = provider.get_id_provider('digid')
-    resp: RedirectResponse = _post_login(login_digid_req, id_provider)
+    resp: RedirectResponse = provider._post_login(login_digid_req, id_provider) # pylint: disable=protected-access
     redirect_url = resp.headers.get('location')
 
     parsed_url = urlparse.urlparse(redirect_url)
