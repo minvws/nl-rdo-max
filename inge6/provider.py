@@ -91,7 +91,7 @@ from pyop.exceptions import (
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
 from . import constants
-from .config import get_settings
+from .config import Settings, get_settings
 from .cache import get_redis_client, redis_cache
 from .rate_limiter import rate_limit_test
 from .utils import create_post_autosubmit_form, create_page_too_busy, create_acs_redirect_link, create_authn_post_context
@@ -116,10 +116,6 @@ from .oidc.authorize import (
     accesstoken,
 )
 
-log: Logger = logging.getLogger(__package__)
-log.setLevel(getattr(logging, get_settings().loglevel.upper()))
-
-_PROVIDER = None
 
 def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_request: AuthorizeRequest,
                     id_provider: str) -> None:
@@ -195,17 +191,6 @@ def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     error_desc = "The servers are too busy right now, please try again later."
     return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
 
-def _prepare_req(auth_req: BaseModel, idp_name: str):
-    """
-    Prepare a authorization request to use the OneLogin SAML library.
-    """
-    return {
-        'https': 'on',
-        'http_host': f'https://{idp_name}.{get_settings().saml.base_issuer}',
-        'script_name': get_settings().authorize_endpoint,
-        'get_data': auth_req.dict(),
-    }
-
 def _get_bsn_from_art_resp(bsn_response: str, id_provider: IdProvider) -> str:
     """
     Depending on the saml versioning the bsn is or is not prepended with a sectore code.
@@ -226,57 +211,6 @@ def _get_bsn_from_art_resp(bsn_response: str, id_provider: IdProvider) -> str:
         return sector_split[1]
 
     raise ValueError("Unknown SAML specification, known: 3.5, >=4.4")
-
-
-def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> Response:
-    """
-    Not all identity providers allow the HTTP-Redirect for performing authentication requests,
-    For those that require HTTP-POST, this method is created. It generates an auto-submit form
-    with the authentication request.
-
-    Further if the system is configured to be in mocking mode, the auto-submit form is configured
-    to use the mocking paths available.
-    """
-    force_digid = login_digid_req.force_digid if login_digid_req.force_digid is not None else False
-    randstate = login_digid_req.state
-
-    issuer_id = id_provider.sp_metadata.issuer_id
-
-    if get_settings().mock_digid.lower() == "true" and not force_digid:
-        ##
-        # Coming from /authorize in mocking mode we should always get in this fall into this branch
-        # in which case login_digid_req only contains the randstate.
-        ##
-        base64_authn_request = base64.urlsafe_b64encode(json.dumps(login_digid_req.authorize_request.dict()).encode()).decode()
-        authn_post_ctx = create_authn_post_context(
-            relay_state=randstate,
-            url=f'/digid-mock?state={randstate}&idp_name={id_provider.name}&authorize_request={base64_authn_request}',
-            issuer_id=issuer_id,
-            keypair=id_provider.keypair_paths
-        )
-
-        return HTMLResponse(content=create_post_autosubmit_form(authn_post_ctx))
-
-    sso_url = id_provider.idp_metadata.get_sso()['location']
-    if id_provider.authn_binding.endswith('POST'):
-        authn_post_ctx = create_authn_post_context(
-            relay_state=randstate,
-            url=sso_url,
-            issuer_id=issuer_id,
-            keypair=id_provider.keypair_paths
-        )
-        return HTMLResponse(content=create_post_autosubmit_form(authn_post_ctx))
-
-    if id_provider.authn_binding.endswith('Redirect'):
-        if login_digid_req.authorize_request is None:
-            raise ValueError("AuthnRequest is None, which should not be possible")
-
-        req = _prepare_req(login_digid_req.authorize_request, id_provider.name)
-        auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
-        return RedirectResponse(auth.login(return_to=login_digid_req.state, force_authn=False, set_nameid_policy=False))
-
-    raise UnexpectedAuthnBinding("Unknown Authn binding {} configured in idp metadata: {}".format(id_provider.authn_binding, id_provider.name))
-
 
 def _perform_artifact_resolve_request(artifact: str, id_provider: IdProvider):
     """
@@ -322,28 +256,90 @@ class Provider(OIDCProvider, SAMLProvider):
         - `settings.bsn.local_symm_key`: symmetric key used for encrypting the BSN stored in the Redis-store
     """
 
-    BSN_SIGN_KEY = get_settings().bsn.sign_key
-    BSN_ENCRYPT_KEY = get_settings().bsn.encrypt_key
-    BSN_LOCAL_SYMM_KEY = get_settings().bsn.local_symm_key
-
-    def __init__(self) -> None:
+    def __init__(self, settings: Settings = get_settings()) -> None:
         OIDCProvider.__init__(self)
         SAMLProvider.__init__(self)
 
+        self.settings = settings
+
+        self.log: Logger = logging.getLogger(__package__)
+        self.log.setLevel(getattr(logging, settings.loglevel.upper()))
+
         self.bsn_encrypt = Encrypt(
-            raw_sign_key=self.BSN_SIGN_KEY,
-            raw_enc_key=self.BSN_ENCRYPT_KEY,
-            raw_local_enc_key=self.BSN_LOCAL_SYMM_KEY
+            raw_sign_key=settings.bsn.sign_key,
+            raw_enc_key=settings.bsn.encrypt_key,
+            raw_local_enc_key=settings.bsn.local_symm_key
         )
 
-        with open(get_settings().ratelimit.sorry_too_busy_page_head, 'r', encoding='utf-8') as too_busy_file:
+        with open(self.settings.ratelimit.sorry_too_busy_page_head, 'r', encoding='utf-8') as too_busy_file:
             self.too_busy_page_template_head = too_busy_file.read()
 
-        with open(get_settings().ratelimit.sorry_too_busy_page_tail, 'r', encoding='utf-8') as too_busy_file:
+        with open(self.settings.ratelimit.sorry_too_busy_page_tail, 'r', encoding='utf-8') as too_busy_file:
             self.too_busy_page_template_tail = too_busy_file.read()
 
-        with open(get_settings().oidc.clients_file, 'r', encoding='utf-8') as clients_file:
+        with open(self.settings.oidc.clients_file, 'r', encoding='utf-8') as clients_file:
             self.audience = list(json.loads(clients_file.read()).keys())
+
+    def _post_login(self, login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> Response:
+        """
+        Not all identity providers allow the HTTP-Redirect for performing authentication requests,
+        For those that require HTTP-POST, this method is created. It generates an auto-submit form
+        with the authentication request.
+
+        Further if the system is configured to be in mocking mode, the auto-submit form is configured
+        to use the mocking paths available.
+        """
+        force_digid = login_digid_req.force_digid if login_digid_req.force_digid is not None else False
+        randstate = login_digid_req.state
+
+        issuer_id = id_provider.sp_metadata.issuer_id
+
+        if self.settings.mock_digid.lower() == "true" and not force_digid:
+            ##
+            # Coming from /authorize in mocking mode we should always get in this fall into this branch
+            # in which case login_digid_req only contains the randstate.
+            ##
+            base64_authn_request = base64.urlsafe_b64encode(json.dumps(login_digid_req.authorize_request.dict()).encode()).decode()
+            authn_post_ctx = create_authn_post_context(
+                relay_state=randstate,
+                url=f'/digid-mock?state={randstate}&idp_name={id_provider.name}&authorize_request={base64_authn_request}',
+                issuer_id=issuer_id,
+                keypair=id_provider.keypair_paths
+            )
+
+            return HTMLResponse(content=create_post_autosubmit_form(authn_post_ctx))
+
+        sso_url = id_provider.idp_metadata.get_sso()['location']
+        if id_provider.authn_binding.endswith('POST'):
+            authn_post_ctx = create_authn_post_context(
+                relay_state=randstate,
+                url=sso_url,
+                issuer_id=issuer_id,
+                keypair=id_provider.keypair_paths
+            )
+            return HTMLResponse(content=create_post_autosubmit_form(authn_post_ctx))
+
+        if id_provider.authn_binding.endswith('Redirect'):
+            if login_digid_req.authorize_request is None:
+                raise ValueError("AuthnRequest is None, which should not be possible")
+
+            req = self._prepare_req(login_digid_req.authorize_request, id_provider.name)
+            auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
+            return RedirectResponse(auth.login(return_to=login_digid_req.state, force_authn=False, set_nameid_policy=False))
+
+        raise UnexpectedAuthnBinding("Unknown Authn binding {} configured in idp metadata: {}".format(id_provider.authn_binding, id_provider.name))
+
+    def _prepare_req(self, auth_req: BaseModel, idp_name: str):
+        """
+        Prepare a authorization request to use the OneLogin SAML library.
+        """
+        return {
+            'https': 'on',
+            'http_host': f'https://{idp_name}.{self.settings.saml.base_issuer}',
+            'script_name': self.settings.authorize_endpoint,
+            'get_data': auth_req.dict(),
+        }
+
 
     def sorry_too_busy(self, request: SorryPageRequest):
         """
@@ -365,16 +361,16 @@ class Provider(OIDCProvider, SAMLProvider):
         valid, a Redirect response or auto-submit POST response is returned depending on the active IDP and its corresponding configuration.
         """
         try:
-            primary_idp = get_redis_client().get(get_settings().primary_idp_key)
+            primary_idp = get_redis_client().get(self.settings.primary_idp_key)
             if primary_idp:
                 primary_idp = primary_idp.decode()
             else:
-                raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the primary_idp_key setting".format(get_settings().primary_idp_key))
+                raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the primary_idp_key setting".format(self.settings.primary_idp_key))
 
-            if hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() != 'true':
+            if hasattr(self.settings, 'mock_digid') and self.settings.mock_digid.lower() != 'true':
                 primary_idp = rate_limit_test(ip_address)
         except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
-            log.warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
+            self.log.warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
             query_params = {
                 'redirect_uri': authorize_request.redirect_uri,
                 'client_id': authorize_request.client_id,
@@ -385,7 +381,7 @@ class Provider(OIDCProvider, SAMLProvider):
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
         except InvalidAuthenticationRequest as invalid_auth_req:
-            log.debug('received invalid authn request', exc_info=True)
+            self.log.debug('received invalid authn request', exc_info=True)
             error_url = invalid_auth_req.to_error_url()
             if error_url:
                 return RedirectResponse(error_url, status_code=303)
@@ -399,7 +395,7 @@ class Provider(OIDCProvider, SAMLProvider):
         # behavior through mocking with primary_idp=digid as without mocking, we need to
         # create a mock redirectresponse.
         id_provider = self.get_id_provider(primary_idp)
-        return _post_login(
+        return self._post_login(
             LoginDigiDRequest(state=randstate, authorize_request=authorize_request),
             id_provider=id_provider
         )
@@ -436,21 +432,21 @@ class Provider(OIDCProvider, SAMLProvider):
             access_key = _create_redis_bsn_key(self.key, token_response['id_token'].encode(), self.audience)
             redis_cache.set(access_key, encrypted_bsn)
 
-            log.info(' User has returned from %s and we received a response (Mocking mode is %s)', id_provider.upper(), get_settings().mock_digid.upper())
+            self.log.info(' User has returned from %s and we received a response (Mocking mode is %s)', id_provider.upper(), self.settings.mock_digid.upper())
 
             json_content_resp = jsonable_encoder(token_response.to_dict())
             return JSONResponse(content=json_content_resp)
         except UserNotAuthenticated as user_not_authenticated:
-            log.debug('invalid client authentication at token endpoint', exc_info=True)
+            self.log.debug('invalid client authentication at token endpoint', exc_info=True)
             error_resp = TokenSAMLErrorResponse(error=user_not_authenticated.oauth_error, error_description=str(user_not_authenticated)).to_dict()
         except InvalidClientAuthentication as invalid_client_auth:
-            log.debug('invalid client authentication at token endpoint', exc_info=True)
+            self.log.debug('invalid client authentication at token endpoint', exc_info=True)
             error_resp = TokenErrorResponse(error='invalid_client', error_description=str(invalid_client_auth)).to_dict()
         except OAuthError as oauth_error:
-            log.debug('invalid request: %s', str(oauth_error), exc_info=True)
+            self.log.debug('invalid request: %s', str(oauth_error), exc_info=True)
             error_resp = TokenErrorResponse(error=oauth_error.oauth_error, error_description=str(oauth_error)).to_dict()
         except ExpiredResourceError as expired_err:
-            log.debug('invalid request: %s', str(expired_err), exc_info=True)
+            self.log.debug('invalid request: %s', str(expired_err), exc_info=True)
             error_resp = TokenErrorResponse(error='invalid_request', error_description=str(expired_err)).to_dict()
 
         # Error has occurred
@@ -468,25 +464,25 @@ class Provider(OIDCProvider, SAMLProvider):
         artifact = request.query_params['SAMLart']
         artifact_hashed =  nacl.hash.sha256(artifact.encode()).decode()
 
-        if 'mocking' in request.query_params and hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() == 'true':
+        if 'mocking' in request.query_params and hasattr(self.settings, 'mock_digid') and self.settings.mock_digid.lower() == 'true':
             redis_cache.set('DIGID_MOCK' + artifact, 'true')
 
         try:
             auth_req_dict = hget_from_redis(state, constants.RedisKeys.AUTH_REQ.value)
             auth_req = auth_req_dict[constants.RedisKeys.AUTH_REQ.value]
         except ExpiredResourceError as expired_err:
-            log.error('received invalid authn request for artifact %s. Reason: %s', artifact_hashed, expired_err, exc_info=True)
+            self.log.error('received invalid authn request for artifact %s. Reason: %s', artifact_hashed, expired_err, exc_info=True)
             return HTMLResponse('Session expired')
 
         authn_response = self.authorize(auth_req, 'test_client')
         response_url = authn_response.request(auth_req['redirect_uri'], False)
         code = authn_response['code']
 
-        log.debug('Storing sha256(artifact) %s under code %s', artifact_hashed, code)
+        self.log.debug('Storing sha256(artifact) %s under code %s', artifact_hashed, code)
         _cache_artifact(code, artifact, auth_req_dict['id_provider'])
 
         _cache_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
-        log.debug('Stored code challenge')
+        self.log.debug('Stored code challenge')
 
         return HTMLResponse(create_acs_redirect_link({"redirect_url": response_url}))
 
@@ -497,20 +493,20 @@ class Provider(OIDCProvider, SAMLProvider):
         in the redis store.
         """
         hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
-        log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
+        self.log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
 
         is_digid_mock = redis_cache.get('DIGID_MOCK' + artifact)
-        if hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() == "true" and is_digid_mock is not None:
+        if hasattr(self.settings, 'mock_digid') and self.settings.mock_digid.lower() == "true" and is_digid_mock is not None:
             return self.bsn_encrypt.symm_encrypt(artifact)
 
         id_provider: IdProvider = self.get_id_provider(id_provider_name)
         resolved_artifact = _perform_artifact_resolve_request(artifact, id_provider)
 
-        log.debug('Received a response for sha256(artifact) %s with status_code %s', hashed_artifact, resolved_artifact.status_code)
+        self.log.debug('Received a response for sha256(artifact) %s with status_code %s', hashed_artifact, resolved_artifact.status_code)
         artifact_response = ArtifactResponse.from_string(resolved_artifact.text, id_provider)
-        log.debug('ArtifactResponse for %s, received status_code %s', hashed_artifact, artifact_response._saml_status_code) # pylint: disable=protected-access
+        self.log.debug('ArtifactResponse for %s, received status_code %s', hashed_artifact, artifact_response._saml_status_code) # pylint: disable=protected-access
         artifact_response.raise_for_status()
-        log.debug('Validated sha256(artifact) %s', hashed_artifact)
+        self.log.debug('Validated sha256(artifact) %s', hashed_artifact)
 
         if id_provider.sp_metadata.cluster_settings is None:
             # We are able to decrypt the message, and we will
@@ -558,9 +554,3 @@ class Provider(OIDCProvider, SAMLProvider):
             return Response(content=id_provider.sp_metadata.get_xml().decode(), media_type="application/xml")
 
         raise HTTPException(status_code=500, detail=', '.join(errors))
-
-def get_provider() -> Provider:
-    global _PROVIDER # pylint: disable=global-statement
-    if _PROVIDER is None:
-        _PROVIDER = Provider()
-    return _PROVIDER

@@ -6,11 +6,11 @@ import logging
 
 import uvicorn
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
 from .config import get_settings
 from .router import router
-from .provider import get_provider
+from .provider import Provider
 
 log = logging.getLogger(__package__)
 
@@ -170,11 +170,19 @@ If you didn't mean to enable ssl change this setting in your config (not recomme
 
 @app.on_event("startup")
 async def startup_event():
-    get_provider()
+    pass
+
+@app.middleware('http')
+async def add_provider_to_request(request: Request, call_next):
+    provider = Provider()
+    request.app.state.provider = provider
+    return await call_next(request)
 
 def main(app_link: str = 'inge6.main:app'):
+    settings = get_settings()
+
     logging.basicConfig(
-        level=getattr(logging, get_settings().loglevel.upper()),
+        level=getattr(logging, settings.loglevel.upper()),
         datefmt='%m/%d/%Y %I:%M:%S %p'
     )
 
@@ -182,15 +190,15 @@ def main(app_link: str = 'inge6.main:app'):
         sys.exit(1)
 
     run_kwargs = {
-        'host': get_settings().host,
-        'port': int(get_settings().port),
-        'reload': get_settings().debug == "True",
+        'host': settings.host,
+        'port': int(settings.port),
+        'reload': settings.debug == "True",
         'proxy_headers': True,
     }
 
-    if hasattr(get_settings(), 'use_ssl') and get_settings().use_ssl.lower() == 'true':
-        run_kwargs['ssl_keyfile'] = get_settings().ssl.base_dir + '/' + get_settings().ssl.key_file
-        run_kwargs['ssl_certfile'] = get_settings().ssl.base_dir + '/' + get_settings().ssl.cert_file
+    if hasattr(settings, 'use_ssl') and settings.use_ssl.lower() == 'true':
+        run_kwargs['ssl_keyfile'] = settings.ssl.base_dir + '/' + settings.ssl.key_file
+        run_kwargs['ssl_certfile'] = settings.ssl.base_dir + '/' + settings.ssl.cert_file
 
     uvicorn.run(
                 app_link,

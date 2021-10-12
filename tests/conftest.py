@@ -2,11 +2,15 @@ import pytest
 from inge6 import cache
 from inge6.config import get_settings
 from inge6.cache import get_redis_client
-from inge6.provider import get_provider
+from inge6.provider import Provider
 
 @pytest.fixture
-def mock_clients_db(mocker):
-    mocker.patch.object(get_provider().provider, 'clients', {
+def mock_provider():
+    return Provider()
+
+@pytest.fixture
+def mock_clients_db(mocker, mock_provider): # pylint: disable=redefined-outer-name
+    mocker.patch.object(mock_provider.provider, 'clients', {
         "test_client": {
             "token_endpoint_auth_method": "none",
             "redirect_uris": [
@@ -15,6 +19,7 @@ def mock_clients_db(mocker):
             "response_types": ["code"]
         }
     })
+    yield mock_provider
 
 @pytest.fixture
 def redis_mock(redisdb):

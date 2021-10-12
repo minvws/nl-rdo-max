@@ -3,6 +3,7 @@ import re
 
 import uuid
 import urllib.parse as urlparse
+from unittest.mock import MagicMock
 import pytest
 import packaging
 
@@ -21,14 +22,16 @@ from inge6.saml.exceptions import UserNotAuthenticated
 
 from inge6.exceptions import ExpectedRedisValue
 from inge6 import constants
-from inge6.provider import Provider
+from inge6.provider import Provider, _get_bsn_from_art_resp
 from inge6.models import AuthorizeRequest, SorryPageRequest
-from inge6.provider import get_provider, _get_bsn_from_art_resp
 from inge6.cache import get_redis_client, redis_cache
 from inge6.config import get_settings
 from inge6.router import consume_bsn_for_token
 
 from ..saml.test_artifact_response_parser import PRIV_KEY_BSN_AES_KEY
+
+def get_provider():
+    return Provider()
 
 def test_sorry_too_busy():
     request = SorryPageRequest(
@@ -238,7 +241,7 @@ def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock
 def mock_is_authorized(key, request, audience):
     return "", "mocking_the_at_hash_XYZ"
 
-def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, mocker, digid_mock_disable):
+def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, mocker, digid_mock_disable, mock_provider):
     # pylint: disable=unused-argument
     def raise_user_login_failed(*args, **kwargs):
         raise UserNotAuthenticated("User authentication flow failed", oauth_error='saml_authn_failed')
@@ -252,7 +255,17 @@ def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, moc
             self._headers = headers
             super().__init__(self.scope)
 
-    mocker.patch.object(get_provider(), '_resolve_artifact', raise_user_login_failed)
+        @property
+        def app(self):
+            mock_app = MagicMock()
+            mock_app.state.provider = mock_provider
+            return mock_app
+
+    mocker.patch.object(mock_provider, '_resolve_artifact', raise_user_login_failed)
+
+    headers: Headers = Headers({})
+    request = TMPRequest(headers)
+
     redirect_uri = "http://localhost:3000/login"
     client_id = 'test_client'
     bsn = '999991772'
@@ -268,8 +281,6 @@ def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, moc
         'code_challenge_method': "S256",
     }
 
-    headers: Headers = Headers({})
-    request = TMPRequest(headers)
     auth_req = AuthorizeRequest(**authorize_params)
     resp = consume_bsn_for_token(bsn, request, auth_req)
     assert resp.status_code == 200
@@ -279,7 +290,7 @@ def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, moc
 
     acc_req_body = f'client_id={client_id}&redirect_uri={redirect_uri}&code={code}&code_verifier={code_verifier}&grant_type=authorization_code'
 
-    accesstoken_resp = get_provider().token_endpoint(acc_req_body.encode(), headers)
+    accesstoken_resp = mock_provider.token_endpoint(acc_req_body.encode(), headers)
     assert accesstoken_resp.status_code == 400
     assert json.loads(accesstoken_resp.body.decode()) == {
         'error': 'saml_authn_failed',

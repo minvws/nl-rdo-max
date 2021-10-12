@@ -12,7 +12,6 @@ from fastapi.encoders import jsonable_encoder
 from .config import get_settings
 from .cache import get_redis_client
 from .models import AuthorizeRequest, DigiDMockRequest, DigiDMockCatchRequest, LoginDigiDRequest, SorryPageRequest
-from .provider import get_provider
 from .digid_mock import (
     digid_mock as dmock,
     digid_mock_catch as dmock_catch
@@ -25,40 +24,48 @@ router = APIRouter()
 
 @router.get(get_settings().authorize_endpoint)
 def authorize(request: Request, authorize_req: AuthorizeRequest = Depends()):
-    return get_provider().authorize_endpoint(authorize_req, request.headers, request.client.host)
+    provider = request.app.state.provider
+    return provider.authorize_endpoint(authorize_req, request.headers, request.client.host)
 
 @router.post(get_settings().accesstoken_endpoint)
 async def token_endpoint(request: Request):
     ''' Expect a request with a body containing the grant_type.'''
+    provider = request.app.state.provider
     body = await request.body()
     headers = request.headers
-    return get_provider().token_endpoint(body, headers)
+    return provider.token_endpoint(body, headers)
 
 @router.get('/metadata/{id_provider}')
-def metadata(id_provider: str):
-    return get_provider().metadata(id_provider)
+def metadata(request: Request, id_provider: str):
+    provider = request.app.state.provider
+    return provider.metadata(id_provider)
 
 @router.get('/acs')
 def assertion_consumer_service(request: Request):
-    return get_provider().assertion_consumer_service(request)
+    provider = request.app.state.provider
+    return provider.assertion_consumer_service(request)
 
 @router.post('/bsn_attribute')
 async def bsn_attribute(request: Request):
-    return get_provider().bsn_attribute(request)
+    provider = request.app.state.provider
+    return provider.bsn_attribute(request)
 
 @router.get('/.well-known/openid-configuration')
-def provider_configuration():
-    json_content = jsonable_encoder(get_provider().provider_configuration.to_dict())
+def provider_configuration(request: Request):
+    provider = request.app.state.provider
+    json_content = jsonable_encoder(provider.provider_configuration.to_dict())
     return JSONResponse(content=json_content)
 
 @router.get(get_settings().jwks_endpoint)
-def jwks_uri():
-    json_content = jsonable_encoder(get_provider().jwks)
+def jwks_uri(request: Request):
+    provider = request.app.state.request
+    json_content = jsonable_encoder(provider.jwks)
     return JSONResponse(content=json_content)
 
 @router.get('/sorry-too-busy')
-def sorry_too_busy(request: SorryPageRequest = Depends()):
-    return get_provider().sorry_too_busy(request)
+def sorry_too_busy(request: Request, sorry_request: SorryPageRequest = Depends()):
+    provider = request.app.state.provider
+    return provider.sorry_too_busy(sorry_request)
 
 @router.get("/")
 def read_root():
@@ -81,13 +88,13 @@ if hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() =
     # pylint: disable=wrong-import-position, c-extension-no-member, wrong-import-order
     from lxml import etree
     from urllib.parse import parse_qs # pylint: disable=wrong-import-order
-    from .provider import _post_login
     from io import StringIO
 
     @router.get('/login-digid')
-    def login_digid(login_digid_req: LoginDigiDRequest = Depends(LoginDigiDRequest.from_request)):
-        id_provider = get_provider().get_id_provider(login_digid_req.idp_name)
-        return _post_login(login_digid_req, id_provider) # pylint: disable=protected-access
+    def login_digid(request: Request, login_digid_req: LoginDigiDRequest = Depends(LoginDigiDRequest.from_request)):
+        provider = request.app.state.provider
+        id_provider = provider.get_id_provider(login_digid_req.idp_name)
+        return provider._post_login(login_digid_req, id_provider) # pylint: disable=protected-access
 
     @router.post('/digid-mock')
     async def digid_mock(digid_mock_req: DigiDMockRequest = Depends(DigiDMockRequest.from_request)):  # pylint: disable=invalid-name
@@ -99,7 +106,8 @@ if hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() =
 
     @router.get('/consume_bsn/{bsn}')
     def consume_bsn_for_token(bsn: str, request: Request, authorize_req: AuthorizeRequest = Depends()):
-        response = get_provider().authorize_endpoint(authorize_req, request.headers, request.client.host)
+        provider = request.app.state.provider
+        response = provider.authorize_endpoint(authorize_req, request.headers, request.client.host)
         status_code = response.status_code
         if status_code != 200:
             log.debug('Status code 200 was expected, but was %s', response.status_code)
@@ -125,7 +133,7 @@ if hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() =
                 'mocking': '1'
             }
 
-        response = get_provider().assertion_consumer_service(AcsReq())
+        response = provider.assertion_consumer_service(AcsReq())
         redirect_url = re.search(r"<meta http-equiv=\"refresh\" content=\"0;url=(.*?)\" />", response.body.decode())
         if redirect_url is None:
             raise HTTPException(status_code=400, detail="No valid refresh url found")
