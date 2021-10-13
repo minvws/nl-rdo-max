@@ -1,14 +1,8 @@
-from typing import Optional
-
 from redis import StrictRedis
 
-from .redis_debugger import RedisGetDebugger
-from ..config import get_settings
+from ..config import Settings, get_settings
 
-# pylint: disable=global-statement
-_REDIS_CLIENT: Optional[StrictRedis] = None
-
-def get_redis_client(settings = None) -> StrictRedis:
+def create_redis_client(settings: Settings = get_settings()) -> StrictRedis:
     """
     Global function to retrieve the connection with the redis-server.
 
@@ -23,24 +17,15 @@ def get_redis_client(settings = None) -> StrictRedis:
 
     :returns: StrictRedis object having a connection with the configured redis server.
     """
-    global _REDIS_CLIENT
-    settings = get_settings() if settings is None else settings
 
-    if _REDIS_CLIENT is None:
-        use_ssl = settings.redis.ssl
+    use_ssl = settings.redis.ssl
 
-        if use_ssl:
-            _REDIS_CLIENT = StrictRedis(
-                                host=settings.redis.host, port=settings().redis.port, db=0,
-                                ssl=True,
-                                ssl_keyfile=settings.redis.key, ssl_certfile=settings.redis.cert,
-                                ssl_ca_certs=settings.redis.cafile
-                            )
-        else:
-            _REDIS_CLIENT = StrictRedis(host=settings.redis.host, port=settings.redis.port, db=0)
+    if use_ssl:
+        return StrictRedis(
+            host=settings.redis.host, port=settings().redis.port, db=0,
+            ssl=True,
+            ssl_keyfile=settings.redis.key, ssl_certfile=settings.redis.cert,
+            ssl_ca_certs=settings.redis.cafile
+        )
 
-        if settings.redis.enable_debugger:
-            log_expiration_events_thread = RedisGetDebugger(_REDIS_CLIENT, daemon=True)
-            log_expiration_events_thread.start()
-
-    return _REDIS_CLIENT
+    return StrictRedis(host=settings.redis.host, port=settings.redis.port, db=0)

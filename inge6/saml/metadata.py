@@ -8,6 +8,7 @@ import secrets
 from lxml import etree
 import xmlsec
 
+from ..config import Settings
 from .saml_request import SAMLRequest, add_reference, sign
 from .constants import NAMESPACES
 from .utils import get_loc_bind, has_valid_signatures, from_settings, compute_keyname, strip_cert, enforce_cert_newlines
@@ -26,7 +27,7 @@ class SPMetadata(SAMLRequest):
     DELTA_DAYS_VALID_UNTIL = 365
 
 
-    def __init__(self, settings_dict, keypair_sign, jinja_env) -> None:
+    def __init__(self, settings: Settings, settings_dict, keypair_sign, jinja_env) -> None:
         """
         Initialize SPMetadata using the settings in the settings dict, for idp_name. And sign it
         using the keypair_sign, which is also the pair used for receiving encrypted material.
@@ -37,7 +38,7 @@ class SPMetadata(SAMLRequest):
         :param pubkey_enc: (OPTIONAL) path to the public key the IdP should use for XML encryption, useful when
         decryption of the messages is done by another party. Otherwise, same key as for signing is used.
         """
-        super().__init__(keypair_sign)
+        super().__init__(settings, keypair_sign)
 
         self.jinja_env = jinja_env
         self.settings_dict = settings_dict

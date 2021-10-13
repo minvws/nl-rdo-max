@@ -3,14 +3,14 @@ import threading
 
 from redis import StrictRedis
 
-from ..config import get_settings
+from ..config import get_settings, Settings
 
 
 class RedisGetDebugger(threading.Thread):
 
-    def __init__(self, redis_client: StrictRedis, *args, settings = None, **kwargs) -> None:
+    def __init__(self, redis_client: StrictRedis, *args, settings: Settings = get_settings(), **kwargs) -> None:
         threading.Thread.__init__(self, *args, **kwargs)
-        self.settings = get_settings() if settings is None else settings
+        self.settings = settings
 
         self.psubscribe = '__keyevent@0__:expired'
         self.redis_client = redis_client

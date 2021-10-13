@@ -9,7 +9,9 @@ Required settings:
 from typing import Any, Text, Optional
 import pickle
 
-from .redis_client import get_redis_client
+from redis import StrictRedis
+
+from .redis_client import create_redis_client
 from .redis_debugger import RedisGetDebugger
 
 from ..config import get_settings
@@ -35,13 +37,15 @@ def _deserialize(serialized_value: Optional[Any]) -> Any:
 
 class RedisCache:
 
-    def __init__(self, settings = None):
-        self.settings = get_settings() if settings is None else settings
+    def __init__(self, settings = get_settings(), redis_client: StrictRedis = None):
+        self.settings = settings
         self.key_prefix: str = self.settings.redis.default_cache_namespace
         self.expires_in_s: int = int(self.settings.redis.object_ttl)
-        self.redis_client = get_redis_client(settings)
-        self.redis_debugger = RedisGetDebugger(redis_client=self.redis_client, settings=self.settings)
+        self.redis_client = create_redis_client(settings) if redis_client is None else redis_client
 
+        if self.settings.redis.enable_debugger:
+            self.redis_debugger = RedisGetDebugger(redis_client=self.redis_client, settings=self.settings, daemon=True)
+            self.redis_debugger.start()
 
     def _get_namespace(self, namespace: str) -> str:
         """
