@@ -52,6 +52,11 @@ class SPMetadata(SAMLRequest):
 
         self._root = etree.fromstring(self.render_template())
         add_reference(self.root, self._id_hash)
+
+        with open(self.signing_cert_path, 'r', encoding='utf-8') as cert_file:
+            cert_data = cert_file.read()
+        self.root.find('.//ds:Signature/ds:KeyInfo//ds:X509Certificate', NAMESPACES).text = strip_cert(cert_data)
+
         sign(self.root, self.signing_key_path)
 
     @property
@@ -141,7 +146,7 @@ class SPMetadata(SAMLRequest):
         template = self.jinja_env.get_template(self.CLUSTER_TEMPLATE_NAME)
         clustered_context = {
             'id': self._id_hash,
-            'valid_until': datetime.datetime.now() + datetime.timedelta(days=self.DELTA_DAYS_VALID_UNTIL),
+            'valid_until': (datetime.datetime.utcnow() + datetime.timedelta(days=self.DELTA_DAYS_VALID_UNTIL)).strftime("%Y-%m-%dT%H:%M:%SZ"),
             'dv_descriptors': self.create_cluster_entity_descriptor(),
             'lc_descriptor': self.create_entity_descriptor(None),
             'cert_tls': strip_cert(cert_tls),
