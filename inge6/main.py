@@ -25,27 +25,27 @@ def _validate_saml_identity_provider_settings():
     for provider, p_settings in identity_providers.items():
         if not os.path.isdir(p_settings['base_dir']):
             missing_files.append(
-                (p_settings['base_dir'], "{}: SAML Identity Providers base directory".format(provider))
+                (p_settings['base_dir'], f"{provider}: SAML Identity Providers base directory")
             )
 
         if not os.path.isfile(p_settings['cert_path']):
             missing_files.append(
-                (p_settings['cert_path'], "{}: SAML ID Provider certificate file".format(provider))
+                (p_settings['cert_path'], f"{provider}: SAML ID Provider certificate file")
             )
 
         if not os.path.isfile(p_settings['key_path']):
             missing_files.append(
-                (p_settings['key_path'], "{}: SAML ID Provider private key file".format(provider))
+                (p_settings['key_path'], f"{provider}: SAML ID Provider private key file")
             )
 
         if not os.path.isfile(p_settings['settings_path']):
             missing_files.append(
-                (p_settings['settings_path'], "{}: SAML ID Provider settings file".format(provider))
+                (p_settings['settings_path'], f"{provider}: SAML ID Provider settings file")
             )
 
         if not os.path.isfile(p_settings['idp_metadata_path']):
             missing_files.append(
-                (p_settings['idp_metadata_path'], "{}: SAML ID Provider metadata file".format(provider))
+                (p_settings['idp_metadata_path'], f"{provider}: SAML ID Provider metadata file")
             )
 
     return missing_files
@@ -56,7 +56,7 @@ def validate_settings(section, keys):
     for key in keys:
         if not hasattr(current_settings, key) or getattr(current_settings, key) == "":
             required_settings.append(
-                ('{}.{}'.format(section, key), 'expected to be defined in the config {} section'.format(section))
+                (f'{section}.{key}', f'expected to be defined in the config {section} section')
             )
 
     return required_settings
@@ -144,14 +144,14 @@ def validate_startup():
         for key in ['key', 'cert', 'cafile']:
             if not os.path.exists(getattr(get_settings().redis, key)):
                 required_settings.append(
-                    ('redis.{}'.format(key), 'does not exist on disk')
+                    (f'redis.{key}', 'does not exist on disk')
                 )
 
     error_msg = ""
     if len(missing_files) > 0 or len(ssl_missing_files) > 0:
         missing_files.extend(ssl_missing_files)
 
-        error_msg += "There seem to be missing files, please check these paths:\n\n{}.\n\n".format("\n".join(f"{file[0]}\t\t{file[1]}" for file in missing_files))
+        error_msg += "There seem to be missing files, please check these paths:\n\n{}.\n\n".format("\n".join(f"{file[0]}\t\t{file[1]}" for file in missing_files)) # pylint: disable=consider-using-f-string
 
         if len(ssl_missing_files) > 0:
             error_msg += """
@@ -160,7 +160,7 @@ If you didn't mean to enable ssl change this setting in your config (not recomme
             """
 
     if len(required_settings) > 0:
-        error_msg += "\n\nSome of the required settings seem to be missing, please have a look at:\n\n{}.\n\n".format("\n".join(f"{file[0]}\t\t{file[1]}" for file in required_settings))
+        error_msg += "\n\nSome of the required settings seem to be missing, please have a look at:\n\n{}.\n\n".format("\n".join(f"{file[0]}\t\t{file[1]}" for file in required_settings)) # pylint: disable=consider-using-f-string
 
     if len(missing_files) > 0 or len(ssl_missing_files) > 0 or len(required_settings) > 0:
         log.error(error_msg)

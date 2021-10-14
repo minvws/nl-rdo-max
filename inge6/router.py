@@ -112,8 +112,8 @@ if hasattr(get_settings(), 'mock_digid') and get_settings().mock_digid.lower() =
             log.debug('Status code 200 was expected, but was %s', response.status_code)
             if 300 <= status_code < 400:
                 redirect = response.raw_headers[0][1].decode()
-                raise HTTPException(status_code=400, detail='200 expected, got {} with redirect uri: {}'.format(status_code, redirect))
-            raise HTTPException(status_code=400, detail='detail authorize response status code was {}, but 200 was expected'.format(status_code))
+                raise HTTPException(status_code=400, detail=f'200 expected, got {status_code} with redirect uri: {redirect}')
+            raise HTTPException(status_code=400, detail=f'detail authorize response status code was {status_code}, but 200 was expected')
 
         parser = etree.HTMLParser()
         tree   = etree.parse(StringIO(response.body.decode()), parser)

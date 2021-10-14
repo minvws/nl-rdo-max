@@ -141,6 +141,6 @@ def test_redis_settings_errorneous(capture_logging, invalid_redis_settings): # p
         "code_namespace"
     ]
     for key in keys:
-        assert 'redis.{}'.format(key) in capture_logging.text
+        assert f'redis.{key}' in capture_logging.text
 
     capture_logging.clear()

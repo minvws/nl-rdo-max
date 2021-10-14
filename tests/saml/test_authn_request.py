@@ -67,7 +67,7 @@ def test_authorize_endpoint_digid(digid_config, digid_mock_disable):
 
     parsed_url = urlparse.urlparse(redirect_url)
     query_params = urlparse.parse_qs(parsed_url.query)
-    assert all(key in query_params.keys() for key in ['SAMLRequest', 'RelayState', 'Signature', 'SigAlg'])
+    assert all(key in query_params for key in ['SAMLRequest', 'RelayState', 'Signature', 'SigAlg'])
 
     generated_authnreq = decode_base64_and_inflate(query_params['SAMLRequest'][0]).decode()
     # pylint: disable=c-extension-no-member
@@ -236,7 +236,7 @@ def test_post_login_force_digid_mocking(digid_config, redis_mock):
 
     parsed_url = urlparse.urlparse(redirect_url)
     query_params = urlparse.parse_qs(parsed_url.query)
-    assert all(key in query_params.keys() for key in ['SAMLRequest', 'RelayState', 'Signature', 'SigAlg'])
+    assert all(key in query_params for key in ['SAMLRequest', 'RelayState', 'Signature', 'SigAlg'])
     assert query_params['RelayState'][0] == '110c567bbee5f758043902920d4078841c2607d75f6bb2aceb074ad6e149da0f'
 
     generated_authnreq = decode_base64_and_inflate(query_params['SAMLRequest'][0]).decode()

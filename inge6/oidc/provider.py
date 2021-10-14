@@ -90,4 +90,4 @@ class Provider:
         if hasattr(self.provider, name):
             return getattr(self.provider, name)
 
-        raise AttributeError("Attribute {} not found".format(name))
+        raise AttributeError(f"Attribute {name} not found")

@@ -27,7 +27,7 @@ from inge6.models import AuthorizeRequest, SorryPageRequest
 from inge6.config import get_settings
 from inge6.router import consume_bsn_for_token
 
-from ..saml.test_artifact_response_parser import PRIV_KEY_BSN_AES_KEY
+from ..utils import PRIV_KEY_BSN_AES_KEY
 
 def test_sorry_too_busy(mock_provider: Provider):
     request = SorryPageRequest(

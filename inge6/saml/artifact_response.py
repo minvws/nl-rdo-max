@@ -190,15 +190,15 @@ class ArtifactResponse:
             errors.append(ValidationError('Could not find response conditions audience in artifact response'))
 
         if response_conditions_aud.text != expected_entity_id:
-            errors.append(ValidationError('Invalid audience in response Conditions. Expected {}, but was {}'.format(expected_entity_id, response_conditions_aud.text)))
+            errors.append(ValidationError(f'Invalid audience in response Conditions. Expected {expected_entity_id}, but was {response_conditions_aud.text}'))
 
         if self.provider.saml_is_new_version:
             response_advice_encrypted_key_aud = self.assertion_attribute_enc_key
             if response_advice_encrypted_key_aud.attrib['Recipient'] != expected_entity_id:
-                errors.append(ValidationError('Invalid audience in encrypted key. Expected {}, but was {}'.format(expected_entity_id, response_advice_encrypted_key_aud.attrib['Recipient'])))
+                errors.append(ValidationError(f"Invalid audience in encrypted key. Expected {expected_entity_id}, but was {response_advice_encrypted_key_aud.attrib['Recipient']}"))
 
             if self.assertion_subject_audrestriction.text != expected_entity_id:
-                errors.append(ValidationError('Invalid issuer in artifact assertion_subject_audrestriction. Expected {}, but was {}'.format(expected_entity_id, self.assertion_subject_audrestriction.text)))
+                errors.append(ValidationError(f'Invalid issuer in artifact assertion_subject_audrestriction. Expected {expected_entity_id}, but was {self.assertion_subject_audrestriction.text}'))
 
         return errors
 
@@ -206,14 +206,14 @@ class ArtifactResponse:
         expected_entity_id = self.provider.idp_metadata.entity_id
         errors = []
         if self.issuer.text != expected_entity_id:
-            errors.append(ValidationError('Invalid issuer in artifact response. Expected {}, but was {}'.format(expected_entity_id, self.issuer.text)))
+            errors.append(ValidationError(f'Invalid issuer in artifact response. Expected {expected_entity_id}, but was {self.issuer.text}'))
 
         if self.response_issuer.text != expected_entity_id:
-            errors.append(ValidationError('Invalid issuer in artifact response_issuer. Expected {}, but was {}'.format(expected_entity_id, self.response_issuer.text)))
+            errors.append(ValidationError(f'Invalid issuer in artifact response_issuer. Expected {expected_entity_id}, but was {self.response_issuer.text}'))
 
         if self.status == 'saml_success':
             if self.assertion_issuer.text != expected_entity_id:
-                errors.append(ValidationError('Invalid issuer in artifact assertion_issuer. Expected {}, but was {}'.format(expected_entity_id, self.assertion_issuer.text)))
+                errors.append(ValidationError(f'Invalid issuer in artifact assertion_issuer. Expected {expected_entity_id}, but was {self.assertion_issuer.text}'))
 
             # RD V.S. AD. we cannot perform this check
             # if self.advice_assertion_issuer.text != self.provider.idp_metadata.entity_id:
@@ -228,12 +228,11 @@ class ArtifactResponse:
         # TODO: remove, or related to saml specification 3.5 vs 4.5? # pylint: disable=fixme
         if self.provider.saml_is_new_version:
             if expected_response_dest != self.response.attrib['Destination']:
-                errors.append(ValidationError('Response destination is not what was expected. Expected: {}, was {}'.format(expected_response_dest, self.response.attrib['Destination'])))
+                errors.append(ValidationError(f"Response destination is not what was expected. Expected: {expected_response_dest}, was {self.response.attrib['Destination']}"))
 
         if self.status == 'saml_success':
             if expected_response_dest != self.assertion_subject_confdata.attrib['Recipient']:
-                errors.append(ValidationError('Recipient in assertion subject confirmation data was not as expected. Expected {}, was {}'
-                                            .format(expected_response_dest, self.assertion_subject_confdata.attrib['Recipient'])))
+                errors.append(ValidationError(f"Recipient in assertion subject confirmation data was not as expected. Expected {expected_response_dest}, was {self.assertion_subject_confdata.attrib['Recipient']}")) # pylint: disable=line-too-long
 
         return errors
 
@@ -246,19 +245,19 @@ class ArtifactResponse:
             issue_instant = dateutil.parser.parse(elem.attrib['IssueInstant'], ignoretz=True)
             expiration_time = issue_instant + timedelta(seconds= self.response_expires_in)
             if current_instant > expiration_time:
-                errors.append(ValidationError("Issued ArtifactResponse:{} has expired. Current time: {}, issue instant expiration time: {}".format(elem.tag, current_instant, expiration_time)))
+                errors.append(ValidationError(f"Issued ArtifactResponse:{elem.tag} has expired. Current time: {current_instant}, issue instant expiration time: {expiration_time}"))
 
         issue_instant_els = self.root.findall(".//*[@NotBefore]")
         for elem in issue_instant_els:
             not_before_time = dateutil.parser.parse(elem.attrib['NotBefore'], ignoretz=True)
             if current_instant < not_before_time:
-                errors.append(ValidationError("Message should not be processed before {}, but is processed at time: {}".format(not_before_time, current_instant)))
+                errors.append(ValidationError(f"Message should not be processed before {not_before_time}, but is processed at time: {current_instant}"))
 
         issue_instant_els = self.root.findall(".//*[@NotOnOrAfter]")
         for elem in issue_instant_els:
             not_on_or_after = dateutil.parser.parse(elem.attrib['NotOnOrAfter'], ignoretz=True)
             if current_instant >= not_on_or_after:
-                errors.append(ValidationError("Message should not be processed on or after {}, but is processed at time: {}".format(not_on_or_after, current_instant)))
+                errors.append(ValidationError(f"Message should not be processed on or after {not_on_or_after}, but is processed at time: {current_instant}"))
 
         return errors
 
@@ -268,14 +267,14 @@ class ArtifactResponse:
         service_id_attr_val = list(root.find("./*[@Name='urn:nl-eid-gdi:1.0:ServiceUUID']"))[0].text
         expected_service_uuid = from_settings(self.provider.sp_metadata.settings_dict, 'sp.attributeConsumingService.requestedAttributes.0.attributeValue.0')
         if service_id_attr_val != expected_service_uuid:
-            errors.append(ValidationError("service uuid does not comply with specified uuid. Expected {}, was {}".format(expected_service_uuid, service_id_attr_val)))
+            errors.append(ValidationError(f"service uuid does not comply with specified uuid. Expected {expected_service_uuid}, was {service_id_attr_val}"))
 
         if not self.is_test_instance and self.is_verifeid:
             # Only perform this validation if it is verified, and not a test instance.
             keyname = root.find('.//ds:KeyName', NAMESPACES).text
             possible_keynames = self.provider.sp_metadata.dv_keynames
             if keyname not in possible_keynames:
-                errors.append(ValidationError("KeyName does not comply with one of the specified keynames. Expected list {}, was {}".format(possible_keynames, keyname)))
+                errors.append(ValidationError(f"KeyName does not comply with one of the specified keynames. Expected list {possible_keynames}, was {keyname}"))
 
         return errors
 
@@ -299,7 +298,7 @@ class ArtifactResponse:
             issue_instant = dateutil.parser.parse(issue_instant_text, ignoretz=True)
             expiration_time = issue_instant + timedelta(seconds=self.response_expires_in)
             if current_instant > expiration_time:
-                errors.append(ValidationError('Authn instant\'s datetime is expired. Current time {}, expiration time {}'.format(current_instant, expiration_time)))
+                errors.append(ValidationError(f'Authn instant\'s datetime is expired. Current time {current_instant}, expiration time {expiration_time}'))
 
         # Authenticating authority is the AD: AuthenticatieDienst, we only know RD: RouteringsDienst.
         # authenticating_authority = self.response_assertion.find('.//saml:AuthenticatingAuthority', NAMESPACES).text

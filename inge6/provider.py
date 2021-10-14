@@ -160,7 +160,7 @@ def _get_bsn_from_art_resp(bsn_response: str, id_provider: IdProvider) -> str:
         sector_split = bsn_response.split(':')
         sector_number = constants.SECTOR_CODES[sector_split[0]]
         if sector_number != constants.SectorNumber.BSN:
-            raise ValueError("Expected BSN number, received: {}".format(sector_number))
+            raise ValueError(f"Expected BSN number, received: {sector_number}")
         return sector_split[1]
 
     raise ValueError("Unknown SAML specification, known: 3.5, >=4.4")
@@ -304,7 +304,7 @@ class Provider(OIDCProvider, SAMLProvider):
             auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
             return RedirectResponse(auth.login(return_to=login_digid_req.state, force_authn=False, set_nameid_policy=False))
 
-        raise UnexpectedAuthnBinding("Unknown Authn binding {} configured in idp metadata: {}".format(id_provider.authn_binding, id_provider.name))
+        raise UnexpectedAuthnBinding(f"Unknown Authn binding {id_provider.authn_binding} configured in idp metadata: {id_provider.name}")
 
     def _prepare_req(self, auth_req: BaseModel, idp_name: str):
         """
@@ -350,7 +350,7 @@ class Provider(OIDCProvider, SAMLProvider):
             if primary_idp:
                 primary_idp = primary_idp.decode()
             else:
-                raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the primary_idp_key setting".format(self.settings.primary_idp_key))
+                raise ExpectedRedisValue(f"Expected {self.settings.primary_idp_key} key to be set in redis. Please check the primary_idp_key setting")
 
             if hasattr(self.settings, 'mock_digid') and self.settings.mock_digid.lower() != 'true':
                 primary_idp = self.rate_limiter.rate_limit_test(ip_address)
@@ -383,7 +383,7 @@ class Provider(OIDCProvider, SAMLProvider):
             if error_url:
                 return RedirectResponse(error_url, status_code=303)
 
-            error_resp = AuthorizationErrorResponse(error='invalid_request_object', error_message=str('Something went wrong: {}'.format(str(invalid_auth_req))),
+            error_resp = AuthorizationErrorResponse(error='invalid_request_object', error_message=f"Something went wrong: {str(invalid_auth_req)}",
                                                     state=authorize_request.state)
             redirect_url = error_resp.request(authorize_request.redirect_uri, False)
             self.log.error("redirecting to: %s", redirect_url)

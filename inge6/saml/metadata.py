@@ -202,13 +202,13 @@ class SPMetadata(SAMLRequest):
         errors = []
 
         if self.cluster_settings is None:
-            if self.root.tag != '{%s}EntityDescriptor' % NAMESPACES['md']:
+            if self.root.tag != f"{NAMESPACES['md']}EntityDescriptor":
                 errors.append('Root is not an EntityDescriptor')
 
             if len(self.root.findall('.//md:SPSSODescriptor', NAMESPACES)) != 1:
                 errors.append('Only one SPSSO Descriptor allowed')
         else:
-            if self.root.tag != '{%s}EntitiesDescriptor' % NAMESPACES['md']:
+            if self.root.tag != f"{NAMESPACES['md']}EntitiesDescriptor":
                 errors.append('Root is not an EntityDescriptor')
 
         if not self._has_correct_bindings():

@@ -44,7 +44,7 @@ class RateLimiter:
         user_limit = int(user_limit)
         timeslot = int(datetime.utcnow().timestamp())
 
-        timeslot_key = "tvs:limiter:{}:{}".format(idp_prefix.upper(), str(timeslot))
+        timeslot_key = f"tvs:limiter:{idp_prefix.upper()}:{str(timeslot)}"
         num_users = self.redis_client.incr(timeslot_key)
 
         if num_users == 1:
@@ -94,7 +94,7 @@ class RateLimiter:
         if primary_idp is not None:
             primary_idp = primary_idp.decode()
         else:
-            raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the primary_idp_key setting".format(self.settings.primary_idp_key))
+            raise ExpectedRedisValue(f"Expected {self.settings.primary_idp_key} key to be set in redis. Please check the primary_idp_key setting")
 
         overflow_idp = self.redis_client.get(self.settings.overflow_idp_key)
 
