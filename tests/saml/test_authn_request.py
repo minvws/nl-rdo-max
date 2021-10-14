@@ -12,7 +12,7 @@ from oic.oic.message import AuthorizationRequest as OICAuthRequest
 from inge6.models import AuthorizeRequest, LoginDigiDRequest
 from inge6.provider import Provider
 from inge6 import constants
-from inge6.cache import get_redis_client, redis_cache
+from inge6.cache import RedisCache
 from inge6.config import get_settings
 
 from .test_utils import decode_base64_and_inflate
@@ -24,7 +24,7 @@ NAMESPACES = {
 }
 
 # pylint: disable=redefined-outer-name, unused-argument
-def test_authorize_endpoint_digid(digid_config, digid_mock_disable, redis_mock):
+def test_authorize_endpoint_digid(digid_config, digid_mock_disable):
     """
     Test if the generated authn request corresponds with the
     expected values when connecting to digid. e.g. a Redirect Binding:
@@ -45,6 +45,9 @@ def test_authorize_endpoint_digid(digid_config, digid_mock_disable, redis_mock):
     </samlp:AuthnRequest>
     """
     provider: Provider = Provider()
+    redis_cache = provider.redis_cache
+    redis_client = provider.redis_client
+
     code_challenge = "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw"
     auth_req = AuthorizeRequest(
         client_id="test_client",
@@ -95,7 +98,7 @@ def test_authorize_endpoint_digid(digid_config, digid_mock_disable, redis_mock):
 
     # Test if time to life / expiry is set correctly
     # pylint: disable=protected-access
-    assert get_redis_client().ttl(redis_cache._get_namespace(rand_state)) == int(get_settings().redis.object_ttl)
+    assert redis_client.ttl(redis_cache._get_namespace(rand_state)) == int(provider.settings.redis.object_ttl)
 
 
 # pylint: disable=redefined-outer-name, unused-argument
@@ -134,6 +137,8 @@ def test_authorize_endpoint_tvs(tvs_config, redis_mock, digid_mock_disable):
         </ds:Signature>
     </samlp:AuthnRequest>
     """
+    redis_cache = RedisCache()
+
 
     def get_post_params_from_html(html: str):
         # pylint: disable=c-extension-no-member
@@ -193,7 +198,7 @@ def test_authorize_endpoint_tvs(tvs_config, redis_mock, digid_mock_disable):
 
     # Test if time to life / expiry is set correctly
     # pylint: disable=protected-access
-    assert get_redis_client().ttl(redis_cache._get_namespace(relay_state)) == int(get_settings().redis.object_ttl)
+    assert redis_mock.ttl(redis_cache._get_namespace(relay_state)) == int(get_settings().redis.object_ttl)
 
 
 def test_post_login_force_digid_mocking(digid_config, redis_mock):

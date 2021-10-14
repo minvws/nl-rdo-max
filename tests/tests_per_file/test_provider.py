@@ -24,16 +24,12 @@ from inge6.exceptions import ExpectedRedisValue
 from inge6 import constants
 from inge6.provider import Provider, _get_bsn_from_art_resp
 from inge6.models import AuthorizeRequest, SorryPageRequest
-from inge6.cache import get_redis_client, redis_cache
 from inge6.config import get_settings
 from inge6.router import consume_bsn_for_token
 
 from ..saml.test_artifact_response_parser import PRIV_KEY_BSN_AES_KEY
 
-def get_provider():
-    return Provider()
-
-def test_sorry_too_busy():
+def test_sorry_too_busy(mock_provider):
     request = SorryPageRequest(
         state = "state",
         redirect_uri = "uri",
@@ -41,13 +37,13 @@ def test_sorry_too_busy():
     )
 
 
-    response = get_provider().sorry_too_busy(request)
+    response = mock_provider.sorry_too_busy(request)
     assert "Het is erg druk op dit moment, iets te druk zelfs." in response.body.decode()
 
 # pylint: disable=unused-argument
-def test_get_bsn_from_artresponse():
+def test_get_bsn_from_artresponse(mock_provider):
     art_resp_sector = 's00000000:900029365'
-    provider = get_provider()
+    provider = mock_provider
     id_provider = provider.get_id_provider('tvs')
     original_version = id_provider.saml_spec_version
     id_provider.saml_spec_version = packaging.version.Version("3.5")
@@ -55,9 +51,15 @@ def test_get_bsn_from_artresponse():
     id_provider.saml_spec_version = original_version
 
 
-def test_authorize_ratelimit(redis_mock, fake_redis_user_limit_key, digid_mock_disable):
-    get_redis_client().set('tvs:primary_idp', 'digid')
-    get_redis_client().set('user_limit_key', 3)
+def test_authorize_ratelimit(mocker, mock_provider, fake_redis_user_limit_key, digid_mock_disable):
+    redis_cache = mock_provider.redis_cache
+    redis_mock = redis_cache.redis_client
+
+    redis_mock.set('tvs:primary_idp', 'digid')
+    redis_mock.set('user_limit_key', 3)
+
+    provider = mock_provider
+    mocker.patch.object(provider, 'redis_cache',  redis_cache)
 
     authorize_params = {
         'client_id': "test_client",
@@ -74,15 +76,15 @@ def test_authorize_ratelimit(redis_mock, fake_redis_user_limit_key, digid_mock_d
     auth_req = AuthorizeRequest(**authorize_params)
 
     # First three calls no problem
-    resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.1')
+    resp = provider.authorize_endpoint(auth_req, headers, '0.0.0.1')
     assert not ('location' in resp.headers and resp.headers['location'].startswith('/sorry-too-busy'))
-    resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.2')
+    resp = provider.authorize_endpoint(auth_req, headers, '0.0.0.2')
     assert not ('location' in resp.headers and resp.headers['location'].startswith('/sorry-too-busy'))
-    resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.3')
+    resp = provider.authorize_endpoint(auth_req, headers, '0.0.0.3')
     assert not ('location' in resp.headers and resp.headers['location'].startswith('/sorry-too-busy'))
 
     # Fourth is the limit.
-    resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.4')
+    resp = provider.authorize_endpoint(auth_req, headers, '0.0.0.4')
     assert resp.headers['location'].startswith('/sorry-too-busy')
 
 
@@ -101,7 +103,7 @@ def test_authorize_invalid_model():
     with pytest.raises(ValidationError):
         AuthorizeRequest(**authorize_params)
 
-def test_authorize_invalid_request(digid_mock_disable, redis_mock, digid_config): # pylint: disable=unused-argument
+def test_authorize_invalid_request(digid_mock_disable, redis_mock, digid_config, mock_provider): # pylint: disable=unused-argument
 
     authorize_params = {
         'client_id': "some_unknown_client",
@@ -116,15 +118,15 @@ def test_authorize_invalid_request(digid_mock_disable, redis_mock, digid_config)
 
     headers: Headers = Headers({})
     auth_req = AuthorizeRequest(**authorize_params)
-    resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.0')
+    resp = mock_provider.authorize_endpoint(auth_req, headers, '0.0.0.0')
     assert resp.status_code == 303
     assert "error=unauthorized_client" in resp.headers['location']
     assert "error_message=Unknown+client_id" in resp.headers['location']
     assert f"state={authorize_params['state']}" in resp.headers['location']
 
 # pylint: disable=unused-argument
-def test_expected_redis_primary_idp(redis_mock):
-    get_redis_client().delete(get_settings().primary_idp_key)
+def test_expected_redis_primary_idp(redis_mock, mock_provider):
+    redis_mock.delete(get_settings().primary_idp_key)
 
     authorize_params = {
         'client_id': "some_unknown_client",
@@ -141,7 +143,7 @@ def test_expected_redis_primary_idp(redis_mock):
     auth_req = AuthorizeRequest(**authorize_params)
 
     with pytest.raises(ExpectedRedisValue):
-        get_provider().authorize_endpoint(auth_req, headers, '0.0.0.0')
+        mock_provider.authorize_endpoint(auth_req, headers, '0.0.0.0')
 
 # pylint: disable=unused-argument
 def mock_verify_signatures(tree, cert_data):
@@ -152,8 +154,8 @@ def mock_symm_encrypt(bsn):
     return bsn
 
 @freeze_time("2021-06-01 12:44:06")
-def test_resolve_artifact_tvs(requests_mock, mocker, redis_mock, tvs_config): # pylint: disable=unused-argument
-    provider = get_provider()
+def test_resolve_artifact_tvs(requests_mock, mocker, redis_mock, tvs_config, mock_provider): # pylint: disable=unused-argument
+    provider = mock_provider
     id_provider = provider.get_id_provider('tvs')
 
     # Allow the decryption of the BSN using a custom privkey, and force the key name used along with that privkey
@@ -177,8 +179,12 @@ def test_resolve_artifact_tvs(requests_mock, mocker, redis_mock, tvs_config): # 
     bsn = provider._resolve_artifact('XXX', 'tvs')
     assert bsn == '900212640'
 
-def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock):
-    provider: Provider = Provider()
+def test_assertion_consumer_service(digid_config, digid_mock_disable, mock_provider):
+    provider: Provider = mock_provider
+    redis_mock = provider.redis_client
+    redis_cache = provider.redis_cache
+    settings = provider.settings
+
     code_challenge = "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw"
     auth_req = AuthorizeRequest(
         code_challenge_method="S256",
@@ -205,7 +211,7 @@ def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock
             "RelayState": relay_state,
             "SAMLart": artifact
         }
-    acs_resp = get_provider().assertion_consumer_service(DummyRequest())
+    acs_resp = provider.assertion_consumer_service(DummyRequest())
 
     redirect_url = re.search(r"<meta http-equiv=\"refresh\" content=\"0;url=(.*?)\" />", acs_resp.body.decode())
     parsed_url = urlparse.urlparse(redirect_url[1])
@@ -213,12 +219,14 @@ def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock
     expected_code = query_params['code'][0]
 
     # Grabbing the generated code from redis, this could be cleaner / better
-    items = get_redis_client().scan(0)[1]
+    items = redis_mock.scan(0)[1]
+    print(provider.settings.redis.enable_debugger)
+    print(items)
     code = None
     for item in items:
         item = item.decode("utf-8")
-        temp_code = item[len(get_settings().redis.default_cache_namespace):].replace(":", "")
-        if get_settings().redis.default_cache_namespace in item and len(temp_code) == 32:
+        temp_code = item[len(settings.redis.default_cache_namespace):].replace(":", "")
+        if settings.redis.default_cache_namespace in item and len(temp_code) == 32:
             code = temp_code
             break
 
@@ -235,7 +243,10 @@ def test_assertion_consumer_service(digid_config, digid_mock_disable, redis_mock
 
     # Test if time to life / expiry is set correctly on the Redis namespace
     # pylint: disable=protected-access
-    assert get_redis_client().ttl(redis_cache._get_namespace(code))== int(get_settings().redis.object_ttl)
+    assert _approx_eq(redis_mock.ttl(redis_cache._get_namespace(code)), int(settings.redis.object_ttl), 5)
+
+def _approx_eq(dynam_val: int, stat_val: int, delta: int):
+    return dynam_val >= stat_val - delta or dynam_val <= stat_val + delta
 
 # pylint: disable=unused-argument
 def mock_is_authorized(key, request, audience):
@@ -298,10 +309,11 @@ def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, moc
     }
 
 # pytest: disable=unused-argument
-def test_bsn_attribute(mocker, redis_mock):
-    mocker.patch('inge6.provider.is_authorized', mock_is_authorized)
+def test_bsn_attribute(mocker, redis_cache, mock_provider):
+    provider = mock_provider
 
-    provider = get_provider()
+    mocker.patch('inge6.provider.is_authorized', mock_is_authorized)
+    mocker.patch.object(provider, 'redis_cache', redis_cache)
 
     bsn = "123456789"
     encrypted_bsn_object = provider.bsn_encrypt.symm_encrypt(bsn)
@@ -315,10 +327,10 @@ def test_bsn_attribute(mocker, redis_mock):
 
 
 # pytest: disable=unused-argument
-def test_bsn_attribute_no_value(mocker, redis_mock):
+def test_bsn_attribute_no_value(mocker, mock_provider):
     mocker.patch('inge6.provider.is_authorized', mock_is_authorized)
 
-    provider = get_provider()
+    provider = mock_provider
     request = Request({'type': 'http'})
     with pytest.raises(HTTPException) as http_exc:
         provider.bsn_attribute(request)
@@ -327,8 +339,8 @@ def test_bsn_attribute_no_value(mocker, redis_mock):
     assert http_exc.value.detail == "Resource expired.Try again after /authorize"
 
 
-def test_metadata():
-    provider = get_provider()
+def test_metadata(mock_provider):
+    provider = mock_provider
 
     resp = provider.metadata('digid')
     assert resp.status_code == 200
@@ -340,8 +352,8 @@ def test_metadata():
 
 
 
-def test_metadata_unknown_id_provider():
-    provider = get_provider()
+def test_metadata_unknown_id_provider(mock_provider):
+    provider = mock_provider
 
     with pytest.raises(HTTPException) as http_exc:
         provider.metadata('AAAAAAAAAA_dont-exist')
@@ -350,8 +362,8 @@ def test_metadata_unknown_id_provider():
     assert http_exc.value.detail == "Page not found"
 
 
-def test_metadata_invalid(mocker):
-    provider = get_provider()
+def test_metadata_invalid(mocker, mock_provider):
+    provider = mock_provider
     id_provider = provider.get_id_provider('digid')
 
     mocker.patch.object(id_provider.sp_metadata, 'validate', lambda: ["this is an error"])

@@ -1,28 +1,31 @@
 import logging
 import threading
 
-from ..config import get_settings
+from redis import StrictRedis
 
-# live 5 minutes longer than regular redis objects
-DEBUG_SET_EXPIRY: int = int(get_settings().redis.object_ttl) + 300
-KEY_PREFIX: str = get_settings().redis.default_cache_namespace
-
-
-def debug_get(redis_client, key, value):
-    if value is None:
-        logging.getLogger().debug('Retrieved expired value with key: %s', key)
-        return
-
-    debug_keyname = f'{KEY_PREFIX}:retrieved:{key}'
-    redis_client.set(debug_keyname, value, ex=DEBUG_SET_EXPIRY)
+from ..config import get_settings, Settings
 
 
 class RedisGetDebugger(threading.Thread):
 
-    def __init__(self, redis_client, *args, **kwargs) -> None:
+    def __init__(self, redis_client: StrictRedis, *args, settings: Settings = get_settings(), **kwargs) -> None:
         threading.Thread.__init__(self, *args, **kwargs)
+        self.settings = settings
+
         self.psubscribe = '__keyevent@0__:expired'
         self.redis_client = redis_client
+
+        # live 5 minutes longer than regular redis objects
+        self.debug_set_expiry: int = int(self.settings.redis.object_ttl) + 300
+        self.key_prefix: str = self.settings.redis.default_cache_namespace
+
+    def debug_get(self, key, value):
+        if value is None:
+            logging.getLogger().debug('Retrieved expired value with key: %s', key)
+            return
+
+        debug_keyname = f'{self.key_prefix}:retrieved:{key}'
+        self.redis_client.set(debug_keyname, value, ex=self.debug_set_expiry)
 
     def _listen_for_expiration_events(self):
         """
@@ -47,10 +50,10 @@ class RedisGetDebugger(threading.Thread):
             else:
                 set_key = str(set_key)
 
-            if not set_key.startswith(f"{KEY_PREFIX}:"):
+            if not set_key.startswith(f"{self.key_prefix}:"):
                 continue
 
-            expected_retrieved_key = f'{KEY_PREFIX}:retrieved:{set_key}'
+            expected_retrieved_key = f'{self.key_prefix}:retrieved:{set_key}'
             logging.getLogger().debug('Attempting retrieval of debug-key: %s', expected_retrieved_key)
             isretrieved = self.redis_client.get(expected_retrieved_key) is not None
             if not isretrieved:

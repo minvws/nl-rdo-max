@@ -1,12 +1,7 @@
 import pytest
 from inge6 import cache
 from inge6.config import get_settings
-from inge6.cache import get_redis_client
 from inge6.provider import Provider
-
-@pytest.fixture
-def mock_provider():
-    return Provider()
 
 @pytest.fixture
 def mock_clients_db(mocker, mock_provider): # pylint: disable=redefined-outer-name
@@ -22,23 +17,29 @@ def mock_clients_db(mocker, mock_provider): # pylint: disable=redefined-outer-na
     yield mock_provider
 
 @pytest.fixture
-def redis_mock(redisdb):
+def redis_mock(redisdb, mocker):
+    mocker.patch('inge6.cache.redis_cache.create_redis_client', lambda _: redisdb)
+    yield redisdb
+
+@pytest.fixture
+def mock_provider(redis_mock): # pylint: disable=unused-argument, redefined-outer-name
+    return Provider()
+
+@pytest.fixture()
+def redis_cache(redis_mock): # pylint: disable=redefined-outer-name, unused-argument
     # pylint: disable=W0212
     # Access to a protected member
-    client = cache._REDIS_CLIENT
-    cache._REDIS_CLIENT = redisdb
-    yield
-    cache._REDIS_CLIENT = client
+    yield cache.redis_cache.RedisCache(settings=get_settings(), redis_client=redis_mock)
 
 # pylint: disable=redefined-outer-name, unused-argument
 @pytest.fixture
 def digid_config(redis_mock):
-    get_redis_client().set(get_settings().primary_idp_key, 'digid')
+    redis_mock.set(get_settings().primary_idp_key, 'digid')
 
 # pylint: disable=redefined-outer-name, unused-argument
 @pytest.fixture
 def tvs_config(redis_mock):
-    get_redis_client().set(get_settings().primary_idp_key, 'tvs')
+    redis_mock.set(get_settings().primary_idp_key, 'tvs')
 
 @pytest.fixture
 def digid_mock_disable():

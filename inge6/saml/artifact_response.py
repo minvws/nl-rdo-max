@@ -22,18 +22,15 @@ from lxml import etree
 
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
-from ..config import get_settings
+from ..config import Settings
 from .utils import from_settings, has_valid_signatures, remove_padding
 from .constants import NAMESPACES
 from .exceptions import UserNotAuthenticated, ValidationError
 from .id_provider import IdProvider
 
-RESPONSE_EXPIRES_IN = int(get_settings().saml.response_expires_in)
 
 CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
 
-log: Logger = logging.getLogger(__package__)
-log.setLevel(getattr(logging, get_settings().loglevel.upper()))
 
 def verify_signatures(tree, cert_data):
     root, valid = has_valid_signatures(tree, cert_data=cert_data)
@@ -42,15 +39,22 @@ def verify_signatures(tree, cert_data):
 
     return root
 
+
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
 class ArtifactResponse:
 
     def __init__(self,
+                 settings: Settings,
                  artifact_tree,
                  provider: IdProvider,
                  is_verified: bool = True,
                  is_test_instance: bool = False
         ) -> None:
+        self.settings = settings
+        self.response_expires_in = int(self.settings.saml.response_expires_in)
+
+        self.log: Logger = logging.getLogger(__package__)
+        self.log.setLevel(getattr(logging, self.settings.loglevel.upper()))
 
         self.provider = provider
         self.is_verifeid = is_verified
@@ -76,22 +80,22 @@ class ArtifactResponse:
         self.validate()
 
     @classmethod
-    def from_string(cls, xml_response: str, provider: IdProvider,
+    def from_string(cls, settings: Settings, xml_response: str, provider: IdProvider,
                     insecure=False, is_test_instance: bool=False):
         # Remove XML declaration if exists, appears etree doesn't handle it too well.
         xml_response = xml_response.split('<?xml version="1.0" encoding="UTF-8"?>\n')[-1]
         artifact_response_tree = etree.fromstring(xml_response).getroottree().getroot()
-        return cls.parse(artifact_response_tree, provider, insecure, is_test_instance)
+        return cls.parse(settings, artifact_response_tree, provider, insecure, is_test_instance)
 
     @classmethod
-    def parse(cls, artifact_response_tree, provider: IdProvider,
+    def parse(cls, settings: Settings, artifact_response_tree, provider: IdProvider,
               insecure=False, is_test_instance: bool=False):
         unverified_tree = artifact_response_tree.find('.//samlp:ArtifactResponse', NAMESPACES)
         if insecure:
-            return cls(unverified_tree, provider, False, is_test_instance)
+            return cls(settings, unverified_tree, provider, False, is_test_instance)
 
         verified_tree = verify_signatures(artifact_response_tree, provider.idp_metadata.get_cert_pem_data())
-        return cls(verified_tree, provider, True, is_test_instance)
+        return cls(settings, verified_tree, provider, True, is_test_instance)
 
     @property
     def root(self):
@@ -240,7 +244,7 @@ class ArtifactResponse:
         issue_instant_els = self.root.findall(".//*[@IssueInstant]")
         for elem in issue_instant_els:
             issue_instant = dateutil.parser.parse(elem.attrib['IssueInstant'], ignoretz=True)
-            expiration_time = issue_instant + timedelta(seconds= RESPONSE_EXPIRES_IN)
+            expiration_time = issue_instant + timedelta(seconds= self.response_expires_in)
             if current_instant > expiration_time:
                 errors.append(ValidationError("Issued ArtifactResponse:{} has expired. Current time: {}, issue instant expiration time: {}".format(elem.tag, current_instant, expiration_time)))
 
@@ -293,7 +297,7 @@ class ArtifactResponse:
             current_instant = datetime.utcnow()
             issue_instant_text = self.response_assertion.find('.//saml:AuthnStatement', NAMESPACES).attrib['AuthnInstant']
             issue_instant = dateutil.parser.parse(issue_instant_text, ignoretz=True)
-            expiration_time = issue_instant + timedelta(seconds= RESPONSE_EXPIRES_IN)
+            expiration_time = issue_instant + timedelta(seconds=self.response_expires_in)
             if current_instant > expiration_time:
                 errors.append(ValidationError('Authn instant\'s datetime is expired. Current time {}, expiration time {}'.format(current_instant, expiration_time)))
 
@@ -322,7 +326,7 @@ class ArtifactResponse:
                 errors += self.validate_attribute_statements()
 
         if len(errors) != 0:
-            log.error(errors)
+            self.log.error(errors)
             raise ValidationError('Audience verification errors.')
 
     def _decrypt_enc_key(self) -> bytes:

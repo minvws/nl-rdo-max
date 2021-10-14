@@ -10,7 +10,6 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
 from .config import get_settings
-from .cache import get_redis_client
 from .models import AuthorizeRequest, DigiDMockRequest, DigiDMockCatchRequest, LoginDigiDRequest, SorryPageRequest
 from .digid_mock import (
     digid_mock as dmock,
@@ -72,9 +71,9 @@ def read_root():
     return HTMLResponse("Many Authentication eXchange")
 
 @router.get(get_settings().health_endpoint)
-def health() -> JSONResponse:
+def health(request: Request) -> JSONResponse:
     try:
-        redis_healthy = get_redis_client().ping()
+        redis_healthy = request.app.state.provider.redis_client.ping()
     except redis.exceptions.RedisError as exception:
         log.exception('Redis server is not reachable. Attempted: %s:%s, ssl=%s', get_settings().redis.host, get_settings().redis.port, get_settings().redis.ssl, exc_info=exception)
         redis_healthy = False
