@@ -80,22 +80,22 @@ class ArtifactResponse:
         self.validate()
 
     @classmethod
-    def from_string(cls, xml_response: str, provider: IdProvider,
+    def from_string(cls, settings: Settings, xml_response: str, provider: IdProvider,
                     insecure=False, is_test_instance: bool=False):
         # Remove XML declaration if exists, appears etree doesn't handle it too well.
         xml_response = xml_response.split('<?xml version="1.0" encoding="UTF-8"?>\n')[-1]
         artifact_response_tree = etree.fromstring(xml_response).getroottree().getroot()
-        return cls.parse(artifact_response_tree, provider, insecure, is_test_instance)
+        return cls.parse(settings, artifact_response_tree, provider, insecure, is_test_instance)
 
     @classmethod
-    def parse(cls, artifact_response_tree, provider: IdProvider,
+    def parse(cls, settings: Settings, artifact_response_tree, provider: IdProvider,
               insecure=False, is_test_instance: bool=False):
         unverified_tree = artifact_response_tree.find('.//samlp:ArtifactResponse', NAMESPACES)
         if insecure:
-            return cls(unverified_tree, provider, False, is_test_instance)
+            return cls(settings, unverified_tree, provider, False, is_test_instance)
 
         verified_tree = verify_signatures(artifact_response_tree, provider.idp_metadata.get_cert_pem_data())
-        return cls(verified_tree, provider, True, is_test_instance)
+        return cls(settings, verified_tree, provider, True, is_test_instance)
 
     @property
     def root(self):

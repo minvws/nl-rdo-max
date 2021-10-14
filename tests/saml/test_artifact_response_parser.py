@@ -104,7 +104,7 @@ def saml_provider():
 # pylint: disable=redefined-outer-name
 def test_get_bsn_tvs(response_custom_bsn_tvs, monkeypatch, tvs_provider_settings, jinja_env):
     tvs_provider = IdProvider(get_settings(), 'tvs', tvs_provider_settings, jinja_env)
-    artifact_response = ArtifactResponse.from_string(response_custom_bsn_tvs, tvs_provider, insecure=True)
+    artifact_response = ArtifactResponse.from_string(get_settings(), response_custom_bsn_tvs, tvs_provider, insecure=True)
 
     monkeypatch.setattr(tvs_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
     assert artifact_response.get_bsn() == '900212640'
@@ -113,7 +113,7 @@ def test_get_bsn_tvs(response_custom_bsn_tvs, monkeypatch, tvs_provider_settings
 # pylint: disable=redefined-outer-name
 def test_from_string_tvs(response_unedited_tvs, tvs_provider_settings, jinja_env):
     tvs_provider = IdProvider(get_settings(), 'tvs', tvs_provider_settings, jinja_env)
-    ArtifactResponse.from_string(response_unedited_tvs, tvs_provider, is_test_instance=True)
+    ArtifactResponse.from_string(get_settings(), response_unedited_tvs, tvs_provider, is_test_instance=True)
     assert True
 
 # pylint: disable=redefined-outer-name
@@ -121,7 +121,7 @@ def test_from_string_tvs(response_unedited_tvs, tvs_provider_settings, jinja_env
 def test_authnfailed_tvs(response_authn_failed_tvs, tvs_provider_settings, jinja_env):
     tvs_provider = IdProvider(get_settings(), 'tvs', tvs_provider_settings, jinja_env)
     with pytest.raises(UserNotAuthenticated):
-        ArtifactResponse.from_string(response_authn_failed_tvs, tvs_provider, insecure=True).raise_for_status()
+        ArtifactResponse.from_string(get_settings(), response_authn_failed_tvs, tvs_provider, insecure=True).raise_for_status()
 
 
 @freeze_time("2021-08-17T14:05:29Z")
@@ -138,7 +138,7 @@ def test_artifact_response_parse_digid(mocker, digid_provider_settings, jinja_en
             }
         }
     })
-    art_resp = ArtifactResponse.from_string(art_resp_resource, digid_provider, insecure=True)
+    art_resp = ArtifactResponse.from_string(get_settings(), art_resp_resource, digid_provider, insecure=True)
     art_resp.raise_for_status()
     assert art_resp.get_bsn() == 's00000000:900029365'
     assert art_resp.provider.saml_spec_version == Version("3.5")

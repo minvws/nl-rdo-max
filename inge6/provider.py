@@ -458,7 +458,7 @@ class Provider(OIDCProvider, SAMLProvider):
         resolved_artifact = self._perform_artifact_resolve_request(artifact, id_provider)
 
         self.log.debug('Received a response for sha256(artifact) %s with status_code %s', hashed_artifact, resolved_artifact.status_code)
-        artifact_response = ArtifactResponse.from_string(resolved_artifact.text, id_provider)
+        artifact_response = ArtifactResponse.from_string(self.settings, resolved_artifact.text, id_provider)
         self.log.debug('ArtifactResponse for %s, received status_code %s', hashed_artifact, artifact_response._saml_status_code) # pylint: disable=protected-access
         artifact_response.raise_for_status()
         self.log.debug('Validated sha256(artifact) %s', hashed_artifact)

@@ -4,10 +4,6 @@ from inge6.config import get_settings
 from inge6.provider import Provider
 
 @pytest.fixture
-def mock_provider():
-    return Provider()
-
-@pytest.fixture
 def mock_clients_db(mocker, mock_provider): # pylint: disable=redefined-outer-name
     mocker.patch.object(mock_provider.provider, 'clients', {
         "test_client": {
@@ -21,10 +17,13 @@ def mock_clients_db(mocker, mock_provider): # pylint: disable=redefined-outer-na
     yield mock_provider
 
 @pytest.fixture
-def redis_mock(redisdb):
-    # pylint: disable=W0212
-    # Access to a protected member
+def redis_mock(redisdb, mocker):
+    mocker.patch('inge6.cache.redis_cache.create_redis_client', lambda _: redisdb)
     yield redisdb
+
+@pytest.fixture
+def mock_provider(redis_mock): # pylint: disable=unused-argument, redefined-outer-name
+    return Provider()
 
 @pytest.fixture()
 def redis_cache(redis_mock): # pylint: disable=redefined-outer-name, unused-argument
