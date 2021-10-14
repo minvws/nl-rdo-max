@@ -18,8 +18,11 @@ mock_digid = True
 loglevel = debug
 
 [ratelimit]
+outage_key = inge6:outage
 sorry_too_busy_page_head = static/templates/sorry-coronacheck_head.html
 sorry_too_busy_page_tail = static/templates/sorry-coronacheck_tail.html
+outage_page_head = static/templates/storing-coronacheck_head.html
+outage_page_tail = static/templates/storing-coronacheck_tail.html
 user_limit_key = tvs_connect_user_limit
 user_limit_key_overflow_idp = digid_connect_user_limit
 ip_expire_in_s = 10

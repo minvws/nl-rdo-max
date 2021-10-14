@@ -8,6 +8,7 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 
 ### Added
 - Clustered connection support.
+- Add outage checking. If ratelimit.outage_key has been set, this key is checked to determine if an outage should be reported
 
 ## [v1.1.2] 2021-09-21
 

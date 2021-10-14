@@ -90,24 +90,25 @@ from pyop.exceptions import (
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
 from . import constants
+
 from .config import Settings, get_settings
 from .rate_limiter import RateLimiter
 from .utils import (
     create_post_autosubmit_form,
-    create_page_too_busy,
     create_acs_redirect_link,
     create_authn_post_context,
     create_redis_bsn_key,
     cache_auth_req,
     cache_code_challenge,
     cache_artifact,
-    hget_from_redis
+    hget_from_redis,
+    create_page_outage
 )
 
 from .encrypt import Encrypt
 from .models import AuthorizeRequest, LoginDigiDRequest, SorryPageRequest
 from .exceptions import (
-    TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin,
+    DependentServiceOutage, TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin,
     ExpiredResourceError, UnexpectedAuthnBinding, ExpectedRedisValue
 )
 
@@ -207,8 +208,28 @@ class Provider(OIDCProvider, SAMLProvider):
         with open(self.settings.ratelimit.sorry_too_busy_page_tail, 'r', encoding='utf-8') as too_busy_file:
             self.too_busy_page_template_tail = too_busy_file.read()
 
+        with open(self.settings.ratelimit.outage_page_head, 'r', encoding='utf-8') as outage_file:
+            self.outage_page_template_head = outage_file.read()
+
+        with open(self.settings.ratelimit.outage_page_tail, 'r', encoding='utf-8') as outage_file:
+            self.outage_page_template_tail = outage_file.read()
+
         with open(self.settings.oidc.clients_file, 'r', encoding='utf-8') as clients_file:
             self.audience = list(json.loads(clients_file.read()).keys())
+
+    def _is_outage(self): # pylint: disable=no-self-use
+        if hasattr(self.settings.ratelimit, 'outage_key'):
+            outage = self.redis_client.get(self.settings.ratelimit.outage_key)
+            if outage:
+                outage = outage.decode()
+            else:
+                return False
+
+            if outage.lower() == 'true' or outage == '1':
+                return True
+
+        return False
+
 
     def _perform_artifact_resolve_request(self, artifact: str, id_provider: IdProvider):
         """
@@ -296,14 +317,19 @@ class Provider(OIDCProvider, SAMLProvider):
         }
 
 
-    def sorry_too_busy(self, request: SorryPageRequest):
+    def sorry_something_went_wrong(self, request: SorryPageRequest):
         """
         Endpoint serving the sorry to busy page. It includes a href button with error information
         in the query parameters.
         """
         allow_list = self.clients[request.client_id]['redirect_uris']
         redirect_uri = _get_too_busy_redirect_error_uri(request.redirect_uri, request.state, allow_list)
-        too_busy_page = create_page_too_busy(self.too_busy_page_template_head, self.too_busy_page_template_tail, redirect_uri)
+
+        if self._is_outage():
+            too_busy_page = create_page_outage(self.outage_page_template_head, self.outage_page_template_tail, redirect_uri)
+            return HTMLResponse(content=too_busy_page)
+
+        too_busy_page = create_page_outage(self.too_busy_page_template_head, self.too_busy_page_template_tail, redirect_uri)
         return HTMLResponse(content=too_busy_page)
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
@@ -316,6 +342,9 @@ class Provider(OIDCProvider, SAMLProvider):
         valid, a Redirect response or auto-submit POST response is returned depending on the active IDP and its corresponding configuration.
         """
         try:
+            if self._is_outage():
+                raise DependentServiceOutage(f"Some service we depend on is down according to the redis key: {self.settings.ratelimit.outage_key}")
+
             primary_idp = self.redis_client.get(self.settings.primary_idp_key)
             if primary_idp:
                 primary_idp = primary_idp.decode()
@@ -324,14 +353,14 @@ class Provider(OIDCProvider, SAMLProvider):
 
             if hasattr(self.settings, 'mock_digid') and self.settings.mock_digid.lower() != 'true':
                 primary_idp = self.rate_limiter.rate_limit_test(ip_address)
-        except (TooBusyError, TooManyRequestsFromOrigin) as rate_limit_error:
+        except (TooBusyError, TooManyRequestsFromOrigin, DependentServiceOutage) as rate_limit_error:
             self.log.warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
             query_params = {
                 'redirect_uri': authorize_request.redirect_uri,
                 'client_id': authorize_request.client_id,
                 'state': authorize_request.state
             }
-            return RedirectResponse('/sorry-too-busy?' + parse.urlencode(query_params))
+            return RedirectResponse('/sorry-something-went-wrong?' + parse.urlencode(query_params))
 
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
