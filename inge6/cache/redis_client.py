@@ -22,7 +22,7 @@ def create_redis_client(settings: Settings = get_settings()) -> StrictRedis:
 
     if use_ssl:
         return StrictRedis(
-            host=settings.redis.host, port=settings().redis.port, db=0,
+            host=settings.redis.host, port=settings.redis.port, db=0,
             ssl=True,
             ssl_keyfile=settings.redis.key, ssl_certfile=settings.redis.cert,
             ssl_ca_certs=settings.redis.cafile
