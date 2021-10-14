@@ -80,6 +80,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from oic.oic.message import (
+    AuthorizationErrorResponse,
     AuthorizationRequest as OICAuthRequest,
     TokenErrorResponse
 )
@@ -408,6 +409,18 @@ class Provider(OIDCProvider, SAMLProvider):
                 'state': authorize_request.state
             }
             return RedirectResponse('/sorry-something-went-wrong?' + parse.urlencode(query_params))
+        except ExpectedRedisValue as exp_redis:
+            raise exp_redis
+        except: # pylint: disable=bare-except
+            log.error("Some unhandled error appeard", exc_info=True)
+            query_params = {
+                'error': "request_not_supported",
+                'error_description': "Some unhandled error in the rate limit tester. Unclear what went wrong",
+                'state': authorize_request.state
+            }
+            redirect_url = authorize_request.redirect_uri + '?' + parse.urlencode(query_params)
+            log.error("redirecting to: %s", redirect_url)
+            return RedirectResponse(redirect_url, status_code=303)
 
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
@@ -417,7 +430,22 @@ class Provider(OIDCProvider, SAMLProvider):
             if error_url:
                 return RedirectResponse(error_url, status_code=303)
 
-            return Response(content='Something went wrong: {}'.format(str(invalid_auth_req)), status_code=400)
+            error_resp = AuthorizationErrorResponse(error='invalid_request_object', error_message=str('Something went wrong: {}'.format(str(invalid_auth_req))),
+                                                    state=authorize_request.state)
+            redirect_url = error_resp.request(authorize_request.redirect_uri, False)
+            log.error("redirecting to: %s", redirect_url)
+            return RedirectResponse(redirect_url, status_code=303)
+        except Exception as exception: # pylint: disable=broad-except
+            log.error("Handling error: %s", exception)
+            log.error("Some unhandled error appeard", exc_info=True)
+            query_params = {
+                'error': "request_not_supported",
+                'error_description': "Some unhandled error when parsing the authentication. Unclear what went wrong",
+                'state': authorize_request.state
+            }
+            redirect_url = authorize_request.redirect_uri + '?' + parse.urlencode(query_params)
+            log.error("redirecting to: %s", redirect_url)
+            return RedirectResponse(redirect_url, status_code=303)
 
         randstate = redis_cache.gen_token()
         _cache_auth_req(randstate, auth_req, authorize_request, primary_idp)
