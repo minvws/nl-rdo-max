@@ -33,6 +33,7 @@ RESPONSE_EXPIRES_IN = int(settings.saml.response_expires_in)
 CAMEL_TO_SNAKE_RE = re.compile(r'(?<!^)(?=[A-Z])')
 
 log: Logger = logging.getLogger(__package__)
+log.setLevel(getattr(logging, settings.loglevel.upper()))
 
 def verify_signatures(tree, cert_data):
     root, valid = has_valid_signatures(tree, cert_data=cert_data)
@@ -376,5 +377,14 @@ class ArtifactResponse:
             }
         }
 
-    def to_string(self) -> str:
+    def to_string(self) -> bytes:
         return etree.tostring(self.root)
+
+    def to_envelope_string(self) -> str:
+        return f"""<?xml version="1.0"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+    <soapenv:Body>
+        {self.to_string().decode()}
+    </soapenv:Body>
+</soapenv:Envelope>
+"""

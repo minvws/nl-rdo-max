@@ -30,7 +30,8 @@ from inge6.router import consume_bsn_for_token
 
 from ..saml.test_artifact_response_parser import PRIV_KEY_BSN_AES_KEY
 
-def test_sorry_too_busy():
+# pylint: disable=unused-argument
+def test_sorry_too_busy(redis_mock):
     request = SorryPageRequest(
         state = "state",
         redirect_uri = "uri",
@@ -38,7 +39,7 @@ def test_sorry_too_busy():
     )
 
 
-    response = get_provider().sorry_too_busy(request)
+    response = get_provider().sorry_something_went_wrong(request)
     assert "Het is erg druk op dit moment, iets te druk zelfs." in response.body.decode()
 
 # pylint: disable=unused-argument
@@ -72,15 +73,15 @@ def test_authorize_ratelimit(redis_mock, fake_redis_user_limit_key, digid_mock_d
 
     # First three calls no problem
     resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.1')
-    assert not ('location' in resp.headers and resp.headers['location'].startswith('/sorry-too-busy'))
+    assert not ('location' in resp.headers and resp.headers['location'].startswith('/sorry-something-went-wrong'))
     resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.2')
-    assert not ('location' in resp.headers and resp.headers['location'].startswith('/sorry-too-busy'))
+    assert not ('location' in resp.headers and resp.headers['location'].startswith('/sorry-something-went-wrong'))
     resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.3')
-    assert not ('location' in resp.headers and resp.headers['location'].startswith('/sorry-too-busy'))
+    assert not ('location' in resp.headers and resp.headers['location'].startswith('/sorry-something-went-wrong'))
 
     # Fourth is the limit.
     resp = get_provider().authorize_endpoint(auth_req, headers, '0.0.0.4')
-    assert resp.headers['location'].startswith('/sorry-too-busy')
+    assert resp.headers['location'].startswith('/sorry-something-went-wrong')
 
 
 def test_authorize_invalid_model():

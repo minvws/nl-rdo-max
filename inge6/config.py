@@ -28,6 +28,12 @@ class Settings(configparser.ConfigParser):
             else:
                 super().__setattr__(name, value)
 
+        def __delattr__(self, name: str) -> None:
+            if name in self._section:
+                del self._section[name]
+            else:
+                super().__delattr__(name)
+
     def __getattr__(self, name):
         if name in self._defaults:
             return self._defaults[name]

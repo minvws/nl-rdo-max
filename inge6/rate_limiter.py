@@ -5,7 +5,7 @@ from .cache import get_redis_client
 from .config import settings
 
 
-def _ip_limit_test(ip_address: str, ip_expire_s: int) -> None:
+def _ip_limit_test(ip_address: str, ip_expire_s: int, nof_attempts_s: int = 1) -> None:
     """
     Perform ip blocking. If the same IP-address accesses this service multiple times in
     `ip_expire_s` seconds, block the flow.
@@ -15,9 +15,11 @@ def _ip_limit_test(ip_address: str, ip_expire_s: int) -> None:
     """
     ip_key = "tvs:ipv4:" + ip_address
     ip_key_exists = get_redis_client().incr(ip_key)
-    if ip_key_exists != 1:
+    if ip_key_exists == 1:
+        get_redis_client().expire(ip_key, ip_expire_s)
+
+    if ip_key_exists > nof_attempts_s:
         raise TooManyRequestsFromOrigin(f"Too many requests from the same ip_address during the last {ip_expire_s} seconds.")
-    get_redis_client().expire(ip_key, ip_expire_s)
 
 
 def _user_limit_test(idp_prefix: str, user_limit_key: str) -> None:
@@ -68,7 +70,14 @@ def rate_limit_test(ip_address: str) -> str:
     :raises: TooBusyError when the number of users exceeds the allowed number.
     """
     try:
-        _ip_limit_test(ip_address=ip_address, ip_expire_s=int(settings.ratelimit.ip_expire_in_s))
+        ip_cache_in_s: int  = int(settings.ratelimit.ip_expire_in_s)
+
+        if hasattr(settings.ratelimit, "nof_attempts_s") and settings.ratelimit.nof_attempts_s != "":
+            # Optional config setting
+            nof_attempts_s: int = int(settings.ratelimit.nof_attempts_s)
+            _ip_limit_test(ip_address=ip_address, ip_expire_s=ip_cache_in_s, nof_attempts_s=nof_attempts_s)
+        else:
+            _ip_limit_test(ip_address=ip_address, ip_expire_s=ip_cache_in_s)
     except TypeError as int_cast_err:
         raise ValueError(
              "Please check the ratelimit.ip_expire_in_s setting, can it be parsed as integer?"

@@ -35,9 +35,12 @@ def add_destination(root, destination):
     root.attrib['Destination'] = destination
 
 def sign(root, key_path):
+    with open(key_path, 'r', encoding='utf-8') as key_file:
+        key_data = key_file.read()
+
     signature_node = xmlsec.tree.find_node(root, xmlsec.constants.NodeSignature)
     ctx = xmlsec.SignatureContext()
-    key = xmlsec.Key.from_file(key_path, xmlsec.constants.KeyDataFormatPem)
+    key = xmlsec.Key.from_memory(key_data, xmlsec.constants.KeyDataFormatPem)
     ctx.key = key
     ctx.register_id(root)
     ctx.sign(signature_node)
