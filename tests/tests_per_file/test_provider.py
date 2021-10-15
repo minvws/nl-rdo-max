@@ -23,7 +23,7 @@ from inge6.saml.exceptions import UserNotAuthenticated
 from inge6.exceptions import ExpectedRedisValue
 from inge6 import constants
 from inge6.provider import Provider, _get_bsn_from_art_resp
-from inge6.models import AuthorizeRequest, SorryPageRequest
+from inge6.models import AuthorizeRequest, JWTError, SorryPageRequest
 from inge6.config import get_settings
 from inge6.router import consume_bsn_for_token
 
@@ -302,11 +302,9 @@ def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, moc
     acc_req_body = f'client_id={client_id}&redirect_uri={redirect_uri}&code={code}&code_verifier={code_verifier}&grant_type=authorization_code'
 
     accesstoken_resp = mock_provider.token_endpoint(acc_req_body.encode(), headers)
-    assert accesstoken_resp.status_code == 400
-    assert json.loads(accesstoken_resp.body.decode()) == {
-        'error': 'saml_authn_failed',
-        'error_description': 'User authentication flow failed'
-    }
+    assert isinstance(accesstoken_resp, JWTError)
+    assert accesstoken_resp.error == 'saml_authn_failed'
+    assert accesstoken_resp.error_description ==  'User authentication flow failed'
 
 # pytest: disable=unused-argument
 def test_bsn_attribute(mocker, redis_cache, mock_provider):
