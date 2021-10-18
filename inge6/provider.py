@@ -84,8 +84,6 @@ from pyop.exceptions import (
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
-from inge6.saml.saml_request import AuthNRequest
-
 from . import constants
 
 from .config import Settings, get_settings
