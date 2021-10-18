@@ -27,7 +27,7 @@ from inge6.models import AuthorizeRequest, SorryPageRequest
 from inge6.config import get_settings
 from inge6.router import consume_bsn_for_token
 
-from ..utils import PRIV_KEY_BSN_AES_KEY
+from ..resources.utils import PRIV_KEY_BSN_AES_KEY
 
 def test_sorry_too_busy(mock_provider: Provider):
     request = SorryPageRequest(
@@ -169,7 +169,7 @@ def test_resolve_artifact_tvs(requests_mock, mocker, redis_mock, tvs_config, moc
     mocker.patch('inge6.saml.artifact_response.verify_signatures', mock_verify_signatures)
 
     # Setup mocking endpoint
-    with open('tests/resources/artifact_response_custom_bsn.xml', 'r', encoding='utf-8') as art_resp_file:
+    with open('tests/resources/sample_messages/artifact_response_custom_bsn.xml', 'r', encoding='utf-8') as art_resp_file:
         artifact_resolve_response = art_resp_file.read()
 
     artifact_resolve_url = id_provider.idp_metadata.get_artifact_rs()['location']
@@ -220,8 +220,6 @@ def test_assertion_consumer_service(digid_config, digid_mock_disable, mock_provi
 
     # Grabbing the generated code from redis, this could be cleaner / better
     items = redis_mock.scan(0)[1]
-    print(provider.settings.redis.enable_debugger)
-    print(items)
     code = None
     for item in items:
         item = item.decode("utf-8")
