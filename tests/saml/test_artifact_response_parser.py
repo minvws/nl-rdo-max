@@ -14,7 +14,7 @@ from inge6.saml.provider import Provider as SAMLProvider
 from inge6.saml.exceptions import UserNotAuthenticated
 from inge6.saml.constants import NAMESPACES
 
-from ..utils import PRIV_KEY_BSN_AES_KEY
+from ..resources.utils import PRIV_KEY_BSN_AES_KEY
 
 # pylint: disable=pointless-string-statement
 """
@@ -55,19 +55,19 @@ def update_time_values(xml_str):
 
 @pytest.fixture
 def response_custom_bsn_tvs():
-    with open('tests/resources/artifact_response_custom_bsn.xml', 'r', encoding='utf-8') as resp_ex_f:
+    with open('tests/resources/sample_messages/artifact_response_custom_bsn.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
     return art_resp_resource
 
 @pytest.fixture
 def response_unedited_tvs():
-    with open('tests/resources/artifact_response.xml', 'r', encoding='utf-8') as resp_ex_f:
+    with open('tests/resources/sample_messages/artifact_response.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
     return art_resp_resource
 
 @pytest.fixture
 def response_authn_failed_tvs():
-    with open('tests/resources/artifact_resolve_response_authnfailed.xml', 'r', encoding='utf-8') as resp_ex_f:
+    with open('tests/resources/sample_messages/artifact_resolve_response_authnfailed.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
     return art_resp_resource
 
@@ -101,7 +101,7 @@ def test_authnfailed_tvs(response_authn_failed_tvs, tvs_provider_settings, jinja
 
 @freeze_time("2021-08-17T14:05:29Z")
 def test_artifact_response_parse_digid(mocker, digid_provider_settings, jinja_env):
-    with open('tests/resources/artifact_response_digid.xml', 'r', encoding='utf-8') as resp_ex_f:
+    with open('tests/resources/sample_messages/artifact_response_digid.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
 
     digid_provider = IdProvider(get_settings(), 'digid', digid_provider_settings, jinja_env)
@@ -154,7 +154,7 @@ def test_etree_parse_fail():
 
 @freeze_time("2021-08-17T14:05:29Z")
 def test_artifact_response_output_parseable(mocker, digid_provider_settings, jinja_env):
-    with open('tests/resources/artifact_response_digid.xml', 'r', encoding='utf-8') as resp_ex_f:
+    with open('tests/resources/sample_messages/artifact_response_digid.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
 
     digid_provider = IdProvider(get_settings(), 'digid', digid_provider_settings, jinja_env)
