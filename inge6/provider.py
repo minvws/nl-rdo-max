@@ -84,6 +84,8 @@ from pyop.exceptions import (
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
+from inge6.saml.saml_request import AuthNRequest
+
 from . import constants
 
 from .config import Settings, get_settings
@@ -271,7 +273,6 @@ class Provider(OIDCProvider, SAMLProvider):
             # in which case login_digid_req only contains the randstate.
             ##
             base64_authn_request = base64.urlsafe_b64encode(json.dumps(login_digid_req.authorize_request.dict()).encode()).decode()
-
             sso_url=f'/digid-mock?state={randstate}&idp_name={id_provider.name}&authorize_request={base64_authn_request}'
 
             authn_request = id_provider.create_authn_request()

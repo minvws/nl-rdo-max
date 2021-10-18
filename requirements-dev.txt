@@ -88,7 +88,7 @@ pytest==6.2.5
     #   pytest-cov
     #   pytest-mock
     #   pytest-redis
-pytest-asyncio==0.15.1
+pytest-asyncio==0.16.0
     # via -r requirements-dev.in
 pytest-cov==3.0.0
     # via -r requirements-dev.in
@@ -125,9 +125,9 @@ toml==0.10.2
     #   pytest
 tomli==1.2.1
     # via black
-types-redis==3.5.11
+types-redis==3.5.15
     # via -r requirements-dev.in
-types-requests==2.25.9
+types-requests==2.25.11
     # via -r requirements-dev.in
 typing-extensions==3.10.0.0
     # via

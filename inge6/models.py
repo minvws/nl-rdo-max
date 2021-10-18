@@ -21,7 +21,6 @@ from .config import Settings
 from .saml.saml_request import AuthNRequest
 from .constants import ROOT_DIR
 
-
 def _fill_template(template_txt: str, context: dict):
     template = Template(template_txt)
     rendered = template.render(context)
@@ -91,6 +90,7 @@ class SAMLAuthNAutoSubmitResponse(HTMLResponse):
         self.authn_request = authn_request
         self.settings = settings
         self.template = ROOT_DIR + "/templates/saml/html/authn_request.html"
+
         content = self.create_post_autosubmit_form({
             'sso_url': self.sso_url,
             'saml_request': self.authn_request.get_base64_string().decode(),
@@ -107,6 +107,7 @@ class MetaRedirectResponse(HTMLResponse):
     def __init__(self, redirect_url: str, status_code: int = 200, headers: dict = None, media_type: str = None, background: BackgroundTask = None) -> None:
         self.redirect_url = redirect_url
         self.template = ROOT_DIR + "/templates/saml/html/assertion_consumer_service.html"
+
         content=self.create_acs_redirect_link({"redirect_url": self.redirect_url})
         super().__init__(content=content, status_code=status_code, headers=headers, media_type=media_type, background=background)
 
