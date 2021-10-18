@@ -48,6 +48,7 @@ class SPMetadata(SAMLRequest):
         if 'clustered' in settings_dict and settings_dict['clustered'] != "":
             with open(settings_dict['clustered'], 'r', encoding='utf-8') as cluster_settings_file:
                 self.cluster_settings = json.loads(cluster_settings_file.read())
+            self.clustered = True
 
         self._root = etree.fromstring(self.render_template())
 
@@ -56,6 +57,10 @@ class SPMetadata(SAMLRequest):
         self.root.find('.//ds:Signature/ds:KeyInfo//ds:X509Certificate', NAMESPACES).text = strip_cert(cert_data)
 
         self.sign(self.root, self._id_hash)
+
+    @property
+    def connections(self):
+        return self.cluster_settings['connections']
 
     @property
     def root(self):
@@ -93,7 +98,7 @@ class SPMetadata(SAMLRequest):
         return from_settings(self.settings_dict, 'sp.assertionConsumerService.binding')
 
     def get_cert_data(self, cluster_name: Optional[str]):
-        if cluster_name is None:
+        if not self.clustered:
             cert_path = self.signing_cert_path
         else:
             if self.cluster_settings is None:
@@ -167,8 +172,7 @@ class SPMetadata(SAMLRequest):
         return template.render(unclustered_context)
 
     def render_template(self) -> str:
-        clustered = self.cluster_settings is not None
-        if clustered:
+        if self.clustered:
             return self.render_clustered_template()
 
         return self.render_unclustered_template()

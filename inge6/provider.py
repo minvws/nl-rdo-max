@@ -524,7 +524,10 @@ class Provider(OIDCProvider, SAMLProvider):
             return encrypted_bsn
 
         # Encryption done by another party, gather relevant info
-        return base64.b64encode(artifact_response.to_string().encode())
+        return {
+                'msg': base64.b64encode(artifact_response.to_string()),
+                'msg_id': artifact_response.root.attrib['ID']
+        }
 
     def bsn_attribute(self, request: Request) -> Response:
         """

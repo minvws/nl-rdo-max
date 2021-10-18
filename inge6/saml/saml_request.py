@@ -79,7 +79,16 @@ class AuthNRequest(SAMLRequest):
     """
     TEMPLATE_PATH = 'authn_request.xml.jinja'
 
-    def __init__(self, sso_url, issuer_id, keypair, jinja_env) -> None:
+    def __init__(self, sso_url: str, issuer_id: str, keypair: Tuple[str, str], jinja_env, intended_audience: str = None, service_uuid: str = None) -> None:
+        """
+            :param sso_url: Single Sign On URL to be used in the request
+            :param issuer_id: Identity known at the identity provider
+            :param keypair: Tuple containing the path to the signing cert and signing key
+            :param jinja_env: Jinja environment containing the template for this authentication request
+            :param intended_audience: In case of a clustered connection, who is the intended audience of the login attributes
+            :param service_uuid: In case of a clustered connection, this parameter is to be passed in the Authentication Request
+            rather than in the Metadata with a index reference in this request.
+        """
         super().__init__(keypair)
 
         self.jinja_env = jinja_env
@@ -87,19 +96,36 @@ class AuthNRequest(SAMLRequest):
         self.issuer_id = issuer_id
         self.keypair = keypair
 
+        self.intended_audience = intended_audience
+        self.service_uuid = service_uuid
+
         self._root = self.render()
 
-    def render(self):
-        template = self.jinja_env.get_template(self.TEMPLATE_PATH)
-        raw_request = template.render({
+    def get_context(self):
+        context = {
             'ID': self._id_hash,
             'destination': self.sso_url,
             'issuer_id': self.issuer_id,
             'issue_instant': get_issue_instant(),
             'sign_cert': read_cert(self.signing_cert_path),
             'force_authn': "false"
-        })
+        }
 
+        if self.intended_audience is not None:
+            if self.service_uuid is None:
+                raise ValueError('When intended audience is set, we also expect the service_uuid')
+
+            context.update({
+                'clustered': True,
+                'intended_audience': self.intended_audience,
+                'service_uuid': self.service_uuid
+            })
+
+        return context
+
+    def render(self):
+        template = self.jinja_env.get_template(self.TEMPLATE_PATH)
+        raw_request = template.render(self.get_context())
         xml_request = etree.fromstring(raw_request)
         return self.sign(xml_request, self._id_hash)
 

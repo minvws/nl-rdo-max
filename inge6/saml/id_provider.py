@@ -58,9 +58,19 @@ class IdProvider:
     def saml_is_legacy_version(self):
         return self.saml_spec_version == Version("3.5")
 
-    def create_authn_request(self):
+    def create_authn_request(self, cluster_name = None):
         sso_url = self.idp_metadata.get_sso()['location']
         issuer_id = self.sp_metadata.issuer_id
+
+        if self.sp_metadata.clustered:
+            if not cluster_name:
+                # if no cluster name is passed, use the first defined connection
+                cluster_name = list(self.sp_metadata.cluster_settings['connections'].keys())[0]
+
+            service_uuid = self.sp_metadata.service_uuid
+            intended_audience = self.sp_metadata.cluster_settings['connections'][cluster_name]['entity_id']
+            return AuthNRequest(sso_url, issuer_id, self.keypair_paths, self.jinja_env, intended_audience, service_uuid)
+
         return AuthNRequest(sso_url, issuer_id, self.keypair_paths, self.jinja_env)
 
     def create_artifactresolve_request(self, artifact: str):
