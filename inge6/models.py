@@ -17,8 +17,9 @@ from pydantic import BaseModel, validator
 from fastapi import Form
 from fastapi.responses import RedirectResponse
 
-from inge6.config import Settings
-from inge6.saml.saml_request import AuthNRequest
+from .config import Settings
+from .saml.saml_request import AuthNRequest
+from .constants import ROOT_DIR
 
 
 def _fill_template(template_txt: str, context: dict):
@@ -89,6 +90,7 @@ class SAMLAuthNAutoSubmitResponse(HTMLResponse):
         self.relay_state = relay_state
         self.authn_request = authn_request
         self.settings = settings
+        self.template = ROOT_DIR + "/templates/saml/html/authn_request.html"
         content = self.create_post_autosubmit_form({
             'sso_url': self.sso_url,
             'saml_request': self.authn_request.get_base64_string().decode(),
@@ -97,14 +99,14 @@ class SAMLAuthNAutoSubmitResponse(HTMLResponse):
         super().__init__(content=content, status_code=status_code, headers=headers, media_type=media_type, background=background)
 
     def create_post_autosubmit_form(self, context: dict) -> typing.Text:
-        return _fill_template_from_file(self.settings.saml.authn_request_html_template, context)
+        return _fill_template_from_file(self.template, context)
 
 
 class MetaRedirectResponse(HTMLResponse):
 
     def __init__(self, redirect_url: str, status_code: int = 200, headers: dict = None, media_type: str = None, background: BackgroundTask = None) -> None:
         self.redirect_url = redirect_url
-        self.template = "saml/templates/html/assertion_consumer_service.html"
+        self.template = ROOT_DIR + "/templates/saml/html/assertion_consumer_service.html"
         content=self.create_acs_redirect_link({"redirect_url": self.redirect_url})
         super().__init__(content=content, status_code=status_code, headers=headers, media_type=media_type, background=background)
 

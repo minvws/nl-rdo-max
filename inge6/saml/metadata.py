@@ -8,7 +8,7 @@ import secrets
 from lxml import etree
 import xmlsec
 
-from .saml_request import SAMLRequest, add_reference, sign
+from .saml_request import SAMLRequest
 from .constants import NAMESPACES
 from .utils import get_loc_bind, has_valid_signatures, from_settings, compute_keyname, strip_cert, enforce_cert_newlines
 
@@ -50,13 +50,12 @@ class SPMetadata(SAMLRequest):
                 self.cluster_settings = json.loads(cluster_settings_file.read())
 
         self._root = etree.fromstring(self.render_template())
-        add_reference(self.root, self._id_hash)
 
         with open(self.signing_cert_path, 'r', encoding='utf-8') as cert_file:
             cert_data = cert_file.read()
         self.root.find('.//ds:Signature/ds:KeyInfo//ds:X509Certificate', NAMESPACES).text = strip_cert(cert_data)
 
-        sign(self.root, self.signing_key_path)
+        self.sign(self.root, self._id_hash)
 
     @property
     def root(self):

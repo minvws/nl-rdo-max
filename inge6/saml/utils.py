@@ -1,5 +1,4 @@
 # pylint: disable=c-extension-no-member
-import base64
 from typing import Dict, Tuple, Any, Optional, Union
 import textwrap
 
@@ -90,6 +89,6 @@ def strip_cert(cert_data):
 
 def read_cert(cert_path: str) -> None:
     with open(cert_path, 'r', encoding='utf-8') as cert_file:
-        cert_data = base64.b64encode(cert_file.read().encode())
+        cert_data = strip_cert(cert_file.read())
 
     return cert_data

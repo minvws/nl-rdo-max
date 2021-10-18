@@ -11,6 +11,7 @@ from inge6.saml.saml_request import ArtifactResolveRequest, AuthNRequest
 from .metadata import IdPMetadata, SPMetadata
 from .utils import from_settings
 
+# pylint: disable=too-many-instance-attributes
 class IdProvider:
 
     def __init__(self, name, idp_setting, jinja_env) -> None:
@@ -22,6 +23,8 @@ class IdProvider:
         self.settings_path = idp_setting['settings_path']
         self.idp_metadata_path = idp_setting['idp_metadata_path']
 
+        self.jinja_env = jinja_env
+
         with open(self.settings_path, 'r', encoding='utf-8') as settings_file:
             self.settings_dict = json.loads(settings_file.read())
 
@@ -29,7 +32,7 @@ class IdProvider:
             self.priv_key = key_file.read()
 
         self._idp_metadata = IdPMetadata(self.idp_metadata_path)
-        self._sp_metadata = SPMetadata(self.settings_dict, self.keypair_paths, jinja_env)
+        self._sp_metadata = SPMetadata(self.settings_dict, self.keypair_paths, self.jinja_env)
 
     @cached_property
     def authn_binding(self):
@@ -58,9 +61,9 @@ class IdProvider:
     def create_authn_request(self):
         sso_url = self.idp_metadata.get_sso()['location']
         issuer_id = self.sp_metadata.issuer_id
-        return AuthNRequest(sso_url, issuer_id, self.keypair_paths)
+        return AuthNRequest(sso_url, issuer_id, self.keypair_paths, self.jinja_env)
 
     def create_artifactresolve_request(self, artifact: str):
         sso_url = self.idp_metadata.get_sso()['location']
         issuer_id = self.sp_metadata.issuer_id
-        return ArtifactResolveRequest(artifact, sso_url, issuer_id, self.keypair_paths)
+        return ArtifactResolveRequest(artifact, sso_url, issuer_id, self.keypair_paths, self.jinja_env)

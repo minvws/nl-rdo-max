@@ -11,50 +11,16 @@ from lxml import etree
 
 from inge6.saml.utils import read_cert
 
-from .constants import ROOT_DIR
-
+def to_soap_envelope(node):
+    return f"""<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+    <SOAP-ENV:Body>
+        {etree.tostring(node)}
+    </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
+"""
 
 def get_issue_instant():
-    return datetime.utcnow().isoformat().split('.')[0] + 'Z',
-
-def add_root_issue_instant(root) -> None:
-    root.attrib['IssueInstant'] = get_issue_instant()
-
-def add_root_id(root, id_hash: str) -> None:
-    root.attrib['ID'] = id_hash
-
-def add_reference(root, id_hash: str) -> None:
-    reference_node: Optional[Any] = xmlsec.tree.find_node(root, xmlsec.constants.NodeReference)
-    if reference_node is None:
-        raise ValueError("Reference node not found, cannot set URI in reference node of signature element.")
-    reference_node.attrib['URI'] = f"#{id_hash}"
-
-def add_certs(root, cert_path: str) -> None:
-    cert_node = root.find('.//ds:X509Certificate', {'ds': 'http://www.w3.org/2000/09/xmldsig#'})
-
-    with open(cert_path, 'r', encoding='utf-8') as cert_file:
-        cert_node.text = base64.b64encode(cert_file.read().encode())
-
-def add_issuer(root, issuer_id):
-    root.find('./saml:Issuer', {'saml': 'urn:oasis:names:tc:SAML:2.0:assertion'}).text = issuer_id
-
-def add_destination(root, destination):
-    root.attrib['Destination'] = destination
-
-def sign(root, key_path):
-    with open(key_path, 'r', encoding='utf-8') as key_file:
-        key_data = key_file.read()
-
-    signature_node = xmlsec.tree.find_node(root, xmlsec.constants.NodeSignature)
-    ctx = xmlsec.SignatureContext()
-    key = xmlsec.Key.from_memory(key_data, xmlsec.constants.KeyDataFormatPem)
-    ctx.key = key
-    ctx.register_id(root)
-    ctx.sign(signature_node)
-
-def add_artifact(root, artifact_code) -> None:
-    artifact = root.find('.//samlp:Artifact', {'samlp': "urn:oasis:names:tc:SAML:2.0:protocol"})
-    artifact.text = artifact_code
+    return datetime.utcnow().isoformat().split('.')[0] + 'Z'
 
 class SAMLRequest:
 
@@ -134,7 +100,7 @@ class AuthNRequest(SAMLRequest):
             'force_authn': "false"
         })
 
-        xml_request = etree.parse(raw_request).getroot()
+        xml_request = etree.fromstring(raw_request)
         return self.sign(xml_request, self._id_hash)
 
     @property
@@ -157,7 +123,7 @@ class ArtifactResolveRequest(SAMLRequest):
         self.artifact = artifact_code
 
         self.saml_resolve_req = self.render()
-        self._root = self.to_soap_envelope(self.saml_resolve_req)
+        self._root = etree.fromstring(to_soap_envelope(self.saml_resolve_req))
 
     def render(self):
         template = self.jinja_env.get_template(self.TEMPLATE_PATH)
@@ -169,16 +135,8 @@ class ArtifactResolveRequest(SAMLRequest):
             'sign_cert': read_cert(self.signing_cert_path),
             'artifact': self.artifact
         })
-        xml_request = etree.fromstring(raw_request).getroot()
+        xml_request = etree.fromstring(raw_request)
         return self.sign(xml_request, self._id_hash)
-
-    def to_soap_envelope(self, node):
-        return f"""<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
-    <SOAP-ENV:Body>
-        {node}
-    </SOAP-ENV:Body>
-</SOAP-ENV:Envelope>
-"""
 
     @property
     def saml_elem(self):
