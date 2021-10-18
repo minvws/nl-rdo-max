@@ -1,17 +1,17 @@
 import logging
 import pytest
 from inge6.main import validate_startup
-from inge6.config import settings
+from inge6.config import get_settings
 
 def test_main():
     assert validate_startup()
 
 @pytest.fixture
 def mock_use_ssl():
-    tmp = settings.use_ssl
-    settings.use_ssl = 'true'
+    tmp = get_settings().use_ssl
+    get_settings().use_ssl = 'true'
     yield
-    settings.use_ssl = tmp
+    get_settings().use_ssl = tmp
 
 @pytest.fixture
 def capture_logging(caplog):
@@ -22,8 +22,8 @@ def capture_logging(caplog):
 
 @pytest.fixture
 def invalid_redis_settings():
-    existing_redis_ssl = settings.redis.ssl
-    settings.redis.ssl = True
+    existing_redis_ssl = get_settings().redis.ssl
+    get_settings().redis.ssl = True
     keys = [
         "host",
         "port",
@@ -41,15 +41,15 @@ def invalid_redis_settings():
     original_values = {}
 
     for key in keys:
-        original_values[key] = getattr(settings.redis, key)
-        setattr(settings.redis, key, "")
+        original_values[key] = getattr(get_settings().redis, key)
+        setattr(get_settings().redis, key, "")
 
     yield
 
-    settings.redis.ssl = existing_redis_ssl
+    get_settings().redis.ssl = existing_redis_ssl
 
     for item in original_values.items():
-        setattr(settings.redis, item[0], item[1])
+        setattr(get_settings().redis, item[0], item[1])
 
 @pytest.mark.parametrize("section,setting",
     [
@@ -63,11 +63,11 @@ def invalid_redis_settings():
 )
 def test_missing_setting_files(section, setting, mocker, mock_use_ssl): # pylint: disable=unused-argument, redefined-outer-name
     mock_logger = mocker.patch('inge6.main.log')
-    tmp = settings[section][setting]
-    settings[section][setting] = 'idontexists.txt'
+    tmp = get_settings()[section][setting]
+    get_settings()[section][setting] = 'idontexists.txt'
     assert not validate_startup()
     mock_logger.error.assert_called()
-    settings[section][setting] = tmp
+    get_settings()[section][setting] = tmp
 
 
 @pytest.mark.parametrize("section,setting",
@@ -80,28 +80,28 @@ def test_missing_setting_files(section, setting, mocker, mock_use_ssl): # pylint
 )
 def test_missing_setting_dirs(section, setting, mocker, mock_use_ssl): # pylint: disable=unused-argument, redefined-outer-name
     mock_logger = mocker.patch('inge6.main.log')
-    tmp = settings[section][setting]
-    settings[section][setting] = '/some/folder/doesnt/exist'
+    tmp = get_settings()[section][setting]
+    get_settings()[section][setting] = '/some/folder/doesnt/exist'
     assert not validate_startup()
     mock_logger.error.assert_called()
-    settings[section][setting] = tmp
+    get_settings()[section][setting] = tmp
 
 
 def test_identity_providers_example(mock_valid_id_providers_settings_path):
-    tmp = settings.saml.identity_provider_settings
-    settings.saml.identity_provider_settings = mock_valid_id_providers_settings_path
+    tmp = get_settings().saml.identity_provider_settings
+    get_settings().saml.identity_provider_settings = mock_valid_id_providers_settings_path
     assert validate_startup()
-    settings.saml.identity_provider_settings = tmp
+    get_settings().saml.identity_provider_settings = tmp
 
 
 @pytest.mark.idp_settings(base_dir='nonexistent/folder')
 def test_identity_providers_example_errorneous_base_dir(mock_invalid_id_provider_setting_path, mocker):
     mock_logger = mocker.patch('inge6.main.log')
-    tmp = settings.saml.identity_provider_settings
-    settings.saml.identity_provider_settings = mock_invalid_id_provider_setting_path
+    tmp = get_settings().saml.identity_provider_settings
+    get_settings().saml.identity_provider_settings = mock_invalid_id_provider_setting_path
     assert not validate_startup()
     mock_logger.error.assert_called()
-    settings.saml.identity_provider_settings = tmp
+    get_settings().saml.identity_provider_settings = tmp
 
 
 @pytest.mark.idp_settings(
@@ -117,11 +117,11 @@ def test_identity_providers_example_errorneous(mock_invalid_id_provider_setting_
     mock_logger = mocker.patch('inge6.main.log')
 
     for mock_idp_setting_path in mock_invalid_id_provider_setting_path:
-        tmp = settings.saml.identity_provider_settings
-        settings.saml.identity_provider_settings = mock_idp_setting_path
+        tmp = get_settings().saml.identity_provider_settings
+        get_settings().saml.identity_provider_settings = mock_idp_setting_path
         assert not validate_startup()
         mock_logger.error.assert_called()
-        settings.saml.identity_provider_settings = tmp
+        get_settings().saml.identity_provider_settings = tmp
 
 
 def test_redis_settings_errorneous(capture_logging, invalid_redis_settings): # pylint: disable=unused-argument, redefined-outer-name
@@ -141,6 +141,6 @@ def test_redis_settings_errorneous(capture_logging, invalid_redis_settings): # p
         "code_namespace"
     ]
     for key in keys:
-        assert 'redis.{}'.format(key) in capture_logging.text
+        assert f'redis.{key}' in capture_logging.text
 
     capture_logging.clear()

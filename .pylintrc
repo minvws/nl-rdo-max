@@ -1,6 +1,8 @@
 [MASTER]
 disable= C0114, C0115, C0116, E0611, E0001
 
+init-hook='import sys; sys.path.extend(["./inge6", "./tests/", "./"]);'
+
 [REPORTS]
 
 # Set the output format. Available formats are text, parseable, colorized, msvs

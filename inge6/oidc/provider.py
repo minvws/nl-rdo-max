@@ -8,11 +8,9 @@ from pyop.provider import Provider as PyopProvider
 from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
 from pyop.userinfo import Userinfo
 
-from ..config import settings
-from ..cache import get_redis_client
+from ..config import Settings
+from ..cache import RedisCache
 from .storage import RedisWrapper
-
-REDIS_TTL = int(settings.redis.object_ttl)
 
 # pylint: disable=too-few-public-methods
 class Provider:
@@ -38,7 +36,12 @@ class Provider:
         - settings.redis.sub_id_namespace
     """
 
-    def __init__(self) -> None:
+    def __init__(self, settings: Settings ) -> None:
+        self.redis_ttl = int(settings.redis.object_ttl)
+
+        self.redis_cache = RedisCache()
+        self.redis_client = self.redis_cache.redis_client
+
         issuer = settings.issuer
         authentication_endpoint = settings.authorize_endpoint
         jwks_uri = settings.jwks_endpoint
@@ -64,10 +67,10 @@ class Provider:
 
         signing_key = RSAKey(key=rsa_load(settings.oidc.rsa_private_key), alg='RS256', )
 
-        authorization_code_db = RedisWrapper(redis_client=get_redis_client(), collection=settings.redis.code_namespace, ttl=REDIS_TTL)
-        access_token_db = RedisWrapper(redis_client=get_redis_client(), collection=settings.redis.token_namespace, ttl=REDIS_TTL)
-        refresh_token_db = RedisWrapper(redis_client=get_redis_client(), collection=settings.redis.refresh_token_namespace, ttl=REDIS_TTL)
-        subject_identifier_db = RedisWrapper(redis_client=get_redis_client(), collection=settings.redis.sub_id_namespace, ttl=REDIS_TTL)
+        authorization_code_db = RedisWrapper(redis_client=self.redis_client, collection=settings.redis.code_namespace, ttl=self.redis_ttl)
+        access_token_db = RedisWrapper(redis_client=self.redis_client, collection=settings.redis.token_namespace, ttl=self.redis_ttl)
+        refresh_token_db = RedisWrapper(redis_client=self.redis_client, collection=settings.redis.refresh_token_namespace, ttl=self.redis_ttl)
+        subject_identifier_db = RedisWrapper(redis_client=self.redis_client, collection=settings.redis.sub_id_namespace, ttl=self.redis_ttl)
 
         authz_state = AuthorizationState(
             HashBasedSubjectIdentifierFactory(settings.oidc.subject_id_hash_salt),
@@ -87,4 +90,4 @@ class Provider:
         if hasattr(self.provider, name):
             return getattr(self.provider, name)
 
-        raise AttributeError("Attribute {} not found".format(name))
+        raise AttributeError(f"Attribute {name} not found")

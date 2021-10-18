@@ -6,11 +6,11 @@ import logging
 
 import uvicorn
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
-from .config import settings
+from .config import get_settings
 from .router import router
-from .provider import get_provider
+from .provider import Provider
 
 log = logging.getLogger(__package__)
 
@@ -19,44 +19,44 @@ app.include_router(router)
 
 def _validate_saml_identity_provider_settings():
     missing_files = []
-    with open(settings.saml.identity_provider_settings, encoding='utf-8') as providers_settings:
+    with open(get_settings().saml.identity_provider_settings, encoding='utf-8') as providers_settings:
         identity_providers = json.loads(providers_settings.read())
 
     for provider, p_settings in identity_providers.items():
         if not os.path.isdir(p_settings['base_dir']):
             missing_files.append(
-                (p_settings['base_dir'], "{}: SAML Identity Providers base directory".format(provider))
+                (p_settings['base_dir'], f"{provider}: SAML Identity Providers base directory")
             )
 
         if not os.path.isfile(p_settings['cert_path']):
             missing_files.append(
-                (p_settings['cert_path'], "{}: SAML ID Provider certificate file".format(provider))
+                (p_settings['cert_path'], f"{provider}: SAML ID Provider certificate file")
             )
 
         if not os.path.isfile(p_settings['key_path']):
             missing_files.append(
-                (p_settings['key_path'], "{}: SAML ID Provider private key file".format(provider))
+                (p_settings['key_path'], f"{provider}: SAML ID Provider private key file")
             )
 
         if not os.path.isfile(p_settings['settings_path']):
             missing_files.append(
-                (p_settings['settings_path'], "{}: SAML ID Provider settings file".format(provider))
+                (p_settings['settings_path'], f"{provider}: SAML ID Provider settings file")
             )
 
         if not os.path.isfile(p_settings['idp_metadata_path']):
             missing_files.append(
-                (p_settings['idp_metadata_path'], "{}: SAML ID Provider metadata file".format(provider))
+                (p_settings['idp_metadata_path'], f"{provider}: SAML ID Provider metadata file")
             )
 
     return missing_files
 
 def validate_settings(section, keys):
     required_settings = []
-    current_settings = getattr(settings, section)
+    current_settings = getattr(get_settings(), section)
     for key in keys:
         if not hasattr(current_settings, key) or getattr(current_settings, key) == "":
             required_settings.append(
-                ('{}.{}'.format(section, key), 'expected to be defined in the config {} section'.format(section))
+                (f'{section}.{key}', f'expected to be defined in the config {section} section')
             )
 
     return required_settings
@@ -66,47 +66,47 @@ def validate_startup():
     ssl_missing_files = []
     required_settings = []
 
-    if not hasattr(settings, 'primary_idp_key') or settings.primary_idp_key == "":
+    if not hasattr(get_settings(), 'primary_idp_key') or get_settings().primary_idp_key == "":
         required_settings.append(
             ('settings.primary_idp_key', "expected to be defined in the config DEFAULT section")
         )
 
-    if not os.path.isfile(settings.saml.identity_provider_settings):
+    if not os.path.isfile(get_settings().saml.identity_provider_settings):
         missing_files.append(
-            (settings.saml.identity_provider_settings, "SAML Identity Providers file")
+            (get_settings().saml.identity_provider_settings, "SAML Identity Providers file")
         )
     else:
         missing_files.extend(_validate_saml_identity_provider_settings())
 
-    if not os.path.isfile(settings.oidc.clients_file):
+    if not os.path.isfile(get_settings().oidc.clients_file):
         missing_files.append(
-            (settings.oidc.clients_file, "OIDC clients file")
+            (get_settings().oidc.clients_file, "OIDC clients file")
         )
 
-    if not os.path.isfile(settings.oidc.rsa_private_key):
+    if not os.path.isfile(get_settings().oidc.rsa_private_key):
         missing_files.append(
-            (settings.oidc.rsa_private_key, "OIDC private key file path")
+            (get_settings().oidc.rsa_private_key, "OIDC private key file path")
         )
 
-    if not os.path.isfile(settings.oidc.rsa_public_key):
+    if not os.path.isfile(get_settings().oidc.rsa_public_key):
         missing_files.append(
-            (settings.oidc.rsa_private_key, "OIDC public key file path")
+            (get_settings().oidc.rsa_private_key, "OIDC public key file path")
         )
 
-    if settings.use_ssl.lower() == 'true':
-        if not os.path.isdir(settings.ssl.base_dir):
+    if get_settings().use_ssl.lower() == 'true':
+        if not os.path.isdir(get_settings().ssl.base_dir):
             ssl_missing_files.append(
-                (settings.ssl.base_dir, "SSL base_dir does not exist")
+                (get_settings().ssl.base_dir, "SSL base_dir does not exist")
             )
 
-        if not os.path.isfile(settings.ssl.base_dir + '/' + settings.ssl.cert_file):
+        if not os.path.isfile(get_settings().ssl.base_dir + '/' + get_settings().ssl.cert_file):
             ssl_missing_files.append(
-                (settings.ssl.cert_file, "SSL certificate file")
+                (get_settings().ssl.cert_file, "SSL certificate file")
             )
 
-        if not os.path.isfile(settings.ssl.base_dir + '/' + settings.ssl.key_file):
+        if not os.path.isfile(get_settings().ssl.base_dir + '/' + get_settings().ssl.key_file):
             ssl_missing_files.append(
-                (settings.ssl.key_file, "SSL key file")
+                (get_settings().ssl.key_file, "SSL key file")
             )
 
     required_settings += validate_settings("redis", [
@@ -121,17 +121,17 @@ def validate_startup():
             "sub_id_namespace"
         ])
 
-    if not isinstance(settings.redis.enable_debugger, bool):
+    if not isinstance(get_settings().redis.enable_debugger, bool):
         required_settings.append(
             ('redis.enable_debugger', 'is incorrectly defined, must be True or False')
         )
 
-    if not isinstance(settings.redis.ssl, bool):
+    if not isinstance(get_settings().redis.ssl, bool):
         required_settings.append(
             ('redis.ssl', 'is incorrectly defined, must be True or False')
         )
 
-    if settings.redis.ssl:
+    if get_settings().redis.ssl:
         # Check if ssl settings are defined
         required_settings += validate_settings("redis", [
                 "ssl",
@@ -142,16 +142,16 @@ def validate_startup():
 
         # Check if ssl certs exist on disk
         for key in ['key', 'cert', 'cafile']:
-            if not os.path.exists(getattr(settings.redis, key)):
+            if not os.path.exists(getattr(get_settings().redis, key)):
                 required_settings.append(
-                    ('redis.{}'.format(key), 'does not exist on disk')
+                    (f'redis.{key}', 'does not exist on disk')
                 )
 
     error_msg = ""
     if len(missing_files) > 0 or len(ssl_missing_files) > 0:
         missing_files.extend(ssl_missing_files)
 
-        error_msg += "There seem to be missing files, please check these paths:\n\n{}.\n\n".format("\n".join(f"{file[0]}\t\t{file[1]}" for file in missing_files))
+        error_msg += "There seem to be missing files, please check these paths:\n\n{}.\n\n".format("\n".join(f"{file[0]}\t\t{file[1]}" for file in missing_files)) # pylint: disable=consider-using-f-string
 
         if len(ssl_missing_files) > 0:
             error_msg += """
@@ -160,7 +160,7 @@ If you didn't mean to enable ssl change this setting in your config (not recomme
             """
 
     if len(required_settings) > 0:
-        error_msg += "\n\nSome of the required settings seem to be missing, please have a look at:\n\n{}.\n\n".format("\n".join(f"{file[0]}\t\t{file[1]}" for file in required_settings))
+        error_msg += "\n\nSome of the required settings seem to be missing, please have a look at:\n\n{}.\n\n".format("\n".join(f"{file[0]}\t\t{file[1]}" for file in required_settings)) # pylint: disable=consider-using-f-string
 
     if len(missing_files) > 0 or len(ssl_missing_files) > 0 or len(required_settings) > 0:
         log.error(error_msg)
@@ -170,9 +170,17 @@ If you didn't mean to enable ssl change this setting in your config (not recomme
 
 @app.on_event("startup")
 async def startup_event():
-    get_provider()
+    pass
+
+@app.middleware('http')
+async def add_provider_to_request(request: Request, call_next):
+    provider = Provider()
+    request.app.state.provider = provider
+    return await call_next(request)
 
 def main(app_link: str = 'inge6.main:app'):
+    settings = get_settings()
+
     logging.basicConfig(
         level=getattr(logging, settings.loglevel.upper()),
         datefmt='%m/%d/%Y %I:%M:%S %p'

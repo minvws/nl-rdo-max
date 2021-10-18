@@ -5,8 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from inge6.main import app
-from inge6.config import settings
-from inge6.cache import get_redis_client
+from inge6.config import get_settings
 
 
 # pylint: disable=unused-argument, redefined-outer-name
@@ -57,13 +56,13 @@ def test_authorize_request_redirect(mock_clients_db, digid_config, digid_mock_di
 
 
 @pytest.fixture
-def enable_inge6_outage():
-    tmp = settings.ratelimit.outage_key
-    settings.ratelimit.outage_key = 'inge6:outage'
-    get_redis_client().set(settings.ratelimit.outage_key, '1')
+def enable_inge6_outage(redis_mock):
+    tmp = get_settings().ratelimit.outage_key
+    get_settings().ratelimit.outage_key = 'inge6:outage'
+    redis_mock.set(get_settings().ratelimit.outage_key, '1')
     yield
-    settings.ratelimit.outage_key = tmp
-    get_redis_client().delete(settings.ratelimit.outage_key)
+    get_settings().ratelimit.outage_key = tmp
+    redis_mock.delete(get_settings().ratelimit.outage_key)
 
 
 # pylint: disable=unused-argument, redefined-outer-name

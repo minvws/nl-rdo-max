@@ -2,6 +2,7 @@ import configparser
 from typing import Any
 
 CONFIG_FILE_NAME = "inge6.conf"
+SETTINGS = None
 
 # pylint: disable=too-many-ancestors, too-few-public-methods
 class Settings(configparser.ConfigParser):
@@ -20,7 +21,7 @@ class Settings(configparser.ConfigParser):
                     return False
 
                 return value
-            raise AttributeError("Setting {}.{} not found and not handled gracefully".format(self._parent, name))
+            raise AttributeError(f"Setting {self._parent}.{name} not found and not handled gracefully")
 
         def __setattr__(self, name: str, value: Any) -> None:
             if name != '_section':
@@ -39,9 +40,18 @@ class Settings(configparser.ConfigParser):
             return self._defaults[name]
         if name in self._sections:
             return self.SettingSection(name, self._sections[name])
-        raise AttributeError("Setting {} not found and not handled gracefully".format(name))
+        raise AttributeError(f"Setting {name} not found and not handled gracefully")
 
-settings = Settings()
+def _create_settings(config_path):
+    settings = Settings()
 
-with open(CONFIG_FILE_NAME, 'r', encoding='utf-8') as conf_file:
-    settings.read_file(conf_file)
+    with open(config_path, 'r', encoding='utf-8') as conf_file:
+        settings.read_file(conf_file)
+
+    return settings
+
+def get_settings(config_path: str = CONFIG_FILE_NAME):
+    global SETTINGS # pylint: disable=global-statement
+    if SETTINGS is None:
+        SETTINGS = _create_settings(config_path)
+    return SETTINGS

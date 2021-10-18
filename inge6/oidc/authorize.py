@@ -9,7 +9,9 @@ import jwt
 from fastapi import  Request, HTTPException
 from fastapi.security.utils import get_authorization_scheme_param
 
-from ..cache import redis_cache
+from inge6.models import JWTToken
+
+from .provider import Provider
 
 def _compute_code_challenge(code_verifier: str):
     """
@@ -90,7 +92,7 @@ def _is_valid_at_request_body(request_body: bytes):
 
     return parsed_request_body
 
-def accesstoken(provider, request_body, headers):
+def accesstoken(provider: Provider, request_body, headers):
     """
     An access token is requested through this function. It validates whether the body contains the expected parameters and verifies the
     supplied code_verifier.
@@ -109,7 +111,7 @@ def accesstoken(provider, request_body, headers):
     code = parsed_request_body['code'][0]
     code_verifier = parsed_request_body['code_verifier'][0]
 
-    cc_cm = redis_cache.hget(code, 'cc_cm')
+    cc_cm = provider.redis_cache.hget(code, 'cc_cm')
 
     if cc_cm is None:
         raise HTTPException(400, detail='Code challenge has expired. Please retry authorization.')
@@ -118,4 +120,4 @@ def accesstoken(provider, request_body, headers):
         raise HTTPException(400, detail='Bad request. code verifier not recognized')
 
     token_response = provider.handle_token_request(request_body.decode('utf-8'), headers)
-    return token_response
+    return JWTToken(**token_response.to_dict())

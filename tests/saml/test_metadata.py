@@ -1,4 +1,5 @@
 import pytest
+from inge6.config import get_settings
 
 from inge6.saml.metadata import IdPMetadata
 from inge6.saml.constants import NAMESPACES
@@ -9,7 +10,7 @@ def test_idp_metadata_bindings_tvs(tvs_config):
     """
     test metadata provided by tvs
     """
-    idp_metadata = IdPMetadata('tests/resources/idp_metadata_authnpost.xml')
+    idp_metadata = IdPMetadata('tests/resources/sample_messages/idp_metadata_authnpost.xml')
     assert idp_metadata.get_sso(binding='POST')['binding'].endswith('POST')
     assert idp_metadata.get_sso(binding='POST')['location'] != ""
 
@@ -18,14 +19,14 @@ def test_idp_metadata_bindings_digid(digid_config):
     """
     test metadata provided by digid
     """
-    idp_metadata = IdPMetadata('tests/resources/idp_metadata_authnredirect.xml')
+    idp_metadata = IdPMetadata('tests/resources/sample_messages/idp_metadata_authnredirect.xml')
     assert idp_metadata.get_sso(binding='Redirect')['binding'].endswith('Redirect')
     assert idp_metadata.get_sso(binding='Redirect')['location'] != ""
 
 
 def test_metadata_required_root_attrs(tvs_config, tvs_provider_settings, jinja_env):
 
-    tvs_provider = IdProvider('tvs', tvs_provider_settings, jinja_env)
+    tvs_provider = IdProvider(get_settings(), 'tvs', tvs_provider_settings, jinja_env)
     assert tvs_provider.sp_metadata.root.attrib['entityID'] is not None
     with pytest.raises(KeyError):
         tvs_provider.sp_metadata.root.attrib['EntityID'] # pylint: disable=pointless-statement
@@ -37,7 +38,7 @@ def test_metadata_required_root_attrs(tvs_config, tvs_provider_settings, jinja_e
 
 
 def test_metadata_clustered(tvs_config, tvs_clustered_provider_settings, jinja_env):
-    tvs_provider = IdProvider('tvs', tvs_clustered_provider_settings, jinja_env)
+    tvs_provider = IdProvider(get_settings(), 'tvs', tvs_clustered_provider_settings, jinja_env)
     assert tvs_provider.sp_metadata.root.attrib['ID'] is not None
     assert tvs_provider.sp_metadata.root.tag == "{urn:oasis:names:tc:SAML:2.0:metadata}EntitiesDescriptor"
 

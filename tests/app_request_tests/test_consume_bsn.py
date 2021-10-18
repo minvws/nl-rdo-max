@@ -6,7 +6,7 @@ import jwt
 from fastapi.testclient import TestClient
 
 from inge6.main import app
-from inge6.config import settings
+from inge6.config import get_settings
 
 # pylint: disable=unused-argument
 def test_consume_bsn_and_accesstoken(mock_clients_db, redis_mock, tvs_config):
@@ -48,7 +48,7 @@ def test_consume_bsn_and_accesstoken(mock_clients_db, redis_mock, tvs_config):
             'verify_signature':False
         }
     )
-    assert id_token['iss'] == settings.issuer
+    assert id_token['iss'] == get_settings().issuer
     assert id_token['nonce'] == authorize_params['nonce']
     assert id_token['aud'] == [client_id]
     assert id_token['sub'] == '7c373c0a53f219d339a3e9255695101ad4c834005bf91c2e43a7548e68c7ca95'

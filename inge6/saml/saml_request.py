@@ -8,7 +8,7 @@ from datetime import datetime
 import xmlsec
 from lxml import etree
 
-from ..config import settings
+from ..config import Settings
 
 def add_root_issue_instant(root) -> None:
     root.attrib['IssueInstant'] = datetime.utcnow().isoformat().split('.')[0] + 'Z'
@@ -51,7 +51,7 @@ def add_artifact(root, artifact_code) -> None:
 
 class SAMLRequest:
 
-    def __init__(self, keypair_sign: Tuple[str, str]) -> None:
+    def __init__(self, settings: Settings, keypair_sign: Tuple[str, str]) -> None:
         """
         Initiate a SAMLRequest with a parsed xml tree and keypair for signing
 
@@ -59,6 +59,7 @@ class SAMLRequest:
         :param keypair: (cert_path, key_path) tuple for signing of the messages.
         """
         self._id_hash = "_" + secrets.token_hex(41) # total length 42.
+        self.settings = settings
         self.signing_cert_path = keypair_sign[0]
         self.signing_key_path = keypair_sign[1]
 
@@ -86,11 +87,11 @@ class AuthNRequest(SAMLRequest):
     Required settings:
         - settings.saml.authn_request_template, path to authn request template
     """
-    TEMPLATE_PATH = settings.saml.authn_request_template
 
-    def __init__(self, sso_url, issuer_id, keypair) -> None:
-        super().__init__(keypair)
-        self._root = etree.parse(self.TEMPLATE_PATH).getroot()
+    def __init__(self, settings: Settings, sso_url, issuer_id, keypair) -> None:
+        super().__init__(settings, keypair)
+        self.template_path = settings.saml.authn_request_template
+        self._root = etree.parse(self.template_path).getroot()
 
         add_root_id(self.root, self._id_hash)
         add_destination(self.root, sso_url)
@@ -111,11 +112,11 @@ class ArtifactResolveRequest(SAMLRequest):
     Required settings:
         - settings.saml.artifactresolve_request_template, path to artifact resolve request template
     """
-    TEMPLATE_PATH = settings.saml.artifactresolve_request_template
 
-    def __init__(self, artifact_code, sso_url, issuer_id, keypair) -> None:
-        super().__init__(keypair)
-        self._root = etree.parse(self.TEMPLATE_PATH).getroot()
+    def __init__(self, settings: Settings, artifact_code, sso_url, issuer_id, keypair) -> None:
+        super().__init__(settings, keypair)
+        self.template_path = settings.saml.artifactresolve_request_template
+        self._root = etree.parse(self.template_path).getroot()
         self.saml_resolve_req = self.root.find('.//samlp:ArtifactResolve', {'samlp': "urn:oasis:names:tc:SAML:2.0:protocol"})
 
         add_root_id(self.saml_resolve_req, self._id_hash)

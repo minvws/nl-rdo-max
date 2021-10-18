@@ -63,10 +63,8 @@ import json
 import logging
 from logging import Logger
 
-from urllib import parse
-
 from urllib.parse import parse_qs, urlencode
-from typing import Text, List, Union
+from typing import Union
 from pydantic.main import BaseModel
 
 import requests
@@ -76,14 +74,9 @@ import nacl.hash
 from starlette.datastructures import Headers
 
 from fastapi import Request, Response, HTTPException
-from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
-from fastapi.encoders import jsonable_encoder
+from fastapi.responses import RedirectResponse, HTMLResponse
 
-from oic.oic.message import (
-    AuthorizationErrorResponse,
-    AuthorizationRequest as OICAuthRequest,
-    TokenErrorResponse
-)
+from oic.oic.message import TokenErrorResponse
 from pyop.exceptions import (
     InvalidAuthenticationRequest,
     InvalidClientAuthentication, OAuthError
@@ -91,13 +84,34 @@ from pyop.exceptions import (
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
+from inge6.saml.saml_request import AuthNRequest
+
 from . import constants
-from .config import settings
-from .cache import get_redis_client, redis_cache
-from .rate_limiter import rate_limit_test
-from .utils import create_post_autosubmit_form, create_page_outage, create_acs_redirect_link, create_authn_post_context
+
+from .config import Settings, get_settings
+from .rate_limiter import RateLimiter
+from .utils import (
+    create_redis_bsn_key,
+    cache_auth_req,
+    cache_code_challenge,
+    cache_artifact,
+    hget_from_redis,
+)
+
 from .encrypt import Encrypt
-from .models import AuthorizeRequest, LoginDigiDRequest, SorryPageRequest
+from .models import (
+    AuthorizeErrorRedirectResponse,
+    AuthorizeRequest,
+    JWTError,
+    JWTResponse,
+    LoginDigiDRequest,
+    MetaRedirectResponse,
+    RateLimitRedirectResponse,
+    SAMLAuthNAutoSubmitResponse,
+    SomethingWrongHTMLResponse,
+    SorryPageRequest
+)
+
 from .exceptions import (
     DependentServiceOutage, TooBusyError, TokenSAMLErrorResponse, TooManyRequestsFromOrigin,
     ExpiredResourceError, UnexpectedAuthnBinding, ExpectedRedisValue
@@ -113,70 +127,8 @@ from .saml import (
 from .oidc.provider import Provider as OIDCProvider
 from .oidc.authorize import (
     is_authorized,
-    validate_jwt_token,
     accesstoken,
 )
-
-log: Logger = logging.getLogger(__package__)
-log.setLevel(getattr(logging, settings.loglevel.upper()))
-
-_PROVIDER = None
-
-def _cache_auth_req(randstate: str, auth_req: OICAuthRequest, authorization_request: AuthorizeRequest,
-                    id_provider: str) -> None:
-    """
-    Method for assembling the data related to the auth request performed, including the code_challenge,
-    code_challenge_method and the to be used identity provider. and storing it in the RedisStore under the
-    constants.RedisKeys.AUTH_REQ enum.
-    """
-    value = {
-        'auth_req': auth_req,
-        'code_challenge': authorization_request.code_challenge,
-        'code_challenge_method': authorization_request.code_challenge_method,
-        'id_provider': id_provider
-    }
-
-    redis_cache.hset(randstate, constants.RedisKeys.AUTH_REQ.value, value)
-
-def _cache_code_challenge(code: str, code_challenge: str, code_challenge_method: str) -> None:
-    """
-    Method for assembling the data related to the upcoming accesstoken request, including the code, code_challenge
-    and code_challenge_method. and storing it in the RedisStore under the constants.RedisKeys.CC_CM enum.
-    """
-    value = {
-        'code_challenge': code_challenge,
-        'code_challenge_method': code_challenge_method
-    }
-    redis_cache.hset(code, constants.RedisKeys.CC_CM.value, value)
-
-def _cache_artifact(code: str, artifact: str, id_provider: str):
-    """
-    Method for assembling the data related to the upcoming accesstoken request, including the artifact and
-    identity_provider that has been used to retrieve the artifact. These are stored in the RedisStore under the
-    constants.RedisKeys.CC_CM enum.
-    """
-    value = {
-        'artifact': artifact,
-        'id_provider': id_provider
-    }
-    redis_cache.hset(code, constants.RedisKeys.ARTI.value, value)
-
-def hget_from_redis(namespace, key):
-    """
-    Method to retrieve something from redis, and if no result is found, throw a resource has expired exception.
-    """
-    result = redis_cache.hget(namespace, key)
-    if result is None:
-        raise ExpiredResourceError("Resource is not (any longer) available in redis")
-    return result
-
-def _create_redis_bsn_key(key: str, id_token: str, audience: List[Text]) -> str:
-    """
-    Method retrieving the redis_bsn_key used to retrieve the bsn from redis. This is the hash of the id_token that has
-    been provided as a response to the accesstoken request.
-    """
-    jwt = validate_jwt_token(key, id_token, audience)
-    return jwt['at_hash']
 
 def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     """
@@ -196,17 +148,6 @@ def _get_too_busy_redirect_error_uri(redirect_uri, state, uri_allow_list):
     error_desc = "The servers are too busy right now, please try again later."
     return redirect_uri + f"?error={error}&error_description={error_desc}&state={state}"
 
-def _prepare_req(auth_req: BaseModel, idp_name: str):
-    """
-    Prepare a authorization request to use the OneLogin SAML library.
-    """
-    return {
-        'https': 'on',
-        'http_host': f'https://{idp_name}.{settings.saml.base_issuer}',
-        'script_name': settings.authorize_endpoint,
-        'get_data': auth_req.dict(),
-    }
-
 def _get_bsn_from_art_resp(bsn_response: str, id_provider: IdProvider) -> str:
     """
     Depending on the saml versioning the bsn is or is not prepended with a sectore code.
@@ -223,84 +164,10 @@ def _get_bsn_from_art_resp(bsn_response: str, id_provider: IdProvider) -> str:
         sector_split = bsn_response.split(':')
         sector_number = constants.SECTOR_CODES[sector_split[0]]
         if sector_number != constants.SectorNumber.BSN:
-            raise ValueError("Expected BSN number, received: {}".format(sector_number))
+            raise ValueError(f"Expected BSN number, received: {sector_number}")
         return sector_split[1]
 
     raise ValueError("Unknown SAML specification, known: 3.5, >=4.4")
-
-
-def _post_login(login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> Response:
-    """
-    Not all identity providers allow the HTTP-Redirect for performing authentication requests,
-    For those that require HTTP-POST, this method is created. It generates an auto-submit form
-    with the authentication request.
-
-    Further if the system is configured to be in mocking mode, the auto-submit form is configured
-    to use the mocking paths available.
-    """
-    force_digid = login_digid_req.force_digid if login_digid_req.force_digid is not None else False
-    randstate = login_digid_req.state
-
-    issuer_id = id_provider.sp_metadata.issuer_id
-
-    if settings.mock_digid.lower() == "true" and not force_digid:
-        ##
-        # Coming from /authorize in mocking mode we should always get in this fall into this branch
-        # in which case login_digid_req only contains the randstate.
-        ##
-        base64_authn_request = base64.urlsafe_b64encode(json.dumps(login_digid_req.authorize_request.dict()).encode()).decode()
-        authn_post_ctx = create_authn_post_context(
-            relay_state=randstate,
-            url=f'/digid-mock?state={randstate}&idp_name={id_provider.name}&authorize_request={base64_authn_request}',
-            issuer_id=issuer_id,
-            keypair=id_provider.keypair_paths
-        )
-
-        return HTMLResponse(content=create_post_autosubmit_form(authn_post_ctx))
-
-    sso_url = id_provider.idp_metadata.get_sso()['location']
-    if id_provider.authn_binding.endswith('POST'):
-        authn_post_ctx = create_authn_post_context(
-            relay_state=randstate,
-            url=sso_url,
-            issuer_id=issuer_id,
-            keypair=id_provider.keypair_paths
-        )
-        return HTMLResponse(content=create_post_autosubmit_form(authn_post_ctx))
-
-    if id_provider.authn_binding.endswith('Redirect'):
-        if login_digid_req.authorize_request is None:
-            raise ValueError("AuthnRequest is None, which should not be possible")
-
-        req = _prepare_req(login_digid_req.authorize_request, id_provider.name)
-        auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
-        return RedirectResponse(auth.login(return_to=login_digid_req.state, force_authn=False, set_nameid_policy=False))
-
-    raise UnexpectedAuthnBinding("Unknown Authn binding {} configured in idp metadata: {}".format(id_provider.authn_binding, id_provider.name))
-
-
-def _perform_artifact_resolve_request(artifact: str, id_provider: IdProvider):
-    """
-    Perform an artifact resolve request using the provided artifact and identity provider.
-    The identity provider tells us the locations of the endpoints needed for resolving the artifact,
-    and the artifact is needed for the provider to resolve the requested attribute.
-    """
-    sso_url = id_provider.idp_metadata.get_sso()['location']
-    issuer_id = id_provider.sp_metadata.issuer_id
-    url = id_provider.idp_metadata.get_artifact_rs()['location']
-
-    resolve_artifact_req = ArtifactResolveRequest(artifact, sso_url, issuer_id, id_provider.keypair_paths)
-    headers = {
-        'SOAPAction' : 'resolve_artifact',
-        'content-type': 'text/xml'
-    }
-
-    return requests.post(
-        url,
-        headers=headers,
-        data=resolve_artifact_req.get_xml(xml_declaration=True),
-        cert=(id_provider.cert_path, id_provider.key_path)
-    )
 
 class Provider(OIDCProvider, SAMLProvider):
     """
@@ -323,38 +190,41 @@ class Provider(OIDCProvider, SAMLProvider):
         - `settings.bsn.local_symm_key`: symmetric key used for encrypting the BSN stored in the Redis-store
     """
 
-    BSN_SIGN_KEY = settings.bsn.sign_key
-    BSN_ENCRYPT_KEY = settings.bsn.encrypt_key
-    BSN_LOCAL_SYMM_KEY = settings.bsn.local_symm_key
+    def __init__(self, settings: Settings = get_settings()) -> None:
+        OIDCProvider.__init__(self, settings)
+        SAMLProvider.__init__(self, settings)
 
-    def __init__(self) -> None:
-        OIDCProvider.__init__(self)
-        SAMLProvider.__init__(self)
+        self.settings = settings
+
+        self.log: Logger = logging.getLogger(__package__)
+        self.log.setLevel(getattr(logging, settings.loglevel.upper()))
 
         self.bsn_encrypt = Encrypt(
-            raw_sign_key=self.BSN_SIGN_KEY,
-            raw_enc_key=self.BSN_ENCRYPT_KEY,
-            raw_local_enc_key=self.BSN_LOCAL_SYMM_KEY
+            raw_sign_key=settings.bsn.sign_key,
+            raw_enc_key=settings.bsn.encrypt_key,
+            raw_local_enc_key=settings.bsn.local_symm_key
         )
 
-        with open(settings.ratelimit.sorry_too_busy_page_head, 'r', encoding='utf-8') as too_busy_file:
+        self.rate_limiter = RateLimiter(self.settings, self.redis_client)
+
+        with open(self.settings.ratelimit.sorry_too_busy_page_head, 'r', encoding='utf-8') as too_busy_file:
             self.too_busy_page_template_head = too_busy_file.read()
 
-        with open(settings.ratelimit.sorry_too_busy_page_tail, 'r', encoding='utf-8') as too_busy_file:
+        with open(self.settings.ratelimit.sorry_too_busy_page_tail, 'r', encoding='utf-8') as too_busy_file:
             self.too_busy_page_template_tail = too_busy_file.read()
 
-        with open(settings.ratelimit.outage_page_head, 'r', encoding='utf-8') as outage_file:
+        with open(self.settings.ratelimit.outage_page_head, 'r', encoding='utf-8') as outage_file:
             self.outage_page_template_head = outage_file.read()
 
-        with open(settings.ratelimit.outage_page_tail, 'r', encoding='utf-8') as outage_file:
+        with open(self.settings.ratelimit.outage_page_tail, 'r', encoding='utf-8') as outage_file:
             self.outage_page_template_tail = outage_file.read()
 
-        with open(settings.oidc.clients_file, 'r', encoding='utf-8') as clients_file:
+        with open(self.settings.oidc.clients_file, 'r', encoding='utf-8') as clients_file:
             self.audience = list(json.loads(clients_file.read()).keys())
 
     def _is_outage(self): # pylint: disable=no-self-use
-        if hasattr(settings.ratelimit, 'outage_key'):
-            outage = get_redis_client().get(settings.ratelimit.outage_key)
+        if hasattr(self.settings.ratelimit, 'outage_key'):
+            outage = self.redis_client.get(self.settings.ratelimit.outage_key)
             if outage:
                 outage = outage.decode()
             else:
@@ -365,6 +235,96 @@ class Provider(OIDCProvider, SAMLProvider):
 
         return False
 
+
+    def _perform_artifact_resolve_request(self, artifact: str, id_provider: IdProvider):
+        """
+        Perform an artifact resolve request using the provided artifact and identity provider.
+        The identity provider tells us the locations of the endpoints needed for resolving the artifact,
+        and the artifact is needed for the provider to resolve the requested attribute.
+        """
+        sso_url = id_provider.idp_metadata.get_sso()['location']
+        issuer_id = id_provider.sp_metadata.issuer_id
+        url = id_provider.idp_metadata.get_artifact_rs()['location']
+
+        resolve_artifact_req = ArtifactResolveRequest(self.settings, artifact, sso_url, issuer_id, id_provider.keypair_paths)
+        headers = {
+            'SOAPAction' : 'resolve_artifact',
+            'content-type': 'text/xml'
+        }
+
+        return requests.post(
+            url,
+            headers=headers,
+            data=resolve_artifact_req.get_xml(xml_declaration=True),
+            cert=(id_provider.cert_path, id_provider.key_path)
+        )
+
+    def _post_login(self, login_digid_req: LoginDigiDRequest, id_provider: IdProvider) -> Response:
+        """
+        Not all identity providers allow the HTTP-Redirect for performing authentication requests,
+        For those that require HTTP-POST, this method is created. It generates an auto-submit form
+        with the authentication request.
+
+        Further if the system is configured to be in mocking mode, the auto-submit form is configured
+        to use the mocking paths available.
+        """
+        force_digid = login_digid_req.force_digid if login_digid_req.force_digid is not None else False
+        randstate = login_digid_req.state
+
+        issuer_id = id_provider.sp_metadata.issuer_id
+
+        if self.settings.mock_digid.lower() == "true" and not force_digid:
+            ##
+            # Coming from /authorize in mocking mode we should always get in this fall into this branch
+            # in which case login_digid_req only contains the randstate.
+            ##
+            base64_authn_request = base64.urlsafe_b64encode(json.dumps(login_digid_req.authorize_request.dict()).encode()).decode()
+
+            keypair=id_provider.keypair_paths
+            sso_url=f'/digid-mock?state={randstate}&idp_name={id_provider.name}&authorize_request={base64_authn_request}'
+
+            authn_request = AuthNRequest(self.settings, sso_url, issuer_id, keypair)
+            return SAMLAuthNAutoSubmitResponse(
+                sso_url=sso_url,
+                relay_state=randstate,
+                authn_request=authn_request,
+                settings=self.settings
+            )
+
+        sso_url = id_provider.idp_metadata.get_sso()['location']
+        if id_provider.authn_binding.endswith('POST'):
+            keypair=id_provider.keypair_paths
+            authn_request = AuthNRequest(self.settings, sso_url, issuer_id, keypair)
+
+            return SAMLAuthNAutoSubmitResponse(
+                sso_url=sso_url,
+                relay_state=randstate,
+                authn_request=authn_request,
+                settings=self.settings
+            )
+
+        if id_provider.authn_binding.endswith('Redirect'):
+            if login_digid_req.authorize_request is None:
+                raise ValueError("AuthnRequest is None, which should not be possible")
+
+            req = self._prepare_req(login_digid_req.authorize_request, id_provider.name)
+            auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
+            return RedirectResponse(auth.login(return_to=login_digid_req.state, force_authn=False, set_nameid_policy=False))
+
+        raise UnexpectedAuthnBinding(f"Unknown Authn binding {id_provider.authn_binding} configured in idp metadata: {id_provider.name}")
+
+    def _prepare_req(self, auth_req: BaseModel, idp_name: str):
+        """
+        Prepare a authorization request to use the OneLogin SAML library.
+        """
+        return {
+            'https': 'on',
+            'http_host': f'https://{idp_name}.{self.settings.saml.base_issuer}',
+            'script_name': self.settings.authorize_endpoint,
+            'get_data': auth_req.dict(),
+        }
+
+
     def sorry_something_went_wrong(self, request: SorryPageRequest):
         """
         Endpoint serving the sorry to busy page. It includes a href button with error information
@@ -374,11 +334,25 @@ class Provider(OIDCProvider, SAMLProvider):
         redirect_uri = _get_too_busy_redirect_error_uri(request.redirect_uri, request.state, allow_list)
 
         if self._is_outage():
-            too_busy_page = create_page_outage(self.outage_page_template_head, self.outage_page_template_tail, redirect_uri)
-            return HTMLResponse(content=too_busy_page)
+            return SomethingWrongHTMLResponse(redirect_uri, self.outage_page_template_head, self.outage_page_template_tail)
 
-        too_busy_page = create_page_outage(self.too_busy_page_template_head, self.too_busy_page_template_tail, redirect_uri)
-        return HTMLResponse(content=too_busy_page)
+        return SomethingWrongHTMLResponse(redirect_uri, self.too_busy_page_template_head, self.too_busy_page_template_tail)
+
+
+    def _get_primary_idp(self, ip_address: str):
+        if self._is_outage():
+            raise DependentServiceOutage(f"Some service we depend on is down according to the redis key: {self.settings.ratelimit.outage_key}")
+
+        primary_idp = self.redis_client.get(self.settings.primary_idp_key)
+        if primary_idp:
+            primary_idp = primary_idp.decode()
+        else:
+            raise ExpectedRedisValue(f"Expected {self.settings.primary_idp_key} key to be set in redis. Please check the primary_idp_key setting")
+
+        if hasattr(self.settings, 'mock_digid') and self.settings.mock_digid.lower() != 'true':
+            primary_idp = self.rate_limiter.rate_limit_test(ip_address)
+
+        return primary_idp
 
     def authorize_endpoint(self, authorize_request: AuthorizeRequest, headers: Headers, ip_address: str) -> Response:
         """
@@ -390,76 +364,66 @@ class Provider(OIDCProvider, SAMLProvider):
         valid, a Redirect response or auto-submit POST response is returned depending on the active IDP and its corresponding configuration.
         """
         try:
-            if self._is_outage():
-                raise DependentServiceOutage(f"Some service we depend on is down according to the redis key: {settings.ratelimit.outage_key}")
-
-            primary_idp = get_redis_client().get(settings.primary_idp_key)
-            if primary_idp:
-                primary_idp = primary_idp.decode()
-            else:
-                raise ExpectedRedisValue("Expected {} key to be set in redis. Please check the primary_idp_key setting".format(settings.primary_idp_key))
-
-            if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() != 'true':
-                primary_idp = rate_limit_test(ip_address)
+            primary_idp = self._get_primary_idp(ip_address)
         except (TooBusyError, TooManyRequestsFromOrigin, DependentServiceOutage) as rate_limit_error:
-            log.warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
-            query_params = {
-                'redirect_uri': authorize_request.redirect_uri,
-                'client_id': authorize_request.client_id,
-                'state': authorize_request.state
-            }
-            return RedirectResponse('/sorry-something-went-wrong?' + parse.urlencode(query_params))
+            self.log.warning("Rate-limit: Service denied someone access, cancelling authorization flow. Reason: %s", str(rate_limit_error))
+            return RateLimitRedirectResponse(
+                url ='/sorry-something-went-wrong?',
+                next_redirect_uri = authorize_request.redirect_uri,
+                client_id = authorize_request.client_id,
+                state = authorize_request.state
+            )
         except ExpectedRedisValue as exp_redis:
             raise exp_redis
         except: # pylint: disable=bare-except
-            log.error("Some unhandled error appeard", exc_info=True)
-            query_params = {
-                'error': "request_not_supported",
-                'error_description': "Some unhandled error in the rate limit tester. Unclear what went wrong",
-                'state': authorize_request.state
-            }
-            redirect_url = authorize_request.redirect_uri + '?' + parse.urlencode(query_params)
-            log.error("redirecting to: %s", redirect_url)
-            return RedirectResponse(redirect_url, status_code=303)
+            self.log.error("Some unhandled error appeard", exc_info=True)
+            return AuthorizeErrorRedirectResponse(
+                url = authorize_request.redirect_uri,
+                error = "request_not_supported",
+                error_description = "Some unhandled error in the rate limit tester. Unclear what went wrong",
+                state = authorize_request.state,
+                status_code=303
+            )
 
         try:
             auth_req = self.parse_authentication_request(urlencode(authorize_request.dict()), headers)
         except InvalidAuthenticationRequest as invalid_auth_req:
-            log.debug('received invalid authn request', exc_info=True)
+            self.log.debug('received invalid authn request', exc_info=True)
             error_url = invalid_auth_req.to_error_url()
             if error_url:
                 return RedirectResponse(error_url, status_code=303)
 
-            error_resp = AuthorizationErrorResponse(error='invalid_request_object', error_message=str('Something went wrong: {}'.format(str(invalid_auth_req))),
-                                                    state=authorize_request.state)
-            redirect_url = error_resp.request(authorize_request.redirect_uri, False)
-            log.error("redirecting to: %s", redirect_url)
-            return RedirectResponse(redirect_url, status_code=303)
+            return AuthorizeErrorRedirectResponse(
+                url = authorize_request.redirect_uri,
+                error = "invalid_request_object",
+                error_description = f"Something went wrong: {str(invalid_auth_req)}",
+                state = authorize_request.state,
+                status_code=303
+            )
         except Exception as exception: # pylint: disable=broad-except
-            log.error("Handling error: %s", exception)
-            log.error("Some unhandled error appeard", exc_info=True)
-            query_params = {
-                'error': "request_not_supported",
-                'error_description': "Some unhandled error when parsing the authentication. Unclear what went wrong",
-                'state': authorize_request.state
-            }
-            redirect_url = authorize_request.redirect_uri + '?' + parse.urlencode(query_params)
-            log.error("redirecting to: %s", redirect_url)
-            return RedirectResponse(redirect_url, status_code=303)
+            self.log.error("Handling error: %s", exception)
+            self.log.error("Some unhandled error appeard", exc_info=True)
+            return AuthorizeErrorRedirectResponse(
+                url = authorize_request.redirect_uri,
+                error = "request_not_supported",
+                error_description = "Some unhandled error in the rate limit tester. Unclear what went wrong",
+                state = authorize_request.state,
+                status_code=303
+            )
 
-        randstate = redis_cache.gen_token()
-        _cache_auth_req(randstate, auth_req, authorize_request, primary_idp)
+        randstate = self.redis_cache.gen_token()
+        cache_auth_req(self.redis_cache, randstate, auth_req, authorize_request, primary_idp)
 
         # There is some special behavior defined on the auth_req when mocking. If we want identical
         # behavior through mocking with primary_idp=digid as without mocking, we need to
         # create a mock redirectresponse.
         id_provider = self.get_id_provider(primary_idp)
-        return _post_login(
+        return self._post_login(
             LoginDigiDRequest(state=randstate, authorize_request=authorize_request),
             id_provider=id_provider
         )
 
-    def token_endpoint(self, body: bytes, headers: Headers) -> JSONResponse:
+    def token_endpoint(self, body: bytes, headers: Headers) -> JWTResponse:
         """
         This method handles the accesstoken endpoint. After the client has obtained an authorization code, by
         letting the resource owner login to the third party Identity Provider, this method processes the clients
@@ -481,36 +445,34 @@ class Provider(OIDCProvider, SAMLProvider):
         code = parse_qs(body.decode())['code'][0]
 
         try:
-            cached_artifact = hget_from_redis(code, constants.RedisKeys.ARTI.value)
+            cached_artifact = hget_from_redis(self.redis_cache, code, constants.RedisKeys.ARTI.value)
             artifact = cached_artifact['artifact']
             id_provider = cached_artifact['id_provider']
 
             token_response = accesstoken(self, body, headers)
             encrypted_bsn = self._resolve_artifact(artifact, id_provider)
 
-            access_key = _create_redis_bsn_key(self.key, token_response['id_token'].encode(), self.audience)
-            redis_cache.set(access_key, encrypted_bsn)
+            access_key = create_redis_bsn_key(self.key, token_response.id_token.encode(), self.audience)
+            self.redis_cache.set(access_key, encrypted_bsn)
 
-            log.info(' User has returned from %s and we received a response (Mocking mode is %s)', id_provider.upper(), settings.mock_digid.upper())
+            self.log.info(' User has returned from %s and we received a response (Mocking mode is %s)', id_provider.upper(), self.settings.mock_digid.upper())
 
-            json_content_resp = jsonable_encoder(token_response.to_dict())
-            return JSONResponse(content=json_content_resp)
+            return token_response
         except UserNotAuthenticated as user_not_authenticated:
-            log.debug('invalid client authentication at token endpoint', exc_info=True)
+            self.log.debug('invalid client authentication at token endpoint', exc_info=True)
             error_resp = TokenSAMLErrorResponse(error=user_not_authenticated.oauth_error, error_description=str(user_not_authenticated)).to_dict()
         except InvalidClientAuthentication as invalid_client_auth:
-            log.debug('invalid client authentication at token endpoint', exc_info=True)
+            self.log.debug('invalid client authentication at token endpoint', exc_info=True)
             error_resp = TokenErrorResponse(error='invalid_client', error_description=str(invalid_client_auth)).to_dict()
         except OAuthError as oauth_error:
-            log.debug('invalid request: %s', str(oauth_error), exc_info=True)
+            self.log.debug('invalid request: %s', str(oauth_error), exc_info=True)
             error_resp = TokenErrorResponse(error=oauth_error.oauth_error, error_description=str(oauth_error)).to_dict()
         except ExpiredResourceError as expired_err:
-            log.debug('invalid request: %s', str(expired_err), exc_info=True)
+            self.log.debug('invalid request: %s', str(expired_err), exc_info=True)
             error_resp = TokenErrorResponse(error='invalid_request', error_description=str(expired_err)).to_dict()
 
         # Error has occurred
-        response = JSONResponse(jsonable_encoder(error_resp), status_code=400)
-        return response
+        return JWTError(**error_resp)
 
     def assertion_consumer_service(self, request: Request) -> Union[RedirectResponse, HTMLResponse]:
         """
@@ -523,27 +485,27 @@ class Provider(OIDCProvider, SAMLProvider):
         artifact = request.query_params['SAMLart']
         artifact_hashed =  nacl.hash.sha256(artifact.encode()).decode()
 
-        if 'mocking' in request.query_params and hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == 'true':
-            redis_cache.set('DIGID_MOCK' + artifact, 'true')
+        if 'mocking' in request.query_params and hasattr(self.settings, 'mock_digid') and self.settings.mock_digid.lower() == 'true':
+            self.redis_cache.set('DIGID_MOCK' + artifact, 'true')
 
         try:
-            auth_req_dict = hget_from_redis(state, constants.RedisKeys.AUTH_REQ.value)
+            auth_req_dict = hget_from_redis(self.redis_cache, state, constants.RedisKeys.AUTH_REQ.value)
             auth_req = auth_req_dict[constants.RedisKeys.AUTH_REQ.value]
         except ExpiredResourceError as expired_err:
-            log.error('received invalid authn request for artifact %s. Reason: %s', artifact_hashed, expired_err, exc_info=True)
+            self.log.error('received invalid authn request for artifact %s. Reason: %s', artifact_hashed, expired_err, exc_info=True)
             return HTMLResponse('Session expired')
 
         authn_response = self.authorize(auth_req, 'test_client')
         response_url = authn_response.request(auth_req['redirect_uri'], False)
         code = authn_response['code']
 
-        log.debug('Storing sha256(artifact) %s under code %s', artifact_hashed, code)
-        _cache_artifact(code, artifact, auth_req_dict['id_provider'])
+        self.log.debug('Storing sha256(artifact) %s under code %s', artifact_hashed, code)
+        cache_artifact(self.redis_cache, code, artifact, auth_req_dict['id_provider'])
 
-        _cache_code_challenge(code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
-        log.debug('Stored code challenge')
+        cache_code_challenge(self.redis_cache, code, auth_req_dict['code_challenge'], auth_req_dict['code_challenge_method'])
+        self.log.debug('Stored code challenge')
 
-        return HTMLResponse(create_acs_redirect_link({"redirect_url": response_url}))
+        return MetaRedirectResponse(redirect_url=response_url)
 
     def _resolve_artifact(self, artifact: str, id_provider_name: str) -> bytes:
         """
@@ -552,20 +514,20 @@ class Provider(OIDCProvider, SAMLProvider):
         in the redis store.
         """
         hashed_artifact = nacl.hash.sha256(artifact.encode()).decode()
-        log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
+        self.log.debug('Making and sending request sha256(artifact) %s', hashed_artifact)
 
-        is_digid_mock = redis_cache.get('DIGID_MOCK' + artifact)
-        if hasattr(settings, 'mock_digid') and settings.mock_digid.lower() == "true" and is_digid_mock is not None:
+        is_digid_mock = self.redis_cache.get('DIGID_MOCK' + artifact)
+        if hasattr(self.settings, 'mock_digid') and self.settings.mock_digid.lower() == "true" and is_digid_mock is not None:
             return self.bsn_encrypt.symm_encrypt(artifact)
 
         id_provider: IdProvider = self.get_id_provider(id_provider_name)
-        resolved_artifact = _perform_artifact_resolve_request(artifact, id_provider)
+        resolved_artifact = self._perform_artifact_resolve_request(artifact, id_provider)
 
-        log.debug('Received a response for sha256(artifact) %s with status_code %s', hashed_artifact, resolved_artifact.status_code)
-        artifact_response = ArtifactResponse.from_string(resolved_artifact.text, id_provider)
-        log.debug('ArtifactResponse for %s, received status_code %s', hashed_artifact, artifact_response._saml_status_code) # pylint: disable=protected-access
+        self.log.debug('Received a response for sha256(artifact) %s with status_code %s', hashed_artifact, resolved_artifact.status_code)
+        artifact_response = ArtifactResponse.from_string(self.settings, resolved_artifact.text, id_provider)
+        self.log.debug('ArtifactResponse for %s, received status_code %s', hashed_artifact, artifact_response._saml_status_code) # pylint: disable=protected-access
         artifact_response.raise_for_status()
-        log.debug('Validated sha256(artifact) %s', hashed_artifact)
+        self.log.debug('Validated sha256(artifact) %s', hashed_artifact)
 
         if id_provider.sp_metadata.cluster_settings is None:
             # We are able to decrypt the message, and we will
@@ -584,7 +546,7 @@ class Provider(OIDCProvider, SAMLProvider):
         _, at_hash= is_authorized(self.key, request, self.audience)
 
         redis_bsn_key = at_hash
-        attributes = redis_cache.get(redis_bsn_key)
+        attributes = self.redis_cache.get(redis_bsn_key)
 
         if attributes is None:
             raise HTTPException(status_code=408, detail="Resource expired.Try again after /authorize", )
@@ -613,9 +575,3 @@ class Provider(OIDCProvider, SAMLProvider):
             return Response(content=id_provider.sp_metadata.get_xml().decode(), media_type="application/xml")
 
         raise HTTPException(status_code=500, detail=', '.join(errors))
-
-def get_provider() -> Provider:
-    global _PROVIDER # pylint: disable=global-statement
-    if _PROVIDER is None:
-        _PROVIDER = Provider()
-    return _PROVIDER
