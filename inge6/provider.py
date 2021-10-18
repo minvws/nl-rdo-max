@@ -242,11 +242,8 @@ class Provider(OIDCProvider, SAMLProvider):
         The identity provider tells us the locations of the endpoints needed for resolving the artifact,
         and the artifact is needed for the provider to resolve the requested attribute.
         """
-        sso_url = id_provider.idp_metadata.get_sso()['location']
-        issuer_id = id_provider.sp_metadata.issuer_id
         url = id_provider.idp_metadata.get_artifact_rs()['location']
-
-        resolve_artifact_req = ArtifactResolveRequest(self.settings, artifact, sso_url, issuer_id, id_provider.keypair_paths)
+        resolve_artifact_req = id_provider.create_artifactresolve_request(artifact)
         headers = {
             'SOAPAction' : 'resolve_artifact',
             'content-type': 'text/xml'
@@ -271,8 +268,6 @@ class Provider(OIDCProvider, SAMLProvider):
         force_digid = login_digid_req.force_digid if login_digid_req.force_digid is not None else False
         randstate = login_digid_req.state
 
-        issuer_id = id_provider.sp_metadata.issuer_id
-
         if self.settings.mock_digid.lower() == "true" and not force_digid:
             ##
             # Coming from /authorize in mocking mode we should always get in this fall into this branch
@@ -280,10 +275,9 @@ class Provider(OIDCProvider, SAMLProvider):
             ##
             base64_authn_request = base64.urlsafe_b64encode(json.dumps(login_digid_req.authorize_request.dict()).encode()).decode()
 
-            keypair=id_provider.keypair_paths
             sso_url=f'/digid-mock?state={randstate}&idp_name={id_provider.name}&authorize_request={base64_authn_request}'
 
-            authn_request = AuthNRequest(self.settings, sso_url, issuer_id, keypair)
+            authn_request = id_provider.create_authn_request()
             return SAMLAuthNAutoSubmitResponse(
                 sso_url=sso_url,
                 relay_state=randstate,
@@ -291,13 +285,11 @@ class Provider(OIDCProvider, SAMLProvider):
                 settings=self.settings
             )
 
-        sso_url = id_provider.idp_metadata.get_sso()['location']
         if id_provider.authn_binding.endswith('POST'):
-            keypair=id_provider.keypair_paths
-            authn_request = AuthNRequest(self.settings, sso_url, issuer_id, keypair)
+            authn_request = id_provider.create_authn_request()
 
             return SAMLAuthNAutoSubmitResponse(
-                sso_url=sso_url,
+                sso_url=authn_request.sso_url,
                 relay_state=randstate,
                 authn_request=authn_request,
                 settings=self.settings

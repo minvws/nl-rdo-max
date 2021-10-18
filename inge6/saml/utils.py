@@ -1,4 +1,5 @@
 # pylint: disable=c-extension-no-member
+import base64
 from typing import Dict, Tuple, Any, Optional, Union
 import textwrap
 
@@ -86,3 +87,9 @@ def enforce_cert_newlines(cert_data):
 
 def strip_cert(cert_data):
     return "\n".join(cert_data.strip().split('\n')[1:-1])
+
+def read_cert(cert_path: str) -> None:
+    with open(cert_path, 'r', encoding='utf-8') as cert_file:
+        cert_data = base64.b64encode(cert_file.read().encode())
+
+    return cert_data

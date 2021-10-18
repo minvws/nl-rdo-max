@@ -6,13 +6,14 @@ from functools import cached_property
 from packaging.version import Version
 from packaging.version import parse as version_parse
 
-from ..config import Settings
+from inge6.saml.saml_request import ArtifactResolveRequest, AuthNRequest
+
 from .metadata import IdPMetadata, SPMetadata
 from .utils import from_settings
 
 class IdProvider:
 
-    def __init__(self, settings: Settings, name, idp_setting, jinja_env) -> None:
+    def __init__(self, name, idp_setting, jinja_env) -> None:
         self.name = name
         self.saml_spec_version = version_parse(str(idp_setting['saml_specification_version']))
         self.base_dir = idp_setting['base_dir']
@@ -28,7 +29,7 @@ class IdProvider:
             self.priv_key = key_file.read()
 
         self._idp_metadata = IdPMetadata(self.idp_metadata_path)
-        self._sp_metadata = SPMetadata(settings, self.settings_dict, self.keypair_paths, jinja_env)
+        self._sp_metadata = SPMetadata(self.settings_dict, self.keypair_paths, jinja_env)
 
     @cached_property
     def authn_binding(self):
@@ -53,3 +54,13 @@ class IdProvider:
     @property
     def saml_is_legacy_version(self):
         return self.saml_spec_version == Version("3.5")
+
+    def create_authn_request(self):
+        sso_url = self.idp_metadata.get_sso()['location']
+        issuer_id = self.sp_metadata.issuer_id
+        return AuthNRequest(sso_url, issuer_id, self.keypair_paths)
+
+    def create_artifactresolve_request(self, artifact: str):
+        sso_url = self.idp_metadata.get_sso()['location']
+        issuer_id = self.sp_metadata.issuer_id
+        return ArtifactResolveRequest(artifact, sso_url, issuer_id, self.keypair_paths)

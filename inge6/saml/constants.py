@@ -1,3 +1,6 @@
+import os
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 NAMESPACES = {
     'ds': 'http://www.w3.org/2000/09/xmldsig#',

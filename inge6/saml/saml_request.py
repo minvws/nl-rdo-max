@@ -1,17 +1,24 @@
 # pylint: disable=c-extension-no-member
-from abc import abstractmethod
 import base64
 import secrets
+
+from abc import abstractmethod
 from typing import Optional, Any, Tuple
 from datetime import datetime
 
 import xmlsec
 from lxml import etree
 
-from ..config import Settings
+from inge6.saml.utils import read_cert
+
+from .constants import ROOT_DIR
+
+
+def get_issue_instant():
+    return datetime.utcnow().isoformat().split('.')[0] + 'Z',
 
 def add_root_issue_instant(root) -> None:
-    root.attrib['IssueInstant'] = datetime.utcnow().isoformat().split('.')[0] + 'Z'
+    root.attrib['IssueInstant'] = get_issue_instant()
 
 def add_root_id(root, id_hash: str) -> None:
     root.attrib['ID'] = id_hash
@@ -51,7 +58,7 @@ def add_artifact(root, artifact_code) -> None:
 
 class SAMLRequest:
 
-    def __init__(self, settings: Settings, keypair_sign: Tuple[str, str]) -> None:
+    def __init__(self, keypair_sign: Tuple[str, str]) -> None:
         """
         Initiate a SAMLRequest with a parsed xml tree and keypair for signing
 
@@ -59,7 +66,6 @@ class SAMLRequest:
         :param keypair: (cert_path, key_path) tuple for signing of the messages.
         """
         self._id_hash = "_" + secrets.token_hex(41) # total length 42.
-        self.settings = settings
         self.signing_cert_path = keypair_sign[0]
         self.signing_key_path = keypair_sign[1]
 
@@ -80,26 +86,56 @@ class SAMLRequest:
     def saml_elem(self):
         return self.root
 
+    def sign(self, node, id_hash: str):
+        def add_reference(root, id_hash: str) -> None:
+            reference_node: Optional[Any] = xmlsec.tree.find_node(root, xmlsec.constants.NodeReference)
+            if reference_node is None:
+                raise ValueError("Reference node not found, cannot set URI in reference node of signature element.")
+            reference_node.attrib['URI'] = f"#{id_hash}"
+
+        with open(self.signing_key_path, 'r', encoding='utf-8') as key_file:
+            key_data = key_file.read()
+
+        add_reference(node, id_hash=id_hash)
+
+        signature_node = xmlsec.tree.find_node(node, xmlsec.constants.NodeSignature)
+        ctx = xmlsec.SignatureContext()
+        key = xmlsec.Key.from_memory(key_data, xmlsec.constants.KeyDataFormatPem)
+        ctx.key = key
+        ctx.register_id(node)
+        ctx.sign(signature_node)
+
+        return node
+
 class AuthNRequest(SAMLRequest):
     """
     Creates an AuthnRequest based on an Authn request template.
-
-    Required settings:
-        - settings.saml.authn_request_template, path to authn request template
     """
+    TEMPLATE_PATH = 'authn_request.xml.jinja'
 
-    def __init__(self, settings: Settings, sso_url, issuer_id, keypair) -> None:
-        super().__init__(settings, keypair)
-        self.template_path = settings.saml.authn_request_template
-        self._root = etree.parse(self.template_path).getroot()
+    def __init__(self, sso_url, issuer_id, keypair, jinja_env) -> None:
+        super().__init__(keypair)
 
-        add_root_id(self.root, self._id_hash)
-        add_destination(self.root, sso_url)
-        add_issuer(self.root, issuer_id)
-        add_root_issue_instant(self.root)
-        add_reference(self.root, self._id_hash)
-        add_certs(self.root, self.signing_cert_path)
-        sign(self.root, self.signing_key_path)
+        self.jinja_env = jinja_env
+        self.sso_url = sso_url
+        self.issuer_id = issuer_id
+        self.keypair = keypair
+
+        self._root = self.render()
+
+    def render(self):
+        template = self.jinja_env.get_template(self.TEMPLATE_PATH)
+        raw_request = template.render({
+            'ID': self._id_hash,
+            'destination': self.sso_url,
+            'issuer_id': self.issuer_id,
+            'issue_instant': get_issue_instant(),
+            'sign_cert': read_cert(self.signing_cert_path),
+            'force_authn': "false"
+        })
+
+        xml_request = etree.parse(raw_request).getroot()
+        return self.sign(xml_request, self._id_hash)
 
     @property
     def root(self):
@@ -108,25 +144,41 @@ class AuthNRequest(SAMLRequest):
 class ArtifactResolveRequest(SAMLRequest):
     """
     Creates an ArtifactResolveRequest based on an Artifact resolve template.
-
-    Required settings:
-        - settings.saml.artifactresolve_request_template, path to artifact resolve request template
     """
+    TEMPLATE_PATH = 'artifactresolve_request.xml.jinja'
 
-    def __init__(self, settings: Settings, artifact_code, sso_url, issuer_id, keypair) -> None:
-        super().__init__(settings, keypair)
-        self.template_path = settings.saml.artifactresolve_request_template
-        self._root = etree.parse(self.template_path).getroot()
-        self.saml_resolve_req = self.root.find('.//samlp:ArtifactResolve', {'samlp': "urn:oasis:names:tc:SAML:2.0:protocol"})
+    def __init__(self, artifact_code, sso_url, issuer_id, keypair, jinja_env) -> None:
+        super().__init__(keypair)
 
-        add_root_id(self.saml_resolve_req, self._id_hash)
-        add_root_issue_instant(self.saml_resolve_req)
-        add_destination(self.saml_resolve_req, sso_url)
-        add_issuer(self.saml_resolve_req, issuer_id)
-        add_reference(self.saml_resolve_req, self._id_hash)
-        add_certs(self.saml_resolve_req, self.signing_cert_path)
-        add_artifact(self.saml_resolve_req, artifact_code)
-        sign(self.saml_resolve_req, self.signing_key_path)
+        self.jinja_env = jinja_env
+        self.sso_url = sso_url
+        self.issuer_id = issuer_id
+        self.keypair = keypair
+        self.artifact = artifact_code
+
+        self.saml_resolve_req = self.render()
+        self._root = self.to_soap_envelope(self.saml_resolve_req)
+
+    def render(self):
+        template = self.jinja_env.get_template(self.TEMPLATE_PATH)
+        raw_request = template.render({
+            'ID': self._id_hash,
+            'destination': self.sso_url,
+            'issuer_id': self.issuer_id,
+            'issue_instant': get_issue_instant(),
+            'sign_cert': read_cert(self.signing_cert_path),
+            'artifact': self.artifact
+        })
+        xml_request = etree.fromstring(raw_request).getroot()
+        return self.sign(xml_request, self._id_hash)
+
+    def to_soap_envelope(self, node):
+        return f"""<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+    <SOAP-ENV:Body>
+        {node}
+    </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
+"""
 
     @property
     def saml_elem(self):
