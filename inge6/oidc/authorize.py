@@ -9,6 +9,8 @@ import jwt
 from fastapi import  Request, HTTPException
 from fastapi.security.utils import get_authorization_scheme_param
 
+from inge6.models import JWTToken
+
 from .provider import Provider
 
 def _compute_code_challenge(code_verifier: str):
@@ -118,4 +120,4 @@ def accesstoken(provider: Provider, request_body, headers):
         raise HTTPException(400, detail='Bad request. code verifier not recognized')
 
     token_response = provider.handle_token_request(request_body.decode('utf-8'), headers)
-    return token_response
+    return JWTToken(**token_response.to_dict())
