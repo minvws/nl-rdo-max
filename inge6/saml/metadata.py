@@ -45,6 +45,7 @@ class SPMetadata(SAMLRequest):
         self.dv_keynames: List[str] = []
 
         self.cluster_settings = None
+        self.clustered = False
         if 'clustered' in settings_dict and settings_dict['clustered'] != "":
             with open(settings_dict['clustered'], 'r', encoding='utf-8') as cluster_settings_file:
                 self.cluster_settings = json.loads(cluster_settings_file.read())
@@ -98,14 +99,15 @@ class SPMetadata(SAMLRequest):
         return from_settings(self.settings_dict, 'sp.assertionConsumerService.binding')
 
     def get_cert_data(self, cluster_name: Optional[str]):
-        if not self.clustered:
+        if cluster_name is None:
+            # When cluster name is none, we want the certs of our service.
             cert_path = self.signing_cert_path
         else:
             if self.cluster_settings is None:
                 # This should never happen (key cannot exist without cluster settings), but makes mypy happy
                 raise RuntimeError("Cluster settings dict seems to be None, initilization failed.")
 
-            cert_path = self.cluster_settings['connections'][cluster_name]['cert_path']
+            cert_path = self.connections[cluster_name]['cert_path']
 
         with open(cert_path, 'r', encoding='utf-8') as cert_file:
             cert_data = cert_file.read()
@@ -130,14 +132,14 @@ class SPMetadata(SAMLRequest):
 
         return {
             'id': "_" + secrets.token_hex(41), # total length 42.
-            'entity_id': self.entity_id if cluster_name is None else self.cluster_settings['connections'][cluster_name]['entity_id'],
+            'entity_id': self.entity_id if cluster_name is None else self.connections[cluster_name]['entity_id'],
             'spsso': self.get_spsso(cluster_name)
         }
 
     def create_cluster_entity_descriptor(self):
         return {
             'clustered_' + cluster_name: self.create_entity_descriptor(cluster_name)
-            for cluster_name, _ in self.cluster_settings['connections'].items()
+            for cluster_name in self.connections
         }
 
     def render_clustered_template(self):
