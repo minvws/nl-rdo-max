@@ -221,17 +221,13 @@ class ArtifactResponse:
             if self.assertion_issuer.text != expected_entity_id:
                 errors.append(ValidationError(f'Invalid issuer in artifact assertion_issuer. Expected {expected_entity_id}, but was {self.assertion_issuer.text}'))
 
-            # RD V.S. AD. we cannot perform this check
-            # if self.advice_assertion_issuer.text != self.id_provider.idp_metadata.entity_id:
-            #     errors.append(ValidationError('Invalid issuer in artifact advice_assertion_issuer. Expected {}, but was {}'.format(expected_entity_id, self.advice_assertion_issuer.text)))
-
         return errors
 
     def validate_recipient_uri(self) -> List[ValidationError]:
         errors = []
 
         expected_response_dest = from_settings(self.id_provider.settings_dict, 'sp.assertionConsumerService.url')
-        # TODO: remove, or related to saml specification 3.5 vs 4.5? # pylint: disable=fixme
+
         if self.id_provider.saml_is_new_version:
             if expected_response_dest != self.response.attrib['Destination']:
                 errors.append(ValidationError(f"Response destination is not what was expected. Expected: {expected_response_dest}, was {self.response.attrib['Destination']}"))
