@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -40,6 +42,6 @@ def digid_provider_settings():
 @pytest.fixture
 def jinja_env():
     return Environment(
-        loader=FileSystemLoader(ROOT_DIR + '/templates/saml/xml'),
+        loader=FileSystemLoader(os.path.join(ROOT_DIR, 'templates/saml/xml')),
         autoescape=select_autoescape()
     )

@@ -1,4 +1,5 @@
 # pylint: disable=too-few-public-methods
+import os
 import html
 import json
 import base64
@@ -89,7 +90,7 @@ class SAMLAuthNAutoSubmitResponse(HTMLResponse):
         self.relay_state = relay_state
         self.authn_request = authn_request
         self.settings = settings
-        self.template = ROOT_DIR + "/templates/saml/html/authn_request.html"
+        self.template = os.path.join(ROOT_DIR, "templates/saml/html/authn_request.html")
 
         content = self.create_post_autosubmit_form({
             'sso_url': self.sso_url,
@@ -106,7 +107,7 @@ class MetaRedirectResponse(HTMLResponse):
 
     def __init__(self, redirect_url: str, status_code: int = 200, headers: dict = None, media_type: str = None, background: BackgroundTask = None) -> None:
         self.redirect_url = redirect_url
-        self.template = ROOT_DIR + "/templates/saml/html/assertion_consumer_service.html"
+        self.template = os.path.join(ROOT_DIR, "templates/saml/html/assertion_consumer_service.html")
 
         content=self.create_acs_redirect_link({"redirect_url": self.redirect_url})
         super().__init__(content=content, status_code=status_code, headers=headers, media_type=media_type, background=background)

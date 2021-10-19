@@ -1,8 +1,10 @@
+from typing import Optional
+
 from redis import StrictRedis
 
 from ..config import Settings, get_settings
 
-def create_redis_client(settings: Settings = get_settings()) -> StrictRedis:
+def create_redis_client(settings: Optional[Settings] = None) -> StrictRedis:
     """
     Global function to retrieve the connection with the redis-server.
 
@@ -17,7 +19,7 @@ def create_redis_client(settings: Settings = get_settings()) -> StrictRedis:
 
     :returns: StrictRedis object having a connection with the configured redis server.
     """
-
+    settings = settings if settings is not None else get_settings()
     use_ssl = settings.redis.ssl
 
     if use_ssl:
