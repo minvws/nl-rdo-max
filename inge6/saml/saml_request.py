@@ -12,7 +12,7 @@ from lxml import etree
 from inge6.saml.utils import read_cert, to_soap_envelope
 
 def get_issue_instant():
-    return datetime.utcnow().isoformat().split('.')[0] + 'Z'
+    return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
 class SAMLRequest:
 
