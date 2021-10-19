@@ -1,3 +1,5 @@
+from typing import Optional
+
 import logging
 import threading
 
@@ -8,9 +10,9 @@ from ..config import get_settings, Settings
 
 class RedisGetDebugger(threading.Thread):
 
-    def __init__(self, redis_client: StrictRedis, *args, settings: Settings = get_settings(), **kwargs) -> None:
+    def __init__(self, redis_client: StrictRedis, *args, settings: Optional[Settings] = None, **kwargs) -> None:
         threading.Thread.__init__(self, *args, **kwargs)
-        self.settings = settings
+        self.settings = settings if settings is not None else get_settings()
 
         self.psubscribe = '__keyevent@0__:expired'
         self.redis_client = redis_client
