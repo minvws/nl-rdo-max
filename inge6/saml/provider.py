@@ -1,3 +1,4 @@
+import os
 import json
 
 from typing import Dict
@@ -17,7 +18,7 @@ class Provider:
     Required settings:
         - settings.saml.identity_provider_settings, path to the configuration for all identity providers.
     """
-    SAML_TEMPLATES_PATH = ROOT_DIR + '/templates/saml/xml/'
+    SAML_TEMPLATES_PATH = os.path.join(ROOT_DIR, 'templates/saml/xml/')
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings

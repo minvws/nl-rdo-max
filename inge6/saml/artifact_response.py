@@ -56,7 +56,7 @@ class ArtifactResponse:
         self.log: Logger = logging.getLogger(__package__)
         self.log.setLevel(getattr(logging, self.settings.loglevel.upper()))
 
-        self.provider = provider
+        self.id_provider = provider
         self.is_verifeid = is_verified
         self.is_test_instance = is_test_instance
 
@@ -179,7 +179,7 @@ class ArtifactResponse:
         return self.status
 
     def validate_in_response_to(self) -> List[ValidationError]:
-        expected_entity_id = from_settings(self.provider.settings_dict, 'sp.entityId')
+        expected_entity_id = from_settings(self.id_provider.settings_dict, 'sp.entityId')
         response_conditions_aud = self.response_audience_restriction.find('.//saml:Audience', NAMESPACES)
 
         errors = []
@@ -192,18 +192,24 @@ class ArtifactResponse:
         if response_conditions_aud.text != expected_entity_id:
             errors.append(ValidationError(f'Invalid audience in response Conditions. Expected {expected_entity_id}, but was {response_conditions_aud.text}'))
 
-        if self.provider.saml_is_new_version:
+        if self.id_provider.saml_is_new_version:
             response_advice_encrypted_key_aud = self.assertion_attribute_enc_key
-            if response_advice_encrypted_key_aud.attrib['Recipient'] != expected_entity_id:
-                errors.append(ValidationError(f"Invalid audience in encrypted key. Expected {expected_entity_id}, but was {response_advice_encrypted_key_aud.attrib['Recipient']}"))
 
-            if self.assertion_subject_audrestriction.text != expected_entity_id:
-                errors.append(ValidationError(f'Invalid issuer in artifact assertion_subject_audrestriction. Expected {expected_entity_id}, but was {self.assertion_subject_audrestriction.text}'))
+            if self.id_provider.sp_metadata.clustered:
+                possible_expected_entity_ids = [self.id_provider.sp_metadata.connections[conn]['entity_id'] for conn in self.id_provider.sp_metadata.connections]
+                if response_advice_encrypted_key_aud not in possible_expected_entity_ids:
+                    errors.append(ValidationError(f"Invalid audience in encrypted key. Expected on of: {expected_entity_id}, but was {response_advice_encrypted_key_aud.attrib['Recipient']}"))
+            else:
+                if response_advice_encrypted_key_aud.attrib['Recipient'] != expected_entity_id:
+                    errors.append(ValidationError(f"Invalid audience in encrypted key. Expected {expected_entity_id}, but was {response_advice_encrypted_key_aud.attrib['Recipient']}"))
+
+                if self.assertion_subject_audrestriction.text != expected_entity_id:
+                    errors.append(ValidationError(f'Invalid issuer in artifact assertion_subject_audrestriction. Expected {expected_entity_id}, but was {self.assertion_subject_audrestriction.text}'))
 
         return errors
 
     def validate_issuer_texts(self) -> List[ValidationError]:
-        expected_entity_id = self.provider.idp_metadata.entity_id
+        expected_entity_id = self.id_provider.idp_metadata.entity_id
         errors = []
         if self.issuer.text != expected_entity_id:
             errors.append(ValidationError(f'Invalid issuer in artifact response. Expected {expected_entity_id}, but was {self.issuer.text}'))
@@ -215,18 +221,14 @@ class ArtifactResponse:
             if self.assertion_issuer.text != expected_entity_id:
                 errors.append(ValidationError(f'Invalid issuer in artifact assertion_issuer. Expected {expected_entity_id}, but was {self.assertion_issuer.text}'))
 
-            # RD V.S. AD. we cannot perform this check
-            # if self.advice_assertion_issuer.text != self.provider.idp_metadata.entity_id:
-            #     errors.append(ValidationError('Invalid issuer in artifact advice_assertion_issuer. Expected {}, but was {}'.format(expected_entity_id, self.advice_assertion_issuer.text)))
-
         return errors
 
     def validate_recipient_uri(self) -> List[ValidationError]:
         errors = []
 
-        expected_response_dest = from_settings(self.provider.settings_dict, 'sp.assertionConsumerService.url')
-        # TODO: remove, or related to saml specification 3.5 vs 4.5? # pylint: disable=fixme
-        if self.provider.saml_is_new_version:
+        expected_response_dest = from_settings(self.id_provider.settings_dict, 'sp.assertionConsumerService.url')
+
+        if self.id_provider.saml_is_new_version:
             if expected_response_dest != self.response.attrib['Destination']:
                 errors.append(ValidationError(f"Response destination is not what was expected. Expected: {expected_response_dest}, was {self.response.attrib['Destination']}"))
 
@@ -265,14 +267,14 @@ class ArtifactResponse:
         errors = []
 
         service_id_attr_val = list(root.find("./*[@Name='urn:nl-eid-gdi:1.0:ServiceUUID']"))[0].text
-        expected_service_uuid = from_settings(self.provider.sp_metadata.settings_dict, 'sp.attributeConsumingService.requestedAttributes.0.attributeValue.0')
+        expected_service_uuid = from_settings(self.id_provider.sp_metadata.settings_dict, 'sp.attributeConsumingService.requestedAttributes.0.attributeValue.0')
         if service_id_attr_val != expected_service_uuid:
             errors.append(ValidationError(f"service uuid does not comply with specified uuid. Expected {expected_service_uuid}, was {service_id_attr_val}"))
 
         if not self.is_test_instance and self.is_verifeid:
             # Only perform this validation if it is verified, and not a test instance.
             keyname = root.find('.//ds:KeyName', NAMESPACES).text
-            possible_keynames = self.provider.sp_metadata.dv_keynames
+            possible_keynames = self.id_provider.sp_metadata.dv_keynames
             if keyname not in possible_keynames:
                 errors.append(ValidationError(f"KeyName does not comply with one of the specified keynames. Expected list {possible_keynames}, was {keyname}"))
 
@@ -302,7 +304,7 @@ class ArtifactResponse:
 
         # Authenticating authority is the AD: AuthenticatieDienst, we only know RD: RouteringsDienst.
         # authenticating_authority = self.response_assertion.find('.//saml:AuthenticatingAuthority', NAMESPACES).text
-        # expected_authority = self.provider.idp_metadata.entity_id
+        # expected_authority = self.id_provider.idp_metadata.entity_id
         # if authenticating_authority != expected_authority:
         #     errors.append(ValidationError('Authority is not as expected. Expected {}, was {}'.format(expected_authority, authenticating_authority)))
 
@@ -321,7 +323,7 @@ class ArtifactResponse:
             errors += self.validate_in_response_to()
             errors += self.validate_authn_statement()
 
-            if self.provider.saml_is_new_version:
+            if self.id_provider.saml_is_new_version:
                 errors += self.validate_attribute_statements()
 
         if len(errors) != 0:
@@ -329,7 +331,7 @@ class ArtifactResponse:
             raise ValidationError('Audience verification errors.')
 
     def _decrypt_enc_key(self) -> bytes:
-        aes_key = OneLogin_Saml2_Utils.decrypt_element(self.assertion_attribute_enc_key, self.provider.priv_key, debug=True)
+        aes_key = OneLogin_Saml2_Utils.decrypt_element(self.assertion_attribute_enc_key, self.id_provider.priv_key, debug=True)
         return aes_key
 
     def _decrypt_enc_data(self, aes_key: bytes) -> bytes:
@@ -351,7 +353,7 @@ class ArtifactResponse:
         return self.assertion_subject.find('./saml:NameID', NAMESPACES)
 
     def get_bsn(self) -> Text:
-        if self.provider.saml_is_new_version:
+        if self.id_provider.saml_is_new_version:
             bsn_element = self._decrypt_bsn()
         else:
             bsn_element = self._plaintext_bsn()

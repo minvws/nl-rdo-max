@@ -45,9 +45,11 @@ class SPMetadata(SAMLRequest):
         self.dv_keynames: List[str] = []
 
         self.cluster_settings = None
+        self.clustered = False
         if 'clustered' in settings_dict and settings_dict['clustered'] != "":
             with open(settings_dict['clustered'], 'r', encoding='utf-8') as cluster_settings_file:
                 self.cluster_settings = json.loads(cluster_settings_file.read())
+            self.clustered = True
 
         self._root = etree.fromstring(self.render_template())
 
@@ -56,6 +58,10 @@ class SPMetadata(SAMLRequest):
         self.root.find('.//ds:Signature/ds:KeyInfo//ds:X509Certificate', NAMESPACES).text = strip_cert(cert_data)
 
         self.sign(self.root, self._id_hash)
+
+    @property
+    def connections(self):
+        return self.cluster_settings['connections']
 
     @property
     def root(self):
@@ -94,13 +100,14 @@ class SPMetadata(SAMLRequest):
 
     def get_cert_data(self, cluster_name: Optional[str]):
         if cluster_name is None:
+            # When cluster name is none, we want the certs of our service.
             cert_path = self.signing_cert_path
         else:
             if self.cluster_settings is None:
                 # This should never happen (key cannot exist without cluster settings), but makes mypy happy
                 raise RuntimeError("Cluster settings dict seems to be None, initilization failed.")
 
-            cert_path = self.cluster_settings['connections'][cluster_name]['cert_path']
+            cert_path = self.connections[cluster_name]['cert_path']
 
         with open(cert_path, 'r', encoding='utf-8') as cert_file:
             cert_data = cert_file.read()
@@ -125,14 +132,14 @@ class SPMetadata(SAMLRequest):
 
         return {
             'id': "_" + secrets.token_hex(41), # total length 42.
-            'entity_id': self.entity_id if cluster_name is None else self.cluster_settings['connections'][cluster_name]['entity_id'],
+            'entity_id': self.entity_id if cluster_name is None else self.connections[cluster_name]['entity_id'],
             'spsso': self.get_spsso(cluster_name)
         }
 
     def create_cluster_entity_descriptor(self):
         return {
             'clustered_' + cluster_name: self.create_entity_descriptor(cluster_name)
-            for cluster_name, _ in self.cluster_settings['connections'].items()
+            for cluster_name in self.connections
         }
 
     def render_clustered_template(self):
@@ -167,8 +174,7 @@ class SPMetadata(SAMLRequest):
         return template.render(unclustered_context)
 
     def render_template(self) -> str:
-        clustered = self.cluster_settings is not None
-        if clustered:
+        if self.clustered:
             return self.render_clustered_template()
 
         return self.render_unclustered_template()
