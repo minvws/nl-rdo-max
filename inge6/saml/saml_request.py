@@ -9,15 +9,7 @@ from datetime import datetime
 import xmlsec
 from lxml import etree
 
-from inge6.saml.utils import read_cert
-
-def to_soap_envelope(node):
-    return f"""<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
-    <SOAP-ENV:Body>
-        {etree.tostring(node)}
-    </SOAP-ENV:Body>
-</SOAP-ENV:Envelope>
-"""
+from inge6.saml.utils import read_cert, to_soap_envelope
 
 def get_issue_instant():
     return datetime.utcnow().isoformat().split('.')[0] + 'Z'
@@ -123,7 +115,7 @@ class ArtifactResolveRequest(SAMLRequest):
         self.artifact = artifact_code
 
         self.saml_resolve_req = self.render()
-        self._root = etree.fromstring(to_soap_envelope(self.saml_resolve_req))
+        self._root = to_soap_envelope(self.saml_resolve_req)
 
     def render(self):
         template = self.jinja_env.get_template(self.TEMPLATE_PATH)

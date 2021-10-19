@@ -1,6 +1,7 @@
 # pylint: disable=c-extension-no-member
 from typing import Dict, Tuple, Any, Optional, Union
 import textwrap
+from lxml import etree
 
 import xmlsec
 
@@ -92,3 +93,29 @@ def read_cert(cert_path: str) -> None:
         cert_data = strip_cert(cert_file.read())
 
     return cert_data
+
+def to_soap_envelope(node):
+    # pylint: disable=c-extension-no-member
+    return f"""<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+    <SOAP-ENV:Body>
+        {etree.tostring(node)}
+    </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
+"""
+
+"""
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
+ <env:Header>
+  <n:alertcontrol xmlns:n="http://example.org/alertcontrol">
+   <n:priority>1</n:priority>
+   <n:expires>2001-06-22T14:00:00-05:00</n:expires>
+  </n:alertcontrol>
+ </env:Header>
+ <env:Body>
+  <m:alert xmlns:m="http://example.org/alert">
+   <m:msg>Pick up Mary at school at 2pm</m:msg>
+  </m:alert>
+ </env:Body>
+</env:Envelope>
+
+"""
