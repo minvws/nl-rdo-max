@@ -52,7 +52,7 @@ def test_artifact_value():
     assert artifact_node.text == expected
 
 JINJA_ENV = Environment(
-    loader=FileSystemLoader(os.path.join(ROOT_DIR, '/templates/saml/xml')),
+    loader=FileSystemLoader(os.path.join(ROOT_DIR, 'templates/saml/xml')),
     autoescape=select_autoescape()
 )
 
