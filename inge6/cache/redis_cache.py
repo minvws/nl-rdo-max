@@ -37,8 +37,8 @@ def _deserialize(serialized_value: Optional[Any]) -> Any:
 
 class RedisCache:
 
-    def __init__(self, settings = get_settings(), redis_client: StrictRedis = None):
-        self.settings = settings
+    def __init__(self, settings = None, redis_client: StrictRedis = None):
+        self.settings = settings if settings is not None else get_settings()
         self.key_prefix: str = self.settings.redis.default_cache_namespace
         self.expires_in_s: int = int(self.settings.redis.object_ttl)
         self.redis_client = create_redis_client(settings) if redis_client is None else redis_client
