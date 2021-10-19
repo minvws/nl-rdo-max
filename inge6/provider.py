@@ -64,7 +64,7 @@ import logging
 from logging import Logger
 
 from urllib.parse import parse_qs, urlencode
-from typing import Union
+from typing import Union, Dict, Any
 from pydantic.main import BaseModel
 
 import requests
@@ -495,7 +495,7 @@ class Provider(OIDCProvider, SAMLProvider):
 
         return MetaRedirectResponse(redirect_url=response_url)
 
-    def _resolve_artifact(self, artifact: str, id_provider_name: str) -> bytes:
+    def _resolve_artifact(self, artifact: str, id_provider_name: str) -> Union[Dict[str, Any], bytes]:
         """
         given the the artifact and active IDP name, perform an artifact resolve request to the
         active Identity Provider. Retrieve the BSN and perform symmetric encryption to store it
