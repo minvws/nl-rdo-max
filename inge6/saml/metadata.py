@@ -8,8 +8,7 @@ import secrets
 from lxml import etree
 import xmlsec
 
-from ..config import Settings
-from .saml_request import SAMLRequest, add_reference, sign
+from .saml_request import SAMLRequest
 from .constants import NAMESPACES
 from .utils import get_loc_bind, has_valid_signatures, from_settings, compute_keyname, strip_cert, enforce_cert_newlines
 
@@ -27,7 +26,7 @@ class SPMetadata(SAMLRequest):
     DELTA_DAYS_VALID_UNTIL = 365
 
 
-    def __init__(self, settings: Settings, settings_dict, keypair_sign, jinja_env) -> None:
+    def __init__(self, settings_dict, keypair_sign, jinja_env) -> None:
         """
         Initialize SPMetadata using the settings in the settings dict, for idp_name. And sign it
         using the keypair_sign, which is also the pair used for receiving encrypted material.
@@ -38,7 +37,7 @@ class SPMetadata(SAMLRequest):
         :param pubkey_enc: (OPTIONAL) path to the public key the IdP should use for XML encryption, useful when
         decryption of the messages is done by another party. Otherwise, same key as for signing is used.
         """
-        super().__init__(settings, keypair_sign)
+        super().__init__(keypair_sign)
 
         self.jinja_env = jinja_env
         self.settings_dict = settings_dict
@@ -51,13 +50,12 @@ class SPMetadata(SAMLRequest):
                 self.cluster_settings = json.loads(cluster_settings_file.read())
 
         self._root = etree.fromstring(self.render_template())
-        add_reference(self.root, self._id_hash)
 
         with open(self.signing_cert_path, 'r', encoding='utf-8') as cert_file:
             cert_data = cert_file.read()
         self.root.find('.//ds:Signature/ds:KeyInfo//ds:X509Certificate', NAMESPACES).text = strip_cert(cert_data)
 
-        sign(self.root, self.signing_key_path)
+        self.sign(self.root, self._id_hash)
 
     @property
     def root(self):

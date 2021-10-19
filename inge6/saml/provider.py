@@ -7,6 +7,8 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from .id_provider import IdProvider
 from ..config import Settings
 
+from ..constants import ROOT_DIR
+
 # pylint: disable=too-few-public-methods
 class Provider:
     """
@@ -15,14 +17,14 @@ class Provider:
     Required settings:
         - settings.saml.identity_provider_settings, path to the configuration for all identity providers.
     """
+    SAML_TEMPLATES_PATH = ROOT_DIR + '/templates/saml/xml/'
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.id_providers_path = self.settings.saml.identity_provider_settings
-        self.saml_templates_path = self.settings.saml.templates
 
         self.jinja_env = Environment(
-            loader=FileSystemLoader(self.saml_templates_path),
+            loader=FileSystemLoader(self.SAML_TEMPLATES_PATH),
             autoescape=select_autoescape()
         )
         self.id_providers = self._parse_id_providers()
@@ -33,7 +35,7 @@ class Provider:
 
         providers = {}
         for provider in id_providers.keys():
-            providers[provider] = IdProvider(self.settings, provider, id_providers[provider], self.jinja_env)
+            providers[provider] = IdProvider(provider, id_providers[provider], self.jinja_env)
 
         return providers
 

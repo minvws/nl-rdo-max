@@ -52,14 +52,6 @@ settings_path = saml/tvs/settings.json
 
 response_expires_in = 600
 
-idp_metadata_path = saml/tvs/metadata/idp_metadata.xml
-
-sp_template = saml/templates/xml/sp_metadata.xml
-authn_request_template = saml/templates/xml/authn_request.xml
-artifactresolve_request_template = saml/templates/xml/artifactresolve_request.xml
-
-authn_request_html_template = saml/templates/html/authn_request.html
-
 [redis]
 host = 172.17.0.1
 port = 6379

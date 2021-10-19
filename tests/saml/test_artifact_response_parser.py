@@ -1,6 +1,4 @@
 # pylint: disable=c-extension-no-member
-from datetime import datetime, timedelta
-
 import pytest
 
 from freezegun import freeze_time
@@ -12,7 +10,6 @@ from inge6.saml import ArtifactResponse
 from inge6.saml.id_provider import IdProvider
 from inge6.saml.provider import Provider as SAMLProvider
 from inge6.saml.exceptions import UserNotAuthenticated
-from inge6.saml.constants import NAMESPACES
 
 from ..resources.utils import PRIV_KEY_BSN_AES_KEY
 
@@ -25,33 +22,6 @@ from ..resources.utils import PRIV_KEY_BSN_AES_KEY
     Specifically for the BSN decryption test, we have reencrypted the AES key with a random keypair of which the private key
     is pasted as a string in the variable `PRIV_KEY_BSN_AES_KEY`.
 """
-
-
-def update_time_values(xml_str):
-    root = etree.fromstring(xml_str)
-    strformat = '%Y-%m-%dT%H:%M:%S.%f%z'
-    current_time = datetime.now()
-
-    datetime_elems = root.findall('.//*[@IssueInstant]')
-    for elem in datetime_elems:
-        elem.attrib['IssueInstant'] = current_time.strftime(strformat)
-
-    datetime_elems = root.findall('.//*[@NotBefore]')
-    for elem in datetime_elems:
-        not_before_time = current_time - timedelta(seconds=120)
-        elem.attrib['NotBefore'] = not_before_time.strftime(strformat)
-
-    datetime_elems = root.findall('.//*[@NotOnOrAfter]')
-    for elem in datetime_elems:
-        not_on_or_after_time = current_time + timedelta(seconds=120)
-        elem.attrib['NotOnOrAfter'] = not_on_or_after_time.strftime(strformat)
-
-    authn_instants = root.findall('.//saml:AuthnStatement', NAMESPACES)
-    for elem in authn_instants:
-        elem.attrib['AuthnInstant'] = current_time.strftime(strformat)
-
-    return etree.tostring(root).decode()
-
 
 @pytest.fixture
 def response_custom_bsn_tvs():
@@ -78,7 +48,7 @@ def saml_provider():
 @freeze_time("2021-06-01 12:44:06")
 # pylint: disable=redefined-outer-name
 def test_get_bsn_tvs(response_custom_bsn_tvs, monkeypatch, tvs_provider_settings, jinja_env):
-    tvs_provider = IdProvider(get_settings(), 'tvs', tvs_provider_settings, jinja_env)
+    tvs_provider = IdProvider('tvs', tvs_provider_settings, jinja_env)
     artifact_response = ArtifactResponse.from_string(get_settings(), response_custom_bsn_tvs, tvs_provider, insecure=True)
 
     monkeypatch.setattr(tvs_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
@@ -87,14 +57,14 @@ def test_get_bsn_tvs(response_custom_bsn_tvs, monkeypatch, tvs_provider_settings
 @freeze_time("2021-08-18 16:35:24.335248")
 # pylint: disable=redefined-outer-name
 def test_from_string_tvs(response_unedited_tvs, tvs_provider_settings, jinja_env):
-    tvs_provider = IdProvider(get_settings(), 'tvs', tvs_provider_settings, jinja_env)
+    tvs_provider = IdProvider('tvs', tvs_provider_settings, jinja_env)
     ArtifactResponse.from_string(get_settings(), response_unedited_tvs, tvs_provider, is_test_instance=True)
     assert True
 
 # pylint: disable=redefined-outer-name
 @freeze_time("2021-06-06 11:40:11")
 def test_authnfailed_tvs(response_authn_failed_tvs, tvs_provider_settings, jinja_env):
-    tvs_provider = IdProvider(get_settings(), 'tvs', tvs_provider_settings, jinja_env)
+    tvs_provider = IdProvider('tvs', tvs_provider_settings, jinja_env)
     with pytest.raises(UserNotAuthenticated):
         ArtifactResponse.from_string(get_settings(), response_authn_failed_tvs, tvs_provider, insecure=True).raise_for_status()
 
@@ -104,7 +74,7 @@ def test_artifact_response_parse_digid(mocker, digid_provider_settings, jinja_en
     with open('tests/resources/sample_messages/artifact_response_digid.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
 
-    digid_provider = IdProvider(get_settings(), 'digid', digid_provider_settings, jinja_env)
+    digid_provider = IdProvider('digid', digid_provider_settings, jinja_env)
     mocker.patch.dict(digid_provider.settings_dict, {
         'sp': {
             'entityId': 'https://siam1.test.anoigo.nl/aselectserver/server',
@@ -157,7 +127,7 @@ def test_artifact_response_output_parseable(mocker, digid_provider_settings, jin
     with open('tests/resources/sample_messages/artifact_response_digid.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
 
-    digid_provider = IdProvider(get_settings(), 'digid', digid_provider_settings, jinja_env)
+    digid_provider = IdProvider('digid', digid_provider_settings, jinja_env)
     mocker.patch.dict(digid_provider.settings_dict, {
         'sp': {
             'entityId': 'https://siam1.test.anoigo.nl/aselectserver/server',

@@ -1,5 +1,5 @@
-<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Version="2.0" ForceAuthn="false" AssertionConsumerServiceIndex="1" AttributeConsumingServiceIndex="1">
-    <saml:Issuer></saml:Issuer>
+<samlp:ArtifactResolve xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Version="2.0" Destination="{{destination}}" IssueInstant="{{issue_instant}}" ID="{{ID}}">
+    <saml:Issuer>{{issuer_id}}</saml:Issuer>
     <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
         <ds:SignedInfo>
             <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
@@ -15,13 +15,10 @@
         </ds:SignedInfo>
         <ds:SignatureValue></ds:SignatureValue>
         <ds:KeyInfo>
-            <ds:KeyName />
             <ds:X509Data>
-                <ds:X509Certificate></ds:X509Certificate>
+                <ds:X509Certificate>{{sign_cert}}</ds:X509Certificate>
             </ds:X509Data>
         </ds:KeyInfo>
     </ds:Signature>
-    <samlp:RequestedAuthnContext Comparison="minimum">
-        <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract</saml:AuthnContextClassRef>
-    </samlp:RequestedAuthnContext>
-</samlp:AuthnRequest>
+    <samlp:Artifact>{{artifact}}</samlp:Artifact>
+</samlp:ArtifactResolve>
