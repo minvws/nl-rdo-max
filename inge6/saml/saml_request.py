@@ -100,7 +100,8 @@ class AuthNRequest(SAMLRequest):
             'issuer_id': self.issuer_id,
             'issue_instant': get_issue_instant(),
             'sign_cert': read_cert(self.signing_cert_path),
-            'force_authn': "false"
+            'force_authn': "false",
+            'clustered': False,
         }
 
         if self.intended_audience is not None:
