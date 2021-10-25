@@ -153,11 +153,11 @@ class ArtifactResponse:
                 if encrypted_id is not None:
                     recipient = encrypted_id.find('./xenc:EncryptedKey', NAMESPACES).attrib.get('Recipient')
                     if self.strict and recipient != self.id_provider.sp_metadata.entity_id:
-                        self.log.debug("Recipients did not match")
+                        self.log.debug("Recipients did not match. Was %s, expected %s", recipient, self.id_provider.sp_metadata.entity_id)
                     else:
                         value = self.decrypt_id(encrypted_id)
 
-            attributes[elem.attrib['Name']] = value
+            attributes[elem.attrib.get('Name')] = value
 
         return attributes
 
