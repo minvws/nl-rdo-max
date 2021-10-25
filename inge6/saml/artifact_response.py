@@ -151,7 +151,7 @@ class ArtifactResponse:
             if len(value) == 1:
                 encrypted_id = value.find('./saml2:EncryptedID', NAMESPACES)
                 if encrypted_id is not None:
-                    recipient = encrypted_id.find('./xenc:EncryptedKey', NAMESPACES).attrib['Recipient']
+                    recipient = encrypted_id.find('./xenc:EncryptedKey', NAMESPACES).attrib.get('Recipient')
                     if self.strict and recipient != self.id_provider.sp_metadata.entity_id:
                         self.log.debug("Recipients did not match")
                     else:
