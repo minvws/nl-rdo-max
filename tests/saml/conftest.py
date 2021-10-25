@@ -14,6 +14,7 @@ def tvs_provider_settings():
         "cert_path": "saml/tvs/certs/sp.crt",
         "key_path": "saml/tvs/certs/sp.key",
         "settings_path": "saml/tvs/settings.json",
+        "advanced_settings_path": "saml/tvs/advanced_settings.json",
         "idp_metadata_path": "saml/tvs/metadata/idp_metadata.xml"
     }
 
@@ -25,6 +26,7 @@ def tvs_clustered_provider_settings():
         "cert_path": "saml/tvs/certs/sp.crt",
         "key_path": "saml/tvs/certs/sp.key",
         "settings_path": "tests/resources/saml_provider_settings/tvs_clustered/settings.json",
+        "advanced_settings_path": "tests/resources/saml_provider_settings/tvs_clustered/advanced_settings.json",
         "idp_metadata_path": "tests/resources/saml_provider_settings/tvs_clustered/metadata/idp_metadata.xml"
     }
 
@@ -36,6 +38,7 @@ def digid_provider_settings():
         "cert_path": "saml/digid/certs/sp.crt",
         "key_path": "saml/digid/certs/sp.key",
         "settings_path": "saml/digid/settings.json",
+        "advanced_settings_path": "saml/digid/advanced_settings.json",
         "idp_metadata_path": "saml/digid/metadata/idp_metadata.xml"
     }
 

@@ -1,0 +1,38 @@
+<samlp:AuthnRequest xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+                    ID="_19f95e6908d4505cbf33d1a55b37f071"
+                    Version="2.0"
+                    IssueInstant="2021-10-14T09:29:21.1949549Z"
+                    AttributeConsumingServiceIndex="0"
+                    AssertionConsumerServiceIndex="0"
+                    ForceAuthn="true"
+                    Destination="https://rd2.toegang.overheid.nl/kvs/rd/request_authentication"
+                    xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+                    >
+    <saml:Issuer>urn:nl-eid-gdi:1.0:DV:00000003410050220000:entities:0000</saml:Issuer>
+    <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+        <SignedInfo>
+            <CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+            <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" />
+            <Reference URI="#_19f95e6908d4505cbf33d1a55b37f071">
+                <Transforms>
+                    <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+                    <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                        <InclusiveNamespaces PrefixList="ds saml samlp xs"
+                                             xmlns="http://www.w3.org/2001/10/xml-exc-c14n#"
+                                             />
+                    </Transform>
+                </Transforms>
+                <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
+                <DigestValue>m0lCYWrdjetI4OAAj0upFThBb6R4oWx3arTVS9gMazY=</DigestValue>
+            </Reference>
+        </SignedInfo>
+        <SignatureValue>SB4EDFT1CkT3U/7b1Gk0FdWRQURrD5BkxrWKdKAUuMgprOLRbQsHpwBAfy74BZocw89DBb3QYFQ+177YKBwnXW2kffcF11p+Tb1H4EwYp9mdpBiDM3ysiw5c+Yo/Hg93d1Sbof6xV24ZTE6PzFo9MeReHd3Q5vXIhuqieJXNyW2urhBCh1pdOSyWeFSPrMy9VFJS6FBbqi2+u/QAIk9opLjDPjBn+gefZaIH8QvymyOBkXx6cbBih+0CpmtnPvPul0yMeiqGsWGTbJTbld2p63CSNovmdY415AFg0G97bJJRJg9Pc3zMhhRaEEZPs1noDaviR+EovwlEQwRmNJc9kQ==</SignatureValue>
+    </Signature>
+    <samlp:Scoping>
+        <samlp:IDPList>
+            <samlp:IDPEntry ProviderID="urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:0001" />
+            <samlp:IDPEntry ProviderID="urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:0001" />
+        </samlp:IDPList>
+        <samlp:RequesterID>urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:0001</samlp:RequesterID>
+    </samlp:Scoping>
+</samlp:AuthnRequest>
