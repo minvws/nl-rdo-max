@@ -4,13 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and (starting from v1.0.0) this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v1.3.0]
 
 ### Added
 - Clustered connection support.
 - Add outage checking. If ratelimit.outage_key has been set, this key is checked to determine if an outage should be reported
 - Better templating mechanism. No longer needed to have the templates locally, but is included in installation
-- Better compatibility when using inge6/MAX as a dependency
+- Better compatibility when using inge6/MAX as a dependency (getting rid of globals, packaging the templates, adding response models)
+- Added support for scoping in the SAML library
 
 ## [v1.1.2] 2021-09-21
 
