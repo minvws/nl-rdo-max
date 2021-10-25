@@ -55,7 +55,7 @@ def saml_provider():
 # pylint: disable=redefined-outer-name
 def test_get_bsn_tvs(response_custom_bsn_tvs, monkeypatch, tvs_provider_settings, jinja_env):
     tvs_provider = IdProvider('tvs', tvs_provider_settings, jinja_env)
-    artifact_response = ArtifactResponse.from_string(get_settings(), response_custom_bsn_tvs, tvs_provider, insecure=True)
+    artifact_response = ArtifactResponse.from_string(get_settings(), response_custom_bsn_tvs, tvs_provider, insecure=True, strict=False)
 
     monkeypatch.setattr(tvs_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
     assert artifact_response.get_bsn() == '900212640'
@@ -64,7 +64,7 @@ def test_get_bsn_tvs(response_custom_bsn_tvs, monkeypatch, tvs_provider_settings
 # pylint: disable=redefined-outer-name
 def test_get_bsn_tvs_machtigen(response_custom_bsn_tvs_machtigen, monkeypatch, tvs_provider_settings, jinja_env):
     tvs_provider = IdProvider('tvs', tvs_provider_settings, jinja_env)
-    artifact_response = ArtifactResponse.from_string(get_settings(), response_custom_bsn_tvs_machtigen, tvs_provider, insecure=True)
+    artifact_response = ArtifactResponse.from_string(get_settings(), response_custom_bsn_tvs_machtigen, tvs_provider, insecure=True, strict=False)
 
     monkeypatch.setattr(tvs_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
     assert artifact_response.get_bsn() == '900212640'
