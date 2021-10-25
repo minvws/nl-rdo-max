@@ -105,7 +105,7 @@ class ArtifactResponse:
         if not self.id_provider.sp_metadata.clustered:
             return [entity_id]
 
-        return [conn for conn in self.id_provider.sp_metadata.connections] + [entity_id]
+        return [conn.entity_id for conn in self.id_provider.sp_metadata.connections] + [entity_id]
 
     @cached_property
     def response(self):
@@ -336,6 +336,7 @@ class ArtifactResponse:
         aes_key = OneLogin_Saml2_Utils.decrypt_element(enc_key_elem, self.id_provider.priv_key, debug=True)
         return aes_key
 
+    # pylint: disable=no-self-use
     def _decrypt_enc_data(self, enc_data_elem, aes_key: bytes) -> bytes:
         encrypted_ciphervalue = enc_data_elem.find('.//xenc:CipherValue', {'xenc': 'http://www.w3.org/2001/04/xmlenc#'}).text
         b64decoded_data = base64.b64decode(encrypted_ciphervalue.encode())
