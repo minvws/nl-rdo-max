@@ -30,6 +30,12 @@ def response_custom_bsn_tvs():
     return art_resp_resource
 
 @pytest.fixture
+def response_custom_bsn_tvs_machtigen():
+    with open('tests/resources/sample_messages/artifact_response_custom_bsn_machtigen.xml', 'r', encoding='utf-8') as resp_ex_f:
+        art_resp_resource = resp_ex_f.read()
+    return art_resp_resource
+
+@pytest.fixture
 def response_unedited_tvs():
     with open('tests/resources/sample_messages/artifact_response.xml', 'r', encoding='utf-8') as resp_ex_f:
         art_resp_resource = resp_ex_f.read()
@@ -49,16 +55,25 @@ def saml_provider():
 # pylint: disable=redefined-outer-name
 def test_get_bsn_tvs(response_custom_bsn_tvs, monkeypatch, tvs_provider_settings, jinja_env):
     tvs_provider = IdProvider('tvs', tvs_provider_settings, jinja_env)
-    artifact_response = ArtifactResponse.from_string(get_settings(), response_custom_bsn_tvs, tvs_provider, insecure=True)
+    artifact_response = ArtifactResponse.from_string(get_settings(), response_custom_bsn_tvs, tvs_provider, insecure=True, strict=False)
 
     monkeypatch.setattr(tvs_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
     assert artifact_response.get_bsn() == '900212640'
 
-@freeze_time("2021-08-18 16:35:24.335248")
+@freeze_time("2021-06-01 12:44:06")
+# pylint: disable=redefined-outer-name
+def test_get_bsn_tvs_machtigen(response_custom_bsn_tvs_machtigen, monkeypatch, tvs_provider_settings, jinja_env):
+    tvs_provider = IdProvider('tvs', tvs_provider_settings, jinja_env)
+    artifact_response = ArtifactResponse.from_string(get_settings(), response_custom_bsn_tvs_machtigen, tvs_provider, insecure=True, strict=False)
+
+    monkeypatch.setattr(tvs_provider, 'priv_key', PRIV_KEY_BSN_AES_KEY)
+    assert artifact_response.get_bsn() == '900212640'
+
+@freeze_time("2021-06-05 16:33:31")
 # pylint: disable=redefined-outer-name
 def test_from_string_tvs(response_unedited_tvs, tvs_provider_settings, jinja_env):
     tvs_provider = IdProvider('tvs', tvs_provider_settings, jinja_env)
-    ArtifactResponse.from_string(get_settings(), response_unedited_tvs, tvs_provider, is_test_instance=True)
+    ArtifactResponse.from_string(get_settings(), response_unedited_tvs, tvs_provider, strict=False)
     assert True
 
 # pylint: disable=redefined-outer-name

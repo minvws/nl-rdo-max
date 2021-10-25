@@ -24,8 +24,15 @@ class SAMLRequest:
         :param keypair: (cert_path, key_path) tuple for signing of the messages.
         """
         self._id_hash = "_" + secrets.token_hex(41) # total length 42.
-        self.signing_cert_path = keypair_sign[0]
-        self.signing_key_path = keypair_sign[1]
+        self.keypair_sign = keypair_sign
+
+    @property
+    def signing_cert_path(self):
+        return self.keypair_sign[0]
+
+    @property
+    def signing_key_path(self):
+        return self.keypair_sign[1]
 
     def get_xml(self, xml_declaration: bool = False) -> bytes:
         if xml_declaration:
@@ -71,7 +78,7 @@ class AuthNRequest(SAMLRequest):
     """
     TEMPLATE_PATH = 'authn_request.xml.jinja'
 
-    def __init__(self, sso_url: str, issuer_id: str, keypair: Tuple[str, str], jinja_env, intended_audience: str = None, service_uuid: str = None) -> None:
+    def __init__(self, sso_url: str, sp_metadata, jinja_env, cluster_name: str = None) -> None:
         """
             :param sso_url: Single Sign On URL to be used in the request
             :param issuer_id: Identity known at the identity provider
@@ -81,17 +88,33 @@ class AuthNRequest(SAMLRequest):
             :param service_uuid: In case of a clustered connection, this parameter is to be passed in the Authentication Request
             rather than in the Metadata with a index reference in this request.
         """
-        super().__init__(keypair)
+        super().__init__(sp_metadata.keypair_sign)
 
         self.jinja_env = jinja_env
         self.sso_url = sso_url
-        self.issuer_id = issuer_id
-        self.keypair = keypair
-
-        self.intended_audience = intended_audience
-        self.service_uuid = service_uuid
+        self.sp_metadata = sp_metadata
+        self.cluster_name = cluster_name
 
         self._root = self.render()
+
+    @property
+    def issuer_id(self):
+        return self.sp_metadata.issuer_id
+
+    @property
+    def service_uuid(self):
+        return self.sp_metadata.service_uuid
+
+    @property
+    def intended_audience(self):
+        if not self.sp_metadata.clustered:
+            return None
+
+        if not self.cluster_name:
+            # if no cluster name is passed, use the first defined connection
+            cluster_name = list(self.sp_metadata.cluster_settings['connections'].keys())[0]
+
+        return self.sp_metadata.cluster_settings['connections'][cluster_name]['entity_id']
 
     def get_context(self):
         context = {
@@ -100,8 +123,9 @@ class AuthNRequest(SAMLRequest):
             'issuer_id': self.issuer_id,
             'issue_instant': get_issue_instant(),
             'sign_cert': read_cert(self.signing_cert_path),
-            'force_authn': "false",
+            'force_authn': "true",
             'clustered': False,
+            'scoping_list': self.sp_metadata.scoping_list
         }
 
         if self.intended_audience is not None:
@@ -132,17 +156,20 @@ class ArtifactResolveRequest(SAMLRequest):
     """
     TEMPLATE_PATH = 'artifactresolve_request.xml.jinja'
 
-    def __init__(self, artifact_code, sso_url, issuer_id, keypair, jinja_env) -> None:
-        super().__init__(keypair)
+    def __init__(self, artifact_code, sso_url, sp_metadata, jinja_env) -> None:
+        super().__init__(sp_metadata.keypair_sign)
 
         self.jinja_env = jinja_env
         self.sso_url = sso_url
-        self.issuer_id = issuer_id
-        self.keypair = keypair
+        self.sp_metadata = sp_metadata
         self.artifact = artifact_code
 
         self.saml_resolve_req = self.render()
         self._root = to_soap_envelope(self.saml_resolve_req)
+
+    @property
+    def issuer_id(self):
+        return self.sp_metadata.issuer_id
 
     def render(self):
         template = self.jinja_env.get_template(self.TEMPLATE_PATH)

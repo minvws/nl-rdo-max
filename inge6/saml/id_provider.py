@@ -21,12 +21,16 @@ class IdProvider:
         self.cert_path = idp_setting['cert_path']
         self.key_path = idp_setting['key_path']
         self.settings_path = idp_setting['settings_path']
+        self.advanced_settings_path = idp_setting['advanced_settings_path']
         self.idp_metadata_path = idp_setting['idp_metadata_path']
 
         self.jinja_env = jinja_env
 
         with open(self.settings_path, 'r', encoding='utf-8') as settings_file:
             self.settings_dict = json.loads(settings_file.read())
+
+        with open(self.advanced_settings_path, 'r', encoding='utf-8') as adv_settings_file:
+            self.settings_dict.update(json.loads(adv_settings_file.read()))
 
         with open(self.key_path, 'r', encoding='utf-8') as key_file:
             self.priv_key = key_file.read()
@@ -60,20 +64,8 @@ class IdProvider:
 
     def create_authn_request(self, cluster_name = None):
         sso_url = self.idp_metadata.get_sso()['location']
-        issuer_id = self.sp_metadata.issuer_id
-
-        if self.sp_metadata.clustered:
-            if not cluster_name:
-                # if no cluster name is passed, use the first defined connection
-                cluster_name = list(self.sp_metadata.cluster_settings['connections'].keys())[0]
-
-            service_uuid = self.sp_metadata.service_uuid
-            intended_audience = self.sp_metadata.cluster_settings['connections'][cluster_name]['entity_id']
-            return AuthNRequest(sso_url, issuer_id, self.keypair_paths, self.jinja_env, intended_audience, service_uuid)
-
-        return AuthNRequest(sso_url, issuer_id, self.keypair_paths, self.jinja_env)
+        return AuthNRequest(sso_url, self.sp_metadata, self.jinja_env, cluster_name)
 
     def create_artifactresolve_request(self, artifact: str):
         sso_url = self.idp_metadata.get_sso()['location']
-        issuer_id = self.sp_metadata.issuer_id
-        return ArtifactResolveRequest(artifact, sso_url, issuer_id, self.keypair_paths, self.jinja_env)
+        return ArtifactResolveRequest(artifact, sso_url, self.sp_metadata, self.jinja_env)

@@ -42,23 +42,41 @@ SETTINGS_DICT = {
     }
 }
 
+ADVANCED_SETTINGS = {
+    'security': {
+        "allowedProxyList": [
+            "urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:0001",
+            "urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:0001"
+        ]
+    }
+}
+
+SETTINGS_DICT.update(ADVANCED_SETTINGS)
+
 keypair_path = ('saml/tvs/certs/sp.crt', 'saml/tvs/certs/sp.key')
-
-def test_artifact_value():
-    expected = "some_artifact_code"
-    saml_req = ArtifactResolveRequest(expected, sso_url='test_url', issuer_id='test_id', keypair=keypair_path, jinja_env=JINJA_ENV)
-    artifact_node = saml_req.root.find('.//samlp:Artifact', {'samlp': 'urn:oasis:names:tc:SAML:2.0:protocol'})
-
-    assert artifact_node.text == expected
 
 JINJA_ENV = Environment(
     loader=FileSystemLoader(os.path.join(ROOT_DIR, 'templates/saml/xml')),
     autoescape=select_autoescape()
 )
 
+SP_METADATA = SPMetadata(
+    settings_dict=SETTINGS_DICT,
+    keypair_sign=keypair_path,
+    jinja_env=JINJA_ENV
+)
+
+
+def test_artifact_value():
+    expected = "some_artifact_code"
+    saml_req = ArtifactResolveRequest(expected, sso_url='test_url', sp_metadata=SP_METADATA, jinja_env=JINJA_ENV)
+    artifact_node = saml_req.root.find('.//samlp:Artifact', {'samlp': 'urn:oasis:names:tc:SAML:2.0:protocol'})
+
+    assert artifact_node.text == expected
+
 @pytest.mark.parametrize("saml_request", [
-    AuthNRequest(sso_url='test_url', issuer_id='test_id', keypair=keypair_path, jinja_env=JINJA_ENV),
-    ArtifactResolveRequest('some_artifact_code', sso_url='test_url', issuer_id='test_id', keypair=keypair_path, jinja_env=JINJA_ENV),
+    AuthNRequest(sso_url='test_url', sp_metadata=SP_METADATA, jinja_env=JINJA_ENV),
+    ArtifactResolveRequest('some_artifact_code', sso_url='test_url', sp_metadata=SP_METADATA, jinja_env=JINJA_ENV),
     SPMetadata(SETTINGS_DICT, keypair_path, JINJA_ENV)])
 def test_verify_requests(saml_request): # pylint: disable=unused-argument
     getroot =saml_request.saml_elem

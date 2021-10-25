@@ -31,4 +31,15 @@
         </saml:Attribute>
     </samlp:Extensions>
     {% endif %}
+    {% if scoping_list|length > 0 %}
+    <samlp:Scoping>
+        <samlp:IDPList>
+            {% for entity_id in scoping_list: %}
+            <samlp:IDPEntry ProviderID="{{entity_id}}" />
+            {% endfor %}
+        </samlp:IDPList>
+        {# Is this one necessary? "Identifies the set of requesting entities on whose behalf the requester is acting." #}
+        {# <samlp:RequesterID>{{provider_id_bvd}}</samlp:RequesterID> #}
+    </samlp:Scoping>
+    {% endif %}
 </samlp:AuthnRequest>
