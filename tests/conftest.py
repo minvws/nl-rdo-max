@@ -102,3 +102,15 @@ def default_authorize_request_dict():
         'code_challenge': "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier : SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
         'code_challenge_method': "S256",
     }
+
+@pytest.fixture
+def mock_clients_db():
+    return {
+        "test_client": {
+            "token_endpoint_auth_method": "none",
+            "redirect_uris": [
+                    "http://localhost:3000/login",
+                ],
+            "response_types": ["code"]
+        }
+    }

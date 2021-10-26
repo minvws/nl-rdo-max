@@ -10,17 +10,9 @@ from inge6.provider import Provider
 from ..test_utils import get_settings
 
 # pylint: disable=unused-argument
-def test_consume_bsn_and_accesstoken(redis_mock, tvs_config, default_authorize_request_dict, mocker):
+def test_consume_bsn_and_accesstoken(redis_mock, tvs_config, default_authorize_request_dict, mocker, mock_clients_db):
     mock_provider = Provider(settings=get_settings())
-    mock_provider.clients = {
-        "test_client": {
-            "token_endpoint_auth_method": "none",
-            "redirect_uris": [
-                    "http://localhost:3000/login",
-                ],
-            "response_types": ["code"]
-        }
-    }
+    mock_provider.clients = mock_clients_db
     mocker.patch('inge6.main.PROVIDER', mock_provider)
 
     client = TestClient(app)
