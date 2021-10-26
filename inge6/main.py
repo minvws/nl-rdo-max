@@ -183,9 +183,10 @@ def validate_startup():
     if len(missing_files) > 0 or len(ssl_missing_files) > 0:
         missing_files.extend(ssl_missing_files)
 
+        # pylint: disable=consider-using-f-string
         error_msg += "There seem to be missing files, please check these paths:\n\n{}.\n\n".format(
             "\n".join(f"{file[0]}\t\t{file[1]}" for file in missing_files)
-        )  # pylint: disable=consider-using-f-string
+        )
 
         if len(ssl_missing_files) > 0:
             error_msg += """
@@ -194,9 +195,10 @@ If you didn't mean to enable ssl change this setting in your config (not recomme
             """
 
     if len(required_settings) > 0:
+        # pylint: disable=consider-using-f-string
         error_msg += "\n\nSome of the required settings seem to be missing, please have a look at:\n\n{}.\n\n".format(
             "\n".join(f"{file[0]}\t\t{file[1]}" for file in required_settings)
-        )  # pylint: disable=consider-using-f-string
+        )
 
     if (
         len(missing_files) > 0

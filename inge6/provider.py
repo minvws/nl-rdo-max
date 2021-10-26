@@ -634,8 +634,8 @@ class Provider(OIDCProvider, SAMLProvider):
         self.log.debug(
             "ArtifactResponse for %s, received status_code %s",
             hashed_artifact,
-            artifact_response._saml_status_code,
-        )  # pylint: disable=protected-access
+            artifact_response._saml_status_code,  # pylint: disable=protected-access
+        )
         artifact_response.raise_for_status()
         self.log.debug("Validated sha256(artifact) %s", hashed_artifact)
 

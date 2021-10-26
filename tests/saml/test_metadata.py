@@ -33,9 +33,8 @@ def test_metadata_required_root_attrs(tvs_config, tvs_provider_settings, jinja_e
     tvs_provider = IdProvider("tvs", tvs_provider_settings, jinja_env)
     assert tvs_provider.sp_metadata.root.attrib["entityID"] is not None
     with pytest.raises(KeyError):
-        tvs_provider.sp_metadata.root.attrib[
-            "EntityID"
-        ]  # pylint: disable=pointless-statement
+        # pylint: disable=pointless-statement
+        tvs_provider.sp_metadata.root.attrib["EntityID"]
 
     assert tvs_provider.sp_metadata.root.attrib["ID"] is not None
     assert tvs_provider.sp_metadata.root.find("./ds:Signature", NAMESPACES) is not None

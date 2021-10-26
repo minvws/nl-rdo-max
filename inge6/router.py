@@ -128,9 +128,9 @@ if (
     ):
         provider = request.app.state.provider
         id_provider = provider.get_id_provider(login_digid_req.idp_name)
-        return provider._post_login(
+        return provider._post_login(  # pylint: disable=protected-access
             login_digid_req, id_provider
-        )  # pylint: disable=protected-access
+        )
 
     @router.post("/digid-mock")
     async def digid_mock(

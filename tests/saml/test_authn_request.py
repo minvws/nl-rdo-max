@@ -374,9 +374,9 @@ def test_post_login_force_digid_mocking(digid_config, redis_mock, mock_provider)
     )
 
     id_provider = provider.get_id_provider("digid")
-    resp: RedirectResponse = provider._post_login(
+    resp: RedirectResponse = provider._post_login(  # pylint: disable=protected-access
         login_digid_req, id_provider
-    )  # pylint: disable=protected-access
+    )
     redirect_url = resp.headers.get("location")
 
     parsed_url = urlparse.urlparse(redirect_url)
