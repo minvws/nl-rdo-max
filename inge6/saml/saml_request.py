@@ -78,7 +78,7 @@ class AuthNRequest(SAMLRequest):
     """
     TEMPLATE_PATH = 'authn_request.xml.jinja'
 
-    def __init__(self, sso_url: str, sp_metadata, jinja_env, cluster_name: str = None) -> None:
+    def __init__(self, sso_url: str, sp_metadata, jinja_env, scoping_list: list, request_ids: list = None, cluster_name: str = None) -> None:
         """
             :param sso_url: Single Sign On URL to be used in the request
             :param issuer_id: Identity known at the identity provider
@@ -94,6 +94,9 @@ class AuthNRequest(SAMLRequest):
         self.sso_url = sso_url
         self.sp_metadata = sp_metadata
         self.cluster_name = cluster_name
+
+        self.scoping_list = scoping_list
+        self.request_ids = request_ids
 
         self._root = self.render()
 
@@ -125,7 +128,8 @@ class AuthNRequest(SAMLRequest):
             'sign_cert': read_cert(self.signing_cert_path),
             'force_authn': "true",
             'clustered': False,
-            'scoping_list': self.sp_metadata.scoping_list
+            'scoping_list': self.scoping_list,
+            'request_ids': self.request_ids if self.request_ids is not None else []
         }
 
         if self.intended_audience is not None:

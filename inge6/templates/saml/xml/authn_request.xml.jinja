@@ -38,8 +38,11 @@
             <samlp:IDPEntry ProviderID="{{entity_id}}" />
             {% endfor %}
         </samlp:IDPList>
-        {# Is this one necessary? "Identifies the set of requesting entities on whose behalf the requester is acting." #}
-        {# <samlp:RequesterID>{{provider_id_bvd}}</samlp:RequesterID> #}
+        {% if request_ids|length > 0 %}
+        {% for entity_id in request_ids %}
+        <samlp:RequesterID>{{entity_id}}</samlp:RequesterID>
+        {% endfor %}
+        {% endif %}
     </samlp:Scoping>
     {% endif %}
 </samlp:AuthnRequest>

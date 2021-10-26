@@ -3,6 +3,8 @@ from enum import Enum
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+SCOPE_MACHTIGEN = 'machtigen'
+
 class SectorNumber(Enum):
     BSN = 1
     SOFI = 2

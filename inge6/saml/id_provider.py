@@ -62,9 +62,24 @@ class IdProvider:
     def saml_is_legacy_version(self):
         return self.saml_spec_version == Version("3.5")
 
-    def create_authn_request(self, cluster_name = None):
+    def create_authn_request(self, cluster_name = None, machtigen=False):
         sso_url = self.idp_metadata.get_sso()['location']
-        return AuthNRequest(sso_url, self.sp_metadata, self.jinja_env, cluster_name)
+
+        if machtigen:
+            return AuthNRequest(sso_url, self.sp_metadata, self.jinja_env, scoping_list=[
+                "urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:0001",
+                "urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:0001"
+            ],
+            request_ids=[
+                "urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:0001"
+            ],
+            cluster_name=cluster_name
+        )
+        return AuthNRequest(sso_url, self.sp_metadata, self.jinja_env, scoping_list=[
+                "urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:0001",
+            ],
+            cluster_name=cluster_name
+        )
 
     def create_artifactresolve_request(self, artifact: str):
         sso_url = self.idp_metadata.get_sso()['location']
