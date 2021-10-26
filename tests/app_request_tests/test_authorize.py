@@ -1,7 +1,5 @@
 import urllib
 
-import pytest
-
 from fastapi.testclient import TestClient
 
 from inge6.main import app
@@ -10,20 +8,10 @@ from ..test_utils import get_settings
 
 
 # pylint: disable=unused-argument, redefined-outer-name
-def test_authorize_request_post(mock_clients_db, redis_mock, tvs_config):
+def test_authorize_request_post(mock_clients_db, redis_mock, tvs_config, default_authorize_request_dict):
     client = TestClient(app)
 
-    authorize_params = {
-        'client_id': "test_client",
-        'redirect_uri': "http://localhost:3000/login",
-        'response_type': "code",
-        'nonce': "n-0S6_WzA2Mj",
-        'state': "af0ifjsldkj",
-        'scope': "openid",
-        'code_challenge': "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier : SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
-        'code_challenge_method': "S256",
-    }
-    query_params: str = urllib.parse.urlencode(authorize_params)
+    query_params: str = urllib.parse.urlencode(default_authorize_request_dict)
     response = client.get(f'/authorize?{query_params}')
 
     assert response.status_code == 200
@@ -33,7 +21,7 @@ def test_authorize_request_post(mock_clients_db, redis_mock, tvs_config):
 
 
 # pylint: disable=unused-argument, redefined-outer-name
-def test_authorize_request_redirect(mock_clients_db, digid_config, mocker):
+def test_authorize_request_redirect(mock_clients_db, digid_config, mocker, default_authorize_request_dict):
     mock_provider = Provider(settings=get_settings({
         'mock_digid': False
     }))
@@ -41,17 +29,7 @@ def test_authorize_request_redirect(mock_clients_db, digid_config, mocker):
 
     client = TestClient(app)
 
-    authorize_params = {
-        'client_id': "test_client",
-        'redirect_uri': "http://localhost:3000/login",
-        'response_type': "code",
-        'nonce': "n-0S6_WzA2Mj",
-        'state': "af0ifjsldkj",
-        'scope': "openid",
-        'code_challenge': "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier : SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
-        'code_challenge_method': "S256",
-    }
-    query_params: str = urllib.parse.urlencode(authorize_params)
+    query_params: str = urllib.parse.urlencode(default_authorize_request_dict)
     response = client.get(f'/authorize?{query_params}', allow_redirects=False)
 
     assert response.status_code == 307
@@ -61,7 +39,7 @@ def test_authorize_request_redirect(mock_clients_db, digid_config, mocker):
     assert "SigAlg" in response.headers['location']
 
 # pylint: disable=unused-argument, redefined-outer-name
-def test_authorize_outage(redis_mock, mocker, mock_clients_db, digid_config):
+def test_authorize_outage(redis_mock, mocker, mock_clients_db, digid_config, default_authorize_request_dict):
     outage_key = 'inge6:outage'
     mock_provider = Provider(settings=get_settings({
         'mock_digid': False,
@@ -72,17 +50,7 @@ def test_authorize_outage(redis_mock, mocker, mock_clients_db, digid_config):
 
     client = TestClient(app)
 
-    authorize_params = {
-        'client_id': "test_client",
-        'redirect_uri': "http://localhost:3000/login",
-        'response_type': "code",
-        'nonce': "n-0S6_WzA2Mj",
-        'state': "af0ifjsldkj",
-        'scope': "openid",
-        'code_challenge': "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier : SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
-        'code_challenge_method': "S256",
-    }
-    query_params: str = urllib.parse.urlencode(authorize_params)
+    query_params: str = urllib.parse.urlencode(default_authorize_request_dict)
     response = client.get(f'/authorize?{query_params}', allow_redirects=False)
 
     assert response.status_code == 307

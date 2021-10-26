@@ -20,7 +20,7 @@ def mock_clients_db(mocker, mock_provider): # pylint: disable=redefined-outer-na
 @pytest.fixture
 def redis_mock(redisdb, mocker):
     # Set the default for the primary_idp, free to update
-    redisdb.set('tvs:primary_idp', 'tvs')
+    redisdb.set(get_settings().primary_idp_key, 'tvs')
     mocker.patch('inge6.cache.redis_cache.create_redis_client', lambda _: redisdb)
     yield redisdb
 
@@ -102,3 +102,16 @@ def mock_invalid_id_provider_setting_path(request, tmp_path):
             identity_providers_file_path.write_text(get_mock_tvs_idp_settings_data(**fake_settings))
             paths.append(str(identity_providers_file_path))
         yield paths
+
+@pytest.fixture
+def default_authorize_request_dict():
+    return {
+        'client_id': "test_client",
+        'redirect_uri': "http://localhost:3000/login",
+        'response_type': "code",
+        'nonce': "n-0S6_WzA2Mj",
+        'state': "af0ifjsldkj",
+        'scope': "openid",
+        'code_challenge': "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier : SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
+        'code_challenge_method': "S256",
+    }

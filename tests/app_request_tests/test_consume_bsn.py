@@ -9,22 +9,16 @@ from inge6.main import app
 from inge6.config import get_settings
 
 # pylint: disable=unused-argument
-def test_consume_bsn_and_accesstoken(mock_clients_db, redis_mock, tvs_config):
+def test_consume_bsn_and_accesstoken(mock_clients_db, redis_mock, tvs_config, default_authorize_request_dict):
     client = TestClient(app)
     bsn = "999991772"
     redirect_uri = "http://localhost:3000/login"
     client_id = 'test_client'
 
-    authorize_params = {
-        'client_id': client_id,
-        'redirect_uri': redirect_uri,
-        'response_type': "code",
-        'nonce': "n-0S6_WzA2Mj",
-        'state': "af0ifjsldkj",
-        'scope': "openid",
-        'code_challenge': "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier : SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
-        'code_challenge_method': "S256",
-    }
+    authorize_params = default_authorize_request_dict
+    authorize_params['client_id'] = client_id
+    authorize_params['redirect_uri'] = redirect_uri
+
     query_params: str = urllib.parse.urlencode(authorize_params)
     resp = client.get(f'/consume_bsn/{bsn}?{query_params}')
     assert resp.status_code == 200

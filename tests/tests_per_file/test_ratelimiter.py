@@ -7,7 +7,7 @@ from inge6.rate_limiter import RateLimiter
 from ..test_utils import get_settings
 
 @pytest.fixture
-def rate_limiter(redis_mock):    
+def rate_limiter(redis_mock):
     return RateLimiter(get_settings({
         'ratelimit.user_limit_key': 'user_limit_key'
     }), redis_client=redis_mock)
