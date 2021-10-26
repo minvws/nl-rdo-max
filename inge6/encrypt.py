@@ -8,9 +8,11 @@ from nacl.secret import SecretBox
 from nacl.public import PrivateKey, Box, PublicKey
 from nacl.encoding import Base64Encoder
 
-class Encrypt:
 
-    def __init__(self, raw_sign_key: bytes, raw_enc_key: bytes, raw_local_enc_key: str) -> None:
+class Encrypt:
+    def __init__(
+        self, raw_sign_key: bytes, raw_enc_key: bytes, raw_local_enc_key: str
+    ) -> None:
         sign_key = PrivateKey(raw_sign_key, encoder=Base64Encoder)
         enc_key = PublicKey(raw_enc_key, encoder=Base64Encoder)
 
@@ -21,14 +23,14 @@ class Encrypt:
         nonce = nacl.utils.random(SecretBox.NONCE_SIZE)
         encrypted_msg = self.secret_box.encrypt(plaintext.encode(), nonce=nonce)
         payload = {
-            'payload': Base64Encoder.encode(encrypted_msg.ciphertext).decode(),
-            'nonce': Base64Encoder.encode(encrypted_msg.nonce).decode()
+            "payload": Base64Encoder.encode(encrypted_msg.ciphertext).decode(),
+            "nonce": Base64Encoder.encode(encrypted_msg.nonce).decode(),
         }
         return base64.b64encode(json.dumps(payload).encode())
 
     def symm_decrypt(self, payload: Dict[Any, Any]) -> bytes:
-        nonce = Base64Encoder.decode(payload['nonce'].encode())
-        ciphertext = Base64Encoder.decode(payload['payload'].encode())
+        nonce = Base64Encoder.decode(payload["nonce"].encode())
+        ciphertext = Base64Encoder.decode(payload["payload"].encode())
         return self.secret_box.decrypt(ciphertext, nonce=nonce)
 
     def pub_encrypt(self, plaintext: bytes) -> bytes:

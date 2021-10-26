@@ -8,23 +8,25 @@ from ..test_utils import get_settings
 
 
 # pylint: disable=unused-argument, redefined-outer-name
-def test_authorize_request_post(redis_mock, tvs_config, default_authorize_request_dict, mocker):
+def test_authorize_request_post(
+    redis_mock, tvs_config, default_authorize_request_dict, mocker
+):
     mock_provider = Provider(settings=get_settings())
     mock_provider.clients = {
         "test_client": {
             "token_endpoint_auth_method": "none",
             "redirect_uris": [
-                    "http://localhost:3000/login",
-                ],
-            "response_types": ["code"]
+                "http://localhost:3000/login",
+            ],
+            "response_types": ["code"],
         }
     }
 
-    mocker.patch('inge6.main.PROVIDER', mock_provider)
+    mocker.patch("inge6.main.PROVIDER", mock_provider)
     client = TestClient(app)
 
     query_params: str = urllib.parse.urlencode(default_authorize_request_dict)
-    response = client.get(f'/authorize?{query_params}')
+    response = client.get(f"/authorize?{query_params}")
 
     assert response.status_code == 200
     assert "SAMLRequest" in response.content.decode()
@@ -33,57 +35,59 @@ def test_authorize_request_post(redis_mock, tvs_config, default_authorize_reques
 
 
 # pylint: disable=unused-argument, redefined-outer-name
-def test_authorize_request_redirect(digid_config, mocker, default_authorize_request_dict):
-    mock_provider = Provider(settings=get_settings({
-        'mock_digid': False
-    }))
+def test_authorize_request_redirect(
+    digid_config, mocker, default_authorize_request_dict
+):
+    mock_provider = Provider(settings=get_settings({"mock_digid": False}))
     mock_provider.clients = {
         "test_client": {
             "token_endpoint_auth_method": "none",
             "redirect_uris": [
-                    "http://localhost:3000/login",
-                ],
-            "response_types": ["code"]
+                "http://localhost:3000/login",
+            ],
+            "response_types": ["code"],
         }
     }
-    mocker.patch('inge6.main.PROVIDER', mock_provider)
+    mocker.patch("inge6.main.PROVIDER", mock_provider)
 
     client = TestClient(app)
 
     query_params: str = urllib.parse.urlencode(default_authorize_request_dict)
-    response = client.get(f'/authorize?{query_params}', allow_redirects=False)
+    response = client.get(f"/authorize?{query_params}", allow_redirects=False)
 
     assert response.status_code == 307
-    assert "SAMLRequest" in response.headers['location']
-    assert "RelayState" in response.headers['location']
-    assert "Signature" in response.headers['location']
-    assert "SigAlg" in response.headers['location']
+    assert "SAMLRequest" in response.headers["location"]
+    assert "RelayState" in response.headers["location"]
+    assert "Signature" in response.headers["location"]
+    assert "SigAlg" in response.headers["location"]
+
 
 # pylint: disable=unused-argument, redefined-outer-name
-def test_authorize_outage(redis_mock, mocker, digid_config, default_authorize_request_dict):
-    outage_key = 'inge6:outage'
+def test_authorize_outage(
+    redis_mock, mocker, digid_config, default_authorize_request_dict
+):
+    outage_key = "inge6:outage"
 
-    mock_provider = Provider(settings=get_settings({
-        'mock_digid': False,
-        'ratelimit.outage_key': outage_key
-    }))
+    mock_provider = Provider(
+        settings=get_settings({"mock_digid": False, "ratelimit.outage_key": outage_key})
+    )
     mock_provider.clients = {
         "test_client": {
             "token_endpoint_auth_method": "none",
             "redirect_uris": [
-                    "http://localhost:3000/login",
-                ],
-            "response_types": ["code"]
+                "http://localhost:3000/login",
+            ],
+            "response_types": ["code"],
         }
     }
 
-    mocker.patch('inge6.main.PROVIDER', mock_provider)
-    redis_mock.set(outage_key, '1')
+    mocker.patch("inge6.main.PROVIDER", mock_provider)
+    redis_mock.set(outage_key, "1")
 
     client = TestClient(app)
 
     query_params: str = urllib.parse.urlencode(default_authorize_request_dict)
-    response = client.get(f'/authorize?{query_params}', allow_redirects=False)
+    response = client.get(f"/authorize?{query_params}", allow_redirects=False)
 
     assert response.status_code == 307
-    assert response.headers['location'].startswith('/sorry-something-went-wrong')
+    assert response.headers["location"].startswith("/sorry-something-went-wrong")

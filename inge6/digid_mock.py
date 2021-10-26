@@ -4,6 +4,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 
 from .models import DigiDMockRequest, DigiDMockCatchRequest
 
+
 def digid_mock(digid_mock_request: DigiDMockRequest) -> HTMLResponse:
     state = digid_mock_request.state
     authorize_request = digid_mock_request.authorize_request
@@ -48,5 +49,5 @@ def digid_mock_catch(request: DigiDMockCatchRequest) -> RedirectResponse:
     bsn = request.bsn
     relay_state = request.RelayState
 
-    response_uri = '/acs' + f'?SAMLart={bsn}&RelayState={relay_state}&mocking=1'
+    response_uri = "/acs" + f"?SAMLart={bsn}&RelayState={relay_state}&mocking=1"
     return RedirectResponse(response_uri, status_code=303)

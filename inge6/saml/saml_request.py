@@ -11,11 +11,12 @@ from lxml import etree
 
 from inge6.saml.utils import read_cert, to_soap_envelope
 
+
 def get_issue_instant():
-    return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
 
 class SAMLRequest:
-
     def __init__(self, keypair_sign: Tuple[str, str]) -> None:
         """
         Initiate a SAMLRequest with a parsed xml tree and keypair for signing
@@ -23,7 +24,7 @@ class SAMLRequest:
         :param root: parsed XML tree
         :param keypair: (cert_path, key_path) tuple for signing of the messages.
         """
-        self._id_hash = "_" + secrets.token_hex(41) # total length 42.
+        self._id_hash = "_" + secrets.token_hex(41)  # total length 42.
         self.keypair_sign = keypair_sign
 
     @property
@@ -36,7 +37,7 @@ class SAMLRequest:
 
     def get_xml(self, xml_declaration: bool = False) -> bytes:
         if xml_declaration:
-            return etree.tostring(self.root, xml_declaration=True, encoding='UTF-8')
+            return etree.tostring(self.root, xml_declaration=True, encoding="UTF-8")
         return etree.tostring(self.root)
 
     def get_base64_string(self) -> bytes:
@@ -53,12 +54,16 @@ class SAMLRequest:
 
     def sign(self, node, id_hash: str):
         def add_reference(root, id_hash: str) -> None:
-            reference_node: Optional[Any] = xmlsec.tree.find_node(root, xmlsec.constants.NodeReference)
+            reference_node: Optional[Any] = xmlsec.tree.find_node(
+                root, xmlsec.constants.NodeReference
+            )
             if reference_node is None:
-                raise ValueError("Reference node not found, cannot set URI in reference node of signature element.")
-            reference_node.attrib['URI'] = f"#{id_hash}"
+                raise ValueError(
+                    "Reference node not found, cannot set URI in reference node of signature element."
+                )
+            reference_node.attrib["URI"] = f"#{id_hash}"
 
-        with open(self.signing_key_path, 'r', encoding='utf-8') as key_file:
+        with open(self.signing_key_path, "r", encoding="utf-8") as key_file:
             key_data = key_file.read()
 
         add_reference(node, id_hash=id_hash)
@@ -72,21 +77,31 @@ class SAMLRequest:
 
         return node
 
+
 class AuthNRequest(SAMLRequest):
     """
     Creates an AuthnRequest based on an Authn request template.
     """
-    TEMPLATE_PATH = 'authn_request.xml.jinja'
 
-    def __init__(self, sso_url: str, sp_metadata, jinja_env, scoping_list: list, request_ids: list = None, cluster_name: str = None) -> None:
+    TEMPLATE_PATH = "authn_request.xml.jinja"
+
+    def __init__(
+        self,
+        sso_url: str,
+        sp_metadata,
+        jinja_env,
+        scoping_list: list,
+        request_ids: list = None,
+        cluster_name: str = None,
+    ) -> None:
         """
-            :param sso_url: Single Sign On URL to be used in the request
-            :param issuer_id: Identity known at the identity provider
-            :param keypair: Tuple containing the path to the signing cert and signing key
-            :param jinja_env: Jinja environment containing the template for this authentication request
-            :param intended_audience: In case of a clustered connection, who is the intended audience of the login attributes
-            :param service_uuid: In case of a clustered connection, this parameter is to be passed in the Authentication Request
-            rather than in the Metadata with a index reference in this request.
+        :param sso_url: Single Sign On URL to be used in the request
+        :param issuer_id: Identity known at the identity provider
+        :param keypair: Tuple containing the path to the signing cert and signing key
+        :param jinja_env: Jinja environment containing the template for this authentication request
+        :param intended_audience: In case of a clustered connection, who is the intended audience of the login attributes
+        :param service_uuid: In case of a clustered connection, this parameter is to be passed in the Authentication Request
+        rather than in the Metadata with a index reference in this request.
         """
         super().__init__(sp_metadata.keypair_sign)
 
@@ -115,32 +130,40 @@ class AuthNRequest(SAMLRequest):
 
         if not self.cluster_name:
             # if no cluster name is passed, use the first defined connection
-            cluster_name = list(self.sp_metadata.cluster_settings['connections'].keys())[0]
+            cluster_name = list(
+                self.sp_metadata.cluster_settings["connections"].keys()
+            )[0]
 
-        return self.sp_metadata.cluster_settings['connections'][cluster_name]['entity_id']
+        return self.sp_metadata.cluster_settings["connections"][cluster_name][
+            "entity_id"
+        ]
 
     def get_context(self):
         context = {
-            'ID': self._id_hash,
-            'destination': self.sso_url,
-            'issuer_id': self.issuer_id,
-            'issue_instant': get_issue_instant(),
-            'sign_cert': read_cert(self.signing_cert_path),
-            'force_authn': "true",
-            'clustered': False,
-            'scoping_list': self.scoping_list,
-            'request_ids': self.request_ids if self.request_ids is not None else []
+            "ID": self._id_hash,
+            "destination": self.sso_url,
+            "issuer_id": self.issuer_id,
+            "issue_instant": get_issue_instant(),
+            "sign_cert": read_cert(self.signing_cert_path),
+            "force_authn": "true",
+            "clustered": False,
+            "scoping_list": self.scoping_list,
+            "request_ids": self.request_ids if self.request_ids is not None else [],
         }
 
         if self.intended_audience is not None:
             if self.service_uuid is None:
-                raise ValueError('When intended audience is set, we also expect the service_uuid')
+                raise ValueError(
+                    "When intended audience is set, we also expect the service_uuid"
+                )
 
-            context.update({
-                'clustered': True,
-                'intended_audience': self.intended_audience,
-                'service_uuid': self.service_uuid
-            })
+            context.update(
+                {
+                    "clustered": True,
+                    "intended_audience": self.intended_audience,
+                    "service_uuid": self.service_uuid,
+                }
+            )
 
         return context
 
@@ -154,11 +177,13 @@ class AuthNRequest(SAMLRequest):
     def root(self):
         return self._root
 
+
 class ArtifactResolveRequest(SAMLRequest):
     """
     Creates an ArtifactResolveRequest based on an Artifact resolve template.
     """
-    TEMPLATE_PATH = 'artifactresolve_request.xml.jinja'
+
+    TEMPLATE_PATH = "artifactresolve_request.xml.jinja"
 
     def __init__(self, artifact_code, sso_url, sp_metadata, jinja_env) -> None:
         super().__init__(sp_metadata.keypair_sign)
@@ -177,14 +202,16 @@ class ArtifactResolveRequest(SAMLRequest):
 
     def render(self):
         template = self.jinja_env.get_template(self.TEMPLATE_PATH)
-        raw_request = template.render({
-            'ID': self._id_hash,
-            'destination': self.sso_url,
-            'issuer_id': self.issuer_id,
-            'issue_instant': get_issue_instant(),
-            'sign_cert': read_cert(self.signing_cert_path),
-            'artifact': self.artifact
-        })
+        raw_request = template.render(
+            {
+                "ID": self._id_hash,
+                "destination": self.sso_url,
+                "issuer_id": self.issuer_id,
+                "issue_instant": get_issue_instant(),
+                "sign_cert": read_cert(self.signing_cert_path),
+                "artifact": self.artifact,
+            }
+        )
         xml_request = etree.fromstring(raw_request)
         return self.sign(xml_request, self._id_hash)
 

@@ -16,6 +16,7 @@ from .redis_debugger import RedisGetDebugger
 
 from ..config import get_settings
 
+
 def _serialize(value: Any) -> bytes:
     """
     Function that specifies how the data should be serialized into the redis-server.
@@ -24,6 +25,7 @@ def _serialize(value: Any) -> bytes:
     :returns: Serialized value, a pickle dump.
     """
     return pickle.dumps(value)
+
 
 def _deserialize(serialized_value: Optional[Any]) -> Any:
     """
@@ -35,16 +37,20 @@ def _deserialize(serialized_value: Optional[Any]) -> Any:
     """
     return pickle.loads(serialized_value) if serialized_value else None
 
-class RedisCache:
 
-    def __init__(self, settings = None, redis_client: StrictRedis = None):
+class RedisCache:
+    def __init__(self, settings=None, redis_client: StrictRedis = None):
         self.settings = settings if settings is not None else get_settings()
         self.key_prefix: str = self.settings.redis.default_cache_namespace
         self.expires_in_s: int = int(self.settings.redis.object_ttl)
-        self.redis_client = create_redis_client(settings) if redis_client is None else redis_client
+        self.redis_client = (
+            create_redis_client(settings) if redis_client is None else redis_client
+        )
 
         if self.settings.redis.enable_debugger:
-            self.redis_debugger = RedisGetDebugger(redis_client=self.redis_client, settings=self.settings, daemon=True)
+            self.redis_debugger = RedisGetDebugger(
+                redis_client=self.redis_client, settings=self.settings, daemon=True
+            )
             self.redis_debugger.start()
 
     def _get_namespace(self, namespace: str) -> str:
@@ -72,7 +78,7 @@ class RedisCache:
             # If in debugging mode, prepend namespace with key for better debugging.
             # It allows the redis debugger to search for specific key_types, and
             # redis db inspection shows better keys
-            key = f'{key}:{key}'
+            key = f"{key}:{key}"
 
         self.redis_client.set(key, serialized_value, ex=self.expires_in_s)
 
@@ -88,7 +94,7 @@ class RedisCache:
         key = self._get_namespace(key)
         value = self.redis_client.get(key)
 
-        if self.settings.redis.enable_debugger and value :
+        if self.settings.redis.enable_debugger and value:
             self.redis_debugger.debug_get(key, value)
 
         deserialized_value = _deserialize(value)
@@ -111,7 +117,7 @@ class RedisCache:
             # If in debugging mode, prepend namespace with key for better debugging.
             # It allows the redis debugger to search for specific key_types, and
             # redis db inspection shows better keys
-            namespace = f'{namespace}:{key}'
+            namespace = f"{namespace}:{key}"
 
         self.redis_client.hset(namespace, key, serialized_value)
         self.redis_client.expire(name=namespace, time=self.expires_in_s)
@@ -128,7 +134,7 @@ class RedisCache:
             # If in debugging mode, namespace is prepended with the key for better debugging.
             # It allows the redis debugger to search for specific key_types, and
             # redis db inspection shows better keys
-            namespace = f'{namespace}:{key}'
+            namespace = f"{namespace}:{key}"
             value = self.redis_client.hget(namespace, key)
             self.redis_debugger.debug_get(namespace, value)
         else:

@@ -4,6 +4,7 @@ from redis import StrictRedis
 
 from ..config import Settings, get_settings
 
+
 def create_redis_client(settings: Optional[Settings] = None) -> StrictRedis:
     """
     Global function to retrieve the connection with the redis-server.
@@ -24,10 +25,13 @@ def create_redis_client(settings: Optional[Settings] = None) -> StrictRedis:
 
     if use_ssl:
         return StrictRedis(
-            host=settings.redis.host, port=settings.redis.port, db=0,
+            host=settings.redis.host,
+            port=settings.redis.port,
+            db=0,
             ssl=True,
-            ssl_keyfile=settings.redis.key, ssl_certfile=settings.redis.cert,
-            ssl_ca_certs=settings.redis.cafile
+            ssl_keyfile=settings.redis.key,
+            ssl_certfile=settings.redis.cert,
+            ssl_ca_certs=settings.redis.cafile,
         )
 
     return StrictRedis(host=settings.redis.host, port=settings.redis.port, db=0)

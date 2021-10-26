@@ -18,7 +18,8 @@ class Provider:
     Required settings:
         - settings.saml.identity_provider_settings, path to the configuration for all identity providers.
     """
-    SAML_TEMPLATES_PATH = os.path.join(ROOT_DIR, 'templates/saml/xml/')
+
+    SAML_TEMPLATES_PATH = os.path.join(ROOT_DIR, "templates/saml/xml/")
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -26,17 +27,19 @@ class Provider:
 
         self.jinja_env = Environment(
             loader=FileSystemLoader(self.SAML_TEMPLATES_PATH),
-            autoescape=select_autoescape()
+            autoescape=select_autoescape(),
         )
         self.id_providers = self._parse_id_providers()
 
     def _parse_id_providers(self) -> Dict[str, IdProvider]:
-        with open(self.id_providers_path, 'r', encoding='utf-8') as id_providers_file:
+        with open(self.id_providers_path, "r", encoding="utf-8") as id_providers_file:
             id_providers = json.loads(id_providers_file.read())
 
         providers = {}
         for provider in id_providers.keys():
-            providers[provider] = IdProvider(provider, id_providers[provider], self.jinja_env)
+            providers[provider] = IdProvider(
+                provider, id_providers[provider], self.jinja_env
+            )
 
         return providers
 
