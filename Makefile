@@ -84,9 +84,13 @@ pip-sync-dev: ## synchronizes the .venv with the state of requirements.txt
 
 lint:
 	. .venv/bin/activate && ${env} pylint inge6 tests
+	. .venv/bin/activate && ${env} black --check inge6 tests
 
 audit:
 	. .venv/bin/activate && ${env} bandit inge6
+
+fix:
+	. .venv/bin/activate && $(env) black inge6 tests
 
 test:
 	. .venv/bin/activate && ${env} pytest tests

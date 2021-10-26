@@ -17,10 +17,11 @@ foobar = saml
 barfoo = redis
 """
 
+
 def test_settings():
     settings: Settings = Settings()
     settings.read_string(TEST_CONFIG)
 
-    assert settings.saml.foobar == 'saml'
-    settings.saml.foobar = 'doo'
-    assert settings.saml.foobar == 'doo'
+    assert settings.saml.foobar == "saml"
+    settings.saml.foobar = "doo"
+    assert settings.saml.foobar == "doo"

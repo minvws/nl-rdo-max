@@ -7,6 +7,7 @@ except ImportError:
 else:
     _HAS_REDIS = True
 
+
 class RedisWrapper(PRW):
     """
     Child class of Pyop RedisWrapper allowing to re-use a redis client. Which is not possible in the current

@@ -10,7 +10,14 @@ import xmlsec
 
 from .saml_request import SAMLRequest
 from .constants import NAMESPACES
-from .utils import get_loc_bind, has_valid_signatures, from_settings, compute_keyname, strip_cert, enforce_cert_newlines
+from .utils import (
+    get_loc_bind,
+    has_valid_signatures,
+    from_settings,
+    compute_keyname,
+    strip_cert,
+    enforce_cert_newlines,
+)
 
 
 class SPMetadata(SAMLRequest):
@@ -21,10 +28,10 @@ class SPMetadata(SAMLRequest):
         - settings.saml.sp_template, path to the sp metadata template
         - settings.issuer, name of the issuer
     """
-    TEMPLATE_NAME = 'sp_metadata.xml.jinja'
-    CLUSTER_TEMPLATE_NAME = 'sp_metadata.clustered.xml.jinja'
-    DELTA_DAYS_VALID_UNTIL = 365
 
+    TEMPLATE_NAME = "sp_metadata.xml.jinja"
+    CLUSTER_TEMPLATE_NAME = "sp_metadata.clustered.xml.jinja"
+    DELTA_DAYS_VALID_UNTIL = 365
 
     def __init__(self, settings_dict, keypair_sign, jinja_env) -> None:
         """
@@ -46,26 +53,30 @@ class SPMetadata(SAMLRequest):
 
         self.cluster_settings = None
         self.clustered = False
-        if 'clustered' in settings_dict and settings_dict['clustered'] != "":
-            with open(settings_dict['clustered'], 'r', encoding='utf-8') as cluster_settings_file:
+        if "clustered" in settings_dict and settings_dict["clustered"] != "":
+            with open(
+                settings_dict["clustered"], "r", encoding="utf-8"
+            ) as cluster_settings_file:
                 self.cluster_settings = json.loads(cluster_settings_file.read())
             self.clustered = True
 
         self._root = etree.fromstring(self.render_template())
 
-        with open(self.signing_cert_path, 'r', encoding='utf-8') as cert_file:
+        with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
             cert_data = cert_file.read()
-        self.root.find('.//ds:Signature/ds:KeyInfo//ds:X509Certificate', NAMESPACES).text = strip_cert(cert_data)
+        self.root.find(
+            ".//ds:Signature/ds:KeyInfo//ds:X509Certificate", NAMESPACES
+        ).text = strip_cert(cert_data)
 
         self.sign(self.root, self._id_hash)
 
     @property
     def connections(self):
-        return self.cluster_settings['connections']
+        return self.cluster_settings["connections"]
 
     @property
     def allow_scoping(self):
-        return self.settings_dict.get('security', {}).get('allowScoping', False)
+        return self.settings_dict.get("security", {}).get("allowScoping", False)
 
     @property
     def root(self):
@@ -73,7 +84,7 @@ class SPMetadata(SAMLRequest):
 
     @property
     def entity_id(self):
-        return from_settings(self.settings_dict, 'sp.entityId')
+        return from_settings(self.settings_dict, "sp.entityId")
 
     @property
     def issuer_id(self):
@@ -82,25 +93,37 @@ class SPMetadata(SAMLRequest):
     @property
     def service_uuid(self):
         try:
-            return self.settings_dict['sp']['attributeConsumingService']['requestedAttributes'][0]['attributeValue'][0]
+            return self.settings_dict["sp"]["attributeConsumingService"][
+                "requestedAttributes"
+            ][0]["attributeValue"][0]
         except KeyError as key_error:
-            raise KeyError('key does not exist. please check your settings.json') from key_error
+            raise KeyError(
+                "key does not exist. please check your settings.json"
+            ) from key_error
 
     @property
     def service_name(self):
-        return from_settings(self.settings_dict, 'sp.attributeConsumingService.serviceName', 'CoronaCheck')
+        return from_settings(
+            self.settings_dict,
+            "sp.attributeConsumingService.serviceName",
+            "CoronaCheck",
+        )
 
     @property
     def service_desc(self):
-        return from_settings(self.settings_dict, 'sp.attributeConsumingService.serviceDescription', 'CoronaCheck Inlogservice')
+        return from_settings(
+            self.settings_dict,
+            "sp.attributeConsumingService.serviceDescription",
+            "CoronaCheck Inlogservice",
+        )
 
     @property
     def acs_url(self):
-        return from_settings(self.settings_dict, 'sp.assertionConsumerService.url')
+        return from_settings(self.settings_dict, "sp.assertionConsumerService.url")
 
     @property
     def acs_binding(self):
-        return from_settings(self.settings_dict, 'sp.assertionConsumerService.binding')
+        return from_settings(self.settings_dict, "sp.assertionConsumerService.binding")
 
     def get_cert_data(self, cluster_name: Optional[str]):
         if cluster_name is None:
@@ -109,11 +132,13 @@ class SPMetadata(SAMLRequest):
         else:
             if self.cluster_settings is None:
                 # This should never happen (key cannot exist without cluster settings), but makes mypy happy
-                raise RuntimeError("Cluster settings dict seems to be None, initilization failed.")
+                raise RuntimeError(
+                    "Cluster settings dict seems to be None, initilization failed."
+                )
 
-            cert_path = self.connections[cluster_name]['cert_path']
+            cert_path = self.connections[cluster_name]["cert_path"]
 
-        with open(cert_path, 'r', encoding='utf-8') as cert_file:
+        with open(cert_path, "r", encoding="utf-8") as cert_file:
             cert_data = cert_file.read()
 
         return cert_data
@@ -123,43 +148,52 @@ class SPMetadata(SAMLRequest):
         keyname = compute_keyname(cert)
         self.dv_keynames.append(keyname)
         return {
-            'cert': strip_cert(cert),
-            'keyname': keyname,
-            'acs_binding': self.acs_binding,
-            'acs_url': self.acs_url,
+            "cert": strip_cert(cert),
+            "keyname": keyname,
+            "acs_binding": self.acs_binding,
+            "acs_url": self.acs_url,
         }
 
     def create_entity_descriptor(self, cluster_name: Optional[str]):
         if self.cluster_settings is None:
             # This should never happen, but makes mypy happy
-            raise RuntimeError("Cluster settings dict seems to be None, initilization failed.")
+            raise RuntimeError(
+                "Cluster settings dict seems to be None, initilization failed."
+            )
 
         return {
-            'id': "_" + secrets.token_hex(41), # total length 42.
-            'entity_id': self.entity_id if cluster_name is None else self.connections[cluster_name]['entity_id'],
-            'spsso': self.get_spsso(cluster_name)
+            "id": "_" + secrets.token_hex(41),  # total length 42.
+            "entity_id": self.entity_id
+            if cluster_name is None
+            else self.connections[cluster_name]["entity_id"],
+            "spsso": self.get_spsso(cluster_name),
         }
 
     def create_cluster_entity_descriptor(self):
         return {
-            'clustered_' + cluster_name: self.create_entity_descriptor(cluster_name)
+            "clustered_" + cluster_name: self.create_entity_descriptor(cluster_name)
             for cluster_name in self.connections
         }
 
     def render_clustered_template(self):
-        with open(self.cluster_settings['tls_keypath'], 'r', encoding='utf-8') as tls_keyfile:
+        with open(
+            self.cluster_settings["tls_keypath"], "r", encoding="utf-8"
+        ) as tls_keyfile:
             cert_tls = tls_keyfile.read()
 
         keyname_tls = compute_keyname(cert_tls)
 
         template = self.jinja_env.get_template(self.CLUSTER_TEMPLATE_NAME)
         clustered_context = {
-            'id': self._id_hash,
-            'valid_until': (datetime.datetime.utcnow() + datetime.timedelta(days=self.DELTA_DAYS_VALID_UNTIL)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            'dv_descriptors': self.create_cluster_entity_descriptor(),
-            'lc_descriptor': self.create_entity_descriptor(None),
-            'cert_tls': strip_cert(cert_tls),
-            'keyname_tls': keyname_tls,
+            "id": self._id_hash,
+            "valid_until": (
+                datetime.datetime.utcnow()
+                + datetime.timedelta(days=self.DELTA_DAYS_VALID_UNTIL)
+            ).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "dv_descriptors": self.create_cluster_entity_descriptor(),
+            "lc_descriptor": self.create_entity_descriptor(None),
+            "cert_tls": strip_cert(cert_tls),
+            "keyname_tls": keyname_tls,
         }
 
         return template.render(clustered_context)
@@ -167,12 +201,12 @@ class SPMetadata(SAMLRequest):
     def render_unclustered_template(self):
         template = self.jinja_env.get_template(self.TEMPLATE_NAME)
         unclustered_context = {
-            'id': self._id_hash,
-            'entity_id': self.entity_id,
-            'spsso': self.get_spsso(None),
-            'service_name': self.service_name,
-            'service_desc': self.service_desc,
-            'service_uuid': self.service_uuid
+            "id": self._id_hash,
+            "entity_id": self.entity_id,
+            "spsso": self.get_spsso(None),
+            "service_name": self.service_name,
+            "service_desc": self.service_desc,
+            "service_uuid": self.service_uuid,
         }
 
         return template.render(unclustered_context)
@@ -184,25 +218,33 @@ class SPMetadata(SAMLRequest):
         return self.render_unclustered_template()
 
     def _valid_signature(self) -> bool:
-        with open(self.signing_cert_path, 'r', encoding='utf-8') as cert_file:
+        with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
             signing_cert = cert_file.read()
 
         _, is_valid = has_valid_signatures(self.root, cert_data=signing_cert)
         return is_valid
 
     def _contains_keyname(self):
-        return self.root.find('.//ds:KeyInfo/ds:KeyName', NAMESPACES) is not None
+        return self.root.find(".//ds:KeyInfo/ds:KeyName", NAMESPACES) is not None
 
     def _has_correct_bindings(self) -> bool:
         correct_bindings = True
-        sls_elem = self.root.find('.//md:SingleLogoutService', NAMESPACES)
-        acs_elem = self.root.find('.//md:AssertionConsumerService', NAMESPACES)
+        sls_elem = self.root.find(".//md:SingleLogoutService", NAMESPACES)
+        acs_elem = self.root.find(".//md:AssertionConsumerService", NAMESPACES)
 
         if sls_elem is not None:
-            correct_bindings = correct_bindings and sls_elem.attrib['Binding'] == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+            correct_bindings = (
+                correct_bindings
+                and sls_elem.attrib["Binding"]
+                == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+            )
 
         # Required element.
-        correct_bindings = correct_bindings and acs_elem.attrib['Binding'] == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+        correct_bindings = (
+            correct_bindings
+            and acs_elem.attrib["Binding"]
+            == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+        )
 
         return correct_bindings
 
@@ -211,53 +253,63 @@ class SPMetadata(SAMLRequest):
 
         if self.cluster_settings is None:
             if self.root.tag != f"{{{NAMESPACES['md']}}}EntityDescriptor":
-                errors.append('Root is not an EntityDescriptor')
+                errors.append("Root is not an EntityDescriptor")
 
-            if len(self.root.findall('.//md:SPSSODescriptor', NAMESPACES)) != 1:
-                errors.append('Only one SPSSO Descriptor allowed')
+            if len(self.root.findall(".//md:SPSSODescriptor", NAMESPACES)) != 1:
+                errors.append("Only one SPSSO Descriptor allowed")
         else:
             if self.root.tag != f"{{{NAMESPACES['md']}}}EntitiesDescriptor":
-                errors.append('Root is not an EntityDescriptor')
+                errors.append("Root is not an EntityDescriptor")
 
         if not self._has_correct_bindings():
-            errors.append('Incorrect bindings for SPSSO services')
+            errors.append("Incorrect bindings for SPSSO services")
 
         if not self._contains_keyname():
-            errors.append('Does not contain a keyname in KeyDescriptor')
+            errors.append("Does not contain a keyname in KeyDescriptor")
 
         if not self._valid_signature():
-            errors.append('Invalid Signature')
+            errors.append("Invalid Signature")
 
         return errors
 
-class IdPMetadata:
 
+class IdPMetadata:
     def __init__(self, idp_metadata_path) -> None:
         self.template = etree.parse(idp_metadata_path).getroot()
-        new_root, valid_sign = has_valid_signatures(self.template, cert_data=self.get_cert_pem_data())
+        new_root, valid_sign = has_valid_signatures(
+            self.template, cert_data=self.get_cert_pem_data()
+        )
         if not valid_sign:
             raise xmlsec.VerificationError("Signature is invalid")
         self.template = new_root
 
-        self.entity_id = self.template.attrib['entityID']
-        self.keyname = self.template.find('.//md:IDPSSODescriptor//dsig:KeyName', NAMESPACES).text
+        self.entity_id = self.template.attrib["entityID"]
+        self.keyname = self.template.find(
+            ".//md:IDPSSODescriptor//dsig:KeyName", NAMESPACES
+        ).text
 
     def find_in_md(self, name: str):
-        return self.template.find(f'.//md:{name}', {'md': "urn:oasis:names:tc:SAML:2.0:metadata"})
+        return self.template.find(
+            f".//md:{name}", {"md": "urn:oasis:names:tc:SAML:2.0:metadata"}
+        )
 
     def get_artifact_rs(self) -> Dict[str, str]:
-        resolution_service = self.find_in_md('ArtifactResolutionService')
+        resolution_service = self.find_in_md("ArtifactResolutionService")
         return get_loc_bind(resolution_service)
 
     def get_cert_pem_data(self) -> str:
-        cert_data = self.template.find('.//md:IDPSSODescriptor//dsig:X509Certificate', NAMESPACES).text
+        cert_data = self.template.find(
+            ".//md:IDPSSODescriptor//dsig:X509Certificate", NAMESPACES
+        ).text
         cert_data = enforce_cert_newlines(cert_data)
-        return f"""-----BEGIN CERTIFICATE-----\n{cert_data}\n-----END CERTIFICATE-----"""
+        return (
+            f"""-----BEGIN CERTIFICATE-----\n{cert_data}\n-----END CERTIFICATE-----"""
+        )
 
-    def get_sso(self, binding='POST') -> Dict[str, str]:
+    def get_sso(self, binding="POST") -> Dict[str, str]:
         sso = self.template.find(
             f".//md:SingleSignOnService[@Binding='urn:oasis:names:tc:SAML:2.0:bindings:HTTP-{binding}']",
-            {'md': "urn:oasis:names:tc:SAML:2.0:metadata"}
+            {"md": "urn:oasis:names:tc:SAML:2.0:metadata"},
         )
         return get_loc_bind(sso)
 

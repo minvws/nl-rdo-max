@@ -21,10 +21,12 @@ class Settings(configparser.ConfigParser):
                     return False
 
                 return value
-            raise AttributeError(f"Setting {self._parent}.{name} not found and not handled gracefully")
+            raise AttributeError(
+                f"Setting {self._parent}.{name} not found and not handled gracefully"
+            )
 
         def __setattr__(self, name: str, value: Any) -> None:
-            if name != '_section':
+            if name != "_section":
                 self._section[name] = value
             else:
                 super().__setattr__(name, value)
@@ -42,16 +44,18 @@ class Settings(configparser.ConfigParser):
             return self.SettingSection(name, self._sections[name])
         raise AttributeError(f"Setting {name} not found and not handled gracefully")
 
+
 def _create_settings(config_path):
     settings = Settings()
 
-    with open(config_path, 'r', encoding='utf-8') as conf_file:
+    with open(config_path, "r", encoding="utf-8") as conf_file:
         settings.read_file(conf_file)
 
     return settings
 
+
 def get_settings(config_path: str = CONFIG_FILE_NAME):
-    global SETTINGS # pylint: disable=global-statement
+    global SETTINGS  # pylint: disable=global-statement
     if SETTINGS is None:
         SETTINGS = _create_settings(config_path)
     return SETTINGS

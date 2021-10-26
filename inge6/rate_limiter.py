@@ -7,12 +7,13 @@ from .config import Settings
 
 
 class RateLimiter:
-
     def __init__(self, settings: Settings, redis_client: StrictRedis):
         self.redis_client = redis_client
         self.settings = settings
 
-    def ip_limit_test(self, ip_address: str, ip_expire_s: int, nof_attempts_s: int = 1) -> None:
+    def ip_limit_test(
+        self, ip_address: str, ip_expire_s: int, nof_attempts_s: int = 1
+    ) -> None:
         """
         Perform ip blocking. If the same IP-address accesses this service multiple times in
         `ip_expire_s` seconds, block the flow.
@@ -26,8 +27,9 @@ class RateLimiter:
             self.redis_client.expire(ip_key, ip_expire_s)
 
         if ip_key_exists > nof_attempts_s:
-            raise TooManyRequestsFromOrigin(f"Too many requests from the same ip_address during the last {ip_expire_s} seconds.")
-
+            raise TooManyRequestsFromOrigin(
+                f"Too many requests from the same ip_address during the last {ip_expire_s} seconds."
+            )
 
     def user_limit_test(self, idp_prefix: str, user_limit_key: str) -> None:
         """
@@ -51,8 +53,9 @@ class RateLimiter:
             self.redis_client.expire(timeslot_key, 2)
 
         if num_users > user_limit:
-            raise TooBusyError("Servers are too busy at this point, please try again later")
-
+            raise TooBusyError(
+                "Servers are too busy at this point, please try again later"
+            )
 
     def rate_limit_test(self, ip_address: str) -> str:
         """
@@ -77,12 +80,19 @@ class RateLimiter:
         :raises: TooBusyError when the number of users exceeds the allowed number.
         """
         try:
-            ip_cache_in_s: int  = int(self.settings.ratelimit.ip_expire_in_s)
+            ip_cache_in_s: int = int(self.settings.ratelimit.ip_expire_in_s)
 
-            if hasattr(self.settings.ratelimit, "nof_attempts_s") and self.settings.ratelimit.nof_attempts_s != "":
+            if (
+                hasattr(self.settings.ratelimit, "nof_attempts_s")
+                and self.settings.ratelimit.nof_attempts_s != ""
+            ):
                 # Optional config setting
                 nof_attempts_s: int = int(self.settings.ratelimit.nof_attempts_s)
-                self.ip_limit_test(ip_address=ip_address, ip_expire_s=ip_cache_in_s, nof_attempts_s=nof_attempts_s)
+                self.ip_limit_test(
+                    ip_address=ip_address,
+                    ip_expire_s=ip_cache_in_s,
+                    nof_attempts_s=nof_attempts_s,
+                )
             else:
                 self.ip_limit_test(ip_address=ip_address, ip_expire_s=ip_cache_in_s)
         except TypeError as int_cast_err:
@@ -94,18 +104,29 @@ class RateLimiter:
         if primary_idp is not None:
             primary_idp = primary_idp.decode()
         else:
-            raise ExpectedRedisValue(f"Expected {self.settings.primary_idp_key} key to be set in redis. Please check the primary_idp_key setting")
+            raise ExpectedRedisValue(
+                f"Expected {self.settings.primary_idp_key} key to be set in redis. Please check the primary_idp_key setting"
+            )
 
         overflow_idp = self.redis_client.get(self.settings.overflow_idp_key)
 
-        if overflow_idp and overflow_idp.decode().lower() != 'false':
+        if overflow_idp and overflow_idp.decode().lower() != "false":
             overflow_idp = overflow_idp.decode()
             try:
-                self.user_limit_test(idp_prefix=primary_idp, user_limit_key=self.settings.ratelimit.user_limit_key)
+                self.user_limit_test(
+                    idp_prefix=primary_idp,
+                    user_limit_key=self.settings.ratelimit.user_limit_key,
+                )
                 return primary_idp
             except TooBusyError:
-                self.user_limit_test(idp_prefix=overflow_idp, user_limit_key=self.settings.ratelimit.user_limit_key_overflow_idp)
+                self.user_limit_test(
+                    idp_prefix=overflow_idp,
+                    user_limit_key=self.settings.ratelimit.user_limit_key_overflow_idp,
+                )
                 return overflow_idp
         else:
-            self.user_limit_test(idp_prefix=primary_idp, user_limit_key=self.settings.ratelimit.user_limit_key)
+            self.user_limit_test(
+                idp_prefix=primary_idp,
+                user_limit_key=self.settings.ratelimit.user_limit_key,
+            )
             return primary_idp
