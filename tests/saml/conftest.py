@@ -3,6 +3,7 @@ import os
 import pytest
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from inge6.config import get_settings
 
 from inge6.constants import ROOT_DIR
 

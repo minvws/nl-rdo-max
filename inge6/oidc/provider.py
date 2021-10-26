@@ -39,7 +39,7 @@ class Provider:
     def __init__(self, settings: Settings ) -> None:
         self.redis_ttl = int(settings.redis.object_ttl)
 
-        self.redis_cache = RedisCache()
+        self.redis_cache = RedisCache(settings=settings)
         self.redis_client = self.redis_cache.redis_client
 
         issuer = settings.issuer

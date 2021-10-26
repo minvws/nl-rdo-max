@@ -17,6 +17,8 @@ log = logging.getLogger(__package__)
 app = FastAPI(docs_url= None, redoc_url= None, openapi_url=None)
 app.include_router(router)
 
+PROVIDER = Provider()
+
 def _validate_saml_identity_provider_settings():
     missing_files = []
     with open(get_settings().saml.identity_provider_settings, encoding='utf-8') as providers_settings:
@@ -174,8 +176,7 @@ async def startup_event():
 
 @app.middleware('http')
 async def add_provider_to_request(request: Request, call_next):
-    provider = Provider()
-    request.app.state.provider = provider
+    request.app.state.provider = PROVIDER
     return await call_next(request)
 
 def main(app_link: str = 'inge6.main:app'):

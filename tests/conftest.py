@@ -1,7 +1,8 @@
 import pytest
 from inge6 import cache
-from inge6.config import get_settings
 from inge6.provider import Provider
+
+from .test_utils import get_settings
 
 @pytest.fixture
 def mock_clients_db(mocker, mock_provider): # pylint: disable=redefined-outer-name
@@ -18,12 +19,18 @@ def mock_clients_db(mocker, mock_provider): # pylint: disable=redefined-outer-na
 
 @pytest.fixture
 def redis_mock(redisdb, mocker):
+    # Set the default for the primary_idp, free to update
+    redisdb.set('tvs:primary_idp', 'tvs')
     mocker.patch('inge6.cache.redis_cache.create_redis_client', lambda _: redisdb)
     yield redisdb
 
 @pytest.fixture
-def mock_provider(redis_mock): # pylint: disable=unused-argument, redefined-outer-name
-    return Provider()
+def default_settings():
+    yield get_settings()
+
+@pytest.fixture
+def mock_provider(redis_mock, default_settings): # pylint: disable=unused-argument, redefined-outer-name
+    return Provider(settings=default_settings)
 
 @pytest.fixture()
 def redis_cache(redis_mock): # pylint: disable=redefined-outer-name, unused-argument
@@ -41,26 +48,12 @@ def digid_config(redis_mock):
 def tvs_config(redis_mock):
     redis_mock.set(get_settings().primary_idp_key, 'tvs')
 
-@pytest.fixture
-def digid_mock_disable():
-    tmp = get_settings().mock_digid
-    get_settings().mock_digid = 'false'
-    yield
-    get_settings().mock_digid = tmp
-
-
-@pytest.fixture
-def digid_mock_enable():
-    tmp = get_settings().mock_digid
-    get_settings().mock_digid = 'true'
-    yield
-    get_settings().mock_digid = tmp
-
 def get_mock_tvs_idp_settings_data(
     saml_spec_version = 4.5,
     base_dir = "saml/tvs",
     cert_path = "saml/tvs/certs/sp.crt",
     key_path = "saml/tvs/certs/sp.key",
+    advanced_settings_path="saml/tvs/advanced_settings.json",
     settings_path = "saml/tvs/settings.json",
     idp_metadata_path = "saml/tvs/metadata/idp_metadata.xml",
 ): return"""{{"tvs": {{
@@ -69,16 +62,29 @@ def get_mock_tvs_idp_settings_data(
         "cert_path": "{cert_path}",
         "key_path": "{key_path}",
         "settings_path": "{settings_path}",
+        "advanced_settings_path": "{advanced_settings_path}",
         "idp_metadata_path": "{idp_metadata_path}" 
     }}
 }}
 """.replace('\n', '').format(saml_spec_version=saml_spec_version, base_dir=base_dir, cert_path=cert_path,
-            key_path=key_path, settings_path=settings_path, idp_metadata_path=idp_metadata_path)
+            key_path=key_path, advanced_settings_path=advanced_settings_path, settings_path=settings_path,
+            idp_metadata_path=idp_metadata_path)
 
 @pytest.fixture
 def mock_valid_id_providers_settings_path(tmp_path):
     identity_providers_file_path = tmp_path / "identity_providers_test.json"
     identity_providers_file_path.write_text(get_mock_tvs_idp_settings_data())
+    yield str(identity_providers_file_path)
+
+@pytest.fixture
+def mockpath_tvs_machtigen_provider_settings(tmp_path):
+    identity_providers_file_path = tmp_path / "identity_providers_test.json"
+    identity_providers_file_path.write_text(get_mock_tvs_idp_settings_data(
+        base_dir="tests/resources/saml_provider_settings/tvs_machtigen",
+        settings_path="tests/resources/saml_provider_settings/tvs_machtigen/settings.json",
+        advanced_settings_path="tests/resources/saml_provider_settings/tvs_machtigen/advanced_settings.json",
+        idp_metadata_path="tests/resources/saml_provider_settings/tvs_machtigen/metadata/idp_metadata.xml"
+    ))
     yield str(identity_providers_file_path)
 
 @pytest.fixture

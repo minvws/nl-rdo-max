@@ -5,7 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from inge6.main import app
-from inge6.config import get_settings
+from inge6.provider import Provider
+from ..test_utils import get_settings
 
 
 # pylint: disable=unused-argument, redefined-outer-name
@@ -32,7 +33,12 @@ def test_authorize_request_post(mock_clients_db, redis_mock, tvs_config):
 
 
 # pylint: disable=unused-argument, redefined-outer-name
-def test_authorize_request_redirect(mock_clients_db, digid_config, digid_mock_disable):
+def test_authorize_request_redirect(mock_clients_db, digid_config, mocker):
+    mock_provider = Provider(settings=get_settings({
+        'mock_digid': False
+    }))
+    mocker.patch('inge6.main.PROVIDER', mock_provider)
+
     client = TestClient(app)
 
     authorize_params = {
@@ -54,19 +60,16 @@ def test_authorize_request_redirect(mock_clients_db, digid_config, digid_mock_di
     assert "Signature" in response.headers['location']
     assert "SigAlg" in response.headers['location']
 
-
-@pytest.fixture
-def enable_inge6_outage(redis_mock):
-    tmp = get_settings().ratelimit.outage_key
-    get_settings().ratelimit.outage_key = 'inge6:outage'
-    redis_mock.set(get_settings().ratelimit.outage_key, '1')
-    yield
-    get_settings().ratelimit.outage_key = tmp
-    redis_mock.delete(get_settings().ratelimit.outage_key)
-
-
 # pylint: disable=unused-argument, redefined-outer-name
-def test_authorize_outage(redis_mock, mock_clients_db, digid_config, digid_mock_disable, enable_inge6_outage):
+def test_authorize_outage(redis_mock, mocker, mock_clients_db, digid_config):
+    outage_key = 'inge6:outage'
+    mock_provider = Provider(settings=get_settings({
+        'mock_digid': False,
+        'ratelimit.outage_key': outage_key
+    }))
+    mocker.patch('inge6.main.PROVIDER', mock_provider)
+    redis_mock.set(outage_key, '1')
+
     client = TestClient(app)
 
     authorize_params = {

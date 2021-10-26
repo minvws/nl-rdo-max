@@ -24,9 +24,10 @@ from inge6.exceptions import ExpectedRedisValue
 from inge6 import constants
 from inge6.provider import Provider, _get_bsn_from_art_resp
 from inge6.models import AuthorizeRequest, JWTError, SorryPageRequest
-from inge6.config import get_settings
 from inge6.router import consume_bsn_for_token
 
+
+from ..test_utils import get_settings
 from ..resources.utils import PRIV_KEY_BSN_AES_KEY
 
 def test_sorry_too_busy(mock_provider: Provider):
@@ -51,15 +52,13 @@ def test_get_bsn_from_artresponse(mock_provider):
     id_provider.saml_spec_version = original_version
 
 
-def test_authorize_ratelimit(mocker, mock_provider, fake_redis_user_limit_key, digid_mock_disable):
-    redis_cache = mock_provider.redis_cache
-    redis_mock = redis_cache.redis_client
+def test_authorize_ratelimit(redis_mock):
+    provider = Provider(settings=get_settings({
+        'mock_digid': False,
+        'ratelimit.user_limit_key': 'user_limit_key'
+    }))
 
-    redis_mock.set('tvs:primary_idp', 'digid')
-    redis_mock.set('user_limit_key', 3)
-
-    provider = mock_provider
-    mocker.patch.object(provider, 'redis_cache',  redis_cache)
+    provider.redis_client.set('user_limit_key', 3)
 
     authorize_params = {
         'client_id': "test_client",
@@ -103,7 +102,10 @@ def test_authorize_invalid_model():
     with pytest.raises(ValidationError):
         AuthorizeRequest(**authorize_params)
 
-def test_authorize_invalid_request(digid_mock_disable, redis_mock, digid_config, mock_provider): # pylint: disable=unused-argument
+def test_authorize_invalid_request(redis_mock, digid_config): # pylint: disable=unused-argument
+    mock_provider = Provider(settings=get_settings({
+        'mock_digid': False
+    }))
 
     authorize_params = {
         'client_id': "some_unknown_client",
@@ -179,8 +181,11 @@ def test_resolve_artifact_tvs(requests_mock, mocker, redis_mock, tvs_config, moc
     bsn = provider._resolve_artifact('XXX', 'tvs')
     assert bsn == '900212640'
 
-def test_assertion_consumer_service(digid_config, digid_mock_disable, mock_provider):
-    provider: Provider = mock_provider
+def test_assertion_consumer_service(digid_config):
+    provider: Provider = Provider(settings=get_settings({
+        'mock_digid': False
+    }))
+
     redis_mock = provider.redis_client
     redis_cache = provider.redis_cache
     settings = provider.settings
@@ -250,8 +255,12 @@ def _approx_eq(dynam_val: int, stat_val: int, delta: int):
 def mock_is_authorized(key, request, audience):
     return "", "mocking_the_at_hash_XYZ"
 
-def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, mocker, digid_mock_disable, mock_provider):
+def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, mocker):
     # pylint: disable=unused-argument
+    mock_provider = Provider(settings=get_settings({
+        'mock_digid': False
+    }))
+
     def raise_user_login_failed(*args, **kwargs):
         raise UserNotAuthenticated("User authentication flow failed", oauth_error='saml_authn_failed')
 
