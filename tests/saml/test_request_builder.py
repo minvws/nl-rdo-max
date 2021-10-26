@@ -75,7 +75,7 @@ def test_artifact_value():
     assert artifact_node.text == expected
 
 @pytest.mark.parametrize("saml_request", [
-    AuthNRequest(sso_url='test_url', sp_metadata=SP_METADATA, jinja_env=JINJA_ENV),
+    AuthNRequest(sso_url='test_url', sp_metadata=SP_METADATA, jinja_env=JINJA_ENV, scoping_list=[]),
     ArtifactResolveRequest('some_artifact_code', sso_url='test_url', sp_metadata=SP_METADATA, jinja_env=JINJA_ENV),
     SPMetadata(SETTINGS_DICT, keypair_path, JINJA_ENV)])
 def test_verify_requests(saml_request): # pylint: disable=unused-argument

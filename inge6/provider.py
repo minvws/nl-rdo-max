@@ -282,7 +282,9 @@ class Provider(OIDCProvider, SAMLProvider):
             )
 
         if id_provider.authn_binding.endswith('POST'):
-            authn_request = id_provider.create_authn_request()
+
+            machtigen = constants.SCOPE_MACHTIGEN in login_digid_req.authorize_request.scope
+            authn_request = id_provider.create_authn_request(machtigen=machtigen)
 
             return SAMLAuthNAutoSubmitResponse(
                 sso_url=authn_request.sso_url,

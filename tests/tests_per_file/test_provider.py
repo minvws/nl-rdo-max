@@ -24,9 +24,10 @@ from inge6.exceptions import ExpectedRedisValue
 from inge6 import constants
 from inge6.provider import Provider, _get_bsn_from_art_resp
 from inge6.models import AuthorizeRequest, JWTError, SorryPageRequest
-from inge6.config import get_settings
 from inge6.router import consume_bsn_for_token
 
+
+from ..test_utils import get_settings
 from ..resources.utils import PRIV_KEY_BSN_AES_KEY
 
 def test_sorry_too_busy(mock_provider: Provider):
@@ -51,26 +52,15 @@ def test_get_bsn_from_artresponse(mock_provider):
     id_provider.saml_spec_version = original_version
 
 
-def test_authorize_ratelimit(mocker, mock_provider, fake_redis_user_limit_key, digid_mock_disable):
-    redis_cache = mock_provider.redis_cache
-    redis_mock = redis_cache.redis_client
+def test_authorize_ratelimit(redis_mock, default_authorize_request_dict):
+    provider = Provider(settings=get_settings({
+        'mock_digid': False,
+        'ratelimit.user_limit_key': 'user_limit_key'
+    }))
 
-    redis_mock.set('tvs:primary_idp', 'digid')
-    redis_mock.set('user_limit_key', 3)
+    provider.redis_client.set('user_limit_key', 3)
 
-    provider = mock_provider
-    mocker.patch.object(provider, 'redis_cache',  redis_cache)
-
-    authorize_params = {
-        'client_id': "test_client",
-        'redirect_uri': "http://localhost:3000/login",
-        'response_type': "code",
-        'nonce': "n-0S6_WzA2Mj",
-        'state': "af0ifjsldkj",
-        'scope': "openid",
-        'code_challenge': "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier : SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
-        'code_challenge_method': "S256",
-    }
+    authorize_params = default_authorize_request_dict
 
     headers: Headers = Headers({})
     auth_req = AuthorizeRequest(**authorize_params)
@@ -103,18 +93,13 @@ def test_authorize_invalid_model():
     with pytest.raises(ValidationError):
         AuthorizeRequest(**authorize_params)
 
-def test_authorize_invalid_request(digid_mock_disable, redis_mock, digid_config, mock_provider): # pylint: disable=unused-argument
+def test_authorize_invalid_request(redis_mock, digid_config, default_authorize_request_dict): # pylint: disable=unused-argument
+    mock_provider = Provider(settings=get_settings({
+        'mock_digid': False
+    }))
 
-    authorize_params = {
-        'client_id': "some_unknown_client",
-        'redirect_uri': "http://localhost:3000/login",
-        'response_type': "code",
-        'nonce': "n-0S6_WzA2Mj",
-        'state': "af0ifjsldkj",
-        'scope': "openid",
-        'code_challenge': "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier : SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
-        'code_challenge_method': "S256",
-    }
+    authorize_params = default_authorize_request_dict
+    authorize_params['client_id'] = "some_unknown_client"
 
     headers: Headers = Headers({})
     auth_req = AuthorizeRequest(**authorize_params)
@@ -179,23 +164,18 @@ def test_resolve_artifact_tvs(requests_mock, mocker, redis_mock, tvs_config, moc
     bsn = provider._resolve_artifact('XXX', 'tvs')
     assert bsn == '900212640'
 
-def test_assertion_consumer_service(digid_config, digid_mock_disable, mock_provider):
-    provider: Provider = mock_provider
+def test_assertion_consumer_service(digid_config, default_authorize_request_dict):
+    provider: Provider = Provider(settings=get_settings({
+        'mock_digid': False
+    }))
+
     redis_mock = provider.redis_client
     redis_cache = provider.redis_cache
     settings = provider.settings
 
     code_challenge = "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw"
-    auth_req = AuthorizeRequest(
-        code_challenge_method="S256",
-        client_id="test_client",
-        redirect_uri="http://localhost:3000/login",
-        response_type="code",
-        nonce="n-0S6_WzA2Mj",
-        state="af0ifjsldkj",
-        scope="openid",
-        code_challenge=code_challenge # code_verifier = SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
-    )
+    default_authorize_request_dict['code_challenge'] = code_challenge
+    auth_req = AuthorizeRequest(**default_authorize_request_dict)
 
     headers = Headers()
     response = provider.authorize_endpoint(auth_req, headers, '0.0.0.0')
@@ -250,8 +230,13 @@ def _approx_eq(dynam_val: int, stat_val: int, delta: int):
 def mock_is_authorized(key, request, audience):
     return "", "mocking_the_at_hash_XYZ"
 
-def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, mocker, digid_mock_disable, mock_provider):
+def test_accesstoken_fail_userlogin(redis_mock, tvs_config, mocker, default_authorize_request_dict, mock_clients_db):
     # pylint: disable=unused-argument
+    mock_provider = Provider(settings=get_settings({
+        'mock_digid': False
+    }))
+    mock_provider.clients = mock_clients_db
+
     def raise_user_login_failed(*args, **kwargs):
         raise UserNotAuthenticated("User authentication flow failed", oauth_error='saml_authn_failed')
 
@@ -279,16 +264,9 @@ def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, moc
     client_id = 'test_client'
     bsn = '999991772'
 
-    authorize_params = {
-        'client_id': client_id,
-        'redirect_uri': redirect_uri,
-        'response_type': "code",
-        'nonce': "n-0S6_WzA2Mj",
-        'state': "af0ifjsldkj",
-        'scope': "openid",
-        'code_challenge': "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier : SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
-        'code_challenge_method': "S256",
-    }
+    authorize_params = default_authorize_request_dict
+    authorize_params['client_id'] = client_id
+    authorize_params['redirect_uri'] = redirect_uri
 
     auth_req = AuthorizeRequest(**authorize_params)
     resp = consume_bsn_for_token(bsn, request, auth_req)

@@ -2,15 +2,19 @@ import time
 import pytest
 
 from inge6.exceptions import TooBusyError, TooManyRequestsFromOrigin
-from inge6.config import get_settings
 from inge6.rate_limiter import RateLimiter
+
+from ..test_utils import get_settings
 
 @pytest.fixture
 def rate_limiter(redis_mock):
-    yield RateLimiter(get_settings(), redis_mock)
+    return RateLimiter(get_settings({
+        'ratelimit.user_limit_key': 'user_limit_key'
+    }), redis_client=redis_mock)
+
 
 #pylint: disable=unused-argument, redefined-outer-name
-def test_rate_limiter_user_limit(redis_mock, rate_limiter, fake_redis_user_limit_key, disable_overflow, digid_config):
+def test_rate_limiter_user_limit(rate_limiter, redis_mock, disable_overflow, digid_config):
     redis_mock.set('user_limit_key', 3)
 
     rate_limiter.rate_limit_test('0.0.0.1')
@@ -20,7 +24,12 @@ def test_rate_limiter_user_limit(redis_mock, rate_limiter, fake_redis_user_limit
         rate_limiter.rate_limit_test('0.0.0.4')
 
 #pylint: disable=unused-argument, redefined-outer-name
-def test_rate_limiter_overflow(redis_mock, rate_limiter, fake_redis_user_limit_key, fake_redis_overflow_userlimit_key):
+def test_rate_limiter_overflow(redis_mock):
+    rate_limiter = RateLimiter(get_settings({
+        'ratelimit.user_limit_key': 'user_limit_key',
+        'ratelimit.user_limit_key_overflow_idp': 'overflow_user_limit'
+    }), redis_client=redis_mock)
+
     redis_mock.set('tvs:primary_idp', 'tvs')
     redis_mock.set('tvs:overflow_idp', 'digid')
     redis_mock.set('user_limit_key', 1)
@@ -38,7 +47,12 @@ def test_rate_limiter_overflow(redis_mock, rate_limiter, fake_redis_user_limit_k
 
 
 #pylint: disable=unused-argument, redefined-outer-name
-def test_rate_limiter_overflow_limit_0(redis_mock, rate_limiter, fake_redis_user_limit_key, fake_redis_overflow_userlimit_key):
+def test_rate_limiter_overflow_limit_0(redis_mock):
+    rate_limiter = RateLimiter(get_settings({
+        'ratelimit.user_limit_key': 'user_limit_key',
+        'ratelimit.user_limit_key_overflow_idp': 'overflow_user_limit'
+    }), redis_client=redis_mock)
+
     redis_mock.set('tvs:primary_idp', 'tvs')
     redis_mock.set('tvs:overflow_idp', 'digid')
     redis_mock.set('user_limit_key', 0)

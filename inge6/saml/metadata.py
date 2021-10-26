@@ -64,9 +64,8 @@ class SPMetadata(SAMLRequest):
         return self.cluster_settings['connections']
 
     @property
-    def scoping_list(self):
-        scoping_list = self.settings_dict['security']['allowedProxyList']
-        return scoping_list if scoping_list is not None else []
+    def allow_scoping(self):
+        return self.settings_dict.get('security', {}).get('allowScoping', False)
 
     @property
     def root(self):
