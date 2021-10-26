@@ -230,11 +230,20 @@ def _approx_eq(dynam_val: int, stat_val: int, delta: int):
 def mock_is_authorized(key, request, audience):
     return "", "mocking_the_at_hash_XYZ"
 
-def test_accesstoken_fail_userlogin(mock_clients_db, redis_mock, tvs_config, mocker, default_authorize_request_dict):
+def test_accesstoken_fail_userlogin(redis_mock, tvs_config, mocker, default_authorize_request_dict):
     # pylint: disable=unused-argument
     mock_provider = Provider(settings=get_settings({
         'mock_digid': False
     }))
+    mock_provider.clients = {
+        "test_client": {
+            "token_endpoint_auth_method": "none",
+            "redirect_uris": [
+                    "http://localhost:3000/login",
+                ],
+            "response_types": ["code"]
+        }
+    }
 
     def raise_user_login_failed(*args, **kwargs):
         raise UserNotAuthenticated("User authentication flow failed", oauth_error='saml_authn_failed')

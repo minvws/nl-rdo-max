@@ -5,19 +5,6 @@ from inge6.provider import Provider
 from .test_utils import get_settings
 
 @pytest.fixture
-def mock_clients_db(mocker, mock_provider): # pylint: disable=redefined-outer-name
-    mocker.patch.object(mock_provider.provider, 'clients', {
-        "test_client": {
-            "token_endpoint_auth_method": "none",
-            "redirect_uris": [
-                    "http://localhost:3000/login",
-                ],
-            "response_types": ["code"]
-        }
-    })
-    yield mock_provider
-
-@pytest.fixture
 def redis_mock(redisdb, mocker):
     # Set the default for the primary_idp, free to update
     redisdb.set(get_settings().primary_idp_key, 'tvs')
