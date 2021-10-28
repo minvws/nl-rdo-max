@@ -217,7 +217,7 @@ class Provider(OIDCProvider, SAMLProvider):
     def __init__(self, settings: Settings = get_settings()) -> None:
         OIDCProvider.__init__(self, settings)
         SAMLProvider.__init__(self, settings)
-        self.ScopeService = ScopeService()
+        self.ScopeService = ScopeService(settings)
 
         self.settings = settings
 
@@ -298,10 +298,7 @@ class Provider(OIDCProvider, SAMLProvider):
             ).decode()
             sso_url = f"/digid-mock?state={randstate}&idp_name={id_provider.name}&authorize_request={base64_authn_request}"
 
-            authn_request = id_provider.create_authn_request(
-                self.ScopeService.determine_scoping_list(login_digid_req.authorize_request.scope),
-                self.ScopeService.determine_request_ids(login_digid_req.authorize_request.scope)
-            )
+            authn_request = id_provider.create_authn_request([], [])
             return SAMLAuthNAutoSubmitResponse(
                 sso_url=sso_url,
                 relay_state=randstate,
@@ -310,11 +307,16 @@ class Provider(OIDCProvider, SAMLProvider):
             )
 
         if id_provider.authn_binding.endswith("POST"):
+            scoping_list, request_ids = []
 
-            authn_request = id_provider.create_authn_request(
-                self.ScopeService.determine_scoping_list(id_provider.name, login_digid_req.authorize_request.scope),
-                self.ScopeService.determine_request_ids(login_digid_req.authorize_request.scope)
-            )
+            if id_provider.sp_metadata.allow_scoping:
+                scoping_list = self.ScopeService.determine_scoping_list(
+                    id_provider.name,
+                    login_digid_req.authorize_request.scope
+                )
+                request_ids = self.ScopeService.determine_request_ids(login_digid_req.authorize_request.scope)
+
+            authn_request = id_provider.create_authn_request(scoping_list, request_ids)
 
             return SAMLAuthNAutoSubmitResponse(
                 sso_url=authn_request.sso_url,

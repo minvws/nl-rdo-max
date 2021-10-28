@@ -1,19 +1,14 @@
 class ScopeService:
+    def __init__(self, settings):
+        self.settings = settings
+
+    @property
     def allowed_scopes(self):
-        return self.sp_metadata.allowed_scopes
-
-    def scoping_supported(self):
-        return self.sp_metadata.allow_scoping
-
-    def scope_allowed(self, scope):
-        return self.allowed_scopes().__contains__(scope)
+        return self.settings.allowed_scopes
 
     def determine_scoping_list(self, scope):
         if not self.scope_allowed(scope):
             raise Exception("scope not allowed")
-
-        if not self.scoping_supported():
-            return []
 
         if scope == 'authorization_by_proxy':
             return [
