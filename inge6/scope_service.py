@@ -4,7 +4,7 @@ class ScopeService:
 
     @property
     def allowed_scopes(self):
-        return self.settings.allowed_scopes
+        return self.settings.allowed_scopes.split(',')
 
     def determine_scoping_list(self, scope):
         if scope not in self.allowed_scopes():
