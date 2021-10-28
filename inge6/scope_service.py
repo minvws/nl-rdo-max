@@ -5,11 +5,10 @@ class ScopeService:
     def scoping_supported(self):
         return self.sp_metadata.allow_scoping
 
-    @staticmethod
-    def scope_allowed(scope):
-        return ScopeService.allowed_scopes().__contains__(scope)
+    def scope_allowed(self, scope):
+        return self.allowed_scopes().__contains__(scope)
 
-    def determine_scoping_list(self, provider, scope):
+    def determine_scoping_list(self, scope):
         if not self.scope_allowed(scope):
             raise Exception("scope not allowed")
 

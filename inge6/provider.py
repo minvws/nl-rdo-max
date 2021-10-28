@@ -299,7 +299,7 @@ class Provider(OIDCProvider, SAMLProvider):
             sso_url = f"/digid-mock?state={randstate}&idp_name={id_provider.name}&authorize_request={base64_authn_request}"
 
             authn_request = id_provider.create_authn_request(
-                self.ScopeService.determine_scoping_list(id_provider.name, login_digid_req.authorize_request.scope),
+                self.ScopeService.determine_scoping_list(login_digid_req.authorize_request.scope),
                 self.ScopeService.determine_request_ids(login_digid_req.authorize_request.scope)
             )
             return SAMLAuthNAutoSubmitResponse(
