@@ -1,4 +1,4 @@
-env = env PATH=${bin}:$$PATH
+env = env PATH="${bin}:$$PATH"
 
 venv: .venv/touchfile ## Create virtual environment
 .venv/touchfile:

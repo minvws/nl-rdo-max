@@ -89,6 +89,7 @@ from . import constants
 
 from .config import Settings, get_settings
 from .rate_limiter import RateLimiter
+from .scope_service import ScopeService
 from .utils import (
     create_redis_bsn_key,
     cache_auth_req,
@@ -216,6 +217,7 @@ class Provider(OIDCProvider, SAMLProvider):
     def __init__(self, settings: Settings = get_settings()) -> None:
         OIDCProvider.__init__(self, settings)
         SAMLProvider.__init__(self, settings)
+        self.ScopeService = ScopeService()
 
         self.settings = settings
 
@@ -296,7 +298,10 @@ class Provider(OIDCProvider, SAMLProvider):
             ).decode()
             sso_url = f"/digid-mock?state={randstate}&idp_name={id_provider.name}&authorize_request={base64_authn_request}"
 
-            authn_request = id_provider.create_authn_request()
+            authn_request = id_provider.create_authn_request(
+                self.ScopeService.determine_scoping_list(id_provider.name, login_digid_req.authorize_request.scope),
+                self.ScopeService.determine_request_ids(login_digid_req.authorize_request.scope)
+            )
             return SAMLAuthNAutoSubmitResponse(
                 sso_url=sso_url,
                 relay_state=randstate,
@@ -306,10 +311,10 @@ class Provider(OIDCProvider, SAMLProvider):
 
         if id_provider.authn_binding.endswith("POST"):
 
-            machtigen = (
-                constants.SCOPE_MACHTIGEN in login_digid_req.authorize_request.scope
+            authn_request = id_provider.create_authn_request(
+                self.ScopeService.determine_scoping_list(id_provider.name, login_digid_req.authorize_request.scope),
+                self.ScopeService.determine_request_ids(login_digid_req.authorize_request.scope)
             )
-            authn_request = id_provider.create_authn_request(machtigen=machtigen)
 
             return SAMLAuthNAutoSubmitResponse(
                 sso_url=authn_request.sso_url,
