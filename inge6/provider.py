@@ -313,7 +313,9 @@ class Provider(OIDCProvider, SAMLProvider):
                 scoping_list = self.scope_service.determine_scoping_list(
                     login_digid_req.authorize_request.scope
                 )
-                request_ids = self.scope_service.determine_request_ids(login_digid_req.authorize_request.scope)
+                request_ids = self.scope_service.determine_request_ids(
+                    login_digid_req.authorize_request.scope
+                )
 
             authn_request = id_provider.create_authn_request(scoping_list, request_ids)
 

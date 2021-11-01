@@ -1,15 +1,18 @@
 import pytest
+from pytest_redis import factories
+
 from inge6 import cache
 from inge6.provider import Provider
 
 from .test_utils import get_settings
-from pytest_redis import factories
 
 redis_config = factories.redis_noproc(port=16379)
-redis = factories.redisdb('redis_config')
+redis = factories.redisdb("redis_config")
 
 
 @pytest.fixture
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 def redis_mock(docker_services, redis, mocker):
     redis.set(get_settings().primary_idp_key, "tvs")
     mocker.patch("inge6.cache.redis_cache.create_redis_client", lambda _: redis)
