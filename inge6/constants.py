@@ -3,7 +3,7 @@ from enum import Enum
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-SCOPE_MACHTIGEN = "machtigen"
+SCOPE_MACHTIGEN = "authorization_by_proxy"
 
 
 class SectorNumber(Enum):
