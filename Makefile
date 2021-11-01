@@ -5,7 +5,7 @@ venv: .venv/touchfile ## Create virtual environment
 	test -d .venv || python3 -m venv .venv
 	. .venv/bin/activate; pip install -U pip
 	. .venv/bin/activate; pip install pip-tools
-    . .venv/bin/activate && ${env} python3 -m piptools compile --output-file requirements-dev.txt requirements.in requirements-dev.in
+	. .venv/bin/activate && ${env} python3 -m piptools compile --output-file requirements-dev.txt requirements.in requirements-dev.in
 	. .venv/bin/activate && ${env} python3 -m piptools sync requirements.txt requirements-dev.txt
 	. .venv/bin/activate && ${env} pip install -e .
 	touch .venv/touchfile
