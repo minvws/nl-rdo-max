@@ -9,7 +9,9 @@ class ScopeService:
     def validate_scopes(self, scopes):
         for scope in scopes:
             if scope not in self.allowed_scopes:
-                raise Exception("scope {} not allowed, only {} are supported".format(scope, self.allowed_scopes))
+                raise Exception(
+                    f"scope {scope} not allowed, only {self.allowed_scopes} are supported"
+                )
 
     def determine_scoping_list(self, scopes):
         scopes_arr = scopes.split()
@@ -25,7 +27,9 @@ class ScopeService:
         ]
 
     def determine_request_ids(self, scopes):
-        if "authorization_by_proxy" in scopes.split():
+        scopes_arr = scopes.split()
+        self.validate_scopes(scopes_arr)
+        if "authorization_by_proxy" in scopes_arr:
             return [
                 "urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:0001",
             ]
