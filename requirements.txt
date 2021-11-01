@@ -4,42 +4,45 @@
 #
 #    pip-compile requirements.in
 #
+anyio==3.3.4
+    # via starlette
 beaker==1.11.0
     # via oic
-certifi==2021.5.30
+certifi==2021.10.8
     # via requests
-cffi==1.14.6
+cffi==1.15.0
     # via
     #   cryptography
     #   pynacl
-charset-normalizer==2.0.4
+charset-normalizer==2.0.7
     # via requests
-cryptography==3.4.7
+cryptography==35.0.0
     # via
     #   oic
     #   pyopenssl
-defusedxml==0.6.0
+defusedxml==0.7.1
     # via oic
-fastapi==0.68.1
+fastapi==0.70.0
     # via -r requirements.in
 future==0.18.2
     # via pyjwkest
 idna==3.2
     # via
     #   -r requirements.in
+    #   anyio
     #   requests
 isodate==0.6.0
     # via python3-saml
 itsdangerous==2.0.1
     # via -r requirements.in
-jinja2==3.0.1
+jinja2==3.0.2
     # via -r requirements.in
 lxml==4.6.3
     # via
     #   -r requirements.in
     #   python3-saml
     #   xmlsec
-mako==1.1.4
+mako==1.1.5
     # via oic
 markupsafe==2.0.1
     # via
@@ -49,9 +52,9 @@ oic==1.3.0
     # via pyop
 pycparser==2.20
     # via cffi
-pycryptodome==3.10.1
+pycryptodome==3.11.0
     # via -r requirements.in
-pycryptodomex==3.10.1
+pycryptodomex==3.11.0
     # via
     #   oic
     #   pyjwkest
@@ -59,13 +62,13 @@ pydantic==1.8.2
     # via fastapi
 pyjwkest==1.4.2
     # via oic
-pyjwt==2.1.0
+pyjwt==2.3.0
     # via -r requirements.in
 pynacl==1.4.0
     # via -r requirements.in
 pyop @ git+git://github.com/IdentityPython/pyop@master
     # via -r requirements.in
-pyopenssl==20.0.1
+pyopenssl==21.0.0
     # via -r requirements.in
 python-dateutil==2.8.2
     # via -r requirements.in
@@ -92,15 +95,17 @@ six==1.16.0
     #   pyopenssl
     #   python-dateutil
     #   python-multipart
-starlette==0.14.2
+sniffio==1.2.0
+    # via anyio
+starlette==0.16.0
     # via fastapi
-types-python-dateutil==2.8.0
+types-python-dateutil==2.8.2
     # via -r requirements.in
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via
     #   oic
     #   pydantic
-urllib3==1.26.6
+urllib3==1.26.7
     # via requests
 xmlsec==1.3.12
     # via
