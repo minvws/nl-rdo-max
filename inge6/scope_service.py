@@ -7,7 +7,7 @@ class ScopeService:
         return self.settings.allowed_scopes.split(',')
 
     def determine_scoping_list(self, scope):
-        if scope not in self.allowed_scopes():
+        if scope not in self.allowed_scopes:
             raise Exception("scope not allowed")
 
         if scope == 'authorization_by_proxy':
@@ -21,7 +21,7 @@ class ScopeService:
         ]
 
     def determine_request_ids(self, scope):
-        if scope not in self.allowed_scopes():
+        if scope not in self.allowed_scopes:
             raise Exception("scope not allowed")
 
         if scope == 'authorization_by_proxy':
