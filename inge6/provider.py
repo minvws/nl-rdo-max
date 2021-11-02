@@ -89,7 +89,6 @@ from . import constants
 
 from .config import Settings, get_settings
 from .rate_limiter import RateLimiter
-from .scope_service import ScopeService
 from .utils import (
     create_redis_bsn_key,
     cache_auth_req,
@@ -217,7 +216,6 @@ class Provider(OIDCProvider, SAMLProvider):
     def __init__(self, settings: Settings = get_settings()) -> None:
         OIDCProvider.__init__(self, settings)
         SAMLProvider.__init__(self, settings)
-        self.scope_service = ScopeService(settings)
 
         self.settings = settings
 
@@ -270,6 +268,19 @@ class Provider(OIDCProvider, SAMLProvider):
 
         return False
 
+    @property
+    def allowed_scopes(self):
+        return self.settings.allowed_scopes
+
+    def split_and_validate_scopes(self, scopes):
+        splitted_scopes = scopes.split()
+        for scope in splitted_scopes:
+            if scope not in self.allowed_scopes:
+                raise Exception(
+                    f"scope {scope} not allowed, only {self.allowed_scopes} are supported"
+                )
+        return splitted_scopes
+
     def _post_login(
         self, login_digid_req: LoginDigiDRequest, id_provider: IdProvider
     ) -> Response:
@@ -307,11 +318,12 @@ class Provider(OIDCProvider, SAMLProvider):
             )
 
         if id_provider.authn_binding.endswith("POST"):
-            scoping_list, request_ids = self.scope_service.determine_scoping_attributes(
-                login_digid_req.authorize_request.scope, id_provider
+            splitted_scopes = self.split_and_validate_scopes(
+                login_digid_req.authorize_request.scope
             )
+            authorization_by_proxy = "authorization_by_proxy" in splitted_scopes
 
-            authn_request = id_provider.create_authn_request(scoping_list, request_ids)
+            authn_request = id_provider.create_authn_request(authorization_by_proxy)
 
             return SAMLAuthNAutoSubmitResponse(
                 sso_url=authn_request.sso_url,

@@ -67,19 +67,10 @@ class IdProvider:
     def saml_is_legacy_version(self):
         return self.saml_spec_version == Version("3.5")
 
-    @property
-    def authorization_by_proxy_scopes(self):
-        return self.sp_metadata.authorization_by_proxy_scopes
-
-    @property
-    def authorization_by_proxy_request_ids(self):
-        return self.sp_metadata.authorization_by_proxy_request_ids
-
-    @property
-    def default_scopes(self):
-        return self.sp_metadata.default_scopes
-
-    def create_authn_request(self, scoping_list, request_ids, cluster_name=None):
+    def create_authn_request(self, authorization_by_proxy, cluster_name=None):
+        scoping_list, request_ids = self.determine_scoping_attributes(
+            authorization_by_proxy
+        )
         sso_url = self.idp_metadata.get_sso()["location"]
 
         return AuthNRequest(
@@ -96,3 +87,21 @@ class IdProvider:
         return ArtifactResolveRequest(
             artifact, sso_url, self.sp_metadata, self.jinja_env
         )
+
+    def determine_scoping_attributes(self, authorization_by_proxy):
+        if self.sp_metadata.allow_scoping:
+            return (
+                self.determine_scoping_list(authorization_by_proxy),
+                self.determine_request_ids(authorization_by_proxy),
+            )
+        return [], []
+
+    def determine_scoping_list(self, authorization_by_proxy):
+        if authorization_by_proxy:
+            return self.sp_metadata.authorization_by_proxy_scopes
+        return self.sp_metadata.default_scopes
+
+    def determine_request_ids(self, authorization_by_proxy):
+        if authorization_by_proxy:
+            return self.sp_metadata.authorization_by_proxy_request_ids
+        return []
