@@ -18,7 +18,12 @@
         "allowedProxyList": [
             "urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:0001",
             "urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:0001"
-        ]
+        ],
+        "authorizationByProxyRequestIds": ["urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:0001"],
+        "authorizationByProxyScopes": [
+            "urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:0001",
+            "urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:0001"],
+        "defaultScopes": ["urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:0001"]
     },
     "contactPerson": {
         "technical": {

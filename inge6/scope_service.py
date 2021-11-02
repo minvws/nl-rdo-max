@@ -13,25 +13,24 @@ class ScopeService:
                     f"scope {scope} not allowed, only {self.allowed_scopes} are supported"
                 )
 
-    def determine_scoping_list(self, scopes):
+    def determine_scoping_attributes(self, scopes, id_provider):
+        if id_provider.sp_metadata.allow_scoping:
+            return (
+                self.determine_scoping_list(scopes, id_provider),
+                self.determine_request_ids(scopes, id_provider),
+            )
+        return [], []
+
+    def determine_scoping_list(self, scopes, id_provider):
         scopes_arr = scopes.split()
         self.validate_scopes(scopes_arr)
         if "authorization_by_proxy" in scopes_arr:
-            return [
-                "urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:0001",
-                "urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:0001",
-            ]
+            return id_provider.authorization_by_proxy_scopes
+        return id_provider.sp_metadata.default_scopes
 
-        return [
-            "urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:0001",
-        ]
-
-    def determine_request_ids(self, scopes):
+    def determine_request_ids(self, scopes, id_provider):
         scopes_arr = scopes.split()
         self.validate_scopes(scopes_arr)
         if "authorization_by_proxy" in scopes_arr:
-            return [
-                "urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:0001",
-            ]
-
+            return id_provider.authorization_by_proxy_request_ids
         return []

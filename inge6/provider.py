@@ -307,14 +307,10 @@ class Provider(OIDCProvider, SAMLProvider):
             )
 
         if id_provider.authn_binding.endswith("POST"):
-            scoping_list, request_ids = [], []
-            if id_provider.sp_metadata.allow_scoping:
-                scoping_list = self.scope_service.determine_scoping_list(
-                    login_digid_req.authorize_request.scope
-                )
-                request_ids = self.scope_service.determine_request_ids(
-                    login_digid_req.authorize_request.scope
-                )
+            scoping_list, request_ids = self.scope_service.determine_scoping_attributes(
+                login_digid_req.authorize_request.scope, id_provider
+            )
+
             authn_request = id_provider.create_authn_request(scoping_list, request_ids)
 
             return SAMLAuthNAutoSubmitResponse(

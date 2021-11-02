@@ -67,6 +67,18 @@ class IdProvider:
     def saml_is_legacy_version(self):
         return self.saml_spec_version == Version("3.5")
 
+    @property
+    def authorization_by_proxy_scopes(self):
+        return self.sp_metadata.authorization_by_proxy_scopes
+
+    @property
+    def authorization_by_proxy_request_ids(self):
+        return self.sp_metadata.authorization_by_proxy_request_ids
+
+    @property
+    def default_scopes(self):
+        return self.sp_metadata.default_scopes
+
     def create_authn_request(self, scoping_list, request_ids, cluster_name=None):
         sso_url = self.idp_metadata.get_sso()["location"]
 

@@ -14,7 +14,8 @@
         "requestedAuthnContextComparison": "minimum",
         "allowSingleLabelDomains": false,
         "signatureAlgorithm": "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
-        "digestAlgorithm": "http://www.w3.org/2001/04/xmlenc#sha256"
+        "digestAlgorithm": "http://www.w3.org/2001/04/xmlenc#sha256",
+        "defaultScopes": ["urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:0001"]
     },
     "contactPerson": {
         "technical": {
