@@ -180,7 +180,6 @@ types-requests==2.25.11
     # via -r requirements-dev.in
 typing-extensions==3.10.0.2
     # via
-    #   astroid
     #   black
     #   gitpython
     #   mypy
