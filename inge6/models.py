@@ -8,6 +8,7 @@ import typing
 from enum import Enum
 
 from jinja2 import Template
+from redis import client
 
 from starlette.background import BackgroundTask
 from starlette.datastructures import URL
@@ -17,6 +18,8 @@ from pydantic import BaseModel, validator
 
 from fastapi import Form
 from fastapi.responses import RedirectResponse
+
+from inge6.exceptions import InvalidClientError
 
 from .config import Settings
 from .saml.saml_request import AuthNRequest
@@ -59,7 +62,7 @@ class AuthorizeErrorRedirectResponse(RedirectResponse):
         ] += f"?error={error}&error_description={error_description}&state={state}"
 
 
-class RateLimitRedirectResponse(RedirectResponse):
+class SomethingWrongRedirectResponse(RedirectResponse):
     def __init__(
         self,
         url: typing.Union[str, URL],
