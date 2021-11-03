@@ -70,3 +70,14 @@ if (resp.status_code != 200):
 accesstoken = json.loads(accesstoken_resp.content.decode())
 ```
 
+
+It is the responsibility of the client to generate a unique code_verifier and code_challenge pair. To make sure that the code_verifier is cryptographically secure one should use the following definition (as defined in: https://datatracker.ietf.org/doc/html/rfc7636#section-4.2):
+```
+code_verifier = high-entropy cryptographic random STRING using the
+unreserved characters [A-Z] / [a-z] / [0-9] / "-" / "." / "_" / "~"
+from Section 2.3 of [RFC3986], with a minimum length of 43 characters
+and a maximum length of 128 characters.
+```
+
+To find the code in this library used for verifying the code_verifier and code_challenge pair, have a look at the code snippet highlighted in the following github permalink:
+https://github.com/91divoc-ln/inge-6/blob/e858cb2807cd270d3ca7e9c67b7fccc556a0f91d/inge6/oidc/authorize.py#L17-L49
