@@ -80,5 +80,5 @@ def hget_from_redis(redis_cache: RedisCache, namespace, key):
     """
     result = redis_cache.hget(namespace, key)
     if result is None:
-        raise ExpiredResourceError("Resource is not (any longer) available in redis")
+        raise ExpiredResourceError("Resource is not available in our cache")
     return result
