@@ -96,11 +96,16 @@ def test_authorize_outage(
 def test_authorize_ratelimit(mocker, default_authorize_request_dict):
     mock_provider = Provider(
         settings=get_settings(
-            {"mock_digid": False, "ratelimit.user_limit_key": "user_limit_key"}
+            {
+                "mock_digid": False, 
+                "ratelimit.user_limit_key": "user_limit_key",
+                "ratelimit.primary_idp_key": "inge6:primary_idp"
+            }
         )
     )
 
     mock_provider.redis_client.set("user_limit_key", 3)
+    mock_provider.redis_client.set("inge6:primary_idp", "tvs")
 
     mocker.patch("inge6.main.PROVIDER", mock_provider)
     client = TestClient(app)
