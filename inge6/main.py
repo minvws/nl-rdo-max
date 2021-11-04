@@ -9,7 +9,11 @@ import uvicorn
 
 from fastapi import FastAPI, Request
 
-from inge6.exceptions import AuthorizeEndpointException, InvalidClientError, SomethingWrongError
+from inge6.exceptions import (
+    AuthorizeEndpointException,
+    InvalidClientError,
+    SomethingWrongError,
+)
 from inge6.models import AuthorizeErrorRedirectResponse, SomethingWrongRedirectResponse
 
 from .config import get_settings
@@ -23,16 +27,19 @@ app.include_router(router)
 
 PROVIDER = Provider()
 
+
 @app.exception_handler(AuthorizeEndpointException)
-async def general_authorization_exception_handler(request: Request, exc: AuthorizeEndpointException):
+async def general_authorization_exception_handler(
+    request: Request, exc: AuthorizeEndpointException
+):
     """
-        When throwing these type of errors the client_id has been verified, but something else is still wrong
+    When throwing these type of errors the client_id has been verified, but something else is still wrong
     """
-    redirect_uri = request.query_params['redirect_uri']
-    state = request.query_params['state']
+    redirect_uri = request.query_params["redirect_uri"]
+    state = request.query_params["state"]
 
     return AuthorizeErrorRedirectResponse(
-        url= redirect_uri,
+        url=redirect_uri,
         error=exc.error,
         error_description=exc.error_description,
         state=state,
@@ -43,11 +50,11 @@ async def general_authorization_exception_handler(request: Request, exc: Authori
 @app.exception_handler(SomethingWrongError)
 async def something_wrong_exception_handler(request: Request, _: SomethingWrongError):
     """
-        When throwing these type of errors the user has been verified, but server access is disabled.
+    When throwing these type of errors the user has been verified, but server access is disabled.
     """
-    redirect_uri = request.query_params['redirect_uri']
-    client_id = request.query_params['client_id']
-    state = request.query_params['state']
+    redirect_uri = request.query_params["redirect_uri"]
+    client_id = request.query_params["client_id"]
+    state = request.query_params["state"]
 
     return SomethingWrongRedirectResponse(
         url="/sorry-something-went-wrong?",
@@ -59,10 +66,7 @@ async def something_wrong_exception_handler(request: Request, _: SomethingWrongE
 
 @app.exception_handler(InvalidClientError)
 async def invalid_client_data_exception_handler(_: Request, exc: InvalidClientError):
-    return JSONResponse(
-        status_code=400,
-        content={"error": str(exc)}
-    )
+    return JSONResponse(status_code=400, content={"error": str(exc)})
 
 
 def _validate_saml_identity_provider_settings():

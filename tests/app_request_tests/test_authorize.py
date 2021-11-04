@@ -91,3 +91,41 @@ def test_authorize_outage(
 
     assert response.status_code == 307
     assert response.headers["location"].startswith("/sorry-something-went-wrong")
+
+
+def test_authorize_ratelimit(mocker, default_authorize_request_dict):
+    mock_provider = Provider(
+        settings=get_settings(
+            {"mock_digid": False, "ratelimit.user_limit_key": "user_limit_key"}
+        )
+    )
+
+    mock_provider.redis_client.set("user_limit_key", 3)
+
+    mocker.patch("inge6.main.PROVIDER", mock_provider)
+    client = TestClient(app)
+
+    query_params: str = urllib.parse.urlencode(default_authorize_request_dict)
+
+    # First three calls no problem
+    resp = client.get(f"/authorize?{query_params}", allow_redirects=False)
+    assert not (
+        "location" in resp.headers
+        and resp.headers["location"].startswith("/sorry-something-went-wrong")
+    )
+
+    resp = client.get(f"/authorize?{query_params}", allow_redirects=False)
+    assert not (
+        "location" in resp.headers
+        and resp.headers["location"].startswith("/sorry-something-went-wrong")
+    )
+
+    resp = client.get(f"/authorize?{query_params}", allow_redirects=False)
+    assert not (
+        "location" in resp.headers
+        and resp.headers["location"].startswith("/sorry-something-went-wrong")
+    )
+
+    # Fourth is the limit.
+    resp = client.get(f"/authorize?{query_params}", allow_redirects=False)
+    assert resp.headers["location"].startswith("/sorry-something-went-wrong")

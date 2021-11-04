@@ -64,7 +64,7 @@ import logging
 from logging import Logger
 
 from urllib.parse import parse_qs, urlencode
-from typing import List, Union, Dict, Any
+from typing import Union, Dict, Any
 from pydantic.main import BaseModel
 
 import requests
