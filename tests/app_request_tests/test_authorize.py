@@ -97,9 +97,9 @@ def test_authorize_ratelimit(mocker, default_authorize_request_dict):
     mock_provider = Provider(
         settings=get_settings(
             {
-                "mock_digid": False, 
+                "mock_digid": False,
+                "primary_idp_key": "inge6:primary_idp",
                 "ratelimit.user_limit_key": "user_limit_key",
-                "ratelimit.primary_idp_key": "inge6:primary_idp"
             }
         )
     )

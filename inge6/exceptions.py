@@ -22,7 +22,7 @@ class TooBusyError(SomethingWrongError):
 
 
 class TooManyRequestsFromOrigin(SomethingWrongError):
-    def __init__(self, ip_expire_s: int) -> None:
+    def __init__(self, ip_expire_s: str) -> None:
         super().__init__(
             f"Too many requests from the same ip_address during the last {ip_expire_s} seconds."
         )

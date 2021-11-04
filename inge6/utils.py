@@ -20,7 +20,7 @@ from . import constants
 
 def validate_auth_req(
     authorize_request: AuthorizeRequest,
-    clients: typing.Optional[typing.Dict[str, typing.Union[str, typing.List[str]]]],
+    clients: typing.Optional[dict],
 ):
     """
     Validate the authorization request. If client_id or redirect_uri is invalid, we cannot redirect the
