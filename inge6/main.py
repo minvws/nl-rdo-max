@@ -72,7 +72,7 @@ async def invalid_client_data_exception_handler(_: Request, exc: InvalidClientEr
 
 @app.exception_handler(ExpiredResourceError)
 async def session_expired_exception_handler(_: Request, __: ExpiredResourceError):
-    return Response(status_code=400, content='Session expired')
+    return Response(status_code=400, content="Session expired")
 
 
 def _validate_saml_identity_provider_settings():
