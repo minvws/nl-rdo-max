@@ -3,7 +3,7 @@ import json
 
 import os.path
 import logging
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 
 import uvicorn
 
@@ -11,6 +11,7 @@ from fastapi import FastAPI, Request
 
 from inge6.exceptions import (
     AuthorizeEndpointException,
+    ExpiredResourceError,
     InvalidClientError,
     SomethingWrongError,
 )
@@ -67,6 +68,11 @@ async def something_wrong_exception_handler(request: Request, _: SomethingWrongE
 @app.exception_handler(InvalidClientError)
 async def invalid_client_data_exception_handler(_: Request, exc: InvalidClientError):
     return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.exception_handler(ExpiredResourceError)
+async def session_expired_exception_handler(_: Request, __: ExpiredResourceError):
+    return Response(status_code=400, content='Session expired')
 
 
 def _validate_saml_identity_provider_settings():
