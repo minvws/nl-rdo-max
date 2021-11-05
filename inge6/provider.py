@@ -270,14 +270,17 @@ class Provider(OIDCProvider, SAMLProvider):
 
     @property
     def allowed_scopes(self):
-        return self.settings.allowed_scopes
+        if hasattr(self.settings, "allowed_scopes"):
+            return self.settings.allowed_scopes
+        return ["openid"]
 
     def split_and_validate_scopes(self, scopes):
         splitted_scopes = scopes.split()
         for scope in splitted_scopes:
             if scope not in self.allowed_scopes:
-                raise Exception(
-                    f"scope {scope} not allowed, only {self.allowed_scopes} are supported"
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Scope {scope} not allowed, only {self.allowed_scopes} are supported",
                 )
         return splitted_scopes
 
@@ -321,7 +324,9 @@ class Provider(OIDCProvider, SAMLProvider):
             splitted_scopes = self.split_and_validate_scopes(
                 login_digid_req.authorize_request.scope
             )
-            authorization_by_proxy = "authorization_by_proxy" in splitted_scopes
+            authorization_by_proxy = (
+                constants.SCOPE_AUTHORIZATION_BY_PROXY in splitted_scopes
+            )
 
             authn_request = id_provider.create_authn_request(authorization_by_proxy)
 
