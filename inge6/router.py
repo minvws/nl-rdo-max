@@ -69,7 +69,7 @@ def provider_configuration(request: Request):
 
 @router.get(get_settings().jwks_endpoint)
 def jwks_uri(request: Request):
-    provider = request.app.state.request
+    provider = request.app.state.provider
     json_content = jsonable_encoder(provider.jwks)
     return JSONResponse(content=json_content)
 
