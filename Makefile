@@ -33,15 +33,15 @@ secrets/public.pem: secrets/private_unencrypted.pem
 	openssl rsa -in secrets/private_unencrypted.pem -pubout -out secrets/public.pem
 
 secrets/ssl:
-	mkdir -p secrets/ssl/certs
-	mkdir -p secrets/ssl/private
+	mkdir -p -m 750 secrets/ssl/certs
+	mkdir -p -m 750 secrets/ssl/private
 
 secrets/ssl/private/apache-selfsigned.key: secrets/ssl
 	openssl req -newkey rsa:2048 -nodes -keyout secrets/ssl/private/apache-selfsigned.key -x509 -days 365 -out secrets/ssl/certs/apache-selfsigned.crt  -subj '/CN=inge6/C=NL'
 
 secrets-redis-certs:
-	mkdir -p secrets/redis/certs
-	mkdir -p secrets/redis/private
+	mkdir -p -m 750 secrets/redis/certs
+	mkdir -p -m 750 secrets/redis/private
 
 	openssl genrsa -out secrets/redis/private/cacert.key 4096
 	openssl req -x509 -new -nodes -key secrets/redis/private/cacert.key -sha256 -days 1024 -out secrets/redis/certs/cacert.crt -subj "/CN=US/CN=inge6.redisserver.ca"
