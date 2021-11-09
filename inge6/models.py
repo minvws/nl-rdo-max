@@ -59,7 +59,7 @@ class AuthorizeErrorRedirectResponse(RedirectResponse):
         ] += f"?error={error}&error_description={error_description}&state={state}"
 
 
-class RateLimitRedirectResponse(RedirectResponse):
+class SomethingWrongRedirectResponse(RedirectResponse):
     def __init__(
         self,
         url: typing.Union[str, URL],

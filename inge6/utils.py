@@ -5,8 +5,7 @@ Required:
     - settings.saml.authn_request_html_template
     - Template in location 'saml/templates/html/assertion_consumer_service.html'
 """
-
-from typing import Text, List
+import typing
 
 from oic.oic.message import AuthorizationRequest as OICAuthRequest
 
@@ -14,12 +13,31 @@ from .oidc.authorize import validate_jwt_token
 
 from .cache import RedisCache
 from .models import AuthorizeRequest
-from .exceptions import ExpiredResourceError
+from .exceptions import ExpiredResourceError, InvalidClientError
 
 from . import constants
 
 
-def create_redis_bsn_key(key: str, id_token: str, audience: List[Text]) -> str:
+def validate_auth_req(
+    authorize_request: AuthorizeRequest,
+    clients: typing.Optional[dict],
+):
+    """
+    Validate the authorization request. If client_id or redirect_uri is invalid, we cannot redirect the
+    user. Instead, return a 400 should be returned.
+    """
+    if clients is None or authorize_request.client_id not in clients:
+        raise InvalidClientError("Client ID not known")
+
+    if authorize_request.redirect_uri not in clients[authorize_request.client_id].get(
+        "redirect_uris", []
+    ):
+        raise InvalidClientError("Redirect URI not known")
+
+
+def create_redis_bsn_key(
+    key: str, id_token: str, audience: typing.List[typing.Text]
+) -> str:
     """
     Method retrieving the redis_bsn_key used to retrieve the bsn from redis. This is the hash of the id_token that has
     been provided as a response to the accesstoken request.
@@ -80,5 +98,5 @@ def hget_from_redis(redis_cache: RedisCache, namespace, key):
     """
     result = redis_cache.hget(namespace, key)
     if result is None:
-        raise ExpiredResourceError("Resource is not available in our cache")
+        raise ExpiredResourceError("Resource not found or expired")
     return result

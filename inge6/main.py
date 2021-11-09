@@ -3,10 +3,19 @@ import json
 
 import os.path
 import logging
+from starlette.responses import JSONResponse, Response
 
 import uvicorn
 
 from fastapi import FastAPI, Request
+
+from inge6.exceptions import (
+    AuthorizeEndpointException,
+    ExpiredResourceError,
+    InvalidClientError,
+    SomethingWrongError,
+)
+from inge6.models import AuthorizeErrorRedirectResponse, SomethingWrongRedirectResponse
 
 from .config import get_settings
 from .router import router
@@ -18,6 +27,52 @@ app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 app.include_router(router)
 
 PROVIDER = Provider()
+
+
+@app.exception_handler(AuthorizeEndpointException)
+async def general_authorization_exception_handler(
+    request: Request, exc: AuthorizeEndpointException
+):
+    """
+    When throwing these type of errors the client_id has been verified, but something else is still wrong
+    """
+    redirect_uri = request.query_params["redirect_uri"]
+    state = request.query_params["state"]
+
+    return AuthorizeErrorRedirectResponse(
+        url=redirect_uri,
+        error=exc.error,
+        error_description=exc.error_description,
+        state=state,
+        status_code=303,
+    )
+
+
+@app.exception_handler(SomethingWrongError)
+async def something_wrong_exception_handler(request: Request, _: SomethingWrongError):
+    """
+    When throwing these type of errors the user has been verified, but server access is disabled.
+    """
+    redirect_uri = request.query_params["redirect_uri"]
+    client_id = request.query_params["client_id"]
+    state = request.query_params["state"]
+
+    return SomethingWrongRedirectResponse(
+        url="/sorry-something-went-wrong?",
+        next_redirect_uri=redirect_uri,
+        client_id=client_id,
+        state=state,
+    )
+
+
+@app.exception_handler(InvalidClientError)
+async def invalid_client_data_exception_handler(_: Request, exc: InvalidClientError):
+    return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.exception_handler(ExpiredResourceError)
+async def session_expired_exception_handler(_: Request, __: ExpiredResourceError):
+    return Response(status_code=400, content="Session expired")
 
 
 def _validate_saml_identity_provider_settings():
