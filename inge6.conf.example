@@ -17,6 +17,8 @@ accesstoken_endpoint = /accesstoken
 jwks_endpoint = /jwks
 health_endpoint = /health
 
+allowed_scopes = openid,authorization_by_proxy
+
 # The host to be running on
 host = 0.0.0.0
 port = 8006

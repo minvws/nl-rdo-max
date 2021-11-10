@@ -199,6 +199,12 @@ class ArtifactResponse:
     def decrypt_id(self, encrypted_id):
         enc_key_elem = encrypted_id.find("./xenc:EncryptedKey", NAMESPACES)
         enc_data_elem = encrypted_id.find("./xenc:EncryptedData", NAMESPACES)
+
+        keyname = enc_key_elem.find(".//ds:KeyName", NAMESPACES).text
+        possible_keynames = self.id_provider.sp_metadata.dv_keynames
+        if keyname not in possible_keynames:
+            raise ValueError(f"KeyName {keyname} is unknown, cannot decrypt")
+
         aes_key = self._decrypt_enc_key(enc_key_elem)
         raw_id_element = self._decrypt_enc_data(enc_data_elem, aes_key)
         decrypted_id_element = etree.fromstring(raw_id_element.decode())
@@ -382,16 +388,6 @@ class ArtifactResponse:
             errors.append(
                 ValidationError(
                     f"service uuid does not comply with specified uuid. Expected {expected_service_uuid}, was {service_id_attr_val}"
-                )
-            )
-
-        # Only perform this validation if it is verified, and not a test instance.
-        keyname = root.find(".//ds:KeyName", NAMESPACES).text
-        possible_keynames = self.id_provider.sp_metadata.dv_keynames
-        if keyname not in possible_keynames:
-            errors.append(
-                ValidationError(
-                    f"KeyName does not comply with one of the specified keynames. Expected list {possible_keynames}, was {keyname}"
                 )
             )
 

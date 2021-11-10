@@ -266,6 +266,22 @@ class Provider(OIDCProvider, SAMLProvider):
 
         return False
 
+    @property
+    def allowed_scopes(self):
+        if hasattr(self.settings, "allowed_scopes"):
+            return self.settings.allowed_scopes
+        return ["openid"]
+
+    def split_and_validate_scopes(self, scopes):
+        splitted_scopes = scopes.split()
+        for scope in splitted_scopes:
+            if scope not in self.allowed_scopes:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Scope {scope} not allowed, only {self.allowed_scopes} are supported",
+                )
+        return splitted_scopes
+
     def _post_login(
         self, login_digid_req: LoginDigiDRequest, id_provider: IdProvider
     ) -> Response:
@@ -294,7 +310,7 @@ class Provider(OIDCProvider, SAMLProvider):
             ).decode()
             sso_url = f"/digid-mock?state={randstate}&idp_name={id_provider.name}&authorize_request={base64_authn_request}"
 
-            authn_request = id_provider.create_authn_request()
+            authn_request = id_provider.create_authn_request([], [])
             return SAMLAuthNAutoSubmitResponse(
                 sso_url=sso_url,
                 relay_state=randstate,
@@ -303,11 +319,14 @@ class Provider(OIDCProvider, SAMLProvider):
             )
 
         if id_provider.authn_binding.endswith("POST"):
-
-            machtigen = (
-                constants.SCOPE_MACHTIGEN in login_digid_req.authorize_request.scope
+            splitted_scopes = self.split_and_validate_scopes(
+                login_digid_req.authorize_request.scope
             )
-            authn_request = id_provider.create_authn_request(machtigen=machtigen)
+            authorization_by_proxy = (
+                constants.SCOPE_AUTHORIZATION_BY_PROXY in splitted_scopes
+            )
+
+            authn_request = id_provider.create_authn_request(authorization_by_proxy)
 
             return SAMLAuthNAutoSubmitResponse(
                 sso_url=authn_request.sso_url,

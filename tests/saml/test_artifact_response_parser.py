@@ -86,6 +86,12 @@ def test_get_bsn_tvs(
     )
 
     monkeypatch.setattr(tvs_provider, "priv_key", PRIV_KEY_BSN_AES_KEY)
+    monkeypatch.setattr(
+        tvs_provider.sp_metadata,
+        "dv_keynames",
+        ["70c7065d4ad1bec9f57e4bd3dfd6812af6035d57e1ec3496b600491d8c238081"],
+    )
+
     assert artifact_response.get_bsn() == "900212640"
 
 
@@ -104,6 +110,11 @@ def test_get_bsn_tvs_machtigen(
     )
 
     monkeypatch.setattr(tvs_provider, "priv_key", PRIV_KEY_BSN_AES_KEY)
+    monkeypatch.setattr(
+        tvs_provider.sp_metadata,
+        "dv_keynames",
+        ["70c7065d4ad1bec9f57e4bd3dfd6812af6035d57e1ec3496b600491d8c238081"],
+    )
     assert artifact_response.get_bsn() == "900212640"
 
 

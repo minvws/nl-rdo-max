@@ -79,6 +79,23 @@ class SPMetadata(SAMLRequest):
         return self.settings_dict.get("security", {}).get("allowScoping", False)
 
     @property
+    def authorization_by_proxy_scopes(self):
+        return self.settings_dict.get("security", {}).get(
+            "authorizationByProxyScopes", []
+        )
+
+    @property
+    def authorization_by_proxy_request_ids(self):
+
+        return self.settings_dict.get("security", {}).get(
+            "authorizationByProxyRequestIds", []
+        )
+
+    @property
+    def default_scopes(self):
+        return self.settings_dict.get("security", {}).get("defaultScopes", [])
+
+    @property
     def root(self):
         return self._root
 

@@ -150,7 +150,6 @@ class AuthNRequest(SAMLRequest):
             "scoping_list": self.scoping_list,
             "request_ids": self.request_ids if self.request_ids is not None else [],
         }
-
         if self.intended_audience is not None:
             if self.service_uuid is None:
                 raise ValueError(

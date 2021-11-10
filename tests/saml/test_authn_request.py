@@ -297,7 +297,7 @@ def test_authorize_endpoint_tvs_machtigen(
         redirect_uri="http://localhost:3000/login",
         nonce="n-0S6_WzA2Mj",
         state="af0ifjsldkj",
-        scope="openid machtigen",
+        scope="openid authorization_by_proxy",
         code_challenge=code_challenge,  # code_verifier = SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
         code_challenge_method="S256",
     )
