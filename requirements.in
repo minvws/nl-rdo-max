@@ -12,6 +12,7 @@ git+git://github.com/IdentityPython/pyop@master
 pycryptodome
 pyOpenSSL
 pyjwt
+jwcrypto
 jinja2
 lxml
 xmlsec

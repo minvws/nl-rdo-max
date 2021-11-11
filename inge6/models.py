@@ -21,6 +21,7 @@ from fastapi.responses import RedirectResponse
 from .config import Settings
 from .saml.saml_request import AuthNRequest
 from .constants import ROOT_DIR
+from . import constants
 
 
 def _fill_template(template_txt: str, context: dict):
@@ -202,6 +203,27 @@ class AuthorizeRequest(BaseModel):
     state: str
     code_challenge: str
     code_challenge_method: str
+
+    @property
+    @staticmethod
+    def allowed_scopes():
+        return ['openid', constants.SCOPE_AUTHORIZATION_BY_PROXY]
+
+    @property
+    def splitted_scopes(self):
+        return self.scopes.split()
+
+    @validator('scope')
+    def validate_scopes(cls, scopes): # pylint: disable=no-self-argument
+        splitted_scopes = scopes.split()
+        for scope in splitted_scopes:
+            if scope not in cls.allowed_scopes:
+                raise ValueError(f"Scope {scope} not allowed, only {cls.allowed_scopes} are supported")
+        return scopes
+
+    @property
+    def authorization_by_proxy(self):
+        return constants.SCOPE_AUTHORIZATION_BY_PROXY in self.splitted_scopes
 
 
 class LoginDigiDRequest(BaseModel):

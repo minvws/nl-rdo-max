@@ -222,6 +222,7 @@ class Provider(OIDCProvider, SAMLProvider):
 
         self.bsn_encrypt = Encrypt(
             raw_sign_key=settings.bsn.sign_key,
+            raw_sign_pubkey=settings.bsn.sign_pubkey,
             raw_enc_key=settings.bsn.encrypt_key,
             raw_local_enc_key=settings.bsn.local_symm_key,
         )
@@ -272,16 +273,6 @@ class Provider(OIDCProvider, SAMLProvider):
             return self.settings.allowed_scopes
         return ["openid"]
 
-    def split_and_validate_scopes(self, scopes):
-        splitted_scopes = scopes.split()
-        for scope in splitted_scopes:
-            if scope not in self.allowed_scopes:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Scope {scope} not allowed, only {self.allowed_scopes} are supported",
-                )
-        return splitted_scopes
-
     def _post_login(
         self, login_digid_req: LoginDigiDRequest, id_provider: IdProvider
     ) -> Response:
@@ -319,15 +310,7 @@ class Provider(OIDCProvider, SAMLProvider):
             )
 
         if id_provider.authn_binding.endswith("POST"):
-            splitted_scopes = self.split_and_validate_scopes(
-                login_digid_req.authorize_request.scope
-            )
-            authorization_by_proxy = (
-                constants.SCOPE_AUTHORIZATION_BY_PROXY in splitted_scopes
-            )
-
-            authn_request = id_provider.create_authn_request(authorization_by_proxy)
-
+            authn_request = id_provider.create_authn_request(login_digid_req.authorize_request.authorization_by_proxy)
             return SAMLAuthNAutoSubmitResponse(
                 sso_url=authn_request.sso_url,
                 relay_state=randstate,
@@ -338,6 +321,9 @@ class Provider(OIDCProvider, SAMLProvider):
         if id_provider.authn_binding.endswith("Redirect"):
             if login_digid_req.authorize_request is None:
                 raise ValueError("AuthnRequest is None, which should not be possible")
+
+            if login_digid_req.authorize_request.authorization_by_proxy:
+                self.log.warning("User attempted to login using authorization by proxy. But is not supported for this IDProvider: %s", id_provider.name)
 
             req = self._prepare_req(login_digid_req.authorize_request, id_provider.name)
             auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
@@ -486,13 +472,18 @@ class Provider(OIDCProvider, SAMLProvider):
             )
             artifact = cached_artifact["artifact"]
             id_provider = cached_artifact["id_provider"]
+            authorization_by_proxy = cached_artifact["authorization_by_proxy"]
 
             token_response = accesstoken(self, body, headers)
-            encrypted_bsn = self._resolve_artifact(artifact, id_provider)
+            try:
+                encrypted_bsn = self._resolve_artifact(artifact, id_provider, authorization_by_proxy)
+            except ValueError:
+                return JWTError(error='server_error', error_description="Attribute expected, but was not found")
 
             access_key = create_redis_bsn_key(
                 self.key, token_response.id_token.encode(), self.audience
             )
+
             self.redis_cache.set(access_key, encrypted_bsn)
 
             self.log.info(
@@ -572,7 +563,7 @@ class Provider(OIDCProvider, SAMLProvider):
         self.log.debug(
             "Storing sha256(artifact) %s under code %s", artifact_hashed, code
         )
-        cache_artifact(self.redis_cache, code, artifact, auth_req_dict["id_provider"])
+        cache_artifact(self.redis_cache, code, artifact, auth_req_dict["id_provider"], auth_req_dict["authorization_by_proxy"])
 
         cache_code_challenge(
             self.redis_cache,
@@ -585,7 +576,7 @@ class Provider(OIDCProvider, SAMLProvider):
         return MetaRedirectResponse(redirect_url=response_url)
 
     def _resolve_artifact(
-        self, artifact: str, id_provider_name: str
+        self, artifact: str, id_provider_name: str, authorization_by_proxy: bool,
     ) -> Union[Dict[str, Any], bytes]:
         """
         given the the artifact and active IDP name, perform an artifact resolve request to the
@@ -626,7 +617,7 @@ class Provider(OIDCProvider, SAMLProvider):
 
         if id_provider.sp_metadata.cluster_settings is None:
             # We are able to decrypt the message, and we will
-            bsn = _get_bsn_from_art_resp(artifact_response.get_bsn(), id_provider)
+            bsn = _get_bsn_from_art_resp(artifact_response.get_bsn(authorization_by_proxy), id_provider)
             encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
             return encrypted_bsn
 
@@ -663,7 +654,7 @@ class Provider(OIDCProvider, SAMLProvider):
                 headers={"Content-Type": "application/xml"},
             )
 
-        encrypted_bsn = self.bsn_encrypt.from_symm_to_pub(bsn_dict)
+        encrypted_bsn = self.bsn_encrypt.from_symm_to_jwt(bsn_dict)
         return Response(content=encrypted_bsn, status_code=200)
 
     def metadata(self, id_provider_name: str) -> Response:
