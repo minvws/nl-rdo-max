@@ -15,7 +15,7 @@ attrs==21.2.0
     #   pytest-docker
 autoflake==1.4
     # via -r requirements-dev.in
-bandit==1.7.0
+bandit==1.7.1
     # via -r requirements-dev.in
 bcrypt==3.2.0
     # via paramiko
@@ -129,7 +129,7 @@ pytest-docker==0.10.3
     # via -r requirements-dev.in
 pytest-mock==3.6.1
     # via -r requirements-dev.in
-pytest_redis==2.2.0
+pytest-redis==2.2.0
     # via -r requirements-dev.in
 python-dateutil==2.8.2
     # via freezegun
@@ -152,7 +152,6 @@ requests-mock==1.9.3
     # via -r requirements-dev.in
 six==1.16.0
     # via
-    #   bandit
     #   bcrypt
     #   dockerpty
     #   jsonschema
