@@ -129,7 +129,7 @@ pytest-docker==0.10.3
     # via -r requirements-dev.in
 pytest-mock==3.6.1
     # via -r requirements-dev.in
-pytest_redis==2.2.0
+pytest-redis==2.2.0
     # via -r requirements-dev.in
 python-dateutil==2.8.2
     # via freezegun
@@ -174,7 +174,7 @@ toml==0.10.2
     #   pytest
 tomli==1.2.2
     # via black
-types-redis==3.5.15
+types-redis==3.5.16
     # via -r requirements-dev.in
 types-requests==2.26.0
     # via -r requirements-dev.in
