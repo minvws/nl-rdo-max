@@ -168,8 +168,8 @@ def test_resolve_artifact_tvs(
     requests_mock.post(artifact_resolve_url, text=artifact_resolve_response)
 
     # pylint: disable=protected-access
-    bsn = provider._resolve_artifact("XXX", "tvs")
-    assert bsn == "900212640"
+    bsn = provider._resolve_artifact("XXX", "tvs", authorization_by_proxy=False)
+    assert bsn == {'authorization_by_proxy': False, 'bsn': '900212640'}
 
 
 def test_assertion_consumer_service(digid_config, default_authorize_request_dict):
@@ -303,17 +303,18 @@ def test_bsn_attribute(mocker, redis_cache, mock_provider):
     mocker.patch("inge6.provider.is_authorized", mock_is_authorized)
     mocker.patch.object(provider, "redis_cache", redis_cache)
 
-    bsn = "123456789"
+    bsn = {"bsn": "123456789", "authorization_by_proxy": False}
     encrypted_bsn_object = provider.bsn_encrypt.symm_encrypt(bsn)
+
     mocker.patch.object(
-        provider.bsn_encrypt, "from_symm_to_pub", provider.bsn_encrypt.symm_decrypt
+        provider.bsn_encrypt, "from_symm_to_jwt", provider.bsn_encrypt.symm_decrypt
     )
     redis_cache.set("mocking_the_at_hash_XYZ", encrypted_bsn_object)
 
     request = Request({"type": "http"})
     resp = provider.bsn_attribute(request)
     assert resp.status_code == 200
-    assert resp.body.decode() == bsn
+    assert json.loads(resp.body.decode()) == bsn
 
 
 # pytest: disable=unused-argument

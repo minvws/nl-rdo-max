@@ -6,6 +6,7 @@ import base64
 import typing
 
 from enum import Enum
+from functools import cached_property
 
 from jinja2 import Template
 
@@ -194,7 +195,7 @@ class ResponseType(str, Enum):
         return self.CODE
 
 
-class AuthorizeRequest(BaseModel):
+class AuthorizeRequest(BaseModel, keep_untouched=(cached_property, )):
     client_id: str
     redirect_uri: str
     response_type: ResponseType
@@ -204,24 +205,24 @@ class AuthorizeRequest(BaseModel):
     code_challenge: str
     code_challenge_method: str
 
-    @property
     @staticmethod
     def allowed_scopes():
         return ['openid', constants.SCOPE_AUTHORIZATION_BY_PROXY]
 
     @property
     def splitted_scopes(self):
-        return self.scopes.split()
+        return self.scope.split()
 
     @validator('scope')
     def validate_scopes(cls, scopes): # pylint: disable=no-self-argument
         splitted_scopes = scopes.split()
         for scope in splitted_scopes:
-            if scope not in cls.allowed_scopes:
+            if scope not in cls.allowed_scopes():
                 raise ValueError(f"Scope {scope} not allowed, only {cls.allowed_scopes} are supported")
+
         return scopes
 
-    @property
+    @cached_property
     def authorization_by_proxy(self):
         return constants.SCOPE_AUTHORIZATION_BY_PROXY in self.splitted_scopes
 

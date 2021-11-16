@@ -84,6 +84,7 @@ from pyop.exceptions import (
 )
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
+from starlette.responses import JSONResponse
 
 from . import constants
 
@@ -221,9 +222,8 @@ class Provider(OIDCProvider, SAMLProvider):
         self.log.setLevel(getattr(logging, settings.loglevel.upper()))
 
         self.bsn_encrypt = Encrypt(
-            raw_sign_key=settings.bsn.sign_key,
-            raw_sign_pubkey=settings.bsn.sign_pubkey,
-            raw_enc_key=settings.bsn.encrypt_key,
+            raw_sign_key=settings.bsn.i6_sign_privkey,
+            raw_enc_key=settings.bsn.i4_encrypt_pubkey,
             raw_local_enc_key=settings.bsn.local_symm_key,
         )
 
@@ -477,6 +477,8 @@ class Provider(OIDCProvider, SAMLProvider):
             token_response = accesstoken(self, body, headers)
             try:
                 encrypted_bsn = self._resolve_artifact(artifact, id_provider, authorization_by_proxy)
+            except UserNotAuthenticated as user_not_authenticated:
+                return JWTError(error=user_not_authenticated.oauth_error, error_description=str(user_not_authenticated))
             except ValueError:
                 return JWTError(error='server_error', error_description="Attribute expected, but was not found")
 
@@ -618,7 +620,10 @@ class Provider(OIDCProvider, SAMLProvider):
         if id_provider.sp_metadata.cluster_settings is None:
             # We are able to decrypt the message, and we will
             bsn = _get_bsn_from_art_resp(artifact_response.get_bsn(authorization_by_proxy), id_provider)
-            encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
+            encrypted_bsn = self.bsn_encrypt.symm_encrypt({
+                'bsn': bsn,
+                'authorization_by_proxy': authorization_by_proxy
+            })
             return encrypted_bsn
 
         # Encryption done by another party, gather relevant info
@@ -635,18 +640,18 @@ class Provider(OIDCProvider, SAMLProvider):
         _, at_hash = is_authorized(self.key, request, self.audience)
 
         redis_bsn_key = at_hash
-        attributes = self.redis_cache.get(redis_bsn_key)
+        bsn_dict = self.redis_cache.get(redis_bsn_key)
 
-        if attributes is None:
+        if bsn_dict is None:
             raise HTTPException(
                 status_code=408,
                 detail="Resource expired.Try again after /authorize",
             )
 
-        decoded_json = base64.b64decode(attributes).decode()
-        bsn_dict = json.loads(decoded_json)
+        # decoded_json = base64.b64decode(attributes).decode()
+        # bsn_dict = json.loads(decoded_json)
 
-        if all(k in bsn_dict for k in ["key", "data"]):
+        if all(k in bsn_dict for k in [b'key', b'data']):
             # We never decrypted the message, we cannot re-encrypt.
             return Response(
                 content=bsn_dict,
@@ -655,7 +660,7 @@ class Provider(OIDCProvider, SAMLProvider):
             )
 
         encrypted_bsn = self.bsn_encrypt.from_symm_to_jwt(bsn_dict)
-        return Response(content=encrypted_bsn, status_code=200)
+        return JSONResponse(content=encrypted_bsn, status_code=200)
 
     def metadata(self, id_provider_name: str) -> Response:
         """

@@ -3,46 +3,34 @@ import json
 
 from typing import Dict, Any
 
-from OpenSSL.crypto import load_certificate, FILETYPE_PEM
-
 import nacl.utils
 from nacl.secret import SecretBox
 from nacl.public import PrivateKey, Box, PublicKey
 from nacl.encoding import Base64Encoder
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
 
 from jwcrypto.jwt import JWT, JWK
 
-def get_pem_from_nacl(nacl_key):
-    cryptography_signkey = Ed25519PrivateKey.from_private_bytes(bytes(nacl_key))
-    return cryptography_signkey.private_bytes(
-        encoding=Encoding.PEM, format=PrivateFormat.PKCS8, encryption_algorithm=NoEncryption()
-    )
+
+def _create_x25519_pubkey(key):
+    jwk = JWK()
+    jwk._import_pyca_pub_okp(key)
+    return jwk
 
 class Encrypt:
     def __init__(
-        self, raw_sign_key: bytes, raw_sign_pubkey: bytes, raw_enc_key: bytes, raw_local_enc_key: str
+        self, raw_sign_key: bytes, raw_enc_key: bytes, raw_local_enc_key: str
     ) -> None:
         sign_key = PrivateKey(raw_sign_key, encoder=Base64Encoder)
-        sign_pubkey = PublicKey(raw_sign_pubkey, encoder=Base64Encoder)
         enc_key = PublicKey(raw_enc_key, encoder=Base64Encoder)
 
         self.box = Box(sign_key, enc_key)
         self.secret_box = SecretBox(bytes.fromhex(raw_local_enc_key))
 
-        sign_key_pem = get_pem_from_nacl(sign_key)
-        sign_pubkey_pem = get_pem_from_nacl(sign_pubkey)
-        enc_key_pem = get_pem_from_nacl(enc_key)
-
-        jwk_sign_pub = JWK.from_pem(sign_pubkey_pem)
-
-        self.jwk_sign = JWK.from_pem(sign_key_pem)
-        self.jwk_enc = JWK.from_pem(enc_key_pem)
-
-        self.fingerprint_enc = self.jwk_enc.thumbprint()
-        self.fingerprint_sign = jwk_sign_pub.thumbprint()
+        self.jwk_sign = JWK.from_pyca(Ed25519PrivateKey.from_private_bytes(bytes(sign_key)))
+        self.jwk_enc = _create_x25519_pubkey(X25519PublicKey.from_public_bytes(bytes(enc_key)))
 
     def symm_encrypt(self, data: Dict[str, Any]) -> bytes:
         plaintext = base64.b64encode(json.dumps(data).encode())
@@ -77,18 +65,15 @@ class Encrypt:
 
     def to_jwe(self, data: Dict[Any, Any]) -> bytes:
         jws_token = JWT({
-            "alg": "RS256",
-            "x5t": self.fingerprint_sign
+            "alg": "EdDSA",
         }, claims=data)
 
         jws_token.make_signed_token(self.jwk_sign)
 
         etoken = JWT(header={
                 'typ': "JWT",
-                'cty': "JWT",
-                'alg': "RSA-OAEP",
-                'enc': "A128CBC-HS256",
-                'x5t': self.fingerprint_enc
+                'alg': "ECDH-ES",
+                'enc': "A128CBC-HS256"
         }, claims=jws_token.serialize())
 
         etoken.make_encrypted_token(self.jwk_enc)
