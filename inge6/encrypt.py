@@ -65,11 +65,11 @@ class Encrypt:
         payload = self.box.encrypt(plaintext, nonce=nonce, encoder=Base64Encoder)
         return payload
 
-    def from_symm_to_pub(self, payload: Dict[Any, Any]) -> bytes:
+    def from_symm_to_pub(self, payload: bytes) -> bytes:
         data = self.symm_decrypt(payload)
         return self.pub_encrypt(data)
 
-    def from_symm_to_jwt(self, payload: Dict[Any, Any]) -> bytes:
+    def from_symm_to_jwt(self, payload: bytes) -> bytes:
         data = self.symm_decrypt(payload)
         return self.to_jwe(data)
 
