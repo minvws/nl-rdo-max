@@ -617,12 +617,10 @@ class Provider(OIDCProvider, SAMLProvider):
             and self.settings.mock_digid.lower() == "true"
             and is_digid_mock is not None
         ):
-            return self.bsn_encrypt.symm_encrypt(
-                {
-                    "type": constants.BSNStorage.RECRYPTED,
-                    "result": {"bsn": artifact},
-                }
-            )
+            return {
+                "type": constants.BSNStorage.RECRYPTED.value,
+                "result": {"bsn": self.bsn_encrypt.symm_encrypt(artifact)},
+            }
 
         id_provider: IdProvider = self.get_id_provider(id_provider_name)
         resolved_artifact = _perform_artifact_resolve_request(artifact, id_provider)
@@ -653,13 +651,13 @@ class Provider(OIDCProvider, SAMLProvider):
             )
 
             return {
-                "type": constants.BSNStorage.RECRYPTED,
+                "type": constants.BSNStorage.RECRYPTED.value,
                 "result": {"bsn": encrypted_bsn},
             }
 
         # Encryption done by another party, gather relevant info
         return {
-            "type": constants.BSNStorage.CLUSTERED,
+            "type": constants.BSNStorage.CLUSTERED.value,
             "result": {
                 "msg": base64.b64encode(artifact_response.to_string()),
                 "msg_id": artifact_response.root.attrib["ID"],
@@ -682,14 +680,14 @@ class Provider(OIDCProvider, SAMLProvider):
                 detail="Resource expired.Try again after /authorize",
             )
 
-        if bsn_dict["type"] == constants.BSNStorage.CLUSTERED:
+        if bsn_dict["type"] == constants.BSNStorage.CLUSTERED.value:
             # We never decrypted the message, we cannot re-encrypt.
             return JSONResponse(
                 content=bsn_dict["result"],
                 status_code=200,
             )
 
-        bsn = bsn_dict["result"]
+        bsn = bsn_dict["result"]["bsn"]
         encrypted_bsn = self.bsn_encrypt.from_symm_to_jwt(bsn)
         return JSONResponse(content=encrypted_bsn, status_code=200)
 

@@ -309,7 +309,10 @@ def test_bsn_attribute(mocker, redis_cache, mock_provider):
     bsn = {"bsn": "123456789", "authorization_by_proxy": False}
     encrypted_bsn_object = provider.bsn_encrypt.symm_encrypt(bsn)
 
-    bsn_entry = {"type": constants.BSNStorage.RECRYPTED, "result": encrypted_bsn_object}
+    bsn_entry = {
+        "type": constants.BSNStorage.RECRYPTED.value,
+        "result": {"bsn": encrypted_bsn_object},
+    }
 
     mocker.patch.object(
         provider.bsn_encrypt, "from_symm_to_jwt", provider.bsn_encrypt.symm_decrypt
@@ -334,7 +337,10 @@ def test_bsn_attribute_clustered(mocker, redis_cache, mock_provider):
         "msg_id": "and has this msg_id",
     }
 
-    bsn_entry = {"type": constants.BSNStorage.CLUSTERED, "result": encrypted_bsn_object}
+    bsn_entry = {
+        "type": constants.BSNStorage.CLUSTERED.value,
+        "result": encrypted_bsn_object,
+    }
 
     redis_cache.set("mocking_the_at_hash_XYZ", bsn_entry)
 
