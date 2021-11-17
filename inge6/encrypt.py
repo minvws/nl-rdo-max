@@ -15,9 +15,15 @@ from jwcrypto.jwt import JWT, JWK
 
 
 def _create_x25519_pubkey(key):
+    """
+    JWCrypto does not directly support X25519 keys, this helper class is similiar to
+    JWK.from_pyca(), and allows to import the x25519 pubkey. However, access to a protected
+    method is required.
+    """
     jwk = JWK()
-    jwk._import_pyca_pub_okp(key)
+    jwk._import_pyca_pub_okp(key)  # pylint: disable=protected-access
     return jwk
+
 
 class Encrypt:
     def __init__(
@@ -29,8 +35,12 @@ class Encrypt:
         self.box = Box(sign_key, enc_key)
         self.secret_box = SecretBox(bytes.fromhex(raw_local_enc_key))
 
-        self.jwk_sign = JWK.from_pyca(Ed25519PrivateKey.from_private_bytes(bytes(sign_key)))
-        self.jwk_enc = _create_x25519_pubkey(X25519PublicKey.from_public_bytes(bytes(enc_key)))
+        self.jwk_sign = JWK.from_pyca(
+            Ed25519PrivateKey.from_private_bytes(bytes(sign_key))
+        )
+        self.jwk_enc = _create_x25519_pubkey(
+            X25519PublicKey.from_public_bytes(bytes(enc_key))
+        )
 
     def symm_encrypt(self, data: Dict[str, Any]) -> bytes:
         plaintext = base64.b64encode(json.dumps(data).encode())
@@ -64,17 +74,19 @@ class Encrypt:
         return self.to_jwe(data)
 
     def to_jwe(self, data: Dict[Any, Any]) -> bytes:
-        jws_token = JWT({
-            "alg": "EdDSA",
-        }, claims=data)
+        jws_token = JWT(
+            {
+                "alg": "EdDSA",
+            },
+            claims=data,
+        )
 
         jws_token.make_signed_token(self.jwk_sign)
 
-        etoken = JWT(header={
-                'typ': "JWT",
-                'alg': "ECDH-ES",
-                'enc': "A128CBC-HS256"
-        }, claims=jws_token.serialize())
+        etoken = JWT(
+            header={"typ": "JWT", "alg": "ECDH-ES", "enc": "A128CBC-HS256"},
+            claims=jws_token.serialize(),
+        )
 
         etoken.make_encrypted_token(self.jwk_enc)
         return etoken.serialize()

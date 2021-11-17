@@ -195,7 +195,7 @@ class ResponseType(str, Enum):
         return self.CODE
 
 
-class AuthorizeRequest(BaseModel, keep_untouched=(cached_property, )):
+class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
     client_id: str
     redirect_uri: str
     response_type: ResponseType
@@ -207,18 +207,20 @@ class AuthorizeRequest(BaseModel, keep_untouched=(cached_property, )):
 
     @staticmethod
     def allowed_scopes():
-        return ['openid', constants.SCOPE_AUTHORIZATION_BY_PROXY]
+        return ["openid", constants.SCOPE_AUTHORIZATION_BY_PROXY]
 
     @property
     def splitted_scopes(self):
         return self.scope.split()
 
-    @validator('scope')
-    def validate_scopes(cls, scopes): # pylint: disable=no-self-argument
+    @validator("scope")
+    def validate_scopes(cls, scopes):  # pylint: disable=no-self-argument
         splitted_scopes = scopes.split()
         for scope in splitted_scopes:
             if scope not in cls.allowed_scopes():
-                raise ValueError(f"Scope {scope} not allowed, only {cls.allowed_scopes} are supported")
+                raise ValueError(
+                    f"Scope {scope} not allowed, only {cls.allowed_scopes} are supported"
+                )
 
         return scopes
 

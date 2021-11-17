@@ -83,13 +83,23 @@ def cache_code_challenge(
     redis_cache.hset(code, constants.RedisKeys.CC_CM.value, value)
 
 
-def cache_artifact(redis_cache: RedisCache, code: str, artifact: str, id_provider: str, authorization_by_proxy: bool):
+def cache_artifact(
+    redis_cache: RedisCache,
+    code: str,
+    artifact: str,
+    id_provider: str,
+    authorization_by_proxy: bool,
+):
     """
     Method for assembling the data related to the upcoming accesstoken request, including the artifact and
     identity_provider that has been used to retrieve the artifact. These are stored in the RedisStore under the
     constants.RedisKeys.CC_CM enum.
     """
-    value = {"artifact": artifact, "id_provider": id_provider, "authorization_by_proxy": authorization_by_proxy}
+    value = {
+        "artifact": artifact,
+        "id_provider": id_provider,
+        "authorization_by_proxy": authorization_by_proxy,
+    }
     redis_cache.hset(code, constants.RedisKeys.ARTI.value, value)
 
 
