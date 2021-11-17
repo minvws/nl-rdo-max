@@ -39,7 +39,7 @@ coverage[toml]==5.5
     #   -r requirements-dev.in
     #   coverage-badge
     #   pytest-cov
-coverage-badge==1.0.2
+coverage-badge==1.1.0
     # via -r requirements-dev.in
 cryptography==35.0.0
     # via paramiko
@@ -129,7 +129,7 @@ pytest-docker==0.10.3
     # via -r requirements-dev.in
 pytest-mock==3.6.1
     # via -r requirements-dev.in
-pytest_redis==2.2.0
+pytest-redis==2.2.0
     # via -r requirements-dev.in
 python-dateutil==2.8.2
     # via freezegun
