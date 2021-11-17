@@ -619,7 +619,14 @@ class Provider(OIDCProvider, SAMLProvider):
         ):
             return {
                 "type": constants.BSNStorage.RECRYPTED.value,
-                "result": {"bsn": self.bsn_encrypt.symm_encrypt(artifact)},
+                "result": {
+                    "bsn": self.bsn_encrypt.symm_encrypt(
+                        {
+                            "bsn": artifact,
+                            "authorization_by_proxy": authorization_by_proxy,
+                        }
+                    )
+                },
             }
 
         id_provider: IdProvider = self.get_id_provider(id_provider_name)
