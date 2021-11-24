@@ -671,7 +671,7 @@ class Provider(OIDCProvider, SAMLProvider):
             },
         }
 
-    def bsn_attribute(self, request: Request) -> Response:
+    def bsn_attribute(self, request: Request, version: constants.Version = constants.Version.V2) -> Response:
         """
         Handles the BSN claim on the accesstoken. Allows to retrieve a bsn
         corresponding to a valid token.
@@ -695,6 +695,12 @@ class Provider(OIDCProvider, SAMLProvider):
             )
 
         bsn = bsn_dict["result"]["bsn"]
+
+        if version == constants.Version.V1:
+            # Backwards compatibility with Inge4
+            encrypted_bsn = self.bsn_encrypt.from_symm_to_pub(bsn, version=version)
+            return Response(content=encrypted_bsn, status_code=200)
+
         encrypted_bsn = self.bsn_encrypt.from_symm_to_jwt(bsn)
         return JSONResponse(content=encrypted_bsn, status_code=200)
 

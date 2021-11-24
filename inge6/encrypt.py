@@ -1,7 +1,7 @@
 import base64
 import json
 
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional, Union
 
 import nacl.utils
 from nacl.secret import SecretBox
@@ -13,6 +13,7 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
 
 from jwcrypto.jwt import JWT, JWK
 
+from .constants import Version
 
 def _create_x25519_pubkey(key):
     """
@@ -59,15 +60,23 @@ class Encrypt:
         encoded_data = self.secret_box.decrypt(ciphertext, nonce=nonce)
         return json.loads(base64.b64decode(encoded_data).decode())
 
-    def pub_encrypt(self, data: Dict[str, Any]) -> bytes:
-        plaintext = base64.b64encode(json.dumps(data).encode())
+    def pub_encrypt(self, data: Union[Dict[str, Any], str], version: Version = Version.V2) -> bytes:
+        if version == Version.V1:
+            plaintext = data.encode()
+        else:
+            plaintext = base64.b64encode(json.dumps(data).encode())
+
         nonce = nacl.utils.random(Box.NONCE_SIZE)
         payload = self.box.encrypt(plaintext, nonce=nonce, encoder=Base64Encoder)
         return payload
 
-    def from_symm_to_pub(self, payload: bytes) -> bytes:
+    def from_symm_to_pub(self, payload: bytes, version: Version = Version.V2) -> bytes:
         data = self.symm_decrypt(payload)
-        return self.pub_encrypt(data)
+
+        if version.V1:
+            data: str = data['bsn']
+
+        return self.pub_encrypt(data, version=version)
 
     def from_symm_to_jwt(self, payload: bytes) -> bytes:
         data = self.symm_decrypt(payload)
