@@ -64,7 +64,7 @@ class Encrypt:
     def pub_encrypt(
         self, data: Union[Dict[str, Any], str], version: Version = Version.V2
     ) -> bytes:
-        if version == Version.V1:
+        if version == Version.V1 and isinstance(data, str):
             plaintext = data.encode()
         else:
             plaintext = base64.b64encode(json.dumps(data).encode())
@@ -77,7 +77,7 @@ class Encrypt:
         data = self.symm_decrypt(payload)
 
         if version.V1:
-            data: str = data["bsn"]
+            return self.pub_encrypt(data["bsn"], version=version)
 
         return self.pub_encrypt(data, version=version)
 
