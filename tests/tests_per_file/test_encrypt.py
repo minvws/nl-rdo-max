@@ -56,6 +56,7 @@ def test_pubencrypt_data():
         ).decode()
     )
 
+
 def test_pubencrypt_data_v1():
     raw_sign_pubkey = "NGml6EezHnJpy7HygYEglexmmM792EiJbGNvDRkTax0="
     raw_sign_key = "WVC2YjCICx/vjEiHrmqDuY+G3gy78+lwGMxvszPAQYY="
@@ -74,8 +75,9 @@ def test_pubencrypt_data_v1():
     enc_privkey = PrivateKey(raw_encrypt_key, encoder=Base64Encoder)
 
     decrypt_box = Box(enc_privkey, sign_pubkey)
-    payload = encrypt.pub_encrypt(data, version = Version.V1)
+    payload = encrypt.pub_encrypt(data, version=Version.V1)
     assert decrypt_box.decrypt(payload, encoder=Base64Encoder).decode() == data
+
 
 def test_recrypt_data_v1():
     raw_sign_pubkey = "NGml6EezHnJpy7HygYEglexmmM792EiJbGNvDRkTax0="
@@ -98,7 +100,8 @@ def test_recrypt_data_v1():
     decrypt_box = Box(enc_privkey, sign_pubkey)
     payload = encrypt.from_symm_to_pub(encrypted_data, version=Version.V1)
 
-    assert decrypt_box.decrypt(payload, encoder=Base64Encoder).decode() == data['bsn']
+    assert decrypt_box.decrypt(payload, encoder=Base64Encoder).decode() == data["bsn"]
+
 
 def _create_x25519_privkey(key):
     jwk = JWK()

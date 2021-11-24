@@ -5,9 +5,11 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 SCOPE_AUTHORIZATION_BY_PROXY = "authorization_by_proxy"
 
+
 class Version(Enum):
     V1 = 1
     V2 = 2
+
 
 class BSNStorage(Enum):
     RECRYPTED = "recrypted"

@@ -671,7 +671,9 @@ class Provider(OIDCProvider, SAMLProvider):
             },
         }
 
-    def bsn_attribute(self, request: Request, version: constants.Version = constants.Version.V2) -> Response:
+    def bsn_attribute(
+        self, request: Request, version: constants.Version = constants.Version.V2
+    ) -> Response:
         """
         Handles the BSN claim on the accesstoken. Allows to retrieve a bsn
         corresponding to a valid token.
