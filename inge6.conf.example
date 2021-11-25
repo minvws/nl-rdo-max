@@ -62,9 +62,9 @@ nof_attempts_s = 3
 # Once the bsn is retrieved it is encrypted and stored in the redis database. This encryption
 # is done using the local_symm_key which is a libsodium key. Finally, when the BSN is requested
 # it is re-encrypted using the encrypt_key and signed using the sign_key.
-sign_key       = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-encrypt_key    = BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=
-local_symm_key = 0000000000000000000000000000000000000000000000000000000000000000
+i6_sign_privkey     = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+i4_encrypt_pubkey   = BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=
+local_symm_key      = 0000000000000000000000000000000000000000000000000000000000000000
 
 [ssl]
 # Setting for the SSL connection when enabled, defined by the root use_ssl setting.

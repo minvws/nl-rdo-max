@@ -92,7 +92,7 @@ def test_get_bsn_tvs(
         ["70c7065d4ad1bec9f57e4bd3dfd6812af6035d57e1ec3496b600491d8c238081"],
     )
 
-    assert artifact_response.get_bsn() == "900212640"
+    assert artifact_response.get_bsn(authorization_by_proxy=False) == "900212640"
 
 
 @freeze_time("2021-06-01 12:44:06")
@@ -115,7 +115,7 @@ def test_get_bsn_tvs_machtigen(
         "dv_keynames",
         ["70c7065d4ad1bec9f57e4bd3dfd6812af6035d57e1ec3496b600491d8c238081"],
     )
-    assert artifact_response.get_bsn() == "900212640"
+    assert artifact_response.get_bsn(authorization_by_proxy=False) == "900212640"
 
 
 @freeze_time("2021-06-05 16:33:31")
@@ -163,7 +163,7 @@ def test_artifact_response_parse_digid(mocker, digid_provider_settings, jinja_en
         get_settings(), art_resp_resource, digid_provider, insecure=True
     )
     art_resp.raise_for_status()
-    assert art_resp.get_bsn() == "s00000000:900029365"
+    assert art_resp.get_bsn(authorization_by_proxy=False) == "s00000000:900029365"
     assert art_resp.id_provider.saml_spec_version == Version("3.5")
 
 

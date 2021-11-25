@@ -468,11 +468,18 @@ class ArtifactResponse:
     def _plaintext_bsn(self):
         return self.assertion_subject.find("./saml:NameID", NAMESPACES)
 
-    def get_bsn(self) -> Text:
+    def get_bsn(self, authorization_by_proxy: bool) -> Text:
         if self.id_provider.saml_is_new_version:
             if "urn:nl-eid-gdi:1.0:LegalSubjectID" in self.attributes:
+                self.log.info(
+                    "Using LegalSubjectID from ArtifactResponse. User retrieving BSN as 'gemachtigde'"
+                )
                 bsn_element = self.attributes["urn:nl-eid-gdi:1.0:LegalSubjectID"]
             else:
+                if authorization_by_proxy:
+                    raise ValueError(
+                        "Expected LegalSubjectID in the attributes, but was not found."
+                    )
                 bsn_element = self.attributes["urn:nl-eid-gdi:1.0:ActingSubjectID"]
 
         else:

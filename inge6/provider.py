@@ -74,7 +74,7 @@ import nacl.hash
 from starlette.datastructures import Headers
 
 from fastapi import Request, Response, HTTPException
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 
 from oic.oic.message import TokenErrorResponse
 from pyop.exceptions import (
@@ -221,8 +221,8 @@ class Provider(OIDCProvider, SAMLProvider):
         self.log.setLevel(getattr(logging, settings.loglevel.upper()))
 
         self.bsn_encrypt = Encrypt(
-            raw_sign_key=settings.bsn.sign_key,
-            raw_enc_key=settings.bsn.encrypt_key,
+            raw_sign_key=settings.bsn.i6_sign_privkey,
+            raw_enc_key=settings.bsn.i4_encrypt_pubkey,
             raw_local_enc_key=settings.bsn.local_symm_key,
         )
 
@@ -272,16 +272,6 @@ class Provider(OIDCProvider, SAMLProvider):
             return self.settings.allowed_scopes
         return ["openid"]
 
-    def split_and_validate_scopes(self, scopes):
-        splitted_scopes = scopes.split()
-        for scope in splitted_scopes:
-            if scope not in self.allowed_scopes:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Scope {scope} not allowed, only {self.allowed_scopes} are supported",
-                )
-        return splitted_scopes
-
     def _post_login(
         self, login_digid_req: LoginDigiDRequest, id_provider: IdProvider
     ) -> Response:
@@ -319,15 +309,9 @@ class Provider(OIDCProvider, SAMLProvider):
             )
 
         if id_provider.authn_binding.endswith("POST"):
-            splitted_scopes = self.split_and_validate_scopes(
-                login_digid_req.authorize_request.scope
+            authn_request = id_provider.create_authn_request(
+                login_digid_req.authorize_request.authorization_by_proxy
             )
-            authorization_by_proxy = (
-                constants.SCOPE_AUTHORIZATION_BY_PROXY in splitted_scopes
-            )
-
-            authn_request = id_provider.create_authn_request(authorization_by_proxy)
-
             return SAMLAuthNAutoSubmitResponse(
                 sso_url=authn_request.sso_url,
                 relay_state=randstate,
@@ -338,6 +322,12 @@ class Provider(OIDCProvider, SAMLProvider):
         if id_provider.authn_binding.endswith("Redirect"):
             if login_digid_req.authorize_request is None:
                 raise ValueError("AuthnRequest is None, which should not be possible")
+
+            if login_digid_req.authorize_request.authorization_by_proxy:
+                self.log.warning(
+                    "User attempted to login using authorization by proxy. But is not supported for this IDProvider: %s",
+                    id_provider.name,
+                )
 
             req = self._prepare_req(login_digid_req.authorize_request, id_provider.name)
             auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
@@ -486,13 +476,28 @@ class Provider(OIDCProvider, SAMLProvider):
             )
             artifact = cached_artifact["artifact"]
             id_provider = cached_artifact["id_provider"]
+            authorization_by_proxy = cached_artifact["authorization_by_proxy"]
 
             token_response = accesstoken(self, body, headers)
-            encrypted_bsn = self._resolve_artifact(artifact, id_provider)
+            try:
+                encrypted_bsn = self._resolve_artifact(
+                    artifact, id_provider, authorization_by_proxy
+                )
+            except UserNotAuthenticated as user_not_authenticated:
+                return JWTError(
+                    error=user_not_authenticated.oauth_error,
+                    error_description=str(user_not_authenticated),
+                )
+            except ValueError:
+                return JWTError(
+                    error="server_error",
+                    error_description="Attribute expected, but was not found",
+                )
 
             access_key = create_redis_bsn_key(
                 self.key, token_response.id_token.encode(), self.audience
             )
+
             self.redis_cache.set(access_key, encrypted_bsn)
 
             self.log.info(
@@ -572,7 +577,13 @@ class Provider(OIDCProvider, SAMLProvider):
         self.log.debug(
             "Storing sha256(artifact) %s under code %s", artifact_hashed, code
         )
-        cache_artifact(self.redis_cache, code, artifact, auth_req_dict["id_provider"])
+        cache_artifact(
+            self.redis_cache,
+            code,
+            artifact,
+            auth_req_dict["id_provider"],
+            auth_req_dict["authorization_by_proxy"],
+        )
 
         cache_code_challenge(
             self.redis_cache,
@@ -585,7 +596,10 @@ class Provider(OIDCProvider, SAMLProvider):
         return MetaRedirectResponse(redirect_url=response_url)
 
     def _resolve_artifact(
-        self, artifact: str, id_provider_name: str
+        self,
+        artifact: str,
+        id_provider_name: str,
+        authorization_by_proxy: bool,
     ) -> Union[Dict[str, Any], bytes]:
         """
         given the the artifact and active IDP name, perform an artifact resolve request to the
@@ -603,7 +617,17 @@ class Provider(OIDCProvider, SAMLProvider):
             and self.settings.mock_digid.lower() == "true"
             and is_digid_mock is not None
         ):
-            return self.bsn_encrypt.symm_encrypt(artifact)
+            return {
+                "type": constants.BSNStorage.RECRYPTED.value,
+                "result": {
+                    "bsn": self.bsn_encrypt.symm_encrypt(
+                        {
+                            "bsn": artifact,
+                            "authorization_by_proxy": authorization_by_proxy,
+                        }
+                    )
+                },
+            }
 
         id_provider: IdProvider = self.get_id_provider(id_provider_name)
         resolved_artifact = _perform_artifact_resolve_request(artifact, id_provider)
@@ -626,17 +650,30 @@ class Provider(OIDCProvider, SAMLProvider):
 
         if id_provider.sp_metadata.cluster_settings is None:
             # We are able to decrypt the message, and we will
-            bsn = _get_bsn_from_art_resp(artifact_response.get_bsn(), id_provider)
-            encrypted_bsn = self.bsn_encrypt.symm_encrypt(bsn)
-            return encrypted_bsn
+            bsn = _get_bsn_from_art_resp(
+                artifact_response.get_bsn(authorization_by_proxy), id_provider
+            )
+            encrypted_bsn = self.bsn_encrypt.symm_encrypt(
+                {"bsn": bsn, "authorization_by_proxy": authorization_by_proxy}
+            )
+
+            return {
+                "type": constants.BSNStorage.RECRYPTED.value,
+                "result": {"bsn": encrypted_bsn},
+            }
 
         # Encryption done by another party, gather relevant info
         return {
-            "msg": base64.b64encode(artifact_response.to_string()),
-            "msg_id": artifact_response.root.attrib["ID"],
+            "type": constants.BSNStorage.CLUSTERED.value,
+            "result": {
+                "msg": base64.b64encode(artifact_response.to_string()),
+                "msg_id": artifact_response.root.attrib["ID"],
+            },
         }
 
-    def bsn_attribute(self, request: Request) -> Response:
+    def bsn_attribute(
+        self, request: Request, version: constants.Version = constants.Version.V2
+    ) -> Response:
         """
         Handles the BSN claim on the accesstoken. Allows to retrieve a bsn
         corresponding to a valid token.
@@ -644,27 +681,30 @@ class Provider(OIDCProvider, SAMLProvider):
         _, at_hash = is_authorized(self.key, request, self.audience)
 
         redis_bsn_key = at_hash
-        attributes = self.redis_cache.get(redis_bsn_key)
+        bsn_dict = self.redis_cache.get(redis_bsn_key)
 
-        if attributes is None:
+        if bsn_dict is None:
             raise HTTPException(
                 status_code=408,
                 detail="Resource expired.Try again after /authorize",
             )
 
-        decoded_json = base64.b64decode(attributes).decode()
-        bsn_dict = json.loads(decoded_json)
-
-        if all(k in bsn_dict for k in ["key", "data"]):
+        if bsn_dict["type"] == constants.BSNStorage.CLUSTERED.value:
             # We never decrypted the message, we cannot re-encrypt.
-            return Response(
-                content=bsn_dict,
+            return JSONResponse(
+                content=bsn_dict["result"],
                 status_code=200,
-                headers={"Content-Type": "application/xml"},
             )
 
-        encrypted_bsn = self.bsn_encrypt.from_symm_to_pub(bsn_dict)
-        return Response(content=encrypted_bsn, status_code=200)
+        bsn = bsn_dict["result"]["bsn"]
+
+        if version == constants.Version.V1:
+            # Backwards compatibility with Inge4
+            encrypted_bsn = self.bsn_encrypt.from_symm_to_pub(bsn, version=version)
+            return Response(content=encrypted_bsn, status_code=200)
+
+        encrypted_bsn = self.bsn_encrypt.from_symm_to_jwt(bsn)
+        return JSONResponse(content=encrypted_bsn, status_code=200)
 
     def metadata(self, id_provider_name: str) -> Response:
         """

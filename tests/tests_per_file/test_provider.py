@@ -1,5 +1,6 @@
 import json
 import re
+import base64
 
 import uuid
 import urllib.parse as urlparse
@@ -168,8 +169,10 @@ def test_resolve_artifact_tvs(
     requests_mock.post(artifact_resolve_url, text=artifact_resolve_response)
 
     # pylint: disable=protected-access
-    bsn = provider._resolve_artifact("XXX", "tvs")
-    assert bsn == "900212640"
+    bsn = provider._resolve_artifact("XXX", "tvs", authorization_by_proxy=False)[
+        "result"
+    ]
+    assert bsn["bsn"] == {"authorization_by_proxy": False, "bsn": "900212640"}
 
 
 def test_assertion_consumer_service(digid_config, default_authorize_request_dict):
@@ -303,17 +306,48 @@ def test_bsn_attribute(mocker, redis_cache, mock_provider):
     mocker.patch("inge6.provider.is_authorized", mock_is_authorized)
     mocker.patch.object(provider, "redis_cache", redis_cache)
 
-    bsn = "123456789"
+    bsn = {"bsn": "123456789", "authorization_by_proxy": False}
     encrypted_bsn_object = provider.bsn_encrypt.symm_encrypt(bsn)
+
+    bsn_entry = {
+        "type": constants.BSNStorage.RECRYPTED.value,
+        "result": {"bsn": encrypted_bsn_object},
+    }
+
     mocker.patch.object(
-        provider.bsn_encrypt, "from_symm_to_pub", provider.bsn_encrypt.symm_decrypt
+        provider.bsn_encrypt, "from_symm_to_jwt", provider.bsn_encrypt.symm_decrypt
     )
-    redis_cache.set("mocking_the_at_hash_XYZ", encrypted_bsn_object)
+    redis_cache.set("mocking_the_at_hash_XYZ", bsn_entry)
 
     request = Request({"type": "http"})
     resp = provider.bsn_attribute(request)
     assert resp.status_code == 200
-    assert resp.body.decode() == bsn
+    assert json.loads(resp.body.decode()) == bsn
+
+
+# pytest: disable=unused-argument
+def test_bsn_attribute_clustered(mocker, redis_cache, mock_provider):
+    provider = mock_provider
+
+    mocker.patch("inge6.provider.is_authorized", mock_is_authorized)
+    mocker.patch.object(provider, "redis_cache", redis_cache)
+
+    encrypted_bsn_object = {
+        "msg": base64.b64encode(b"<xml> This is an artifact_response </xml>").decode(),
+        "msg_id": "and has this msg_id",
+    }
+
+    bsn_entry = {
+        "type": constants.BSNStorage.CLUSTERED.value,
+        "result": encrypted_bsn_object,
+    }
+
+    redis_cache.set("mocking_the_at_hash_XYZ", bsn_entry)
+
+    request = Request({"type": "http"})
+    resp = provider.bsn_attribute(request)
+    assert resp.status_code == 200
+    assert json.loads(resp.body.decode()) == encrypted_bsn_object
 
 
 # pytest: disable=unused-argument

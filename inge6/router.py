@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
 from .config import get_settings
+from .constants import Version
 from .models import (
     AuthorizeRequest,
     DigiDMockRequest,
@@ -56,6 +57,12 @@ def assertion_consumer_service(request: Request):
 
 @router.post("/bsn_attribute")
 async def bsn_attribute(request: Request):
+    provider = request.app.state.provider
+    return provider.bsn_attribute(request, version=Version.V1)
+
+
+@router.post("/v2/bsn_attribute")
+async def bsn_attribute_v2(request: Request):
     provider = request.app.state.provider
     return provider.bsn_attribute(request)
 
