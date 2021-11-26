@@ -173,17 +173,14 @@ toml==0.10.2
     #   pytest
 tomli==1.2.2
     # via black
-types-redis==3.5.16
+types-redis==4.0.1
     # via -r requirements-dev.in
 types-requests==2.26.0
     # via -r requirements-dev.in
 typing-extensions==3.10.0.2
     # via
-    #   astroid
     #   black
-    #   gitpython
     #   mypy
-    #   pylint
 urllib3==1.26.7
     # via requests
 uvicorn==0.15.0
