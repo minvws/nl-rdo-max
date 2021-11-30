@@ -16,7 +16,7 @@ def tvs_provider_settings():
         "key_path": "saml/tvs/certs/sp.key",
         "settings_path": "saml/tvs/settings.json",
         "advanced_settings_path": "saml/tvs/advanced_settings.json",
-        "idp_metadata_path": "saml/tvs/metadata/idp_metadata.xml",
+        "idp_metadata_path": "tests/resources/saml_provider_settings/tvs/metadata/idp_metadata.xml",
     }
 
 

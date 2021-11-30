@@ -704,6 +704,7 @@ class Provider(OIDCProvider, SAMLProvider):
             return Response(content=encrypted_bsn, status_code=200)
 
         encrypted_bsn = self.bsn_encrypt.from_symm_to_jwt(bsn)
+        print(encrypted_bsn)
         return Response(content=encrypted_bsn, status_code=200)
 
     def metadata(self, id_provider_name: str) -> Response:
