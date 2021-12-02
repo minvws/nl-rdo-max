@@ -315,14 +315,18 @@ def test_bsn_attribute(mocker, redis_cache, mock_provider):
     }
 
     mocker.patch.object(
-        provider.bsn_encrypt, "from_symm_to_jwt", provider.bsn_encrypt.symm_decrypt
+        provider.bsn_encrypt,
+        "from_symm_to_jwt",
+        lambda x: base64.b64encode(
+            json.dumps(provider.bsn_encrypt.symm_decrypt(x)).encode()
+        ),
     )
     redis_cache.set("mocking_the_at_hash_XYZ", bsn_entry)
 
     request = Request({"type": "http"})
     resp = provider.bsn_attribute(request)
     assert resp.status_code == 200
-    assert json.loads(resp.body.decode()) == bsn
+    assert json.loads(base64.b64decode(resp.body)) == bsn
 
 
 # pytest: disable=unused-argument
