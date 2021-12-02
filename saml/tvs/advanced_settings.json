@@ -19,7 +19,7 @@
         "authorizationByProxyRequestIds": ["urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:9002"],
         "authorizationByProxyScopes": [
             "urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:9002",
-            " urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:9002"],
+            "urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:9002"],
         "defaultScopes": ["urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:9002"]
     },
     "contactPerson": {
