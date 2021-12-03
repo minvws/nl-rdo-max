@@ -30,7 +30,7 @@ base64_privkey = base64.b64encode(privkey_bytes)
 
 # To load a key from a base64 encoded key
 privkey_bytes = base64.b64decode(base64_privkey)
-loaded_privkey = Ed25519PrivateKey.from_private_bytes(privkey_bytes)
+privkey = Ed25519PrivateKey.from_private_bytes(privkey_bytes)
 
 # To get the pubkey
 pubkey_bytes = privkey.public_key().public_bytes(
