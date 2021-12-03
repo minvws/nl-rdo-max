@@ -16,6 +16,7 @@ Inge6 needs two keys to encrypt and sign the JWT containing the BSN details. Thi
 import base64
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives import serialization
+
 # To generate a new key
 privkey = Ed25519PrivateKey.generate()
 privkey_bytes = privkey.private_bytes(
@@ -23,11 +24,14 @@ privkey_bytes = privkey.private_bytes(
     format=serialization.PrivateFormat.Raw,
     encryption_algorithm=serialization.NoEncryption()
 )
+
 # print base64 private key
 base64_privkey = base64.b64encode(privkey_bytes)
+
 # To load a key from a base64 encoded key
 privkey_bytes = base64.b64decode(base64_privkey)
 loaded_privkey = Ed25519PrivateKey.from_private_bytes(privkey_bytes)
+
 # To get the pubkey
 pubkey_bytes = privkey.public_key().public_bytes(
     encoding=serialization.Encoding.Raw,
