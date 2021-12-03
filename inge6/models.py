@@ -1,6 +1,7 @@
 # pylint: disable=too-few-public-methods
 import os
 import html
+import logging
 import json
 import base64
 import typing
@@ -23,6 +24,8 @@ from .config import Settings
 from .saml.saml_request import AuthNRequest
 from .constants import ROOT_DIR
 from . import constants
+
+log = logging.getLogger(__package__)
 
 
 def _fill_template(template_txt: str, context: dict):
@@ -206,7 +209,7 @@ class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
     code_challenge_method: str
 
     @staticmethod
-    def allowed_scopes():
+    def get_allowed_scopes():
         return ["openid", constants.SCOPE_AUTHORIZATION_BY_PROXY]
 
     @property
@@ -217,9 +220,11 @@ class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
     def validate_scopes(cls, scopes):  # pylint: disable=no-self-argument
         splitted_scopes = scopes.split()
         for scope in splitted_scopes:
-            if scope not in cls.allowed_scopes():
-                raise ValueError(
-                    f"Scope {scope} not allowed, only {cls.allowed_scopes} are supported"
+            if scope not in cls.get_allowed_scopes():
+                log.warning(
+                    "Scope %s not allowed, only %s are supported",
+                    scope,
+                    cls.get_allowed_scopes(),
                 )
 
         return scopes
