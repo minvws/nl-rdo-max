@@ -19,7 +19,7 @@ bandit==1.7.1
     # via -r requirements-dev.in
 bcrypt==3.2.0
     # via paramiko
-black==21.11b1
+black==21.12b0
     # via -r requirements-dev.in
 certifi==2021.10.8
     # via requests
@@ -141,8 +141,6 @@ pyyaml==5.4.1
     #   docker-compose
 redis==3.5.3
     # via pytest-redis
-regex==2021.10.23
-    # via black
 requests==2.26.0
     # via
     #   docker
