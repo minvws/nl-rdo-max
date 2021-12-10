@@ -224,6 +224,10 @@ class SPMetadata(SAMLRequest):
             "service_name": self.service_name,
             "service_desc": self.service_desc,
             "service_uuid": self.service_uuid,
+            "valid_until": (
+                datetime.datetime.utcnow()
+                + datetime.timedelta(days=self.DELTA_DAYS_VALID_UNTIL)
+            ).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
 
         return template.render(unclustered_context)
