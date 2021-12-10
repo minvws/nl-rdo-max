@@ -10,6 +10,41 @@ As Inge6 is a OIDC <-> SAML bridge, one has to have files for both. Each file is
 
 For a more detailed view on the setup, please have a look in the `/docs` folder.
 
+## JWT keys
+Inge6 needs two keys to encrypt and sign the JWT containing the BSN details. This is a Ed25519 keypair on Inge6 part, and a X25519 keypair for the requesting party (inge4). To generate a Ed25519 keypair one can perform the following code:
+```python
+import base64
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
+from cryptography.hazmat.primitives import serialization
+
+# To generate a new key
+privkey = Ed25519PrivateKey.generate()
+privkey_bytes = privkey.private_bytes(
+    encoding=serialization.Encoding.Raw,
+    format=serialization.PrivateFormat.Raw,
+    encryption_algorithm=serialization.NoEncryption()
+)
+
+# print base64 private key
+base64_privkey = base64.b64encode(privkey_bytes)
+
+# To load a key from a base64 encoded key
+privkey_bytes = base64.b64decode(base64_privkey)
+privkey = Ed25519PrivateKey.from_private_bytes(privkey_bytes)
+
+# To get the pubkey
+pubkey_bytes = privkey.public_key().public_bytes(
+    encoding=serialization.Encoding.Raw,
+    format=serialization.PublicFormat.Raw
+)
+base64_pubkey = base64.b64encode(pubkey_bytes)
+```
+
+The code is identical for creating a X25519 key, but then just needs a different import (and use the similar classes for loading and generation of the keys):
+```python
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
+```
+
 ## Ubuntu dependencies
 Some Ubuntu dependencies that should be installed:
 `libxmlsec1-dev pkg-config`
