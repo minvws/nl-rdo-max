@@ -83,7 +83,7 @@ class SomethingWrongRedirectResponse(RedirectResponse):
         self.state = state
         self.headers[
             "location"
-        ] += f"?redirect_uri={next_redirect_uri}&client_id={client_id}&state={state}"
+        ] += f"redirect_uri={next_redirect_uri}&client_id={client_id}&state={state}"
 
 
 class SAMLAuthNRedirectResponse(RedirectResponse):
