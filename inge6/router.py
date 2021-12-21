@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
+from .provider import Provider
 from .config import get_settings
 from .constants import Version
 from .models import (
@@ -85,8 +86,8 @@ def jwks_uri(request: Request):
 def sorry_something_went_wrong(
     request: Request, sorry_request: SorryPageRequest = Depends()
 ):
-    provider = request.app.state.provider
-    return provider.sorry_too_busy(sorry_request)
+    provider: Provider = request.app.state.provider
+    return provider.sorry_something_went_wrong(sorry_request)
 
 
 @router.get("/")
