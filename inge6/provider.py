@@ -63,7 +63,9 @@ import json
 import logging
 from logging import Logger
 
+from urllib.parse import urlparse
 from urllib.parse import parse_qs, urlencode
+
 from typing import Union, Dict, Any
 from pydantic.main import BaseModel
 
@@ -217,8 +219,11 @@ class Provider(OIDCProvider, SAMLProvider):
 
         self.settings = settings
 
-        self.log: Logger = logging.getLogger(__package__)
-        self.log.setLevel(getattr(logging, settings.loglevel.upper()))
+        logging.basicConfig(
+            level=getattr(logging, settings.loglevel.upper()),
+            datefmt="%m/%d/%Y %I:%M:%S %p",
+        )
+        self.log: Logger =  logging.getLogger(__package__)
 
         self.bsn_encrypt = Encrypt(
             raw_sign_key=settings.bsn.i6_sign_privkey,
@@ -592,6 +597,12 @@ class Provider(OIDCProvider, SAMLProvider):
             auth_req_dict["code_challenge_method"],
         )
         self.log.debug("Stored code challenge")
+
+        parsed_url = urlparse(response_url)
+        r_url_query_params = parse_qs(parsed_url.query)
+
+        if len(r_url_query_params) < 2:
+            self.log.warning("Query parameter is empty or contains empty values. Query params: %s", r_url_query_params)
 
         return MetaRedirectResponse(redirect_url=response_url)
 

@@ -53,8 +53,11 @@ class ArtifactResponse:
         self.settings = settings
         self.response_expires_in = int(self.settings.saml.response_expires_in)
 
-        self.log: Logger = logging.getLogger(__package__)
-        self.log.setLevel(getattr(logging, self.settings.loglevel.upper()))
+        logging.basicConfig(
+            level=getattr(logging, self.settings.loglevel.upper()),
+            datefmt="%m/%d/%Y %I:%M:%S %p",
+        )
+        self.log: Logger =  logging.getLogger(__package__)
 
         self.id_provider = provider
         self.is_verified = is_verified

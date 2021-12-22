@@ -1,6 +1,6 @@
+import logging
 from typing import Optional
 
-import logging
 import threading
 
 from redis import StrictRedis
@@ -19,6 +19,12 @@ class RedisGetDebugger(threading.Thread):
         threading.Thread.__init__(self, *args, **kwargs)
         self.settings = settings if settings is not None else get_settings()
 
+        logging.basicConfig(
+            level=getattr(logging, self.settings.loglevel.upper()),
+            datefmt="%m/%d/%Y %I:%M:%S %p",
+        )
+        self.log: logging.Logger =  logging.getLogger(__package__)
+
         self.psubscribe = "__keyevent@0__:expired"
         self.redis_client = redis_client
 
@@ -28,7 +34,7 @@ class RedisGetDebugger(threading.Thread):
 
     def debug_get(self, key, value):
         if value is None:
-            logging.getLogger().debug("Retrieved expired value with key: %s", key)
+            self.log.debug("Retrieved expired value with key: %s", key)
             return
 
         debug_keyname = f"{self.key_prefix}:retrieved:{key}"
@@ -61,18 +67,18 @@ class RedisGetDebugger(threading.Thread):
                 continue
 
             expected_retrieved_key = f"{self.key_prefix}:retrieved:{set_key}"
-            logging.getLogger().debug(
+            self.log.debug(
                 "Attempting retrieval of debug-key: %s", expected_retrieved_key
             )
             isretrieved = self.redis_client.get(expected_retrieved_key) is not None
             if not isretrieved:
-                logging.getLogger().debug(
+                self.log.debug(
                     "Key %s has expired, but was never retrieved", set_key
                 )
 
     def run(self):
-        logging.getLogger().debug(
+        self.log.debug(
             "Start listening for redis events: %s.", self.psubscribe
         )
         self._listen_for_expiration_events()
-        logging.getLogger().debug("Stopped listening")
+        self.log.debug("Stopped listening")
