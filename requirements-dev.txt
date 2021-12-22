@@ -75,7 +75,7 @@ mccabe==0.6.1
     # via pylint
 mirakuru==2.4.1
     # via pytest-redis
-mypy==0.910
+mypy==0.921
     # via -r requirements-dev.in
 mypy-extensions==0.4.3
     # via
@@ -166,12 +166,15 @@ texttable==1.6.4
 toml==0.10.2
     # via
     #   coverage
-    #   mypy
     #   pylint
     #   pytest
 tomli==1.2.2
     # via black
 types-redis==4.0.5
+    # via
+    #   black
+    #   mypy
+types-redis==4.0.4
     # via -r requirements-dev.in
 types-requests==2.26.2
     # via -r requirements-dev.in
