@@ -1,10 +1,44 @@
 # Changelog
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file (Online version can be in the GitHub repository).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and (starting from v1.0.0) this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.3.0]
+## [v1.3.5] 2021-12-21
+- fix redirect to sorry page issues by @maxxiefjv in #253
+
+## [v1.3.4] 2021-12-18
+- soft validation scopes instead of throwing exceptions
+- add validUntil to metadata
+- add JWT libsodium key generation in README.md
+
+## [v1.3.3] 2021-12-02
+- Update default machtigen/scoping settings
+
+## [v1.3.2] 2021-11-25
+
+### Added
+- add some additional information on code_verifiers and code_challenge in README.md
+- Scoping/Machtigen support for different environments
+- DigiD Machtigen tracking throughout user lifecycle
+
+### Changed
+- Set permissions for generated directories
+- No longer mention the services used (i.e. don't show redis in client error messages)
+
+### Fixed
+- fix getting wrong attribute from ArtifactResponse SAML
+- Fix open redirect, doing so by adding several top-level exception handlers
+
+## [v1.3.1] 2021-10-26
+
+### Added
+- perform machtigen on scope change by @maxxiefjv in #205
+
+### Changed
+- Code formatting with black by @maxxiefjv in #206
+
+## [v1.3.0] 2021-10-25
 
 ### Added
 - Clustered connection support.
