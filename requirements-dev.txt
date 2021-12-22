@@ -169,6 +169,8 @@ toml==0.10.2
     #   pylint
     #   pytest
 tomli==1.2.2
+    # via black
+types-redis==4.0.5
     # via
     #   black
     #   mypy
