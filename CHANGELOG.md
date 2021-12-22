@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and (starting from v1.0.0) this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [v1.3.5] 2021-12-21
-- fix redirect to sorry page issues by @maxxiefjv in #253
+- fix redirect to sorry page issues
 
 ## [v1.3.4] 2021-12-18
 - soft validation scopes instead of throwing exceptions
@@ -33,10 +33,10 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 ## [v1.3.1] 2021-10-26
 
 ### Added
-- perform machtigen on scope change by @maxxiefjv in #205
+- perform machtigen on scope change 
 
 ### Changed
-- Code formatting with black by @maxxiefjv in #206
+- Code formatting with black by
 
 ## [v1.3.0] 2021-10-25
 
