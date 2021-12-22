@@ -113,6 +113,7 @@ from .models import (
 )
 
 from .exceptions import (
+    AuthorizationByProxyDisabled,
     AuthorizeEndpointException,
     DependentServiceOutage,
     TokenSAMLErrorResponse,
@@ -121,7 +122,7 @@ from .exceptions import (
     ExpectedRedisValue,
 )
 
-from .saml.exceptions import UserNotAuthenticated
+from .saml.exceptions import ScopingAttributesNotAllowed, UserNotAuthenticated
 from .saml.id_provider import IdProvider
 from .saml.provider import Provider as SAMLProvider
 from .saml import ArtifactResponse
@@ -233,25 +234,36 @@ class Provider(OIDCProvider, SAMLProvider):
 
         self.rate_limiter = RateLimiter(self.settings, self.redis_client)
 
+        # TODO: Move this to config # pylint: disable=fixme
         with open(
-            self.settings.ratelimit.sorry_too_busy_page_head, "r", encoding="utf-8"
+            self.settings.static.sorry_too_busy_page_head, "r", encoding="utf-8"
         ) as too_busy_file:
             self.too_busy_page_template_head = too_busy_file.read()
 
         with open(
-            self.settings.ratelimit.sorry_too_busy_page_tail, "r", encoding="utf-8"
+            self.settings.static.sorry_too_busy_page_tail, "r", encoding="utf-8"
         ) as too_busy_file:
             self.too_busy_page_template_tail = too_busy_file.read()
 
         with open(
-            self.settings.ratelimit.outage_page_head, "r", encoding="utf-8"
+            self.settings.static.outage_page_head, "r", encoding="utf-8"
         ) as outage_file:
             self.outage_page_template_head = outage_file.read()
 
         with open(
-            self.settings.ratelimit.outage_page_tail, "r", encoding="utf-8"
+            self.settings.static.outage_page_tail, "r", encoding="utf-8"
         ) as outage_file:
             self.outage_page_template_tail = outage_file.read()
+
+        with open(
+            self.settings.static.disabled_mchtgn_page_head, "r", encoding="utf-8"
+        ) as auth_proxy_disable:
+            self.auth_by_proxy_head = auth_proxy_disable.read()
+
+        with open(
+            self.settings.static.disabled_mchtgn_page_tail, "r", encoding="utf-8"
+        ) as auth_proxy_disable:
+            self.auth_by_proxy_tail = auth_proxy_disable.read()
 
         with open(
             self.settings.oidc.clients_file, "r", encoding="utf-8"
@@ -314,9 +326,13 @@ class Provider(OIDCProvider, SAMLProvider):
             )
 
         if id_provider.authn_binding.endswith("POST"):
-            authn_request = id_provider.create_authn_request(
-                login_digid_req.authorize_request.authorization_by_proxy
-            )
+            try:
+                authn_request = id_provider.create_authn_request(
+                    login_digid_req.authorize_request.authorization_by_proxy
+                )
+            except ScopingAttributesNotAllowed as scoping_not_allowed:
+                raise AuthorizationByProxyDisabled() from scoping_not_allowed
+
             return SAMLAuthNAutoSubmitResponse(
                 sso_url=authn_request.sso_url,
                 relay_state=randstate,
@@ -333,6 +349,7 @@ class Provider(OIDCProvider, SAMLProvider):
                     "User attempted to login using authorization by proxy. But is not supported for this IDProvider: %s",
                     id_provider.name,
                 )
+                raise AuthorizationByProxyDisabled()
 
             req = self._prepare_req(login_digid_req.authorize_request, id_provider.name)
             auth = OneLogin_Saml2_Auth(req, custom_base_path=id_provider.base_dir)
@@ -369,17 +386,36 @@ class Provider(OIDCProvider, SAMLProvider):
             request.redirect_uri, request.state, allow_list
         )
 
-        if self._is_outage():
+        if request.reason in [
+            constants.SomethingWrongReason.TOO_BUSY.value,
+            constants.SomethingWrongReason.TOO_MANY_REQUEST.value,
+        ]:
             return SomethingWrongHTMLResponse(
                 redirect_uri,
-                self.outage_page_template_head,
-                self.outage_page_template_tail,
+                self.too_busy_page_template_head,
+                self.too_busy_page_template_tail,
             )
 
+        if (
+            request.reason
+            == constants.SomethingWrongReason.AUTH_BY_PROXY_DISABLED.value
+        ):
+            return SomethingWrongHTMLResponse(
+                redirect_uri,
+                self.auth_by_proxy_head,
+                self.auth_by_proxy_tail,
+            )
+
+        if not self._is_outage:
+            self.log.warning(
+                "Someone landed on the outage page, but there is no outage."
+            )
+
+        # If we got to the sorry page, by default we have an outage
         return SomethingWrongHTMLResponse(
             redirect_uri,
-            self.too_busy_page_template_head,
-            self.too_busy_page_template_tail,
+            self.outage_page_template_head,
+            self.outage_page_template_tail,
         )
 
     def _get_primary_idp(self, ip_address: str):

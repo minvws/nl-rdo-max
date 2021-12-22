@@ -49,7 +49,9 @@ async def general_authorization_exception_handler(
 
 
 @app.exception_handler(SomethingWrongError)
-async def something_wrong_exception_handler(request: Request, _: SomethingWrongError):
+async def something_wrong_exception_handler(
+    request: Request, something_wrong_err: SomethingWrongError
+):
     """
     When throwing these type of errors the user has been verified, but server access is disabled.
     """
@@ -62,6 +64,7 @@ async def something_wrong_exception_handler(request: Request, _: SomethingWrongE
         next_redirect_uri=redirect_uri,
         client_id=client_id,
         state=state,
+        reason=something_wrong_err.reason,
     )
 
 

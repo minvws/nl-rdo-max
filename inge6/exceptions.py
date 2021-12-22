@@ -1,5 +1,7 @@
 from oic.oic.message import TokenErrorResponse
 
+from inge6.constants import SomethingWrongReason
+
 
 class InvalidClientError(RuntimeError):
     pass
@@ -13,25 +15,40 @@ class AuthorizeEndpointException(RuntimeError):
 
 
 class SomethingWrongError(RuntimeError):
-    pass
+    def __init__(self, reason: SomethingWrongReason, message: str):
+        super().__init__(message)
+        self.reason = reason
 
 
 class TooBusyError(SomethingWrongError):
     def __init__(self) -> None:
-        super().__init__("Servers are too busy at this point, please try again later")
+        super().__init__(
+            SomethingWrongReason.TOO_BUSY,
+            "Servers are too busy at this point, please try again later",
+        )
 
 
 class TooManyRequestsFromOrigin(SomethingWrongError):
     def __init__(self, ip_expire_s: str) -> None:
         super().__init__(
-            f"Too many requests from the same ip_address during the last {ip_expire_s} seconds."
+            SomethingWrongReason.TOO_MANY_REQUEST,
+            f"Too many requests from the same ip_address during the last {ip_expire_s} seconds.",
         )
 
 
 class DependentServiceOutage(SomethingWrongError):
     def __init__(self, outage_key: str) -> None:
         super().__init__(
-            f"Some service we depend on is down according to the redis key: {outage_key}"
+            SomethingWrongReason.OUTAGE,
+            f"Some service we depend on is down according to the redis key: {outage_key}",
+        )
+
+
+class AuthorizationByProxyDisabled(SomethingWrongError):
+    def __init__(self) -> None:
+        super().__init__(
+            SomethingWrongReason.AUTH_BY_PROXY_DISABLED,
+            "Authorization by proxy is disabled for this provider",
         )
 
 

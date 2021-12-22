@@ -6,9 +6,9 @@ from functools import cached_property
 from packaging.version import Version
 from packaging.version import parse as version_parse
 
-from inge6.saml.saml_request import ArtifactResolveRequest, AuthNRequest
-
+from .saml_request import ArtifactResolveRequest, AuthNRequest
 from .metadata import IdPMetadata, SPMetadata
+from .exceptions import ScopingAttributesNotAllowed
 from .utils import from_settings
 
 # pylint: disable=too-many-instance-attributes
@@ -94,7 +94,9 @@ class IdProvider:
                 self.determine_scoping_list(authorization_by_proxy),
                 self.determine_request_ids(authorization_by_proxy),
             )
-        return [], []
+        raise ScopingAttributesNotAllowed(
+            "Scoping for this provider has been disabled in the settings"
+        )
 
     def determine_scoping_list(self, authorization_by_proxy):
         if authorization_by_proxy:

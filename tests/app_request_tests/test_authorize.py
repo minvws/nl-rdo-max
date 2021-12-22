@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from inge6.main import app
 from inge6.provider import Provider
+from inge6.constants import SomethingWrongReason
 from ..test_utils import get_settings
 
 
@@ -91,6 +92,38 @@ def test_authorize_outage(
 
     assert response.status_code == 307
     assert response.headers["location"].startswith("/sorry-something-went-wrong")
+    assert SomethingWrongReason.OUTAGE.value in response.headers["location"]
+
+
+# pylint: disable=unused-argument, redefined-outer-name
+def test_authorize_authbyprxy_disabled(
+    redis_mock, mocker, digid_config, default_authorize_request_dict
+):
+    mock_provider = Provider(settings=get_settings({"mock_digid": False}))
+    mock_provider.clients = {
+        "test_client": {
+            "token_endpoint_auth_method": "none",
+            "redirect_uris": [
+                "http://localhost:3000/login",
+            ],
+            "response_types": ["code"],
+        }
+    }
+
+    mocker.patch("inge6.main.PROVIDER", mock_provider)
+
+    client = TestClient(app)
+
+    default_authorize_request_dict["scope"] = "openid authorization_by_proxy"
+    query_params: str = urllib.parse.urlencode(default_authorize_request_dict)
+    response = client.get(f"/authorize?{query_params}", allow_redirects=False)
+
+    assert response.status_code == 307
+    assert response.headers["location"].startswith("/sorry-something-went-wrong")
+    assert (
+        SomethingWrongReason.AUTH_BY_PROXY_DISABLED.value
+        in response.headers["location"]
+    )
 
 
 def test_authorize_ratelimit(mocker, default_authorize_request_dict):
@@ -134,3 +167,4 @@ def test_authorize_ratelimit(mocker, default_authorize_request_dict):
     # Fourth is the limit.
     resp = client.get(f"/authorize?{query_params}", allow_redirects=False)
     assert resp.headers["location"].startswith("/sorry-something-went-wrong")
+    assert SomethingWrongReason.TOO_MANY_REQUEST.value in resp.headers["location"]

@@ -71,6 +71,7 @@ class SomethingWrongRedirectResponse(RedirectResponse):
         next_redirect_uri: str,
         client_id: str,
         state: str,
+        reason: str,
         status_code: int = 307,
         headers: dict = None,
         background: BackgroundTask = None,
@@ -83,7 +84,7 @@ class SomethingWrongRedirectResponse(RedirectResponse):
         self.state = state
         self.headers[
             "location"
-        ] += f"redirect_uri={next_redirect_uri}&client_id={client_id}&state={state}"
+        ] += f"redirect_uri={next_redirect_uri}&client_id={client_id}&state={state}&reason={reason}"
 
 
 class SAMLAuthNRedirectResponse(RedirectResponse):
@@ -316,6 +317,7 @@ class SorryPageRequest(BaseModel):
     state: str
     redirect_uri: str
     client_id: str
+    reason: str
 
     @validator("state", "redirect_uri", "client_id")
     def convert_to_escaped_html(

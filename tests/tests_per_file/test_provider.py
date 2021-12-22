@@ -32,14 +32,34 @@ from ..test_utils import get_settings
 from ..resources.utils import PRIV_KEY_BSN_AES_KEY
 
 
-def test_sorry_too_busy(mock_provider: Provider):
+def test_sorry_something_wrong(mock_provider: Provider):
     request = SorryPageRequest(
-        state="state", redirect_uri="uri", client_id="test_client"
+        state="state",
+        redirect_uri="uri",
+        client_id="test_client",
+        reason=constants.SomethingWrongReason.TOO_BUSY,
     )
 
     response = mock_provider.sorry_something_went_wrong(request)
     assert (
         "Het is erg druk op dit moment, iets te druk zelfs." in response.body.decode()
+    )
+
+    request.reason = constants.SomethingWrongReason.TOO_MANY_REQUEST
+    response = mock_provider.sorry_something_went_wrong(request)
+    assert (
+        "Het is erg druk op dit moment, iets te druk zelfs." in response.body.decode()
+    )
+
+    request.reason = constants.SomethingWrongReason.OUTAGE
+    response = mock_provider.sorry_something_went_wrong(request)
+    assert "Er is op dit moment een storing." in response.body.decode()
+
+    request.reason = constants.SomethingWrongReason.AUTH_BY_PROXY_DISABLED
+    response = mock_provider.sorry_something_went_wrong(request)
+    assert (
+        "Vrijwillig machtigen is op dit moment niet beschikbaar."
+        in response.body.decode()
     )
 
 

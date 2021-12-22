@@ -7,3 +7,7 @@ class UserNotAuthenticated(OAuthError):
 
 class ValidationError(RuntimeError):
     pass
+
+
+class ScopingAttributesNotAllowed(RuntimeError):
+    pass
