@@ -94,7 +94,7 @@ class IdProvider:
                 self.determine_scoping_list(authorization_by_proxy),
                 self.determine_request_ids(authorization_by_proxy),
             )
-        
+
         if authorization_by_proxy:
             raise ScopingAttributesNotAllowed(
                 "Scoping for this provider has been disabled in the settings"
