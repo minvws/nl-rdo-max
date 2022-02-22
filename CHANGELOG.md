@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file (Online vers
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and (starting from v1.0.0) this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.7] 2022-02-21
+## What's Changed
+- when mocking and auth_by_proxy is disabled, an error is raised. But a… by @maxxiefjv in https://github.com/91divoc-ln/inge-6/pull/290
+- Bump mypy from 0.921 to 0.931 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/272
+- Bump pytest-asyncio from 0.16.0 to 0.18.1 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/295
+- Bump types-requests from 2.26.2 to 2.27.10 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/296
+- Bump uvicorn from 0.16.0 to 0.17.5 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/297
+- Bump types-redis from 4.0.4 to 4.1.16 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/298
+- Bump pytest-mock from 3.6.1 to 3.7.0 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/302
+- Bump pytest-redis from 2.3.0 to 2.4.0 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/301
+- Bump black from 21.12b0 to 22.1.0 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/300
+- Bump bandit from 1.7.1 to 1.7.2 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/299
+
+
+## [v1.3.6] 2021-12-22
+## What's Changed
+- Bump mypy from 0.910 to 0.921 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/256
+- Bump types-redis from 4.0.4 to 4.0.5 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/257
+- improve log messages and start logging empty redirect query params by @maxxiefjv in https://github.com/91divoc-ln/inge-6/pull/255
+- add changelog to changelog.md by @maxxiefjv in https://github.com/91divoc-ln/inge-6/pull/261
+- Machtigen sorry page when not available by @maxxiefjv in https://github.com/91divoc-ln/inge-6/pull/254
+- form should be a GET method by @maxxiefjv in https://github.com/91divoc-ln/inge-6/pull/260
+
 ## [v1.3.5] 2021-12-21
 - fix redirect to sorry page issues
 
