@@ -289,7 +289,7 @@ typing-extensions==4.1.1
     #   oic
     #   pydantic
     #   pylint
-unidecode==1.2.0
+unidecode==1.3.3
     # via inge6 (setup.py)
 urllib3==1.26.8
     # via requests
