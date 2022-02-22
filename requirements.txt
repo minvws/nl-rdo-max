@@ -184,7 +184,7 @@ pyparsing==3.0.7
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
-pytest==6.2.5
+pytest==7.0.1
     # via
     #   inge6 (setup.py)
     #   pytest-asyncio
