@@ -126,7 +126,7 @@ def test_authorize_authbyprxy_disabled(
     )
 
 
-def test_authorize_ratelimit(mocker, default_authorize_request_dict):
+def test_authorize_ratelimit(mocker, redis_mock, default_authorize_request_dict):
     mock_provider = Provider(
         settings=get_settings(
             {
@@ -137,6 +137,7 @@ def test_authorize_ratelimit(mocker, default_authorize_request_dict):
         )
     )
 
+    mock_provider.redis_client = redis_mock
     mock_provider.redis_client.set("user_limit_key", 3)
     mock_provider.redis_client.set("inge6:primary_idp", "tvs")
 

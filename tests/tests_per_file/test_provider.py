@@ -313,10 +313,11 @@ def test_accesstoken_fail_userlogin(
 
     acc_req_body = f"client_id={client_id}&redirect_uri={redirect_uri}&code={code}&code_verifier={code_verifier}&grant_type=authorization_code"
 
-    accesstoken_resp = mock_provider.token_endpoint(acc_req_body.encode(), headers)
-    assert isinstance(accesstoken_resp, JWTError)
-    assert accesstoken_resp.error == "saml_authn_failed"
-    assert accesstoken_resp.error_description == "User authentication flow failed"
+    with pytest.raises(JWTError) as jwt_error:
+        mock_provider.token_endpoint(acc_req_body.encode(), headers)
+
+    assert jwt_error.value.error == "saml_authn_failed"
+    assert jwt_error.value.error_description == "User authentication flow failed"
 
 
 # pytest: disable=unused-argument

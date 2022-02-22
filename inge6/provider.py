@@ -525,12 +525,14 @@ class Provider(OIDCProvider, SAMLProvider):
                     artifact, id_provider, authorization_by_proxy
                 )
             except UserNotAuthenticated as user_not_authenticated:
-                return JWTError(
+                # FastAPI middleware handles, no need to reraise - pylint: disable=raise-missing-from
+                raise JWTError(
                     error=user_not_authenticated.oauth_error,
                     error_description=str(user_not_authenticated),
                 )
             except ValueError:
-                return JWTError(
+                # FastAPI middleware handles, no need to reraise - pylint: disable=raise-missing-from
+                raise JWTError(
                     error="server_error",
                     error_description="Attribute expected, but was not found",
                 )
@@ -575,7 +577,7 @@ class Provider(OIDCProvider, SAMLProvider):
             ).to_dict()
 
         # Error has occurred
-        return JWTError(**error_resp)
+        raise JWTError(**error_resp)
 
     def assertion_consumer_service(
         self, request: Request

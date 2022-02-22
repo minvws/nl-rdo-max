@@ -15,7 +15,11 @@ from inge6.exceptions import (
     InvalidClientError,
     SomethingWrongError,
 )
-from inge6.models import AuthorizeErrorRedirectResponse, SomethingWrongRedirectResponse
+from inge6.models import (
+    AuthorizeErrorRedirectResponse,
+    JWTError,
+    SomethingWrongRedirectResponse,
+)
 
 from .config import get_settings
 from .router import router
@@ -76,6 +80,17 @@ async def invalid_client_data_exception_handler(_: Request, exc: InvalidClientEr
 @app.exception_handler(ExpiredResourceError)
 async def session_expired_exception_handler(_: Request, __: ExpiredResourceError):
     return Response(status_code=400, content="Session expired")
+
+
+@app.exception_handler(JWTError)
+async def accesstoken_jwt_error(_: Request, jwt_error: JWTError):
+    return JSONResponse(
+        status_code=400,
+        content={
+            "error": jwt_error.error,
+            "error_description": jwt_error.error_description,
+        },
+    )
 
 
 def _validate_saml_identity_provider_settings():

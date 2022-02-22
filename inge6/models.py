@@ -184,12 +184,14 @@ class JWTToken(BaseModel):
     id_token: str
 
 
-class JWTError(BaseModel):
-    error: str
-    error_description: str
+class JWTError(Exception):
+    def __init__(self, error: str, error_description: str) -> None:
+        super().__init__()
+        self.error = error
+        self.error_description = error_description
 
 
-JWTResponse = typing.Union[JWTToken, JWTError]
+JWTResponse = JWTToken
 
 
 class ResponseType(str, Enum):
