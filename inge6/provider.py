@@ -588,10 +588,13 @@ class Provider(OIDCProvider, SAMLProvider):
         This artifact is stored, and the user is redirected to the configured redirect_uri. The retrieved artifact
         is later used to verify the login, and retrieve the BSN.
         """
-        state = request.query_params["RelayState"]
-        artifact = request.query_params["SAMLart"]
-        artifact_hashed = nacl.hash.sha256(artifact.encode()).decode()
+        state = request.query_params.get("RelayState", None)
+        artifact = request.query_params.get("SAMLart", None)
 
+        if state is None or artifact is None:
+            return HTMLResponse(status_code=401, content="User not authorized")
+
+        artifact_hashed = nacl.hash.sha256(artifact.encode()).decode()
         if (
             "mocking" in request.query_params
             and hasattr(self.settings, "mock_digid")
@@ -611,7 +614,9 @@ class Provider(OIDCProvider, SAMLProvider):
                 expired_err,
                 exc_info=True,
             )
-            return HTMLResponse("Session expired")
+            return HTMLResponse(
+                status_code=404, content="Session expired, user not authorized"
+            )
 
         authn_response = self.authorize(auth_req, "test_client")
         response_url = authn_response.request(auth_req["redirect_uri"], False)
