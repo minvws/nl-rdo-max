@@ -1,5 +1,7 @@
+import os
 import sys
 import json
+os.environ.setdefault('PYTHON_SETTINGS_MODULE', 'inge6.runtime.settings')
 
 import os.path
 import logging
