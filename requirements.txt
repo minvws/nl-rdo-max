@@ -116,7 +116,7 @@ lxml==4.8.0
     #   zeep
 mako==1.1.6
     # via oic
-markupsafe==2.1.0
+markupsafe==2.1.1
     # via
     #   jinja2
     #   mako
