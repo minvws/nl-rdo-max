@@ -33,9 +33,11 @@ from .provider import Provider
 
 log = logging.getLogger(__package__)
 
-app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-if defaults.DEBUG:
-    app = FastAPI(docs_url="/ui", redoc_url="/docs")
+app = (
+    FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+    if not defaults.DEBUG
+    else FastAPI(docs_url="/ui", redoc_url="/docs")
+)
 app.include_router(router)
 
 PROVIDER = Provider()
