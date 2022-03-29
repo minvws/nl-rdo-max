@@ -192,7 +192,7 @@ pytest==7.0.1
     #   pytest-docker
     #   pytest-mock
     #   pytest-redis
-pytest-asyncio==0.18.1
+pytest-asyncio==0.18.2
     # via inge6 (setup.py)
 pytest-cov==3.0.0
     # via inge6 (setup.py)
