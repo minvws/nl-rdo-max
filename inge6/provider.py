@@ -87,7 +87,7 @@ from pyop.exceptions import (
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
-from inge6.conf import settings as defaults
+from inge6.conf import settings as defaults # type: ignore
 from . import constants
 from .cache import RedisCache
 from .config import Settings, get_settings
