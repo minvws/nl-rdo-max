@@ -32,14 +32,14 @@ def test_acs_fail_random_state_artifact(mocker):
     assert "Session expired, user not authorized" in resp.text
 
 
-def test_acs_succes_metaredirect_response(mocker):
+def test_acs_succes_metaredirect_response(mocker, redis_mock):
 
-    mock_provider = Provider(settings=get_settings())
+    mock_provider = Provider(settings=get_settings(), redis_client=redis_mock)
     mocker.patch(
         "inge6.provider.hget_from_redis",
     )
 
-    mock_provider.authorize = MagicMock()
+    mock_provider.oidc.authorize = MagicMock()
 
     mocker.patch("inge6.provider.cache_artifact")
     mocker.patch("inge6.provider.cache_code_challenge")

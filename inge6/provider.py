@@ -87,8 +87,9 @@ from pyop.exceptions import (
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
+from inge6.conf import settings as defaults
 from . import constants
-
+from .cache import RedisCache
 from .config import Settings, get_settings
 from .rate_limiter import RateLimiter
 from .utils import (
@@ -128,6 +129,7 @@ from .saml.provider import Provider as SAMLProvider
 from .saml import ArtifactResponse
 
 from .oidc.provider import Provider as OIDCProvider
+from .oidc.storage import RedisWrapper
 from .oidc.authorize import (
     is_authorized,
     accesstoken,
@@ -193,7 +195,7 @@ def _perform_artifact_resolve_request(artifact: str, id_provider: IdProvider):
     )
 
 
-class Provider(OIDCProvider, SAMLProvider):
+class Provider(SAMLProvider):  # pylint: disable=R0902
     """
     This provider is the bridge between OIDC and SAML. It implements the OIDC protocol
     and connects to a configured SAML provider.
@@ -214,10 +216,41 @@ class Provider(OIDCProvider, SAMLProvider):
         - `settings.bsn.local_symm_key`: symmetric key used for encrypting the BSN stored in the Redis-store
     """
 
-    def __init__(self, settings: Settings = get_settings()) -> None:
-        OIDCProvider.__init__(self, settings)
+    @property
+    def clients(self) -> dict:
+        return self.oidc.clients
+
+    @clients.setter
+    def clients(self, value: dict):
+        self.oidc.clients = value
+
+    @property
+    def provider_configuration(self):
+        return self.oidc.provider_configuration
+
+    @property
+    def key(self):
+        return self.oidc.key
+
+    @staticmethod
+    def cache_factory(settings, redis_client=None):
+        return RedisCache(settings=settings, redis_client=redis_client)
+
+    def __init__(self, settings: Settings = get_settings(), redis_client=None) -> None:
         SAMLProvider.__init__(self, settings)
 
+        self.redis_cache = self.cache_factory(
+            settings=settings, redis_client=redis_client
+        )
+        self.redis_client = self.redis_cache.redis_client
+        assert redis_client is None or (redis_client == self.redis_client)
+        self.oidc = OIDCProvider.fromsettings(
+            settings=defaults,
+            storage_factory=lambda **kwargs: RedisWrapper(
+                redis_client=self.redis_client, **kwargs
+            ),
+            redis_cache=self.redis_cache,
+        )
         self.settings = settings
 
         logging.basicConfig(
@@ -453,7 +486,7 @@ class Provider(OIDCProvider, SAMLProvider):
         primary_idp = self._get_primary_idp(ip_address)
 
         try:
-            auth_req = self.parse_authentication_request(
+            auth_req = self.oidc.parse_authentication_request(
                 urlencode(authorize_request.dict()), headers
             )
         except InvalidAuthenticationRequest as invalid_auth_req:
@@ -519,7 +552,7 @@ class Provider(OIDCProvider, SAMLProvider):
             id_provider = cached_artifact["id_provider"]
             authorization_by_proxy = cached_artifact["authorization_by_proxy"]
 
-            token_response = accesstoken(self, body, headers)
+            token_response = accesstoken(self.oidc, body, headers)
             try:
                 encrypted_bsn = self._resolve_artifact(
                     artifact, id_provider, authorization_by_proxy
@@ -618,7 +651,7 @@ class Provider(OIDCProvider, SAMLProvider):
                 status_code=404, content="Session expired, user not authorized"
             )
 
-        authn_response = self.authorize(auth_req, "test_client")
+        authn_response = self.oidc.authorize(auth_req, "test_client")
         response_url = authn_response.request(auth_req["redirect_uri"], False)
         code = authn_response["code"]
 

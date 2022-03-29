@@ -13,7 +13,7 @@ from ..test_utils import get_settings
 def test_consume_bsn_and_accesstoken(
     redis_mock, tvs_config, default_authorize_request_dict, mocker, mock_clients_db
 ):
-    mock_provider = Provider(settings=get_settings())
+    mock_provider = Provider(settings=get_settings(), redis_client=redis_mock)
     mock_provider.clients = mock_clients_db
     mocker.patch("inge6.main.PROVIDER", mock_provider)
 

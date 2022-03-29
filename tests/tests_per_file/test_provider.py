@@ -271,7 +271,9 @@ def test_accesstoken_fail_userlogin(
     redis_mock, tvs_config, mocker, default_authorize_request_dict, mock_clients_db
 ):
     # pylint: disable=unused-argument
-    mock_provider = Provider(settings=get_settings({"mock_digid": False}))
+    mock_provider = Provider(
+        settings=get_settings({"mock_digid": False}), redis_client=redis_mock
+    )
     mock_provider.clients = mock_clients_db
 
     def raise_user_login_failed(*args, **kwargs):
