@@ -114,7 +114,7 @@ lxml==4.8.0
     #   python3-saml
     #   xmlsec
     #   zeep
-mako==1.1.6
+mako==1.2.0
     # via oic
 markupsafe==2.1.1
     # via
