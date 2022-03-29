@@ -90,7 +90,7 @@ class Provider:
         )
         self.provider = PyopProvider(
             signing_key,
-            configuration_information, # type: ignore
+            configuration_information,  # type: ignore
             authz_state,
             clients,
             userinfo_db,
