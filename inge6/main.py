@@ -9,6 +9,7 @@ import uvicorn
 
 from fastapi import FastAPI, Request
 
+from inge6.conf import settings as defaults
 from inge6.exceptions import (
     AuthorizeEndpointException,
     ExpiredResourceError,
@@ -28,6 +29,8 @@ from .provider import Provider
 log = logging.getLogger(__package__)
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+if defaults.DEBUG:
+    app = FastAPI(docs_url="/ui", redoc_url="/docs")
 app.include_router(router)
 
 PROVIDER = Provider()
@@ -296,10 +299,10 @@ async def add_provider_to_request(request: Request, call_next):
 
 
 def main(app_link: str = "inge6.main:app"):
-    settings = get_settings()
+    from inge6.conf import settings
 
     logging.basicConfig(
-        level=getattr(logging, settings.loglevel.upper()),
+        level=getattr(logging, settings.LOG_LEVEL),
         datefmt="%m/%d/%Y %I:%M:%S %p",
     )
 
@@ -307,17 +310,15 @@ def main(app_link: str = "inge6.main:app"):
         sys.exit(1)
 
     run_kwargs = {
-        "host": settings.host,
-        "port": int(settings.port),
-        "reload": settings.debug == "True",
+        "host": settings.HOST,
+        "port": int(settings.PORT),
+        "reload": settings.DEBUG,
         "proxy_headers": True,
     }
 
-    if hasattr(settings, "use_ssl") and settings.use_ssl.lower() == "true":
-        run_kwargs["ssl_keyfile"] = settings.ssl.base_dir + "/" + settings.ssl.key_file
-        run_kwargs["ssl_certfile"] = (
-            settings.ssl.base_dir + "/" + settings.ssl.cert_file
-        )
+    if settings.USE_SSL:
+        run_kwargs["ssl_keyfile"] = settings.SSL_KEYFILE
+        run_kwargs["ssl_certfile"] = settings.SSL_CERTFILE
 
     uvicorn.run(app_link, **run_kwargs)
 
