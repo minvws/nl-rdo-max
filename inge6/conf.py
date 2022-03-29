@@ -1,4 +1,5 @@
 # pylint: skip-file
+# type: ignore
 """Exposes the settings declared in the environment variable
 ``PYTHON_SETTINGS_MODULE``."""
 import importlib
@@ -41,9 +42,7 @@ class Settings:
                 setattr(target, k, v)
         except ImportError:
             if fatal:
-                raise ImproperlyConfigured(
-                    "Can not import settings module %s" % qualname
-                )
+                raise
 
 
 def __getattr__(attname: str):

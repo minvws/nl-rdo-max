@@ -1,4 +1,5 @@
 # pylint: disable=C0412,C0413,C0415,W0404
+# type: ignore
 import os
 import sys
 import json
