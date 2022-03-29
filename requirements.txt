@@ -279,7 +279,7 @@ types-redis==4.1.17
     # via inge6 (setup.py)
 types-requests==2.27.11
     # via inge6 (setup.py)
-types-urllib3==1.26.9
+types-urllib3==1.26.11
     # via types-requests
 typing-extensions==4.1.1
     # via
