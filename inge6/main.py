@@ -1,7 +1,9 @@
+# pylint: disable=C0412,C0413,C0415,W0404
 import os
 import sys
 import json
-os.environ.setdefault('PYTHON_SETTINGS_MODULE', 'inge6.runtime.settings')
+
+os.environ.setdefault("PYTHON_SETTINGS_MODULE", "inge6.runtime.settings")
 
 import os.path
 import logging

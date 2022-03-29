@@ -1,10 +1,8 @@
+# pylint: skip-file
 """Exposes the settings declared in the environment variable
 ``PYTHON_SETTINGS_MODULE``."""
-import contextlib
-import functools
 import importlib
 import inspect
-import itertools
 import types
 import os
 import sys
