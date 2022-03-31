@@ -98,7 +98,7 @@ isodate==0.6.1
     #   zeep
 isort==5.10.1
     # via pylint
-itsdangerous==2.1.0
+itsdangerous==2.1.2
     # via inge6 (setup.py)
 jinja2==3.0.3
     # via inge6 (setup.py)
