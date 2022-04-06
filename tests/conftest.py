@@ -16,6 +16,9 @@ redis = factories.redisdb("redis_config")
 def redis_mock(docker_services, redis, mocker):
     redis.set(get_settings().primary_idp_key, "tvs")
     mocker.patch("inge6.cache.redis_cache.create_redis_client", lambda _: redis)
+    mocker.patch(
+        "inge6.cache.redis_cache.RedisCache.client_factory", lambda *a, **k: redis
+    )
     yield redis
 
 

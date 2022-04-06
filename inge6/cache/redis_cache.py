@@ -39,12 +39,16 @@ def _deserialize(serialized_value: Optional[Any]) -> Any:
 
 
 class RedisCache:
+    @staticmethod
+    def client_factory(settings):
+        return create_redis_client(settings)
+
     def __init__(self, settings=None, redis_client: StrictRedis = None):
         self.settings = settings if settings is not None else get_settings()
         self.key_prefix: str = self.settings.redis.default_cache_namespace
         self.expires_in_s: int = int(self.settings.redis.object_ttl)
         self.redis_client = (
-            create_redis_client(settings) if redis_client is None else redis_client
+            self.client_factory(settings) if redis_client is None else redis_client
         )
 
         if self.settings.redis.enable_debugger:

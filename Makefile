@@ -1,3 +1,4 @@
+export PYTHON_SETTINGS_MODULE=inge6.runtime.settings
 env = env PATH="${bin}:$$PATH"
 
 venv: .venv/touchfile ## Create virtual environment
@@ -92,7 +93,7 @@ fix:
 	. .venv/bin/activate && $(env) black inge6 tests
 
 test:
-	. .venv/bin/activate && ${env} pytest tests
+	. .venv/bin/activate && ${env} pytest tests -x
 
 type-check:
 	. .venv/bin/activate && ${env} MYPYPATH=stubs/ mypy --show-error-codes inge6
