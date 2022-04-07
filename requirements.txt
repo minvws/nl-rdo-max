@@ -20,7 +20,7 @@ attrs==21.4.0
     #   zeep
 autoflake==1.4
     # via inge6 (setup.py)
-bandit==1.7.3
+bandit==1.7.4
     # via inge6 (setup.py)
 bcrypt==3.2.0
     # via paramiko
@@ -39,7 +39,7 @@ cffi==1.15.0
     #   pynacl
 charset-normalizer==2.0.12
     # via requests
-click==8.0.4
+click==8.1.2
     # via
     #   black
     #   uvicorn
@@ -74,7 +74,7 @@ dockerpty==0.4.1
     # via docker-compose
 docopt==0.6.2
     # via docker-compose
-fastapi==0.74.1
+fastapi==0.75.0
     # via inge6 (setup.py)
 freezegun==1.2.1
     # via inge6 (setup.py)
@@ -170,7 +170,7 @@ pyjwkest==1.4.2
     # via oic
 pyjwt==2.3.0
     # via inge6 (setup.py)
-pylint==2.13.3
+pylint==2.13.5
     # via inge6 (setup.py)
 pynacl==1.5.0
     # via
@@ -192,7 +192,7 @@ pytest==7.1.1
     #   pytest-docker
     #   pytest-mock
     #   pytest-redis
-pytest-asyncio==0.18.2
+pytest-asyncio==0.18.3
     # via inge6 (setup.py)
 pytest-cov==3.0.0
     # via inge6 (setup.py)
@@ -218,7 +218,7 @@ pyyaml==6.0
     # via
     #   bandit
     #   docker-compose
-redis==4.2.0
+redis==4.2.2
     # via
     #   inge6 (setup.py)
     #   pytest-redis
@@ -293,7 +293,7 @@ unidecode==1.3.4
     # via inge6 (setup.py)
 urllib3==1.26.9
     # via requests
-uvicorn==0.17.5
+uvicorn==0.17.6
     # via inge6 (setup.py)
 websocket-client==1.3.2
     # via
