@@ -212,7 +212,7 @@ python-multipart==0.0.5
     # via inge6 (setup.py)
 python3-saml==1.14.0
     # via inge6 (setup.py)
-pytz==2021.3
+pytz==2022.1
     # via zeep
 pyyaml==6.0
     # via
