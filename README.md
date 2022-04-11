@@ -10,6 +10,14 @@ As Inge6 is a OIDC <-> SAML bridge, one has to have files for both. Each file is
 
 For a more detailed view on the setup, please have a look in the `/docs` folder.
 
+## Setup IDP Metadata
+To use DigiD or TVS you first need to download the metadata. During setup this is done in the make setup or make metadata step. This can manually be done using curl or another downloading tool. The URLs for the pre-production environment are included below as a reference.
+```
+curl "https://was-preprod1.digid.nl/saml/idp/metadata" --output saml/digid/metadata/idp_metadata.xml
+curl "https://pp2.toegang.overheid.nl/kvs/rd/metadata" --output saml/tvs/metadata/idp_metadata.xml
+```
+
+
 ## JWT keys
 Inge6 needs two keys to encrypt and sign the JWT containing the BSN details. This is a Ed25519 keypair on Inge6 part, and a X25519 keypair for the requesting party (inge4). To generate a Ed25519 keypair one can perform the following code:
 ```python

@@ -66,7 +66,13 @@ saml-files: saml/tvs/certs/sp.crt saml/digid/certs/sp.crt saml/identity_provider
 
 secret-files: secrets/public.pem secrets/ssl/private/apache-selfsigned.key
 
-setup: inge6.conf clients.json saml secrets/ssl secret-files saml-files secrets-redis-certs
+metadata:
+	mkdir -p saml/digid/metadata
+	mkdir -p saml/tvs/metadata
+	curl "https://was-preprod1.digid.nl/saml/idp/metadata" --output saml/digid/metadata/idp_metadata.xml
+	curl "https://pp2.toegang.overheid.nl/kvs/rd/metadata" --output saml/tvs/metadata/idp_metadata.xml
+
+setup: inge6.conf clients.json saml secrets/ssl secret-files saml-files secrets-redis-certs metadata
 
 fresh: clean_venv venv
 

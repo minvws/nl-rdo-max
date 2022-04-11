@@ -25,3 +25,5 @@ tmp
 cluster.tvs.json
 build
 .mypy_cache
+saml/digid/metadata/idp_metadata.xml
+saml/tvs/metadata/idp_metadata.xml
