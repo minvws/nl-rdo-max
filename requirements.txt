@@ -218,7 +218,7 @@ pyyaml==6.0
     # via
     #   bandit
     #   docker-compose
-redis==4.2.2
+redis==4.3.1
     # via
     #   inge6 (setup.py)
     #   pytest-redis
