@@ -1,12 +1,12 @@
 # System summary
- Inge6 is build as a bridge between the CoronaCheck app and TVS (Toegang Verlenings Service) or DigiD. It allows a end-user to login into digid and provide the app with a token, which can be used to retrieve the BSN of that same end-user. This BSN is used in inge4 to retrieve the related vaccination and test data from the existing provider.
+ Multiple Athentication eXchange (MAX) is build as a bridge between the CoronaCheck app and TVS (Toegang Verlenings Service) or DigiD. It allows a end-user to login into digid and provide the app with a token, which can be used to retrieve the BSN of that same end-user. This BSN is used in inge4 to retrieve the related vaccination and test data from the existing provider.
 
- ![system overview](docs/images/retrieve-ac-flow.png "Inge6 retrieve access token")
+ ![system overview](docs/images/retrieve-ac-flow.png "MAX retrieve access token")
  *Flow of retrieving an access token. Throughout the first part of the flow (after /authorize), the call is directly linked to some randstate (generated directly after the first call). The latter part of the flow that same user is linked using the generated code coupled to that randstate. Using these random state parameters we track the user throughout the complete flow, and seperate that user from other users interacting with the system*
 
 # Setup
 
-As Inge6 is a OIDC <-> SAML bridge, one has to have files for both. Each file is described below. Further, one needs to create an `inge6.conf` to define all settings. An example is found in inge6.conf.example with the corresponding explanations. To make use of all default settings, a single run of `make setup` should be sufficient. Allowing you to run the service on all default settings. 
+As MAX is a OIDC <-> SAML bridge, one has to have files for both. Each file is described below. Further, one needs to create an `inge6.conf` to define all settings. An example is found in inge6.conf.example with the corresponding explanations. To make use of all default settings, a single run of `make setup` should be sufficient. Allowing you to run the service on all default settings. 
 
 For a more detailed view on the setup, please have a look in the `/docs` folder.
 
@@ -19,7 +19,7 @@ curl "https://pp2.toegang.overheid.nl/kvs/rd/metadata" --output saml/tvs/metadat
 
 
 ## JWT keys
-Inge6 needs two keys to encrypt and sign the JWT containing the BSN details. This is a Ed25519 keypair on Inge6 part, and a X25519 keypair for the requesting party (inge4). To generate a Ed25519 keypair one can perform the following code:
+MAX needs two keys to encrypt and sign the JWT containing the BSN details. This is a Ed25519 keypair on MAX' part, and a X25519 keypair for the requesting party (inge4). To generate a Ed25519 keypair one can perform the following code:
 ```python
 import base64
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
@@ -72,7 +72,7 @@ Optionally, to enable ratelimit overflow, extra keys are expected to be set. The
 # Using the mock environment
 For development purposes we have created a 'backdoor' to retrieve a JWT Token for arbitrary BSNs, only available when `mock_digid` is True in the settings file. This setting enables two things:
 1. The program flow is altered. By default we do not connect to the actual IdP, instead an 'end-user' is allowed to input an arbitrary BSN and retrieve a corresponding token. However, it still allows for connecting to the actual IdP if that is requested.
-2. An additional endpoint is available `/consume_bsn`. This endpoint allows external tools and test services to let Inge6 consume a bsn and return a 'code'. This code can then be used in the `accesstoken_endpoint`, the accesstoken endpoint defined in the settings file, to retrieve a JWT token that corresponds to the provided bsn.
+2. An additional endpoint is available `/consume_bsn`. This endpoint allows external tools and test services to let MAX consume a bsn and return a 'code'. This code can then be used in the `accesstoken_endpoint`, the accesstoken endpoint defined in the settings file, to retrieve a JWT token that corresponds to the provided bsn.
 
 A code example on the second case:
 ```python
@@ -123,6 +123,6 @@ and a maximum length of 128 characters.
 ```
 
 To find the code in this library used for verifying the code_verifier and code_challenge pair, have a look at the code snippet highlighted in the following github permalink:
-https://github.com/91divoc-ln/inge-6/blob/e858cb2807cd270d3ca7e9c67b7fccc556a0f91d/inge6/oidc/authorize.py#L17-L49
+https://github.com/minvws/nl-rdo-max/blob/e858cb2807cd270d3ca7e9c67b7fccc556a0f91d/inge6/oidc/authorize.py#L17-L49
 
 This snippet verifies the pair as defined in https://datatracker.ietf.org/doc/html/rfc7636#section-4.2
