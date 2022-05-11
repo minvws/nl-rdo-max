@@ -50,7 +50,7 @@ coverage[toml]==6.3.2
     #   pytest-cov
 coverage-badge==1.1.0
     # via inge6 (setup.py)
-cryptography==36.0.2
+cryptography==37.0.2
     # via
     #   jwcrypto
     #   oic
@@ -102,7 +102,7 @@ itsdangerous==2.1.2
     # via inge6 (setup.py)
 jinja2==3.1.1
     # via inge6 (setup.py)
-jsonschema==4.4.0
+jsonschema==4.5.1
     # via docker-compose
 jwcrypto==1.0
     # via inge6 (setup.py)
@@ -142,7 +142,7 @@ pathspec==0.9.0
     # via black
 pbr==5.8.1
     # via stevedore
-platformdirs==2.5.1
+platformdirs==2.5.2
     # via
     #   black
     #   pylint
@@ -170,13 +170,13 @@ pyjwkest==1.4.2
     # via oic
 pyjwt==2.3.0
     # via inge6 (setup.py)
-pylint==2.13.5
+pylint==2.13.8
     # via inge6 (setup.py)
 pynacl==1.5.0
     # via
     #   inge6 (setup.py)
     #   paramiko
-pyop==3.3.1
+pyop==3.4.0
     # via inge6 (setup.py)
 pyopenssl==22.0.0
     # via inge6 (setup.py)
@@ -281,7 +281,7 @@ types-requests==2.27.25
     # via inge6 (setup.py)
 types-urllib3==1.26.11
     # via types-requests
-typing-extensions==4.1.1
+typing-extensions==4.2.0
     # via
     #   astroid
     #   black
