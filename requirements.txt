@@ -180,7 +180,7 @@ pyop==3.3.1
     # via inge6 (setup.py)
 pyopenssl==22.0.0
     # via inge6 (setup.py)
-pyparsing==3.0.7
+pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
