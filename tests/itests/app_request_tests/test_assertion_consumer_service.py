@@ -18,7 +18,9 @@ def test_acs_fail_empty_params():
     assert "User not authorized" in resp.text
 
 
-def test_acs_fail_random_state_artifact(mocker):
+def test_acs_fail_random_state_artifact(
+    mocker, redis_mock
+):  # pylint: disable=unused-argument
     mock_provider = Provider(settings=get_settings())
 
     mocker.patch("inge6.main.PROVIDER", mock_provider)

@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from inge6.main import app
 from inge6.provider import Provider
 
-from ..test_utils import get_settings
+from ...test_utils import get_settings
 
 # pylint: disable=unused-argument
 def test_consume_bsn_and_accesstoken(

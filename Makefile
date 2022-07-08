@@ -99,7 +99,14 @@ fix:
 	. .venv/bin/activate && $(env) black inge6 tests
 
 test:
-	. .venv/bin/activate && ${env} pytest tests -x
+	. .venv/bin/activate && ${env} pytest tests
+
+utests:
+	. .venv/bin/activate && ${env} pytest tests/utests
+
+itests:
+	. .venv/bin/activate && ${env} pytest tests/itests
+
 
 type-check:
 	. .venv/bin/activate && ${env} MYPYPATH=stubs/ mypy --show-error-codes inge6

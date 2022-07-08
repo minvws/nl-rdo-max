@@ -238,7 +238,6 @@ class Provider(SAMLProvider):  # pylint: disable=R0902
 
     def __init__(self, settings: Settings = get_settings(), redis_client=None) -> None:
         SAMLProvider.__init__(self, settings)
-
         self.redis_cache = self.cache_factory(
             settings=settings, redis_client=redis_client
         )

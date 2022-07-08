@@ -47,6 +47,6 @@ class Settings:
 
 def __getattr__(attname: str):
     sys.modules[__name__].settings = Settings.import_settings(
-        qualname=os.getenv("PYTHON_SETTINGS_MODULE")
+        qualname="inge6.runtime.settings"
     )
     return sys.module[__name__].settings

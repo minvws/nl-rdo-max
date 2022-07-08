@@ -11,7 +11,7 @@ from inge6.saml.id_provider import IdProvider
 from inge6.saml.provider import Provider as SAMLProvider
 from inge6.saml.exceptions import UserNotAuthenticated
 
-from ..resources.utils import PRIV_KEY_BSN_AES_KEY
+from ...resources.utils import PRIV_KEY_BSN_AES_KEY
 
 # pylint: disable=pointless-string-statement
 """

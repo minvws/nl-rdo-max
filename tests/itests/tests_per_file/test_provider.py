@@ -28,8 +28,8 @@ from inge6.models import AuthorizeRequest, JWTError, SorryPageRequest
 from inge6.router import consume_bsn_for_token
 
 
-from ..test_utils import get_settings
-from ..resources.utils import PRIV_KEY_BSN_AES_KEY
+from ...test_utils import get_settings
+from ...resources.utils import PRIV_KEY_BSN_AES_KEY
 
 
 def test_sorry_something_wrong(mock_provider: Provider):

@@ -1,6 +1,6 @@
 import pytest
 
-from ..test_utils import get_settings
+from ...test_utils import get_settings
 
 
 @pytest.fixture

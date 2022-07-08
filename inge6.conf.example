@@ -107,7 +107,7 @@ response_expires_in = 600
 [redis]
 # Connecting to the redis server through parameters:
 host = localhost
-port = 6379
+port = 16379
 # Enable the RedisDebugger thread
 enable_debugger = False
 

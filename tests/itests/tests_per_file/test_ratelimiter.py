@@ -4,7 +4,7 @@ import pytest
 from inge6.exceptions import TooBusyError, TooManyRequestsFromOrigin
 from inge6.rate_limiter import RateLimiter
 
-from ..test_utils import get_settings
+from ...test_utils import get_settings
 
 
 @pytest.fixture

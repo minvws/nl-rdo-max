@@ -14,7 +14,7 @@ from inge6.provider import Provider
 from inge6 import constants
 
 from .test_utils import decode_base64_and_inflate
-from ..test_utils import get_settings
+from ...test_utils import get_settings
 
 NAMESPACES = {
     "saml": "urn:oasis:names:tc:SAML:2.0:assertion",

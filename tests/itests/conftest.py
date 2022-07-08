@@ -4,7 +4,7 @@ from pytest_redis import factories
 from inge6 import cache
 from inge6.provider import Provider
 
-from .test_utils import get_settings
+from ..test_utils import get_settings
 
 redis_config = factories.redis_noproc(port=16379)
 redis = factories.redisdb("redis_config")
