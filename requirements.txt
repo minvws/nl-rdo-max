@@ -4,7 +4,7 @@
 #
 #    pip-compile --extra=dev
 #
-anyio==3.5.0
+anyio==3.6.1
     # via starlette
 asgiref==3.5.0
     # via uvicorn
@@ -108,7 +108,7 @@ jwcrypto==1.0
     # via inge6 (setup.py)
 lazy-object-proxy==1.7.1
     # via astroid
-lxml==4.6.5
+lxml==4.9.1
     # via
     #   inge6 (setup.py)
     #   python3-saml
