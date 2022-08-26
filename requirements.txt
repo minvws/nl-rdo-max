@@ -159,7 +159,7 @@ pycparser==2.21
     # via cffi
 pycryptodome==3.14.1
     # via inge6 (setup.py)
-pycryptodomex==3.14.1
+pycryptodomex==3.15.0
     # via
     #   oic
     #   pyjwkest
