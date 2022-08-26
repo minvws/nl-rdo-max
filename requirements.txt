@@ -12,7 +12,7 @@ astroid==2.11.6
     # via pylint
 async-timeout==4.0.2
     # via redis
-attrs==21.4.0
+attrs==22.1.0
     # via
     #   jsonschema
     #   pytest
