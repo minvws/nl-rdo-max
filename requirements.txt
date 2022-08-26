@@ -296,7 +296,7 @@ urllib3==1.26.9
     # via requests
 uvicorn==0.17.6
     # via inge6 (setup.py)
-websocket-client==0.59.0
+websocket-client==1.4.0
     # via
     #   docker
     #   docker-compose
