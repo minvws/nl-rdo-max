@@ -100,7 +100,7 @@ isort==5.10.1
     # via pylint
 itsdangerous==2.1.2
     # via inge6 (setup.py)
-jinja2==3.1.1
+jinja2==3.1.2
     # via inge6 (setup.py)
 jsonschema==4.14.0
     # via docker-compose
