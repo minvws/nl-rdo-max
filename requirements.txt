@@ -6,7 +6,7 @@
 #
 anyio==3.5.0
     # via starlette
-asgiref==3.5.0
+asgiref==3.5.2
     # via uvicorn
 astroid==2.11.6
     # via pylint
