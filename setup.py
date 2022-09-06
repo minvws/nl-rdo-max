@@ -26,7 +26,7 @@ requirements = [
     'python3-saml==1.14.0',
     'zeep==4.1.0',
     'unidecode==1.3.4',
-    'requests==2.27.1',
+    'requests==2.28.1',
 ]
 
 setup(

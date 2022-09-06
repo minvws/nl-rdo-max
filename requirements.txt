@@ -227,7 +227,7 @@ redis==4.3.4
     #   redis-collections
 redis-collections==0.11.0
     # via inge6 (setup.py)
-requests==2.27.1
+requests==2.28.1
     # via
     #   docker
     #   docker-compose
