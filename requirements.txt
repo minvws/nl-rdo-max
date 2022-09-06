@@ -100,7 +100,7 @@ isort==5.10.1
     # via pylint
 itsdangerous==2.1.2
     # via inge6 (setup.py)
-jinja2==3.1.1
+jinja2==3.1.2
     # via inge6 (setup.py)
 jsonschema==4.14.0
     # via docker-compose
@@ -138,7 +138,7 @@ packaging==21.3
     #   redis
 paramiko==2.10.3
     # via docker
-pathspec==0.9.0
+pathspec==0.10.1
     # via black
 pbr==5.9.0
     # via stevedore
@@ -194,7 +194,7 @@ pytest==7.1.1
     #   pytest-docker
     #   pytest-mock
     #   pytest-redis
-pytest-asyncio==0.18.3
+pytest-asyncio==0.19.0
     # via inge6 (setup.py)
 pytest-cov==3.0.0
     # via inge6 (setup.py)
@@ -216,7 +216,7 @@ python3-saml==1.14.0
     # via inge6 (setup.py)
 pytz==2022.2.1
     # via zeep
-pyyaml==5.4.1
+pyyaml==6.0
     # via
     #   bandit
     #   docker-compose
