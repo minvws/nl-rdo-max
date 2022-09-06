@@ -102,7 +102,7 @@ itsdangerous==2.1.2
     # via inge6 (setup.py)
 jinja2==3.1.2
     # via inge6 (setup.py)
-jsonschema==4.14.0
+jsonschema==4.15.0
     # via docker-compose
 jwcrypto==1.0
     # via inge6 (setup.py)
