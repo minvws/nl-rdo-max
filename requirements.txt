@@ -208,7 +208,7 @@ python-dateutil==2.8.2
     # via
     #   freezegun
     #   inge6 (setup.py)
-python-dotenv==0.20.0
+python-dotenv==0.21.0
     # via docker-compose
 python-multipart==0.0.5
     # via inge6 (setup.py)
