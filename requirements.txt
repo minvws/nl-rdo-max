@@ -6,9 +6,9 @@
 #
 anyio==3.5.0
     # via starlette
-asgiref==3.5.0
+asgiref==3.5.2
     # via uvicorn
-astroid==2.11.6
+astroid==2.12.7
     # via pylint
 async-timeout==4.0.2
     # via redis
@@ -227,7 +227,7 @@ redis==4.3.4
     #   redis-collections
 redis-collections==0.11.0
     # via inge6 (setup.py)
-requests==2.27.1
+requests==2.28.1
     # via
     #   docker
     #   docker-compose
