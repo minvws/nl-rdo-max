@@ -140,7 +140,7 @@ paramiko==2.10.3
     # via docker
 pathspec==0.10.1
     # via black
-pbr==5.9.0
+pbr==5.10.0
     # via stevedore
 platformdirs==2.5.2
     # via
