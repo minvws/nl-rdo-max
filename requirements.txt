@@ -26,7 +26,7 @@ bcrypt==4.0.0
     # via paramiko
 beaker==1.11.0
     # via oic
-black==22.3.0
+black==22.8.0
     # via inge6 (setup.py)
 cached-property==1.5.2
     # via zeep
@@ -114,7 +114,7 @@ lxml==4.9.1
     #   python3-saml
     #   xmlsec
     #   zeep
-mako==1.2.1
+mako==1.2.2
     # via oic
 markupsafe==2.1.1
     # via
