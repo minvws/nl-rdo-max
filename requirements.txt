@@ -76,7 +76,7 @@ docopt==0.6.2
     # via docker-compose
 fastapi==0.75.1
     # via inge6 (setup.py)
-freezegun==1.2.1
+freezegun==1.2.2
     # via inge6 (setup.py)
 future==0.18.2
     # via pyjwkest
