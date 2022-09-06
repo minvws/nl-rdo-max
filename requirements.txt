@@ -6,9 +6,9 @@
 #
 anyio==3.5.0
     # via starlette
-asgiref==3.5.0
+asgiref==3.5.2
     # via uvicorn
-astroid==2.11.6
+astroid==2.12.7
     # via pylint
 async-timeout==4.0.2
     # via redis
@@ -200,7 +200,7 @@ pytest-cov==3.0.0
     # via inge6 (setup.py)
 pytest-docker==0.12.0
     # via inge6 (setup.py)
-pytest-mock==3.7.0
+pytest-mock==3.8.2
     # via inge6 (setup.py)
 pytest-redis==2.4.0
     # via inge6 (setup.py)
