@@ -30,7 +30,7 @@ black==22.8.0
     # via inge6 (setup.py)
 cached-property==1.5.2
     # via zeep
-certifi==2021.10.8
+certifi==2022.6.15.1
     # via requests
 cffi==1.15.1
     # via
@@ -170,7 +170,7 @@ pyflakes==2.5.0
     # via autoflake
 pyjwkest==1.4.2
     # via oic
-pyjwt==2.3.0
+pyjwt==2.4.0
     # via inge6 (setup.py)
 pylint==2.13.8
     # via inge6 (setup.py)
