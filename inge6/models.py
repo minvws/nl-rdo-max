@@ -244,9 +244,7 @@ class LoginDigiDRequest(BaseModel):
     idp_name: typing.Optional[str] = None
 
     @validator("state")
-    def convert_to_escaped_html(
-        cls, text
-    ):  # pylint: disable=no-self-argument, no-self-use
+    def convert_to_escaped_html(cls, text):  # pylint: disable=no-self-argument
         return html.escape(text)
 
     @classmethod
@@ -297,9 +295,7 @@ class DigiDMockRequest(BaseModel):
         )
 
     @validator("state", "RelayState", "SAMLRequest")
-    def convert_to_escaped_html(
-        cls, text
-    ):  # pylint: disable=no-self-argument, no-self-use
+    def convert_to_escaped_html(cls, text):  # pylint: disable=no-self-argument
         return html.escape(text)
 
 
@@ -309,9 +305,7 @@ class DigiDMockCatchRequest(BaseModel):
     RelayState: str
 
     @validator("bsn", "SAMLart", "RelayState")
-    def convert_to_escaped_html(
-        cls, text
-    ):  # pylint: disable=no-self-argument, no-self-use
+    def convert_to_escaped_html(cls, text):  # pylint: disable=no-self-argument
         return html.escape(text)
 
 
@@ -322,9 +316,7 @@ class SorryPageRequest(BaseModel):
     reason: str
 
     @validator("state", "redirect_uri", "client_id")
-    def convert_to_escaped_html(
-        cls, text
-    ):  # pylint: disable=no-self-argument, no-self-use
+    def convert_to_escaped_html(cls, text):  # pylint: disable=no-self-argument
         return html.escape(text)
 
 
