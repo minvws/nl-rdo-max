@@ -456,7 +456,6 @@ class ArtifactResponse:
         )
         return aes_key
 
-    # pylint: disable=no-self-use
     def _decrypt_enc_data(self, enc_data_elem, aes_key: bytes) -> bytes:
         encrypted_ciphervalue = enc_data_elem.find(
             ".//xenc:CipherValue", {"xenc": "http://www.w3.org/2001/04/xmlenc#"}

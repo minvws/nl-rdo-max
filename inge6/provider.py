@@ -192,6 +192,7 @@ def _perform_artifact_resolve_request(artifact: str, id_provider: IdProvider):
         headers=headers,
         data=resolve_artifact_req.get_xml(xml_declaration=True),
         cert=(id_provider.cert_path, id_provider.key_path),
+        timeout=60,
     )
 
 
@@ -302,7 +303,7 @@ class Provider(SAMLProvider):  # pylint: disable=R0902
         ) as clients_file:
             self.audience = list(json.loads(clients_file.read()).keys())
 
-    def _is_outage(self):  # pylint: disable=no-self-use
+    def _is_outage(self):
         if hasattr(self.settings.ratelimit, "outage_key"):
             outage = self.redis_client.get(self.settings.ratelimit.outage_key)
             if outage:

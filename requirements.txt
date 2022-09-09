@@ -172,7 +172,7 @@ pyjwkest==1.4.2
     # via oic
 pyjwt==2.4.0
     # via inge6 (setup.py)
-pylint==2.13.8
+pylint==2.15.2
     # via inge6 (setup.py)
 pynacl==1.5.0
     # via
