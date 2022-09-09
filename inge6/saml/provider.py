@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
 import json
-
+import os
 from typing import Dict
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
