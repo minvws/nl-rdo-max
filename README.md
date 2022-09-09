@@ -138,6 +138,3 @@ Note that all commits should be signed using a gpg key.
 ## Security
 
 Security issues can be reported through a github issue, at security@rdobeheer.nl, or through the https://www.ncsc.nl/contact/kwetsbaarheid-melden.
-
-
-This snippet verifies the pair as defined in https://datatracker.ietf.org/doc/html/rfc7636#section-4.2
