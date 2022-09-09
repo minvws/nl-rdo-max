@@ -1,16 +1,18 @@
 # System summary
- Multiple Athentication eXchange (MAX) is build as a bridge between the CoronaCheck app and TVS (Toegang Verlenings Service) or DigiD. It allows a end-user to login into digid and provide the app with a token, which can be used to retrieve the BSN of that same end-user. This BSN is used in inge4 to retrieve the related vaccination and test data from the existing provider.
+ Multiple Authentication eXchange (MAX) is build as a bridge between the CoronaCheck app and TVS (Toegang Verlenings Service) or DigiD. It allows an end-user to login into digid and provide the app with a token, which can be used to retrieve the BSN of that same end-user. This BSN is used in inge4 to retrieve the related vaccination and test data from the existing provider.
 
  ![system overview](docs/images/retrieve-ac-flow.png "MAX retrieve access token")
  *Flow of retrieving an access token. Throughout the first part of the flow (after /authorize), the call is directly linked to some randstate (generated directly after the first call). The latter part of the flow that same user is linked using the generated code coupled to that randstate. Using these random state parameters we track the user throughout the complete flow, and seperate that user from other users interacting with the system*
+ *IdPx is a identity provider
+ *RD-BC is the (hidden) IdPx Backend providing the artifacts
 
 # Setup
 
-As MAX is a OIDC <-> SAML bridge, one has to have files for both. Each file is described below. Further, one needs to create an `inge6.conf` to define all settings. An example is found in inge6.conf.example with the corresponding explanations. To make use of all default settings, a single run of `make setup` should be sufficient. Allowing you to run the service on all default settings. 
+As MAX (codename inge6) is a OIDC <-> SAML bridge, one has to have files for both. Each file is described below. Further, one needs to create an `inge6.conf` to define all settings. An example is found in inge6.conf.example with the corresponding explanations. To make use of all default settings, a single run of `make setup` should be sufficient. Allowing you to run the service on all default settings. 
 
 For a more detailed view on the setup, please have a look in the `/docs` folder.
 
-## Setup IDP Metadata
+## Setup Identity Provider (IDP) Metadata
 To use DigiD or TVS you first need to download the metadata. During setup this is done in the make setup or make metadata step. This can manually be done using curl or another downloading tool. The URLs for the pre-production environment are included below as a reference.
 ```
 curl "https://was-preprod1.digid.nl/saml/idp/metadata" --output saml/digid/metadata/idp_metadata.xml
@@ -71,7 +73,7 @@ Optionally, to enable ratelimit overflow, extra keys are expected to be set. The
 
 # Using the mock environment
 For development purposes we have created a 'backdoor' to retrieve a JWT Token for arbitrary BSNs, only available when `mock_digid` is True in the settings file. This setting enables two things:
-1. The program flow is altered. By default we do not connect to the actual IdP, instead an 'end-user' is allowed to input an arbitrary BSN and retrieve a corresponding token. However, it still allows for connecting to the actual IdP if that is requested.
+1. The program flow is altered. By default we do not connect to the actual Identity Provider (IdP), instead an 'end-user' is allowed to input an arbitrary BSN and retrieve a corresponding token. However, it still allows for connecting to the actual IdP if that is requested.
 2. An additional endpoint is available `/consume_bsn`. This endpoint allows external tools and test services to let MAX consume a bsn and return a 'code'. This code can then be used in the `accesstoken_endpoint`, the accesstoken endpoint defined in the settings file, to retrieve a JWT token that corresponds to the provided bsn.
 
 A code example on the second case:
