@@ -278,7 +278,7 @@ types-python-dateutil==2.8.19
     # via inge6 (setup.py)
 types-redis==4.3.20
     # via inge6 (setup.py)
-types-requests==2.28.9
+types-requests==2.28.10
     # via inge6 (setup.py)
 types-urllib3==1.26.24
     # via types-requests
