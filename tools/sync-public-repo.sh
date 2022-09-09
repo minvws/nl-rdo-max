@@ -1,6 +1,7 @@
 #!/bin/bash
 
-BASE_REPONAME=nl-covid19-coronacheck-authentication-service
+# Config
+BASE_REPONAME=nl-rdo-max
 
 # Helpers
 TIMESTAMP=`date '+%Y%m%d-%H%M%S'`
@@ -31,15 +32,8 @@ if ! git config remote.public-repo.url > /dev/null; then
 fi
 
 if ! git config remote.private-repo.url > /dev/null; then
-    echo As we do not hardcode/reveal the name of the private repository - you have to
-    echo explitly set it with:
-    echo
-    echo git remote add private-repo git@github.com:XXXXXXXXXXXXXXXXX
-    echo
-    echo Prior to running this script.
-    exit
-else
-    echo -e "${GREEN}Private-repo already set${ENDCOL}"
+    git remote add private-repo git@github.com:minvws/$BASE_REPONAME-private
+    echo -e "${GREEN}Private-repo remote added${ENDCOL}"
 fi
 
 # Create a branch where we sync everything from current private main
@@ -59,10 +53,3 @@ PR_URL="https://github.com/minvws/$BASE_REPONAME/compare/sync/$TIMESTAMP?quick_p
 open $PR_URL
 
 echo -e "${GREEN}Done.${ENDCOL}"
-
-## Release
-
-Post, or during, RC build - run the script in tools to synchronise this repostory with the
-public repository. As the source code/businessrules/algorithms used in production should 
-be public as a matter of principle.
-
