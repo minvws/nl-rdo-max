@@ -17,7 +17,8 @@ from nacl.encoding import Base64Encoder
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
 
-from jwcrypto.jwt import JWT, JWK
+from jwcrypto.jwt import JWT
+from jwcrypto.jwk import JWK
 
 from .constants import Version
 
