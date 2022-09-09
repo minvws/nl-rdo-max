@@ -50,7 +50,7 @@ coverage[toml]==6.4.4
     #   pytest-cov
 coverage-badge==1.1.0
     # via inge6 (setup.py)
-cryptography==37.0.2
+cryptography==38.0.1
     # via
     #   jwcrypto
     #   oic
