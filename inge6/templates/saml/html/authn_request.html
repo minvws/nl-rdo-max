@@ -1,0 +1,9 @@
+<html>
+   <body onload="document.forms['SAMLForm'].submit()">
+    <form method="POST" id="SAMLForm" action="{{ sso_url }}">
+      <input type="hidden" name="SAMLRequest" value="{{ saml_request }}" />
+      <input type="hidden" name="RelayState" value="{{ relay_state }}" />
+    </form>
+    Redirecting to TVS...
+  </body>
+</html>

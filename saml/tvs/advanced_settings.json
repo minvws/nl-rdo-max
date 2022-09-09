@@ -1,0 +1,38 @@
+{
+    "security": {
+        "nameIdEncrypted": false,
+        "authnRequestsSigned": true,
+        "logoutRequestSigned": true,
+        "logoutResponseSigned": false,
+        "signMetadata": true,
+        "wantMessagesSigned": true,
+        "wantAssertionsSigned": true,
+        "wantNameId": true,
+        "wantNameIdEncrypted": false,
+        "wantAssertionsEncrypted": false,
+        "requestedAuthnContext": ["urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"],
+        "requestedAuthnContextComparison": "minimum",
+        "allowSingleLabelDomains": false,
+        "signatureAlgorithm": "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+        "digestAlgorithm": "http://www.w3.org/2001/04/xmlenc#sha256",
+        "allowScoping": true,
+        "authorizationByProxyRequestIds": ["urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:9002"],
+        "authorizationByProxyScopes": [
+            "urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:9002",
+            "urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:9002"],
+        "defaultScopes": ["urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:9002"]
+    },
+    "contactPerson": {
+        "technical": {
+            "givenName": "Helpdesk",
+            "emailAddress": "helpdesk@rdobeheer.nl"
+        }
+    },
+    "organization": {
+        "en-US": {
+            "name": "MinVWS",
+            "displayname": "Ministerie van Volksgezondheid, Welzijn en Sport",
+            "url": "https://www.rijksoverheid.nl/ministeries/ministerie-van-volksgezondheid-welzijn-en-sport"
+        }
+    }
+}

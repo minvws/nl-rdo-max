@@ -12,10 +12,13 @@ from nacl.encoding import URLSafeBase64Encoder
 
 import jwt
 
-from fastapi import  Request, HTTPException
+from fastapi import Request, HTTPException
 from fastapi.security.utils import get_authorization_scheme_param
 
-from ..cache import redis_cache
+from inge6.models import JWTToken
+
+from .provider import Provider
+
 
 def _compute_code_challenge(code_verifier: str):
     """
@@ -28,10 +31,13 @@ def _compute_code_challenge(code_verifier: str):
 
     :param code_verifier: the code verifier to transform to the Code Challenge
     """
-    verifier_hash = nacl.hash.sha256(code_verifier.encode('ISO_8859_1'), encoder=URLSafeBase64Encoder)
-    return verifier_hash.decode().replace('=', '')
+    verifier_hash = nacl.hash.sha256(
+        code_verifier.encode("ISO_8859_1"), encoder=URLSafeBase64Encoder
+    )
+    return verifier_hash.decode().replace("=", "")
 
-def verify_code_verifier(cc_cm: Dict[str ,str], code_verifier: str) -> bool:
+
+def verify_code_verifier(cc_cm: Dict[str, str], code_verifier: str) -> bool:
     """
     Verify that the given code_verifier complies with the initially supplied code_challenge.
 
@@ -41,12 +47,12 @@ def verify_code_verifier(cc_cm: Dict[str ,str], code_verifier: str) -> bool:
     :param code_verifier: the code_verfier to check against the code challenge.
     :returns: whether the code_verifier is what was expected given the cc_cm
     """
-    code_challenge_method = cc_cm['code_challenge_method']
-    if not code_challenge_method == 'S256':
+    code_challenge_method = cc_cm["code_challenge_method"]
+    if not code_challenge_method == "S256":
         return False
 
     code_challenge = _compute_code_challenge(code_verifier)
-    return code_challenge == cc_cm['code_challenge']
+    return code_challenge == cc_cm["code_challenge"]
 
 
 def validate_jwt_token(key: str, id_token: str, audience: List[Text]) -> dict:
@@ -58,7 +64,7 @@ def validate_jwt_token(key: str, id_token: str, audience: List[Text]) -> dict:
     :returns: a dictionary containing the parts of the valid JWT token
     :raises InvalidSignatureError: raises an exception when the id_token is invalid.
     """
-    return jwt.decode(id_token, key=key, algorithms=['RS256'], audience=audience)
+    return jwt.decode(id_token, key=key, algorithms=["RS256"], audience=audience)
 
 
 def is_authorized(key: str, request: Request, audience: List[Text]) -> Tuple[str, str]:
@@ -74,11 +80,12 @@ def is_authorized(key: str, request: Request, audience: List[Text]) -> Tuple[str
     authorization: str = request.headers.get("Authorization")
     scheme, id_token = get_authorization_scheme_param(authorization)
 
-    if scheme != 'Bearer':
+    if scheme != "Bearer":
         raise HTTPException(status_code=401, detail="Not authorized")
 
     jwt_dict = validate_jwt_token(key, id_token, audience)
-    return id_token, jwt_dict['at_hash']
+    return id_token, jwt_dict["at_hash"]
+
 
 def _is_valid_at_request_body(request_body: bytes):
     """
@@ -89,14 +96,17 @@ def _is_valid_at_request_body(request_body: bytes):
     :raises ValueError: raises error when the expected parameters are not present.
     """
     parsed_request_body = parse_qs(request_body.decode())
-    expected_params = ['code', 'code_verifier']
+    expected_params = ["code", "code_verifier"]
 
     if not all(x in parsed_request_body for x in expected_params):
-        raise ValueError("Expects `code` and `code_verifier` to be contained in the urlencoded body of the request")
+        raise ValueError(
+            "Expects `code` and `code_verifier` to be contained in the urlencoded body of the request"
+        )
 
     return parsed_request_body
 
-def accesstoken(provider, request_body, headers):
+
+def accesstoken(provider: Provider, request_body, headers):
     """
     An access token is requested through this function. It validates whether the body contains the expected parameters and verifies the
     supplied code_verifier.
@@ -112,16 +122,20 @@ def accesstoken(provider, request_body, headers):
     except ValueError as parse_error:
         raise HTTPException(400, detail=str(parse_error)) from parse_error
 
-    code = parsed_request_body['code'][0]
-    code_verifier = parsed_request_body['code_verifier'][0]
+    code = parsed_request_body["code"][0]
+    code_verifier = parsed_request_body["code_verifier"][0]
 
-    cc_cm = redis_cache.hget(code, 'cc_cm')
+    cc_cm = provider.redis_cache.hget(code, "cc_cm")
 
     if cc_cm is None:
-        raise HTTPException(400, detail='Code challenge has expired. Please retry authorization.')
+        raise HTTPException(
+            400, detail="Code challenge has expired. Please retry authorization."
+        )
 
     if not verify_code_verifier(cc_cm, code_verifier):
-        raise HTTPException(400, detail='Bad request. code verifier not recognized')
+        raise HTTPException(400, detail="Bad request. code verifier not recognized")
 
-    token_response = provider.handle_token_request(request_body.decode('utf-8'), headers)
-    return token_response
+    token_response = provider.handle_token_request(
+        request_body.decode("utf-8"), headers
+    )
+    return JWTToken(**token_response.to_dict())

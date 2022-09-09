@@ -1,0 +1,50 @@
+@startuml
+title retrieve-ac-flow
+
+skinparam backgroundColor white
+skinparam participantBackgroundColor #EEEBDC
+skinparam noteBackgroundColor #EEE
+
+participant RD_BC
+participant IdPx
+participant App
+
+App->Inge6:/authorize?redirect_uri&client_id&code_challenge&...
+Inge6->Redis:store(randstate, {code, authorize_query_params})
+
+alt SAML >4.4 specification
+
+    Inge6-->App:HTMLResponse(form: AuthnRequest + RelayState=randstate, onload(submit))
+    App->IdPx:post(AuthnRequest, Relaystate)
+
+else SAML 3.5 specification
+
+    Inge6-->App:RedirectResponse(/digid-authn-endpoint?SAMLRequest=XXX&RelayStat=XXX&Signature=XXX&SigAlg=XXX)
+    App->IdPx:redirect(AuthnRequest, Relaystate)
+
+end
+
+note over App, IdPx:user does login
+IdPx-->App:redirect(/acs?SAMLArt=artifact)
+App->Inge6:/acs?SAMLArt=artifact&RelayState=randstate
+
+Inge6<->Redis:get(randstate)
+
+Inge6->Redis:store(arti:code, artifact)
+Inge6-->App:/redirect_uri?code=code
+
+note over App: Logged in, now: get accesstoken
+App->Inge6:/accesstoken.body[client_id, code=XXX, redirect_uri, code_verifier]
+Redis<->Inge6:get(cc_cm:code)
+Inge6->Inge6:validate code_verifier
+
+Redis<->Inge6:get(arti:code)
+Inge6->RD_BC:/resolve?artifact
+Inge6<--RD_BC:resolved artifact?attributes
+Inge6->Inge6:validate artifactResponse
+
+Inge6->Redis:store(h(token), attributes)
+
+Inge6-->App:JSONResponse(access_token)
+App->App:remember[access_token]
+@enduml

@@ -4,122 +4,185 @@
 #
 # SPDX-License-Identifier: EUPL-1.2
 #
-import os
 import logging
+from logging import Logger
 
-from typing import Dict, Optional
-from urllib.parse import urlparse
+import re
+
+import redis.exceptions
 
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
 
-from .config import settings
-from .cache import get_redis_client
-from .models import AuthorizeRequest
-from .provider import get_provider
-from .digid_mock import (
-    digid_mock as dmock,
-    digid_mock_catch as dmock_catch
+from .provider import Provider
+from .config import get_settings
+from .constants import Version
+from .models import (
+    AuthorizeRequest,
+    DigiDMockRequest,
+    DigiDMockCatchRequest,
+    LoginDigiDRequest,
+    SorryPageRequest,
 )
+from .digid_mock import digid_mock as dmock, digid_mock_catch as dmock_catch
+
+log: Logger = logging.getLogger(__package__)
+log.setLevel(getattr(logging, get_settings().loglevel.upper()))
 
 router = APIRouter()
 
-@router.get('/authorize')
-def authorize(request: Request, authorize_req: AuthorizeRequest = Depends()):
-    return get_provider().authorize_endpoint(authorize_req, request.headers, request.client.host)
 
-@router.post('/accesstoken')
+@router.get(get_settings().authorize_endpoint)
+def authorize(request: Request, authorize_req: AuthorizeRequest = Depends()):
+    provider = request.app.state.provider
+    return provider.authorize_endpoint(
+        authorize_req, request.headers, request.client.host
+    )
+
+
+@router.post(get_settings().accesstoken_endpoint)
 async def token_endpoint(request: Request):
-    ''' Expect a request with a body containing the grant_type.'''
+    """Expect a request with a body containing the grant_type."""
+    provider = request.app.state.provider
     body = await request.body()
     headers = request.headers
-    return get_provider().token_endpoint(body, headers)
+    return provider.token_endpoint(body, headers)
 
-@router.get('/metadata')
-def metadata():
-    return get_provider().metadata()
 
-@router.get('/acs')
+@router.get("/metadata/{id_provider}")
+def metadata(request: Request, id_provider: str):
+    provider = request.app.state.provider
+    return provider.metadata(id_provider)
+
+
+@router.get("/acs")
 def assertion_consumer_service(request: Request):
-    return get_provider().assertion_consumer_service(request)
+    provider = request.app.state.provider
+    return provider.assertion_consumer_service(request)
 
-@router.post('/bsn_attribute')
-def bsn_attribute(request: Request):
-    return get_provider().bsn_attribute(request)
 
-@router.get('/.well-known/openid-configuration')
-def provider_configuration():
-    json_content = jsonable_encoder(get_provider().provider_configuration.to_dict())
+@router.post("/bsn_attribute")
+async def bsn_attribute(request: Request):
+    provider = request.app.state.provider
+    return provider.bsn_attribute(request, version=Version.V1)
+
+
+@router.post("/v2/bsn_attribute")
+async def bsn_attribute_v2(request: Request):
+    provider = request.app.state.provider
+    return provider.bsn_attribute(request)
+
+
+@router.get("/.well-known/openid-configuration")
+def provider_configuration(request: Request):
+    provider = request.app.state.provider
+    json_content = jsonable_encoder(provider.provider_configuration.to_dict())
     return JSONResponse(content=json_content)
 
-@router.get('/jwks')
-def jwks_uri():
-    json_content = jsonable_encoder(get_provider().jwks)
+
+@router.get(get_settings().jwks_endpoint)
+def jwks_uri(request: Request):
+    provider = request.app.state.provider
+    json_content = jsonable_encoder(provider.jwks)
     return JSONResponse(content=json_content)
+
+
+@router.get("/sorry-something-went-wrong")
+def sorry_something_went_wrong(
+    request: Request, sorry_request: SorryPageRequest = Depends()
+):
+    provider: Provider = request.app.state.provider
+    return provider.sorry_something_went_wrong(sorry_request)
+
 
 @router.get("/")
-async def read_root(request: Request):
-    url_data = urlparse(request.url._url) # pylint: disable=protected-access
-    return {
-        "headers": request.headers,
-        "query_params": request.query_params,
-        "path_params": request.path_params,
-        "url": url_data.path
+def read_root():
+    return HTMLResponse("Many Authentication eXchange")
+
+
+@router.get(get_settings().health_endpoint)
+def health(request: Request) -> JSONResponse:
+    try:
+        redis_healthy = request.app.state.provider.redis_client.ping()
+    except redis.exceptions.RedisError as exception:
+        log.exception(
+            "Redis server is not reachable. Attempted: %s:%s, ssl=%s",
+            get_settings().redis.host,
+            get_settings().redis.port,
+            get_settings().redis.ssl,
+            exc_info=exception,
+        )
+        redis_healthy = False
+
+    healthy = redis_healthy
+    response = {
+        "healthy": healthy,
+        "results": [{"healthy": redis_healthy, "service": "keydb"}],
     }
-
-@router.get("/heartbeat")
-def heartbeat() -> Dict[str, bool]:
-    errors = list()
-
-    # Check reachability redis
-    if not get_redis_client().ping():
-        errors.append("CANNOT REACH REDIS CLIENT ON {}:{}".format(settings.redis.host, settings.redis.port))
-
-    # Check accessability cert and key path
-    if not os.access(settings.saml.cert_path, os.R_OK):
-        errors.append("CANNOT ACCESS SAML CERT FILE")
-
-    if not os.access(settings.saml.cert_path, os.R_OK):
-        errors.append("CANNOT ACCESS SAML KEY FILE")
-
-    if len(errors) != 0:
-        raise HTTPException(status_code=500, detail=',\n'.join(errors))
-
-    return {"running": True}
+    return JSONResponse(
+        content=jsonable_encoder(response), status_code=200 if healthy else 500
+    )
 
 
 ## MOCK ENDPOINTS:
-if settings.mock_digid.lower() == 'true':
+if (
+    hasattr(get_settings(), "mock_digid")
+    and get_settings().mock_digid.lower() == "true"
+):
     # pylint: disable=wrong-import-position, c-extension-no-member, wrong-import-order
     from lxml import etree
-    from urllib.parse import parse_qs # pylint: disable=wrong-import-order
+    from urllib.parse import parse_qs  # pylint: disable=wrong-import-order
+    from io import StringIO
 
-    @router.get('/login-digid')
-    def login_digid(state: str, force_digid: Optional[bool] = None):
-        return HTMLResponse(content=get_provider()._login(state, force_digid)) # pylint: disable=protected-access
+    @router.get("/login-digid")
+    def login_digid(
+        request: Request,
+        login_digid_req: LoginDigiDRequest = Depends(LoginDigiDRequest.from_request),
+    ):
+        provider = request.app.state.provider
+        id_provider = provider.get_id_provider(login_digid_req.idp_name)
+        return provider._post_login(  # pylint: disable=protected-access
+            login_digid_req, id_provider
+        )
 
-    @router.post('/digid-mock')
-    async def digid_mock(request: Request):
-        return await dmock(request)
+    @router.post("/digid-mock")
+    async def digid_mock(
+        digid_mock_req: DigiDMockRequest = Depends(DigiDMockRequest.from_request),
+    ):  # pylint: disable=invalid-name
+        return dmock(digid_mock_req)
 
-    @router.get('/digid-mock-catch')
-    async def digid_mock_catch(request: Request):
-        return await dmock_catch(request)
+    @router.get("/digid-mock-catch")
+    async def digid_mock_catch(request: DigiDMockCatchRequest = Depends()):
+        return dmock_catch(request)
 
-    @router.get('/consume_bsn/{bsn}')
-    def consume_bsn_for_token(bsn: str, request: Request, authorize_req: AuthorizeRequest = Depends()):
-        response = get_provider().authorize_endpoint(authorize_req, request.headers, request.client.host)
+    @router.get("/consume_bsn/{bsn}")
+    def consume_bsn_for_token(
+        bsn: str, request: Request, authorize_req: AuthorizeRequest = Depends()
+    ):
+        provider = request.app.state.provider
+        response = provider.authorize_endpoint(
+            authorize_req, request.headers, request.client.host
+        )
         status_code = response.status_code
         if status_code != 200:
-            logging.debug('Status code 200 was expected, but was %s', response.status_code)
+            log.debug("Status code 200 was expected, but was %s", response.status_code)
             if 300 <= status_code < 400:
                 redirect = response.raw_headers[0][1].decode()
-                raise HTTPException(status_code=400, detail='200 expected, got {} with redirect uri: {}'.format(status_code, redirect))
-            raise HTTPException(status_code=400, detail='detail authorize response status code was {}, but 200 was expected'.format(status_code))
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"200 expected, got {status_code} with redirect uri: {redirect}",
+                )
+            raise HTTPException(
+                status_code=400,
+                detail=f"detail authorize response status code was {status_code}, but 200 was expected",
+            )
 
-        response_tree = etree.fromstring(response.__dict__['body'].decode()).getroottree().getroot()
-        relay_state = response_tree.find('.//input[@name="RelayState"]').attrib['value']
+        parser = etree.HTMLParser()
+        tree = etree.parse(StringIO(response.body.decode()), parser)
+        relay_state = (
+            tree.getroot().find('.//input[@name="RelayState"]').attrib["value"]
+        )
 
         # pylint: disable=too-few-public-methods, too-many-ancestors, super-init-not-called
         class AcsReq(Request):
@@ -128,13 +191,16 @@ if settings.mock_digid.lower() == 'true':
 
             @property
             def query_params(self):
-                return {
-                'RelayState': relay_state,
-                'SAMLart': bsn,
-                'mocking': '1'
-            }
+                return {"RelayState": relay_state, "SAMLart": bsn, "mocking": "1"}
 
-        response = get_provider().assertion_consumer_service(AcsReq())
-        response_qargs = parse_qs(response.headers["location"].split('?')[1])
+        response = provider.assertion_consumer_service(AcsReq())
+        redirect_url = re.search(
+            r"<meta http-equiv=\"refresh\" content=\"0;url=(.*?)\" />",
+            response.body.decode(),
+        )
+        if redirect_url is None:
+            raise HTTPException(status_code=400, detail="No valid refresh url found")
+
+        response_qargs = parse_qs(redirect_url[1].split("?")[1])
         content = jsonable_encoder(response_qargs)
         return JSONResponse(content=content)

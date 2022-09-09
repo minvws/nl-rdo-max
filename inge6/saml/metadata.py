@@ -6,179 +6,338 @@
 #
 # pylint: disable=c-extension-no-member
 import json
+import datetime
 
-from typing import Dict, Optional
+from typing import Dict, Optional, List
+import secrets
 
 from lxml import etree
 import xmlsec
 
-from OpenSSL.crypto import load_certificate, FILETYPE_PEM
-
-from .saml_request import (
-    SAMLRequest, add_root_id,
-    add_reference, sign,
-)
+from .saml_request import SAMLRequest
 from .constants import NAMESPACES
-from .utils import get_loc_bind, has_valid_signatures, from_settings
-from ..config import settings
-
-
-def add_certs(root, cert_data: str) -> None:
-    certifi_elems = root.findall('.//ds:X509Certificate', NAMESPACES)
-
-    for elem in certifi_elems:
-        elem.text = cert_data.replace("-----BEGIN CERTIFICATE-----\n", "").replace("-----END CERTIFICATE-----\n", "")
+from .utils import (
+    get_loc_bind,
+    has_valid_signatures,
+    from_settings,
+    compute_keyname,
+    strip_cert,
+    enforce_cert_newlines,
+)
 
 
 class SPMetadata(SAMLRequest):
-    TEMPLATE_PATH = settings.saml.sp_template
-    SETTINGS_PATH = 'saml/settings.json'
+    """
+    Ability to generate metadata needed for IDPs. It uses the template defined in the template path.
 
-    DEFAULT_SLS_URL = settings.issuer + '/sls'
-    DEFAULT_SLS_BINDING = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+    Required settings:
+        - settings.saml.sp_template, path to the sp metadata template
+        - settings.issuer, name of the issuer
+    """
 
-    DEFAULT_ACS_URL = settings.issuer + '/acs'
-    DEFAULT_ACS_BINDING = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+    TEMPLATE_NAME = "sp_metadata.xml.jinja"
+    CLUSTER_TEMPLATE_NAME = "sp_metadata.clustered.xml.jinja"
+    DELTA_DAYS_VALID_UNTIL = 365
 
-    def __init__(self) -> None:
-        super().__init__(etree.parse(self.TEMPLATE_PATH).getroot())
+    def __init__(self, settings_dict, keypair_sign, jinja_env) -> None:
+        """
+        Initialize SPMetadata using the settings in the settings dict, for idp_name. And sign it
+        using the keypair_sign, which is also the pair used for receiving encrypted material.
 
-        with open(self.SETTINGS_PATH, 'r') as settings_file:
-            self.settings_dict = json.loads(settings_file.read())
+        :param settings_dict: dictionary containing the settings for the SP
+        :param keypair_sign: paths to the private and public key for signing and signature validation
+        :param idp_name: Identity Provider this service provider metadata is configured for.
+        :param pubkey_enc: (OPTIONAL) path to the public key the IdP should use for XML encryption, useful when
+        decryption of the messages is done by another party. Otherwise, same key as for signing is used.
+        """
+        super().__init__(keypair_sign)
 
-        self.issuer_id = self.settings_dict['sp']['entityId']
+        self.jinja_env = jinja_env
+        self.settings_dict = settings_dict
 
-        with open(self.CERT_PATH, 'r') as cert_file:
-            self.cert_data = cert_file.read()
+        self.dv_keynames: List[str] = []
 
-        self.keyname: Optional[str] = None
-        self.entity_id: Optional[str] = None
+        self.cluster_settings = None
+        self.clustered = False
+        if "clustered" in settings_dict and settings_dict["clustered"] != "":
+            with open(
+                settings_dict["clustered"], "r", encoding="utf-8"
+            ) as cluster_settings_file:
+                self.cluster_settings = json.loads(cluster_settings_file.read())
+            self.clustered = True
 
-        add_root_id(self.root, self._id_hash)
-        add_reference(self.root, self._id_hash)
-        add_certs(self.root, self.cert_data)
+        self._root = etree.fromstring(self.render_template())
 
-        self._add_entity_id()
-        self._add_service_details()
-        self._add_attribute_value()
-        self._add_keynames()
+        with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
+            cert_data = cert_file.read()
+        self.root.find(
+            ".//ds:Signature/ds:KeyInfo//ds:X509Certificate", NAMESPACES
+        ).text = strip_cert(cert_data)
 
-        sign(self.root, self.KEY_PATH)
+        self.sign(self.root, self._id_hash)
 
-    def _add_entity_id(self) -> None:
-        self.entity_id = from_settings(self.settings_dict, 'sp.entityId')
-        if self.entity_id is None:
-            raise ValueError('Please specify the sp.entityId attribute in settings.json')
-        self.root.attrib['EntityID'] = self.entity_id
+    @property
+    def connections(self):
+        return self.cluster_settings["connections"]
 
-    def _add_keynames(self) -> None:
-        cert = load_certificate(FILETYPE_PEM, self.cert_data)
-        sha256_fingerprint = cert.digest("sha256").decode().replace(":", "").lower()
-        self.keyname = sha256_fingerprint
+    @property
+    def allow_scoping(self):
+        return self.settings_dict.get("security", {}).get("allowScoping", False)
 
-        keyname_elems = self.root.findall('.//ds:KeyInfo/ds:KeyName', NAMESPACES)
-        for keyname_elem in keyname_elems:
-            keyname_elem.text = sha256_fingerprint
+    @property
+    def authorization_by_proxy_scopes(self):
+        return self.settings_dict.get("security", {}).get(
+            "authorizationByProxyScopes", []
+        )
 
-    def _add_service_details(self) -> None:
-        sls_elem = self.root.find('.//md:SingleLogoutService', NAMESPACES)
-        acs_elem = self.root.find('.//md:AssertionConsumerService', NAMESPACES)
+    @property
+    def authorization_by_proxy_request_ids(self):
 
-        sls_loc = from_settings(self.settings_dict, 'sp.SingleLogoutService.url', self.DEFAULT_SLS_URL)
-        sls_binding = from_settings(self.settings_dict, 'sp.SingleLogoutService.binding', self.DEFAULT_SLS_BINDING)
+        return self.settings_dict.get("security", {}).get(
+            "authorizationByProxyRequestIds", []
+        )
 
-        acs_binding = from_settings(self.settings_dict, 'sp.assertionConsumerService.binding', self.DEFAULT_ACS_URL)
-        acs_loc = from_settings(self.settings_dict, 'sp.assertionConsumerService.url', self.DEFAULT_ACS_BINDING)
+    @property
+    def default_scopes(self):
+        return self.settings_dict.get("security", {}).get("defaultScopes", [])
 
-        sls_elem.attrib['Location'] = sls_loc
-        sls_elem.attrib['Binding'] = sls_binding
+    @property
+    def root(self):
+        return self._root
 
-        acs_elem.attrib['Location'] = acs_loc
-        acs_elem.attrib['Binding'] = acs_binding
+    @property
+    def entity_id(self):
+        return from_settings(self.settings_dict, "sp.entityId")
 
-        attr_consuming_service = self.root.find('.//md:AttributeConsumingService', NAMESPACES)
-        service_name = attr_consuming_service.find('./md:ServiceName', NAMESPACES)
-        service_desc = attr_consuming_service.find('./md:ServiceDescription', NAMESPACES)
+    @property
+    def issuer_id(self):
+        return self.entity_id
 
-        service_name.text = from_settings(self.settings_dict, 'sp.attributeConsumingService.serviceName', 'CoronaCheck')
-        service_desc.text = from_settings(self.settings_dict, 'sp.attributeConsumingService.serviceDescription', 'CoronaCheck Inlogservice')
-
-    def _add_attribute_value(self) -> None:
-        attr_value_elem = self.root.find('.//md:AttributeConsumingService//saml:AttributeValue', NAMESPACES)
-
+    @property
+    def service_uuid(self):
         try:
-            attr_value_elem.text = self.settings_dict['sp']['attributeConsumingService']['requestedAttributes'][0]['attributeValue'][0]
+            return self.settings_dict["sp"]["attributeConsumingService"][
+                "requestedAttributes"
+            ][0]["attributeValue"][0]
         except KeyError as key_error:
-            raise KeyError('key does not exist. please check your settings.json') from key_error
+            raise KeyError(
+                "key does not exist. please check your settings.json"
+            ) from key_error
+
+    @property
+    def service_name(self):
+        return from_settings(
+            self.settings_dict,
+            "sp.attributeConsumingService.serviceName",
+            "CoronaCheck",
+        )
+
+    @property
+    def service_desc(self):
+        return from_settings(
+            self.settings_dict,
+            "sp.attributeConsumingService.serviceDescription",
+            "CoronaCheck Inlogservice",
+        )
+
+    @property
+    def acs_url(self):
+        return from_settings(self.settings_dict, "sp.assertionConsumerService.url")
+
+    @property
+    def acs_binding(self):
+        return from_settings(self.settings_dict, "sp.assertionConsumerService.binding")
+
+    def get_cert_data(self, cluster_name: Optional[str]):
+        if cluster_name is None:
+            # When cluster name is none, we want the certs of our service.
+            cert_path = self.signing_cert_path
+        else:
+            if self.cluster_settings is None:
+                # This should never happen (key cannot exist without cluster settings), but makes mypy happy
+                raise RuntimeError(
+                    "Cluster settings dict seems to be None, initilization failed."
+                )
+
+            cert_path = self.connections[cluster_name]["cert_path"]
+
+        with open(cert_path, "r", encoding="utf-8") as cert_file:
+            cert_data = cert_file.read()
+
+        return cert_data
+
+    def get_spsso(self, cluster_name: Optional[str]):
+        cert = self.get_cert_data(cluster_name)
+        keyname = compute_keyname(cert)
+        self.dv_keynames.append(keyname)
+        return {
+            "cert": strip_cert(cert),
+            "keyname": keyname,
+            "acs_binding": self.acs_binding,
+            "acs_url": self.acs_url,
+        }
+
+    def create_entity_descriptor(self, cluster_name: Optional[str]):
+        if self.cluster_settings is None:
+            # This should never happen, but makes mypy happy
+            raise RuntimeError(
+                "Cluster settings dict seems to be None, initilization failed."
+            )
+
+        return {
+            "id": "_" + secrets.token_hex(41),  # total length 42.
+            "entity_id": self.entity_id
+            if cluster_name is None
+            else self.connections[cluster_name]["entity_id"],
+            "spsso": self.get_spsso(cluster_name),
+        }
+
+    def create_cluster_entity_descriptor(self):
+        return {
+            "clustered_" + cluster_name: self.create_entity_descriptor(cluster_name)
+            for cluster_name in self.connections
+        }
+
+    def render_clustered_template(self):
+        with open(
+            self.cluster_settings["tls_keypath"], "r", encoding="utf-8"
+        ) as tls_keyfile:
+            cert_tls = tls_keyfile.read()
+
+        keyname_tls = compute_keyname(cert_tls)
+
+        template = self.jinja_env.get_template(self.CLUSTER_TEMPLATE_NAME)
+        clustered_context = {
+            "id": self._id_hash,
+            "valid_until": (
+                datetime.datetime.utcnow()
+                + datetime.timedelta(days=self.DELTA_DAYS_VALID_UNTIL)
+            ).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "dv_descriptors": self.create_cluster_entity_descriptor(),
+            "lc_descriptor": self.create_entity_descriptor(None),
+            "cert_tls": strip_cert(cert_tls),
+            "keyname_tls": keyname_tls,
+        }
+
+        return template.render(clustered_context)
+
+    def render_unclustered_template(self):
+        template = self.jinja_env.get_template(self.TEMPLATE_NAME)
+        unclustered_context = {
+            "id": self._id_hash,
+            "entity_id": self.entity_id,
+            "spsso": self.get_spsso(None),
+            "service_name": self.service_name,
+            "service_desc": self.service_desc,
+            "service_uuid": self.service_uuid,
+            "valid_until": (
+                datetime.datetime.utcnow()
+                + datetime.timedelta(days=self.DELTA_DAYS_VALID_UNTIL)
+            ).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+
+        return template.render(unclustered_context)
+
+    def render_template(self) -> str:
+        if self.clustered:
+            return self.render_clustered_template()
+
+        return self.render_unclustered_template()
 
     def _valid_signature(self) -> bool:
-        _, is_valid = has_valid_signatures(self.root, cert_data=self.cert_data)
+        with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
+            signing_cert = cert_file.read()
+
+        _, is_valid = has_valid_signatures(self.root, cert_data=signing_cert)
         return is_valid
 
     def _contains_keyname(self):
-        return self.root.find('.//ds:KeyInfo/ds:KeyName', NAMESPACES) is not None
+        return self.root.find(".//ds:KeyInfo/ds:KeyName", NAMESPACES) is not None
 
     def _has_correct_bindings(self) -> bool:
         correct_bindings = True
-        sls_elem = self.root.find('.//md:SingleLogoutService', NAMESPACES)
-        acs_elem = self.root.find('.//md:AssertionConsumerService', NAMESPACES)
+        sls_elem = self.root.find(".//md:SingleLogoutService", NAMESPACES)
+        acs_elem = self.root.find(".//md:AssertionConsumerService", NAMESPACES)
 
         if sls_elem is not None:
-            correct_bindings = correct_bindings and sls_elem.attrib['Binding'] == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+            correct_bindings = (
+                correct_bindings
+                and sls_elem.attrib["Binding"]
+                == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+            )
 
         # Required element.
-        correct_bindings = correct_bindings and acs_elem.attrib['Binding'] == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+        correct_bindings = (
+            correct_bindings
+            and acs_elem.attrib["Binding"]
+            == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+        )
 
         return correct_bindings
 
     def validate(self) -> list:
         errors = []
 
-        if self.root.tag != '{%s}EntityDescriptor' % NAMESPACES['md']:
-            errors.append('Root is not an EntityDescriptor')
+        if self.cluster_settings is None:
+            if self.root.tag != f"{{{NAMESPACES['md']}}}EntityDescriptor":
+                errors.append("Root is not an EntityDescriptor")
 
-        if len(self.root.findall('.//md:SPSSODescriptor', NAMESPACES)) != 1:
-            errors.append('Only one SPSSO Descriptor allowed')
+            if len(self.root.findall(".//md:SPSSODescriptor", NAMESPACES)) != 1:
+                errors.append("Only one SPSSO Descriptor allowed")
+        else:
+            if self.root.tag != f"{{{NAMESPACES['md']}}}EntitiesDescriptor":
+                errors.append("Root is not an EntityDescriptor")
 
         if not self._has_correct_bindings():
-            errors.append('Incorrect bindings for SPSSO services')
+            errors.append("Incorrect bindings for SPSSO services")
 
         if not self._contains_keyname():
-            errors.append('Does not contain a keyname in KeyDescriptor')
+            errors.append("Does not contain a keyname in KeyDescriptor")
 
         if not self._valid_signature():
-            errors.append('Invalid Signature')
+            errors.append("Invalid Signature")
 
         return errors
 
-class IdPMetadata:
-    IDP_PATH = settings.saml.idp_path
 
-    def __init__(self) -> None:
-        self.template = etree.parse(self.IDP_PATH).getroot()
-        new_root, valid_sign = has_valid_signatures(self.template, cert_data=self.get_cert_pem_data())
+class IdPMetadata:
+    def __init__(self, idp_metadata_path) -> None:
+        self.template = etree.parse(idp_metadata_path).getroot()
+        new_root, valid_sign = has_valid_signatures(
+            self.template, cert_data=self.get_cert_pem_data()
+        )
         if not valid_sign:
             raise xmlsec.VerificationError("Signature is invalid")
         self.template = new_root
 
-        self.entity_id = self.template.attrib['entityID']
-        self.keyname = self.template.find('.//md:IDPSSODescriptor//dsig:KeyName', NAMESPACES).text
-
-    def _validate_md(self) -> bool:
-        raise NotImplementedError("WIP")
+        self.entity_id = self.template.attrib["entityID"]
+        self.keyname = self.template.find(
+            ".//md:IDPSSODescriptor//dsig:KeyName", NAMESPACES
+        ).text
 
     def find_in_md(self, name: str):
-        return self.template.find(f'.//md:{name}', {'md': "urn:oasis:names:tc:SAML:2.0:metadata"})
+        return self.template.find(
+            f".//md:{name}", {"md": "urn:oasis:names:tc:SAML:2.0:metadata"}
+        )
 
     def get_artifact_rs(self) -> Dict[str, str]:
-        resolution_service = self.find_in_md('ArtifactResolutionService')
+        resolution_service = self.find_in_md("ArtifactResolutionService")
         return get_loc_bind(resolution_service)
 
     def get_cert_pem_data(self) -> str:
-        return f"""-----BEGIN CERTIFICATE-----\n{self.template.find('.//md:IDPSSODescriptor//dsig:X509Certificate', NAMESPACES).text}-----END CERTIFICATE-----"""
+        cert_data = self.template.find(
+            ".//md:IDPSSODescriptor//dsig:X509Certificate", NAMESPACES
+        ).text
+        cert_data = enforce_cert_newlines(cert_data)
+        return (
+            f"""-----BEGIN CERTIFICATE-----\n{cert_data}\n-----END CERTIFICATE-----"""
+        )
 
-    def get_sso(self) -> Dict[str, str]:
-        sso = self.find_in_md('SingleSignOnService')
+    def get_sso(self, binding="POST") -> Dict[str, str]:
+        sso = self.template.find(
+            f".//md:SingleSignOnService[@Binding='urn:oasis:names:tc:SAML:2.0:bindings:HTTP-{binding}']",
+            {"md": "urn:oasis:names:tc:SAML:2.0:metadata"},
+        )
         return get_loc_bind(sso)
 
     def get_xml(self) -> bytes:

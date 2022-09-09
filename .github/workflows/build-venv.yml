@@ -31,7 +31,7 @@ jobs:
         run: cd /var/www/html; make venv
 
       - name: Create archive
-        run: cd /var/www/html; tar -czf /home/runner/work/inge-6/inge-6/inge6_venv_${{ env.RELEASE_VERSION }}.tar.gz .venv
+        run: cd /var/www/html; tar -czf /home/runner/work/nl-rdo-max/inge-6/inge6_venv_${{ env.RELEASE_VERSION }}.tar.gz .venv
 
       - name: Upload venv tar
         uses: actions/upload-artifact@v1
