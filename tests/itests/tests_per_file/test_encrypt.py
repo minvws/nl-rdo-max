@@ -7,7 +7,9 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from nacl.public import Box, PrivateKey, PublicKey
 from nacl.encoding import Base64Encoder
 
-from jwcrypto.jwt import JWT, JWK
+from jwcrypto.jwt import JWT
+from jwcrypto.jwk import JWK
+
 
 from inge6.config import get_settings
 from inge6.constants import Version
