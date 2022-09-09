@@ -127,7 +127,6 @@ and a maximum length of 128 characters.
 To find the code in this library used for verifying the code_verifier and code_challenge pair, have a look at the code snippet highlighted in the following github permalink:
 https://github.com/minvws/nl-rdo-max/blob/e858cb2807cd270d3ca7e9c67b7fccc556a0f91d/inge6/oidc/authorize.py#L17-L49
 
-<<<<<<< HEAD
 ## Development & Contribution process
 
 The development team works on the repository in a private fork (for reasons of compliance with existing processes) and shares its work as often as possible.
@@ -138,8 +137,7 @@ Note that all commits should be signed using a gpg key.
 
 ## Security
 
-Security issues can be reported through a github issue, at https://coronacheck.nl/nl/kwetsbaarheid-melden or confidentially through the https://www.ncsc.nl/contact/kwetsbaarheid-melden.
+Security issues can be reported through a github issue, at security@rdobeheer.nl, or through the https://www.ncsc.nl/contact/kwetsbaarheid-melden.
 
 
-=======
 This snippet verifies the pair as defined in https://datatracker.ietf.org/doc/html/rfc7636#section-4.2
