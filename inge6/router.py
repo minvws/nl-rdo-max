@@ -3,11 +3,15 @@ from logging import Logger
 
 import re
 
+from typing import cast
+
 import redis.exceptions
 
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.encoders import jsonable_encoder
+
+from starlette.datastructures import Address
 
 from .provider import Provider
 from .config import get_settings
@@ -31,7 +35,7 @@ router = APIRouter()
 def authorize(request: Request, authorize_req: AuthorizeRequest = Depends()):
     provider = request.app.state.provider
     return provider.authorize_endpoint(
-        authorize_req, request.headers, request.client.host
+        authorize_req, request.headers, cast(Address, request.client).host
     )
 
 
@@ -156,7 +160,7 @@ if (
     ):
         provider = request.app.state.provider
         response = provider.authorize_endpoint(
-            authorize_req, request.headers, request.client.host
+            authorize_req, request.headers, cast(Address, request.client).host
         )
         status_code = response.status_code
         if status_code != 200:
