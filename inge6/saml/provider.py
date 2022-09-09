@@ -1,6 +1,11 @@
-import os
+# Copyright (c) 2020-2021 De Staat der Nederlanden, Ministerie van Volksgezondheid, Welzijn en Sport.
+#
+# Licensed under the EUROPEAN UNION PUBLIC LICENCE v. 1.2
+#
+# SPDX-License-Identifier: EUPL-1.2
+#
 import json
-
+import os
 from typing import Dict
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
