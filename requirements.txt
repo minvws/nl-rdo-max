@@ -30,7 +30,7 @@ black==22.8.0
     # via inge6 (setup.py)
 cached-property==1.5.2
     # via zeep
-certifi==2021.10.8
+certifi==2022.6.15.1
     # via requests
 cffi==1.15.1
     # via
@@ -50,7 +50,7 @@ coverage[toml]==6.4.4
     #   pytest-cov
 coverage-badge==1.1.0
     # via inge6 (setup.py)
-cryptography==37.0.2
+cryptography==38.0.1
     # via
     #   jwcrypto
     #   oic
@@ -102,7 +102,7 @@ itsdangerous==2.1.2
     # via inge6 (setup.py)
 jinja2==3.1.2
     # via inge6 (setup.py)
-jsonschema==4.15.0
+jsonschema==4.16.0
     # via docker-compose
 jwcrypto==1.0
     # via inge6 (setup.py)
