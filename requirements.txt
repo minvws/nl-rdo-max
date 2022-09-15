@@ -30,7 +30,7 @@ black==22.8.0
     # via inge6 (setup.py)
 cached-property==1.5.2
     # via zeep
-certifi==2022.6.15.1
+certifi==2022.9.14
     # via requests
 cffi==1.15.1
     # via
