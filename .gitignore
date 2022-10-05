@@ -1,30 +1,9 @@
-*.ipyc
-.venv
-.vscode
+## Local build files
 .idea
-*.swp
-*.pyc
+app.egg-info
 __pycache__
-.env
-*.key
-*.crt
-.coverage*
-cov.xml
-*.egg-info
-*.pytest_cache*
-dump.rdb
-saml/settings.json
-inge6.conf
-node_modules
-out/
-http_cache.sqlite
+
+## Configuration and secrets
+secrets
 clients.json
-.DS_Store
-saml/identity_providers.json
-tmp
-.DS_Store
-cluster.tvs.json
-build
-.mypy_cache
-saml/digid/metadata/idp_metadata.xml
-saml/tvs/metadata/idp_metadata.xml
+max.conf

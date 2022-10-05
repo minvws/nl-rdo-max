@@ -11,8 +11,8 @@
     "digid": {
         "saml_specification_version": 3.5,
         "base_dir": "saml/digid",
-        "cert_path": "saml/digid/certs/inge-6-uzipoc.crt",
-        "key_path": "saml/digid/certs/inge-6-uzipoc.key",
+        "cert_path": "saml/digid/certs/sp.crt",
+        "key_path": "saml/digid/certs/sp.key",
         "settings_path": "saml/digid/settings.json",
         "advanced_settings_path": "saml/digid/advanced_settings.json",
         "idp_metadata_path": "saml/digid/metadata/idp_metadata.xml"

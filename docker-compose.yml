@@ -1,0 +1,13 @@
+services:
+  redis:
+    image: redis:7.0.4
+    container_name: 'max-redis'
+    restart: 'no'
+    ports:
+      - '6379:6379'
+  redis-init:
+    depends_on: ['redis']
+    image: redis:7.0.4
+    container_name: 'max-redis-init'
+    restart: 'no'
+    command: 'redis-cli -h redis set max:primary_identity_provider tvs'

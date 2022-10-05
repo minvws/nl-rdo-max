@@ -1,0 +1,3 @@
+SCOPE_AUTHORIZATION_BY_PROXY = "authorization_by_proxy"
+
+AUTHENTICATION_REQUEST_PREFIX = "auth_req"

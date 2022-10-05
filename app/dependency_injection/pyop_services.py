@@ -1,0 +1,100 @@
+# pylint: disable=c-extension-no-member, too-few-public-methods
+from dependency_injector import containers, providers
+
+from pyop.authz_state import AuthorizationState
+from pyop.provider import Provider as PyopProvider
+from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
+from pyop.userinfo import Userinfo
+from jwcrypto.jwk import JWK
+from jwkest.jwk import RSAKey, import_rsa_key
+
+from app.providers.saml_provider import SAMLProvider
+from app.services.authentication_cache_service import AuthenticationCacheService
+from app.services.certificate_store import CertificateStore
+from app.misc.utils import file_content, as_list, clients_from_json
+
+
+def pyop_rsa_signing_key_callable(signing_key_path: str, certificate_store: CertificateStore):
+    signing_key = file_content(signing_key_path)
+    kid = JWK.from_pem(str.encode(signing_key)).thumbprint()
+    public_certificate = certificate_store.get_by_thumbprint(kid)
+    if public_certificate:
+        kid = public_certificate.key_id
+    return RSAKey(key=import_rsa_key(signing_key), alg="RS256", kid=kid)
+
+
+def pyop_configuration_information_callable(
+    issuer: str,
+    authorize_endpoint: str,
+    jwks_endpoint: str,
+    token_endpoint: str,
+    scopes_supported: list[str]
+):
+    return {
+        "issuer": issuer,
+        "authorization_endpoint": issuer + authorize_endpoint,
+        "jwks_uri": issuer + jwks_endpoint,
+        "token_endpoint": issuer + token_endpoint,
+        "scopes_supported": scopes_supported,
+        "response_types_supported": ["code"],
+        "response_modes_supported": ["query"],
+        "grant_types_supported": ["authorization_code"],
+        "subject_types_supported": ["pairwise"],
+        "token_endpoint_auth_methods_supported": ["none"],
+        "claims_parameter_supported": True
+    }
+
+
+class PyopServices(containers.DeclarativeContainer):
+    config = providers.Configuration()
+
+    storage = providers.DependenciesContainer()
+
+    pyop_rsa_signing_key = providers.Callable(
+        pyop_rsa_signing_key_callable,
+        signing_key_path=config.oidc.rsa_private_key,
+        certificate_store=storage.certificate_store
+    )
+
+    pyop_configuration_information = providers.Callable(
+        pyop_configuration_information_callable,
+        issuer=config.oidc.issuer,
+        authorize_endpoint=config.oidc.authorize_endpoint,
+        jwks_endpoint=config.oidc.jwks_endpoint,
+        token_endpoint=config.oidc.token_endpoint,
+        scopes_supported=config.oidc.scopes_supported.as_(as_list)
+    )
+
+    subject_identifier_factory = providers.Singleton(
+        HashBasedSubjectIdentifierFactory,
+        config.oidc.subject_id_hash_salt
+    )
+
+    authz_state = AuthorizationState(
+        subject_identifier_factory=subject_identifier_factory,
+        authorization_code_db=storage.authorization_code_db,
+        access_token_db=storage.authorization_code_db,
+        refresh_token_db=storage.access_token_db,
+        subject_identifier_db=storage.subject_identifier_db
+    )
+
+    authentication_cache_service = providers.Singleton(
+        AuthenticationCacheService
+    )
+
+    saml_provider = providers.Singleton(
+        SAMLProvider,
+        authentication_cache_service=authentication_cache_service
+    )
+
+    clients = config.oidc.clients_file.as_(clients_from_json)
+
+    pyop_provider = providers.Singleton(
+        PyopProvider,
+        signing_key=pyop_rsa_signing_key,
+        configuration_information=pyop_configuration_information,
+        authz_state=authz_state,
+        clients=clients,
+        userinfo=Userinfo({"client": {"key": "value"}}),  # Can this demo client be None?
+        id_token_lifetime=config.redis.object_ttl.as_int()
+    )
