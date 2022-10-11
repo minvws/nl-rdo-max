@@ -136,7 +136,7 @@ def test_jwt_encryption():
     jwk_enc_privkey = _create_x25519_privkey(enc_privkey)
     jwk_sign_pubkey = JWK.from_pyca(sign_public_key)
 
-    encrypted_jwt = JWT(key=jwk_enc_privkey, jwt=encoded_jwe)
+    encrypted_jwt = JWT(key=jwk_enc_privkey, jwt=encoded_jwe, expected_type="JWE")
     signed_jwt = JWT(key=jwk_sign_pubkey, jwt=encrypted_jwt.claims)
 
     claims = json.loads(signed_jwt.claims)
