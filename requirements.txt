@@ -64,7 +64,7 @@ deprecated==1.2.13
     #   redis
 dill==0.3.5.1
     # via pylint
-distro==1.7.0
+distro==1.8.0
     # via docker-compose
 docker[ssh]==6.0.0
     # via docker-compose
@@ -86,7 +86,7 @@ gitpython==3.1.27
     # via bandit
 h11==0.13.0
     # via uvicorn
-idna==3.3
+idna==3.4
     # via
     #   anyio
     #   requests
