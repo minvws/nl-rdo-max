@@ -32,7 +32,7 @@ secrets/private_unencrypted.pem:
 secrets/public.pem: secrets/private_unencrypted.pem
 	openssl rsa -in secrets/private_unencrypted.pem -pubout -out secrets/public.pem
 
-secrets/ssl:
+secrets/ssl/private:
 	mkdir -p -m 750 secrets/ssl/certs
 	mkdir -p -m 750 secrets/ssl/private
 
@@ -72,7 +72,7 @@ metadata:
 	curl --cacert secrets/ssl/certs/PrivateRootCA-G1.pem "https://was-preprod1.digid.nl/saml/idp/metadata" --output saml/digid/metadata/idp_metadata.xml
 	curl "https://pp2.toegang.overheid.nl/kvs/rd/metadata" --output saml/tvs/metadata/idp_metadata.xml
 
-setup: inge6.conf clients.json saml secrets/ssl secret-files saml-files secrets-redis-certs metadata
+setup: inge6.conf clients.json saml secrets/ssl/private secret-files saml-files secrets-redis-certs metadata
 
 fresh: clean_venv venv
 
