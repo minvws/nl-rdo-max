@@ -64,7 +64,7 @@ deprecated==1.2.13
     #   redis
 dill==0.3.5.1
     # via pylint
-distro==1.7.0
+distro==1.8.0
     # via docker-compose
 docker[ssh]==6.0.0
     # via docker-compose
