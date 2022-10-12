@@ -242,7 +242,7 @@ requests-file==1.5.1
     # via zeep
 requests-mock==1.10.0
     # via inge6 (setup.py)
-requests-toolbelt==0.9.1
+requests-toolbelt==0.10.0
     # via zeep
 six==1.16.0
     # via
