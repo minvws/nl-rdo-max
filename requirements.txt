@@ -43,7 +43,7 @@ click==8.1.3
     # via
     #   black
     #   uvicorn
-coverage[toml]==6.4.4
+coverage[toml]==6.5.0
     # via
     #   coverage-badge
     #   inge6 (setup.py)
