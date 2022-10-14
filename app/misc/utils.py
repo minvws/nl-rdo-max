@@ -1,13 +1,20 @@
 import json
+import base64
+from os import path
+from typing import Union
+
 from lxml import etree
+from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 
 
 SOAP_NS = "http://www.w3.org/2003/05/soap-envelope"
 
 
-def file_content(filepath: str):
-    with open(filepath, "r", encoding="utf-8") as file:
-        return file.read()
+def file_content(filepath: str) -> Union[str, None]:
+    if filepath is not None and path.exists(filepath):
+        with open(filepath, "r", encoding="utf-8") as file:
+            return file.read()
+    return None
 
 
 def as_list(input: str):
@@ -48,3 +55,13 @@ def to_soap_envelope(node):
     body.append(node)
 
     return env
+
+
+def compute_fingerpint(cert: bytes, hash: str = "sha256"):
+    cert = load_certificate(FILETYPE_PEM, cert)
+    return cert.digest(hash).decode().replace(":", "").lower().encode()
+
+
+def get_fingerprint(signing_cert: bytes):
+    sha1_fingerprint = compute_fingerpint(signing_cert, "sha1").decode()
+    return base64.urlsafe_b64encode(sha1_fingerprint.encode())

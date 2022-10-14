@@ -16,6 +16,11 @@ from onelogin.saml2.auth import OneLogin_Saml2_Auth
 log = logging.getLogger(__package__)
 
 
+def _load_template(path, filename):
+    template_path = os.path.join(path, filename)
+    with open(template_path, "r", encoding="utf-8") as template_file:
+        return template_file.read()
+
 class SAMLResponseFactory():
     def __init__(
             self,
@@ -26,9 +31,8 @@ class SAMLResponseFactory():
         self._saml_base_issuer = saml_base_issuer
         self._oidc_authorize_endpoint = oidc_authorize_endpoint
 
-        template_path = os.path.join(html_templates_path, "authn_request.html")
-        with open(template_path, "r", encoding="utf-8") as template_file:
-            self._template_txt = template_file.read()
+        self._authn_request_template = _load_template(html_templates_path, "authn_request.html")
+        self._assertion_consumer_service_template = _load_template(html_templates_path, "assertion_consumer_service.html")
 
     def create_saml_response(self, mock_digid, saml_identity_provider, login_digid_request, randstate):
         if mock_digid:
@@ -49,6 +53,27 @@ class SAMLResponseFactory():
             f"configured in idp metadata: {saml_identity_provider.name}"
         )
 
+    def create_saml_meta_redirect_response(
+            self,
+            redirect_url: str,
+            status_code: int = 200,
+            headers: dict = None,
+            media_type: str = None,
+            background: BackgroundTask = None,
+    ):
+        template = Template(self._assertion_consumer_service_template)
+        rendered = template.render({
+            "redirect_url": redirect_url
+        })
+
+        return HTMLResponse(
+            content=rendered,
+            status_code=status_code,
+            headers=headers,
+            media_type=media_type,
+            background=background
+        )
+
     def _create_saml_authn_submit_response(
             self,
             saml_identity_provider,
@@ -65,7 +90,7 @@ class SAMLResponseFactory():
             )
         except ScopingAttributesNotAllowed as scoping_not_allowed:
             raise AuthorizationByProxyDisabled() from scoping_not_allowed
-        template = Template(self._template_txt)
+        template = Template(self._authn_request_template)
         rendered = template.render({
             "sso_url": authn_request.sso_url,
             "saml_request": authn_request.get_base64_string().decode(),
@@ -118,14 +143,12 @@ class SAMLResponseFactory():
         sso_url = f"/digid-mock?state={randstate}&idp_name={saml_identity_provider.name}&authorize_request={base64_authn_request}"
 
         authn_request = saml_identity_provider.create_authn_request([], [])
-        print(self._template_txt)
-        template = Template(self._template_txt)
+        template = Template(self._authn_request_template)
         rendered = template.render({
             "sso_url": sso_url,
             "saml_request": authn_request.get_base64_string().decode(),
             "relay_state": randstate,
         })
-        print(rendered)
         return HTMLResponse(
             content=rendered,
             status_code=status_code,

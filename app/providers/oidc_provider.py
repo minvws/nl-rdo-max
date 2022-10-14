@@ -2,7 +2,8 @@ import base64
 import json
 from urllib.parse import urlencode
 
-from fastapi import Request
+from fastapi import Request, HTTPException, Response
+
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
@@ -13,10 +14,15 @@ from app.models.authorize_request import AuthorizeRequest
 from app.exceptions.oidc_exceptions import InvalidClientException, InvalidRedirectUriException
 from app.models.login_digid_request import LoginDigiDRequest
 from app.models.saml.exceptions import ScopingAttributesNotAllowed
+from pyop.provider import extract_bearer_token_from_http_request
+
+from app.models.token_request import TokenRequest
+from app.services.saml.artifact_resolving_service import ArtifactResolvingService
+from app.services.userinfo.userinfo_service import UserinfoService
 from app.storage.authentication_cache import AuthenticationCache
 from app.misc.rate_limiter import RateLimiter
-from app.services.saml_identity_provider_service import SamlIdentityProviderService
-from app.services.saml_response_factory import SAMLResponseFactory
+from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
+from app.services.saml.saml_response_factory import SAMLResponseFactory
 
 
 class OIDCProvider():
@@ -28,7 +34,9 @@ class OIDCProvider():
             clients: dict,
             saml_identity_provider_service: SamlIdentityProviderService,
             mock_digid: bool,
-            saml_response_factory: SAMLResponseFactory
+            saml_response_factory: SAMLResponseFactory,
+            artifact_resolving_service: ArtifactResolvingService,
+            userinfo_service: UserinfoService
     ):
         self._pyop_provider = pyop_provider
         self._authentication_cache = authentication_cache
@@ -37,10 +45,17 @@ class OIDCProvider():
         self._saml_identity_provider_service = saml_identity_provider_service
         self._mock_digid = mock_digid
         self._saml_response_factory = saml_response_factory
+        self._artifact_resolving_service = artifact_resolving_service
+        self._userinfo_service = userinfo_service
 
     def well_known(self):
         return JSONResponse(
             content=jsonable_encoder(self._pyop_provider.provider_configuration.to_dict())
+        )
+
+    def jwks(self):
+        return JSONResponse(
+            content=jsonable_encoder(self._pyop_provider.jwks)
         )
 
     def authorize(self, authorize_request: AuthorizeRequest, request: Request):
@@ -56,7 +71,6 @@ class OIDCProvider():
         )
 
         saml_identity_provider = self._saml_identity_provider_service.get_identity_provider(identity_provider_name)
-
         randstate = self._authentication_cache.create_authentication_request_state(
             pyop_authentication_request,
             authorize_request,
@@ -70,6 +84,40 @@ class OIDCProvider():
             saml_identity_provider,
             login_digid_request,
             randstate
+        )
+
+    def token(self, token_request: TokenRequest, headers):
+        acs_context = self._authentication_cache.get_acs_context(token_request.code)
+        if acs_context is None:
+            raise HTTPException(
+                400, detail="Code challenge has expired. Please retry authorization."
+            )
+
+        token_response = self._pyop_provider.handle_token_request(token_request.query_string, headers)
+        resolved_artifact = self._artifact_resolving_service.resolve_artifact(acs_context)
+        external_user_authentication_context = self\
+            ._userinfo_service\
+            .request_userinfo_for_artifact(acs_context, resolved_artifact)
+        self._authentication_cache.cache_authentication_context(token_response, external_user_authentication_context)
+        return token_response
+
+    def userinfo(
+            self,
+            request: Request
+    ):
+        bearer_token = extract_bearer_token_from_http_request(
+            authz_header=request.headers.get("Authorization")
+        )
+        #todo: id_token valid until same as redis cache ttl
+        introspection = self._pyop_provider.authz_state.introspect_access_token(bearer_token)
+        authentication_context = self._authentication_cache.get_authentication_context(bearer_token)
+
+        if not introspection["active"]:
+            raise Exception("not authorized")
+        print(authentication_context["external_user_authentication_context"])
+        return Response(
+            headers={"Content-Type": "application/jwt"},
+            content=authentication_context["external_user_authentication_context"]
         )
 
     def _validate_authorize_request(

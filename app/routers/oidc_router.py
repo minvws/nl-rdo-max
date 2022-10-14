@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Request, Depends
 from dependency_injector.wiring import inject, Provide
+from pydantic.error_wrappers import ValidationError
 
+from app.models.token_request import TokenRequest
 from app.providers.oidc_provider import OIDCProvider
 from app.dependency_injection.config import RouterConfig
 from app.models.authorize_request import AuthorizeRequest
-
 
 oidc_router = APIRouter()
 
@@ -25,3 +26,32 @@ def authorize(
     oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
 ):
     return oidc_provider.authorize(authorize_req, request)
+
+
+@oidc_router.post(RouterConfig.accesstoken_endpoint)
+@inject
+async def accesstoken(
+        request: Request,
+        oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"])
+):
+    return oidc_provider.token(
+        TokenRequest.from_query_string((await request.body()).decode("utf-8")),
+        request.headers
+    )
+
+
+@oidc_router.get(RouterConfig.jwks_endpoint)
+@inject
+async def jwks(
+        oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"])
+):
+    return oidc_provider.jwks()
+
+
+@oidc_router.get(RouterConfig.userinfo_endpoint)
+@inject
+def userinfo(
+    request: Request,
+    oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
+):
+    return oidc_provider.userinfo(request)

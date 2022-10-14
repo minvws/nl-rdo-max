@@ -98,6 +98,9 @@ class RedisCache(Cache):
     def set_complex_object(self, key: str, value: Any) -> Any:
         return self.redis_client.set(self._prepend_with_namespace(key), _serialize(value))
 
+    def get_complex_object(self, key: str) -> Any:
+        return _deserialize(self.redis_client.get(self._prepend_with_namespace(key)))
+
     def _prepend_with_namespace(self, key: str) -> str:
         namespace_key = f"{self.key_prefix}:{key}"
         if self.enable_debugger and not self.redis_client.exists(namespace_key) > 0:

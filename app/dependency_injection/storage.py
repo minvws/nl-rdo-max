@@ -13,6 +13,8 @@ from app.storage.authentication_cache import AuthenticationCache
 class Storage(containers.DeclarativeContainer):
     config = providers.Configuration()
 
+    encryption_services = providers.DependenciesContainer()
+
     certificate_store = providers.Singleton(
         CertificateStore,
         config.oidc.certificates_directory,
@@ -67,5 +69,6 @@ class Storage(containers.DeclarativeContainer):
 
     authentication_cache = providers.Singleton(
         AuthenticationCache,
-        cache=cache
+        cache=cache,
+        authentication_context_encryption_service=encryption_services.user_authentication_encryption_service
     )

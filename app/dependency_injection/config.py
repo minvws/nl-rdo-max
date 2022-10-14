@@ -34,3 +34,4 @@ class RouterConfig():
     accesstoken_endpoint = get_config_value("oidc", "accesstoken_endpoint")
     jwks_endpoint = get_config_value("oidc", "jwks_endpoint")
     health_endpoint = get_config_value("misc", "health_endpoint")
+    userinfo_endpoint = get_config_value("oidc", "userinfo_endpoint")

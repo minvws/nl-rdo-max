@@ -1,6 +1,7 @@
 # pylint: disable=c-extension-no-member, too-few-public-methods
 from configparser import ConfigParser
 
+from dependency_injector import providers
 from fastapi import FastAPI
 import uvicorn
 
@@ -10,7 +11,6 @@ from app.routers.digid_mock_router import digid_mock_router
 from app.routers.saml_router import saml_router
 from app.routers.oidc_router import oidc_router
 from app.routers.cc_router import cc_router
-from app.routers.uzi_router import uzi_router
 from app.routers.irma_router import irma_router
 
 from app.exceptions.oidc_exceptions import (
@@ -82,16 +82,15 @@ def create_fastapi_app(
         "redoc_url": "/docs"
     } if is_uvicorn_app else {}
     fastapi = FastAPI(**fastapi_kwargs)
-    fastapi.container = container
     fastapi.include_router(saml_router)
     fastapi.include_router(oidc_router)
     if cc_routing_enabled:
         fastapi.include_router(cc_router)
-    if uzi_routing_enabled:
-        fastapi.include_router(uzi_router)
-        fastapi.include_router(irma_router)
+    # if uzi_routing_enabled:
+    #     container.services.override(UziServices)
     if is_mock_digid:
         fastapi.include_router(digid_mock_router)
 
+    fastapi.container = container
     _add_exception_handlers(fastapi)
     return fastapi

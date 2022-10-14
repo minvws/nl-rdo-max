@@ -1,9 +1,23 @@
-## Local build files
+## Local dev files
 .idea
-app.egg-info
+.venv
+*.egg-info
+*.pytest_cache
 __pycache__
+.vscode
+*.swp
+*.pyc
+.coverage*
+.DS_Store
 
 ## Configuration and secrets
 secrets
 clients.json
 max.conf
+*.crt
+*.key
+saml/digid/advanced_settings.json
+saml/digid/settings.json
+saml/tvs/advanced_settings.json
+saml/tvs/cluster.json
+saml/tvs/settings.json

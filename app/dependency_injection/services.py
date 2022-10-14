@@ -5,15 +5,20 @@ from app.misc.utils import as_bool
 from app.providers.digid_mock_provider import DigidMockProvider
 from app.providers.oidc_provider import OIDCProvider
 from app.providers.cc_provider import CCProvider
+from app.providers.saml_provider import SAMLProvider
 from app.providers.uzi_provider import UziProvider
 from app.providers.irma_provider import IRMAProvider
 from app.misc.rate_limiter import RateLimiter
-from app.services.saml_identity_provider_service import SamlIdentityProviderService
-from app.services.saml_response_factory import SAMLResponseFactory
+from app.services.saml.artifact_resolving_service import ArtifactResolvingService, MockedArtifactResolvingService
+from app.services.userinfo.cibg_userinfo_service import CIBGUserinfoService, MockedCIBGUserinfoService
+from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
+from app.services.saml.saml_response_factory import SAMLResponseFactory
 
 
 class Services(containers.DeclarativeContainer):
     config = providers.Configuration()
+
+    encryption_services = providers.DependenciesContainer()
 
     storage = providers.DependenciesContainer()
 
@@ -44,6 +49,35 @@ class Services(containers.DeclarativeContainer):
         templates_path=config.saml.xml_templates_path
     )
 
+    _artifact_resolving_service = providers.Singleton(
+        ArtifactResolvingService
+    )
+
+    mocked_artifact_resolving_service = providers.Singleton(
+        MockedArtifactResolvingService
+    )
+
+    artifact_resolving_service = providers.Selector(
+        config.app.mock_digid.as_(str.lower),
+        true=mocked_artifact_resolving_service,
+        false=_artifact_resolving_service
+    )
+
+    cibg_external_user_authentication_service = providers.Singleton(
+        CIBGUserinfoService
+    )
+
+    mocked_cibg_userinfo_service = providers.Singleton(
+        MockedCIBGUserinfoService,
+        jwe_service=encryption_services.jwe_service,
+        clients=pyop_services.clients
+    )
+
+    userinfo_service = providers.Selector(
+        config.app.external_user_authentication,
+        cibg_mock=mocked_cibg_userinfo_service
+    )
+
     oidc_provider = providers.Singleton(
         OIDCProvider,
         pyop_provider=pyop_services.pyop_provider,
@@ -52,7 +86,9 @@ class Services(containers.DeclarativeContainer):
         clients=pyop_services.clients,
         saml_identity_provider_service=saml_identity_provider_service,
         mock_digid=config.app.mock_digid.as_(as_bool),
-        saml_response_factory=saml_response_factory
+        saml_response_factory=saml_response_factory,
+        artifact_resolving_service=artifact_resolving_service,
+        userinfo_service=userinfo_service
     )
 
     digid_mock_provider = providers.Singleton(
@@ -61,14 +97,13 @@ class Services(containers.DeclarativeContainer):
         saml_identity_provider_service=saml_identity_provider_service
     )
 
-    cc_provider = providers.Singleton(
-        CCProvider
-    )
-
-    uzi_provider = providers.Singleton(
-        UziProvider
-    )
-
     irma_provider = providers.Singleton(
         IRMAProvider
+    )
+
+    saml_provider = providers.Singleton(
+        SAMLProvider,
+        authentication_cache=storage.authentication_cache,
+        pyop_provider=pyop_services.pyop_provider,
+        saml_response_factory=saml_response_factory
     )

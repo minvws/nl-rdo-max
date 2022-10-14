@@ -20,6 +20,10 @@ class Cache(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def get_complex_object(self, key: str) -> Any:
+        pass
+
+    @abc.abstractmethod
     def get(self, key: str) -> Any:
         pass
 

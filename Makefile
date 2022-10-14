@@ -1,4 +1,5 @@
 env = env PATH="${bin}:$$PATH"
+create_key_pair =
 
 complete: venv secrets/ssl/private/apache-selfsigned.key secrets/oidc/private/selfsigned.key
 
@@ -39,6 +40,8 @@ secrets/oidc:
 secrets/oidc/private/selfsigned.key: secrets/oidc
 	openssl req -newkey rsa:2048 -nodes -keyout secrets/oidc/private/selfsigned.key -x509 -days 365 -out secrets/oidc/certs/selfsigned.crt  -subj '/CN=max-oidc/C=NL'
 
+setup-secrets:
+	./setup-secrets.sh
 
 saml/tvs/certs/sp.key:
 	openssl genrsa -out saml/tvs/certs/sp.key 2048
@@ -60,3 +63,25 @@ metadata:
 	mkdir -p saml/tvs/metadata
 	curl "https://was-preprod1.digid.nl/saml/idp/metadata" --output saml/digid/metadata/idp_metadata.xml
 	curl "https://pp2.toegang.overheid.nl/kvs/rd/metadata" --output saml/tvs/metadata/idp_metadata.xml
+
+config: max.conf clients.json saml-settings
+saml-settings: saml-tvs-settings saml-digid-settings
+saml-tvs-settings: saml-tvs-advanced-settings saml-tvs-settings-json
+saml-digid-settings: saml-digid-advanced-settings saml-digid-settings-json
+saml-digid-advanced-settings:
+	cp saml/digid/advanced_settings.json.example saml/digid/advanced_settings.json
+
+saml-digid-settings-json:
+	cp saml/digid/settings.json.example saml/digid/settings.json
+
+saml-tvs-advanced-settings:
+	cp saml/tvs/advanced_settings.json.example saml/tvs/advanced_settings.json
+
+saml-tvs-settings-json:
+	cp saml/tvs/settings.json.example saml/tvs/settings.json
+
+max.conf:
+	cp max.conf.example max.conf
+
+clients.json:
+	cp clients.json.example clients.json

@@ -31,7 +31,6 @@ class SamlIdentityProviderService():
     def _parse_identity_providers(self, identity_providers_path: str, jinja_env: Environment) -> dict:
         with open(identity_providers_path, "r", encoding="utf-8") as identity_providers_file:
             identity_providers = json.loads(identity_providers_file.read())
-
         providers = {}
         for provider in identity_providers.keys():
             providers[provider] = SamlIdentityProvider(

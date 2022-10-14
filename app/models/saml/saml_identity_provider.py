@@ -27,13 +27,10 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
         self.jinja_env = jinja_env
         with open(self.settings_path, "r", encoding="utf-8") as settings_file:
             self.settings_dict = json.loads(settings_file.read())
-        print(self.settings_dict)
         with open(
             self.advanced_settings_path, "r", encoding="utf-8"
         ) as adv_settings_file:
             self.settings_dict.update(json.loads(adv_settings_file.read()))
-        print(self.settings_dict)
-        print("after update")
 
         with open(self.key_path, "r", encoding="utf-8") as key_file:
             self.priv_key = key_file.read()

@@ -21,7 +21,6 @@ class CertificateStore:
 
     def get_by_thumbprint(self, thumbprint: str) -> JWK:
         for key in self.keys:
-            print(key.thumbprint(hashalg=hashes.SHA256()))
             if key.thumbprint(hashalg=hashes.SHA256()) == thumbprint:
                 return key
 

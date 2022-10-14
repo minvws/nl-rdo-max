@@ -13,7 +13,8 @@ requirements = [
     "lxml",
     "pyOpenSSL",
     'python3-saml==1.14.0',
-    'python-multipart'
+    'python-multipart',
+    'pynacl'
 ]
 
 setup(

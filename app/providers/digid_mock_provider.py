@@ -10,12 +10,16 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 
 from app.models.digid_mock_requests import DigiDMockRequest, DigiDMockCatchRequest
 from app.models.login_digid_request import LoginDigiDRequest
-from app.services.saml_response_factory import SAMLResponseFactory
-from app.services.saml_identity_provider_service import SamlIdentityProviderService
+from app.services.saml.saml_response_factory import SAMLResponseFactory
+from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 
 
 class DigidMockProvider:
-    def __init__(self, saml_response_factory: SAMLResponseFactory, saml_identity_provider_service: SamlIdentityProviderService):
+    def __init__(
+            self,
+            saml_response_factory: SAMLResponseFactory,
+            saml_identity_provider_service: SamlIdentityProviderService
+    ):
         self._saml_response_factory = saml_response_factory
         self._saml_identity_provider_service = saml_identity_provider_service
 
@@ -68,9 +72,8 @@ class DigidMockProvider:
         """
         return HTMLResponse(content=http_content, status_code=200)
 
-
     @staticmethod
-    def digid_mock_catch(self, request: DigiDMockCatchRequest) -> RedirectResponse:
+    def digid_mock_catch(request: DigiDMockCatchRequest) -> RedirectResponse:
         bsn = request.bsn
         relay_state = request.RelayState
 
