@@ -1,8 +1,15 @@
 [app]
-cc_routing_enabled = True
-uzi_routing_enabled = True
+app_mode = uzi
+external_user_authentication = cibg_mock
+jwe_encryption = rsa
+# jwe_encryption = ed25519
 loglevel = debug
 mock_digid = True
+i6_sign_privkey                      = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+i4_encrypt_pubkey                    = BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=
+external_user_authentication_sym_key = 0000000000000000000000000000000000000000000000000000000000000000
+jwe_sign_priv_key_path = secrets/userinfo/jwe_sign.key
+jwe_sign_crt_path = secrets/userinfo/jwe_sign.crt
 
 [uvicorn]
 # The host to be running on
@@ -18,16 +25,16 @@ use_ssl = True
 
 # Setting for the SSL connection when enabled, defined by the use_ssl setting.
 base_dir = secrets/ssl
-cert_file = certs/apache-selfsigned.crt
-key_file = private/apache-selfsigned.key
+cert_file = apache-selfsigned.crt
+key_file = apache-selfsigned.key
 
 [oidc]
-certificates_directory = secrets/oidc/certs
-rsa_private_key = secrets/oidc/private/selfsigned.key
+certificates_directory = secrets/jwks-certs
+rsa_private_key = secrets/oidc/selfsigned.key
 issuer = https://localhost:8006
 authorize_endpoint = /authorize
 jwks_endpoint = /jwks
-token_endpoint = /token
+accesstoken_endpoint = /token
 userinfo_endpoint = /userinfo
 scopes_supported = openid
 clients_file = clients.json
