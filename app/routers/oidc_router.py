@@ -35,7 +35,7 @@ async def accesstoken(
         oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"])
 ):
     return oidc_provider.token(
-        TokenRequest.from_query_string((await request.body()).decode("utf-8")),
+        TokenRequest.from_body_query_string((await request.body()).decode("utf-8")),
         request.headers
     )
 

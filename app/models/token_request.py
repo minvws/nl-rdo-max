@@ -18,7 +18,7 @@ class TokenRequest(BaseModel):
     # pylint: disable=invalid-name
     # noinspection PyPep8Naming
     @classmethod
-    def from_query_string(
+    def from_body_query_string(
             cls,
             query_string
     ) -> "TokenRequest":

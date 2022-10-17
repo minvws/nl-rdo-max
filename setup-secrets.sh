@@ -41,6 +41,14 @@ if [[ ! -f $SECRETS_DIR/cacert.crt ]]; then
 	  -subj "/CN=US/CN=inge-6-uzipoc-ca"
 fi
 
+###
+# OIDC JWT signing
+###
+if [[ ! -f $SECRETS_DIR/ssl/server.crt ]]; then
+  create_key_pair $SECRETS_DIR/ssl "server" "localhost"
+  create_pub_key $SECRETS_DIR/ssl "server"
+  cp $SECRETS_DIR/userinfo/jwe_sign.crt $SECRETS_DIR/jwks-certs
+fi
 
 ###
 # OIDC JWT signing
