@@ -12,17 +12,10 @@ class AssertionConsumerServiceRequest(BaseModel):
     # noinspection PyPep8Naming
     @classmethod
     def from_request(
-            cls,
-            SAMLart: str,
-            RelayState: str,
-            mocking: int = 0
-    ) -> 'AssertionConsumerServiceRequest':
+        cls, SAMLart: str, RelayState: str, mocking: int = 0
+    ) -> "AssertionConsumerServiceRequest":
         return AssertionConsumerServiceRequest.parse_obj(
-            {
-                "SAMLart": SAMLart,
-                "RelayState": RelayState,
-                "mocking": mocking == 1
-            }
+            {"SAMLart": SAMLart, "RelayState": RelayState, "mocking": mocking == 1}
         )
 
     def hashed_saml_art(self):

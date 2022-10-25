@@ -57,4 +57,4 @@ class Ed25519JweService(JweService):
     def box_encrypt(self, data: str, client_key: str) -> str:
         enc_key = PublicKey(client_key.encode("utf-8"), encoder=Base64Encoder)
         box = Box(self._sign_key, enc_key)
-        return box.encrypt(data.encode('utf-8'), encoder=Base64Encoder).decode('utf-8')
+        return box.encrypt(data.encode("utf-8"), encoder=Base64Encoder).decode("utf-8")

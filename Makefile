@@ -39,13 +39,13 @@ setup: setup-config setup-saml setup-secrets
 
 lint:
 	. .venv/bin/activate && ${env} pylint app tests
-	. .venv/bin/activate && ${env} black --check inge6 tests
+	. .venv/bin/activate && ${env} black --check app tests
 
 audit:
-	. .venv/bin/activate && ${env} bandit inge6
+	. .venv/bin/activate && ${env} bandit app6
 
 fix:
-	. .venv/bin/activate && $(env) black inge6 tests
+	. .venv/bin/activate && $(env) black app tests
 
 test: venv setup
 	. .venv/bin/activate && ${env} pytest tests

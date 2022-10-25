@@ -3,20 +3,26 @@ from unittest.mock import MagicMock, patch
 
 from app.storage.redis.redis_cache import RedisCache
 
-namespace = str(uuid.uuid4())
-key = str(uuid.uuid4())
-value = str(uuid.uuid4()).encode("utf-8")
+A_NAMESPACE = str(uuid.uuid4())
+A_KEY = str(uuid.uuid4())
+A_VALUE = str(uuid.uuid4()).encode("utf-8")
 
 
 def create_redis_cache(
-        redis_client=MagicMock(),
-        redis_get_debugger_factory=MagicMock(),
-        redis_get_debugger=MagicMock(),
-        enable_debugger=False,
-        expire_in_seconds=53
+    redis_client=MagicMock(),
+    redis_get_debugger_factory=MagicMock(),
+    redis_get_debugger=MagicMock(),
+    enable_debugger=False,
+    expire_in_seconds=53,
 ):
     redis_get_debugger_factory.create.return_value = redis_get_debugger
-    return RedisCache(namespace, enable_debugger, expire_in_seconds, redis_client, redis_get_debugger_factory)
+    return RedisCache(
+        A_NAMESPACE,
+        enable_debugger,
+        expire_in_seconds,
+        redis_client,
+        redis_get_debugger_factory,
+    )
 
 
 def test_setup_redis_debugger():
@@ -25,7 +31,7 @@ def test_setup_redis_debugger():
     create_redis_cache(
         redis_get_debugger=redis_get_debugger,
         redis_get_debugger_factory=redis_get_debugger_factory,
-        enable_debugger=True
+        enable_debugger=True,
     )
 
     redis_get_debugger_factory.create.assert_called_with(daemon=True)
@@ -38,11 +44,11 @@ def test_get():
     cache = create_redis_cache(
         redis_client=redis_client,
     )
-    redis_client.get.return_value = value
+    redis_client.get.return_value = A_VALUE
 
-    actual = cache.get(key)
-    assert actual == value
-    redis_client.get.assert_called_with(f"{namespace}:{key}")
+    actual = cache.get(A_KEY)
+    assert actual == A_VALUE
+    redis_client.get.assert_called_with(f"{A_NAMESPACE}:{A_KEY}")
 
 
 def test_get_with_debug_enabled():
@@ -51,16 +57,16 @@ def test_get_with_debug_enabled():
     cache = create_redis_cache(
         redis_client=redis_client,
         enable_debugger=True,
-        redis_get_debugger=redis_debugger
+        redis_get_debugger=redis_debugger,
     )
-    redis_client.get.return_value = value
+    redis_client.get.return_value = A_VALUE
     redis_client.exists.return_value = 0
 
-    actual = cache.get(key)
-    assert actual == value
-    redis_client.get.assert_called_with(f"{namespace}:DEBUG:{key}")
-    redis_client.exists.assert_called_with(f"{namespace}:{key}")
-    redis_debugger.debug_get.assert_called_with(f"{namespace}:DEBUG:{key}", value)
+    actual = cache.get(A_KEY)
+    assert actual == A_VALUE
+    redis_client.get.assert_called_with(f"{A_NAMESPACE}:DEBUG:{A_KEY}")
+    redis_client.exists.assert_called_with(f"{A_NAMESPACE}:{A_KEY}")
+    redis_debugger.debug_get.assert_called_with(f"{A_NAMESPACE}:DEBUG:{A_KEY}", A_VALUE)
 
 
 def test_get_with_debug_enabled_and_key_already_exists():
@@ -69,116 +75,119 @@ def test_get_with_debug_enabled_and_key_already_exists():
     cache = create_redis_cache(
         redis_client=redis_client,
         enable_debugger=True,
-        redis_get_debugger=redis_debugger
+        redis_get_debugger=redis_debugger,
     )
-    redis_client.get.return_value = value
+    redis_client.get.return_value = A_VALUE
     redis_client.exists.return_value = 1
 
-    actual = cache.get(key)
-    assert actual == value
-    redis_client.get.assert_called_with(f"{namespace}:{key}")
-    redis_client.exists.assert_called_with(f"{namespace}:{key}")
-    redis_debugger.debug_get.assert_called_with(f"{namespace}:{key}", value)
+    actual = cache.get(A_KEY)
+    assert actual == A_VALUE
+    redis_client.get.assert_called_with(f"{A_NAMESPACE}:{A_KEY}")
+    redis_client.exists.assert_called_with(f"{A_NAMESPACE}:{A_KEY}")
+    redis_debugger.debug_get.assert_called_with(f"{A_NAMESPACE}:{A_KEY}", A_VALUE)
 
 
 def test_get_int():
     cache = create_redis_cache()
     # noinspection PyShadowingNames
-    value = b'5'
+    # pylint:disable=redefined-outer-name
+    value = b"5"
     expected = 5
-    with patch.object(RedisCache, 'get', return_value=value) as get_method:
-        actual = cache.get_int(key)
+    with patch.object(RedisCache, "get", return_value=value) as get_method:
+        actual = cache.get_int(A_KEY)
         assert actual == expected
-        get_method.assert_called_with(key)
+        get_method.assert_called_with(A_KEY)
 
 
 def test_get_int_when_not_parsable_returns_none():
     cache = create_redis_cache()
     # noinspection PyShadowingNames
-    with patch.object(RedisCache, 'get', return_value=value) as get_method:
-        actual = cache.get_int(key)
+    # pylint:disable=redefined-outer-name
+    with patch.object(RedisCache, "get", return_value=A_VALUE) as get_method:
+        actual = cache.get_int(A_KEY)
         assert actual is None
-        get_method.assert_called_with(key)
+        get_method.assert_called_with(A_KEY)
 
 
 def test_get_string():
     cache = create_redis_cache()
-    with patch.object(RedisCache, 'get', return_value=value) as get_method:
-        actual = cache.get_string(key)
-        assert actual == value.decode("utf-8")
-        get_method.assert_called_with(key)
+    with patch.object(RedisCache, "get", return_value=A_VALUE) as get_method:
+        actual = cache.get_string(A_KEY)
+        assert actual == A_VALUE.decode("utf-8")
+        get_method.assert_called_with(A_KEY)
 
 
 def test_get_bool_non_true_returns_false():
     cache = create_redis_cache()
     # noinspection PyShadowingNames
-    with patch.object(RedisCache, 'get', return_value=value) as get_method:
-        actual = cache.get_bool(key)
+    with patch.object(RedisCache, "get", return_value=A_VALUE) as get_method:
+        actual = cache.get_bool(A_KEY)
         assert actual is False
-        get_method.assert_called_with(key)
+        get_method.assert_called_with(A_KEY)
 
 
 def test_get_bool_from_string():
     cache = create_redis_cache()
     # noinspection PyShadowingNames
+    # pylint:disable=redefined-outer-name
     value = b"TruE"
-    with patch.object(RedisCache, 'get', return_value=value) as get_method:
-        actual = cache.get_bool(key)
+    with patch.object(RedisCache, "get", return_value=value) as get_method:
+        actual = cache.get_bool(A_KEY)
         assert actual is True
-        get_method.assert_called_with(key)
+        get_method.assert_called_with(A_KEY)
 
 
 def test_get_bool_from_int():
     cache = create_redis_cache()
     # noinspection PyShadowingNames
+    # pylint:disable=redefined-outer-name
     value = b"1"
-    with patch.object(RedisCache, 'get', return_value=value) as get_method:
-        actual = cache.get_bool(key)
+    with patch.object(RedisCache, "get", return_value=value) as get_method:
+        actual = cache.get_bool(A_KEY)
         assert actual is True
-        get_method.assert_called_with(key)
+        get_method.assert_called_with(A_KEY)
 
 
 def test_set():
     redis_client = MagicMock()
-    cache = create_redis_cache(
-        redis_client=redis_client,
-        expire_in_seconds=4
-    )
+    cache = create_redis_cache(redis_client=redis_client, expire_in_seconds=4)
     redis_client.set.side_effect = [True, False]
 
-    assert cache.set(key, value) is True
-    redis_client.set.assert_called_with(f"{namespace}:{key}", value, ex=4)
-    assert cache.set(key, value) is False
+    assert cache.set(A_KEY, A_VALUE) is True
+    redis_client.set.assert_called_with(f"{A_NAMESPACE}:{A_KEY}", A_VALUE, ex=4)
+    assert cache.set(A_KEY, A_VALUE) is False
 
 
 def test_set_complex_object(mocker):
     cache = create_redis_cache()
     # noinspection PyShadowingNames
+    # pylint:disable=redefined-outer-name
     value = {"bla": "complex"}
-    serialized = b'pickle_output'
+    serialized = b"pickle_output"
     pickle_patch = mocker.patch("pickle.dumps")
     pickle_patch.return_value = serialized
-    with patch.object(RedisCache, 'set', side_effect=[True, False]) as set_method:
-        actual = cache.set_complex_object(key, value)
+    with patch.object(RedisCache, "set", side_effect=[True, False]) as set_method:
+        actual = cache.set_complex_object(A_KEY, value)
         assert actual is True
-        set_method.assert_called_with(key, serialized)
+        set_method.assert_called_with(A_KEY, serialized)
         pickle_patch.assert_called_with(value)
-        assert cache.set_complex_object(key, value) is False
+        assert cache.set_complex_object(A_KEY, value) is False
 
 
 def test_get_complex_object(mocker):
     cache = create_redis_cache()
     deserialized = {"bla": "complex"}
     # noinspection PyShadowingNames
-    value = b'serialized'
+    # pylint:disable=redefined-outer-name
+    value = b"serialized"
     pickle_patch = mocker.patch("pickle.loads")
     pickle_patch.return_value = deserialized
-    with patch.object(RedisCache, 'get', side_effect=[value,None]) as get_method:
-        actual = cache.get_complex_object(key)
+    with patch.object(RedisCache, "get", side_effect=[value, None]) as get_method:
+        actual = cache.get_complex_object(A_KEY)
         assert actual == deserialized
-        get_method.assert_called_with(key)
+        get_method.assert_called_with(A_KEY)
         pickle_patch.assert_called_with(value)
-        assert cache.get_complex_object(key) is None
+        assert cache.get_complex_object(A_KEY) is None
 
 
 def test_gen_token():
@@ -195,58 +204,52 @@ def test_incr():
     expected = "5"
     redis_client.incr.return_value = expected
     cache = create_redis_cache(redis_client=redis_client)
-    actual = cache.incr(key)
+    actual = cache.incr(A_KEY)
     assert actual == expected
-    redis_client.incr.assert_called_with(f"{namespace}:{key}")
+    redis_client.incr.assert_called_with(f"{A_NAMESPACE}:{A_KEY}")
 
 
 def test_expire():
     redis_client = MagicMock()
     cache = create_redis_cache(redis_client=redis_client)
-    cache.expire(key, 5434)
-    redis_client.expire.assert_called_with(f"{namespace}:{key}", 5434, nx=True)
+    cache.expire(A_KEY, 5434)
+    redis_client.expire.assert_called_with(f"{A_NAMESPACE}:{A_KEY}", 5434, nx=True)
 
 
 def test_delete():
     redis_client = MagicMock()
     cache = create_redis_cache(redis_client=redis_client)
-    cache.delete(key)
-    redis_client.delete.assert_called_with(f"{namespace}:{key}")
+    cache.delete(A_KEY)
+    redis_client.delete.assert_called_with(f"{A_NAMESPACE}:{A_KEY}")
 
 
 def test_prepend_with_namespace_when_debug_enabled():
     redis_client = MagicMock()
-    cache = create_redis_cache(
-        redis_client=redis_client,
-        enable_debugger=True
-    )
+    cache = create_redis_cache(redis_client=redis_client, enable_debugger=True)
     redis_client.exists.return_value = 0
-    expected = f"{namespace}:DEBUG:{key}"
-    actual = cache._prepend_with_namespace(key)
+    expected = f"{A_NAMESPACE}:DEBUG:{A_KEY}"
+    # pylint:disable=protected-access
+    actual = cache._prepend_with_namespace(A_KEY)
     assert actual == expected
-    redis_client.exists.assert_called_with(f"{namespace}:{key}")
+    redis_client.exists.assert_called_with(f"{A_NAMESPACE}:{A_KEY}")
 
 
 def test_prepend_with_namespace_when_debug_enabled_end_non_debug_key_already_exists():
     redis_client = MagicMock()
-    cache = create_redis_cache(
-        redis_client=redis_client,
-        enable_debugger=True
-    )
+    cache = create_redis_cache(redis_client=redis_client, enable_debugger=True)
     redis_client.exists.return_value = 1
-    expected = f"{namespace}:{key}"
-    actual = cache._prepend_with_namespace(key)
+    expected = f"{A_NAMESPACE}:{A_KEY}"
+    # pylint:disable=protected-access
+    actual = cache._prepend_with_namespace(A_KEY)
     assert actual == expected
-    redis_client.exists.assert_called_with(f"{namespace}:{key}")
+    redis_client.exists.assert_called_with(f"{A_NAMESPACE}:{A_KEY}")
 
 
 def test_prepend_with_namespace_when_debug_not_enabled():
     redis_client = MagicMock()
-    cache = create_redis_cache(
-        redis_client=redis_client,
-        enable_debugger=False
-    )
-    expected = f"{namespace}:{key}"
-    actual = cache._prepend_with_namespace(key)
+    cache = create_redis_cache(redis_client=redis_client, enable_debugger=False)
+    expected = f"{A_NAMESPACE}:{A_KEY}"
+    # pylint:disable=protected-access
+    actual = cache._prepend_with_namespace(A_KEY)
     assert actual == expected
     redis_client.exists.assert_not_called()

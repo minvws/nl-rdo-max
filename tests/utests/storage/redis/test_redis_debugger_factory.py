@@ -12,7 +12,9 @@ def test_redis_get_debugger_factory():
     rgd = rgdf.create()
     assert rgd.redis_client == redis_client
     assert logging.getLevelName(rgd.log.getEffectiveLevel()) == "DEBUG"
-    assert logging.getLevelName(logging.getLogger("test").getEffectiveLevel()) == "WARNING"
+    assert (
+        logging.getLevelName(logging.getLogger("test").getEffectiveLevel()) == "WARNING"
+    )
     assert rgd.debug_set_expiry == 5 + 300
     assert rgd.key_prefix == "default_namespace"
     assert rgd.psubscribe == "__keyevent@0__:expired"
@@ -20,5 +22,5 @@ def test_redis_get_debugger_factory():
 
 def test_redis_get_debugger_factory_invalid_loglevel_raises():
     redis_client = MagicMock()
-    with(pytest.raises(ValueError)):
+    with pytest.raises(ValueError):
         RedisGetDebuggerFactory(redis_client, "invalid", 5, "default_namespace")

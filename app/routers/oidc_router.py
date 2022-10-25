@@ -13,7 +13,7 @@ oidc_router = APIRouter()
 @oidc_router.get("/.well-known/openid-configuration")
 @inject
 def well_known(
-    oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"])
+    oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
 ):
     return oidc_provider.well_known()
 
@@ -31,19 +31,19 @@ def authorize(
 @oidc_router.post(RouterConfig.accesstoken_endpoint)
 @inject
 async def accesstoken(
-        request: Request,
-        oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"])
+    request: Request,
+    oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
 ):
     return oidc_provider.token(
         TokenRequest.from_body_query_string((await request.body()).decode("utf-8")),
-        request.headers
+        request.headers,
     )
 
 
 @oidc_router.get(RouterConfig.jwks_endpoint)
 @inject
 async def jwks(
-        oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"])
+    oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
 ):
     return oidc_provider.jwks()
 

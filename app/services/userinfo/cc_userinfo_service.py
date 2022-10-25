@@ -13,17 +13,20 @@ class CCUserinfoService(UserinfoService):
         self._app_mode = app_mode
 
     def request_userinfo_for_artifact(
-            self,
-            acs_context: Dict[str, Any],
-            resolved_artifact: Dict[str, Any],
+        self,
+        acs_context: Dict[str, Any],
+        resolved_artifact: Dict[str, Any],
     ) -> str:
         if self._app_mode == "legacy":
             # noinspection PyTypeChecker
             service: Ed25519JweService = self._jwe_service
             return service.box_encrypt(
                 resolved_artifact["bsn"],
-                self._clients[acs_context["client_id"]]["client_public_nacl_key"]
+                self._clients[acs_context["client_id"]]["client_public_nacl_key"],
             )
-        return self._jwe_service.to_jwe({
-            "bsn": resolved_artifact["bsn"]
-        }, file_content(self._clients[acs_context["client_id"]]["client_certificate_path"]))
+        return self._jwe_service.to_jwe(
+            {"bsn": resolved_artifact["bsn"]},
+            file_content(
+                self._clients[acs_context["client_id"]]["client_certificate_path"]
+            ),
+        )

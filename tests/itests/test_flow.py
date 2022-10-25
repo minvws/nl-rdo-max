@@ -1,3 +1,4 @@
+# pylint:disable=unused-argument
 def test_openid_configuration(lazy_app, config, app_mode_default, client):
     app = lazy_app.value
     issuer_url = config["oidc"]["issuer"]
@@ -9,7 +10,7 @@ def test_openid_configuration(lazy_app, config, app_mode_default, client):
         "request_parameter_supported": False,
         "request_uri_parameter_supported": True,
         "require_request_uri_registration": False,
-        "grant_types_supported":["authorization_code"],
+        "grant_types_supported": ["authorization_code"],
         "frontchannel_logout_supported": False,
         "frontchannel_logout_session_supported": False,
         "backchannel_logout_supported": False,
@@ -23,5 +24,5 @@ def test_openid_configuration(lazy_app, config, app_mode_default, client):
         "response_modes_supported": ["query"],
         "subject_types_supported": ["pairwise"],
         "userinfo_endpoint": issuer_url + "/userinfo",
-        "id_token_signing_alg_values_supported": ["RS256"]
+        "id_token_signing_alg_values_supported": ["RS256"],
     }

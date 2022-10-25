@@ -1,7 +1,7 @@
 import abc
 
 
-#todo: Define interface with pubkey from client ed25519 and rsa typed
+# todo: Define interface with pubkey from client ed25519 and rsa typed
 from typing import Union, Dict
 
 

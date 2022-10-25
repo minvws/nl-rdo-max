@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 
-class ArtifactResolvingService():
+class ArtifactResolvingService:
     def resolve_artifact(self, artifact: dict) -> Dict[str, Any]:
         pass
 
@@ -16,5 +16,5 @@ class MockedArtifactResolvingService(ArtifactResolvingService):
         return {
             "bsn": acs_context["artifact"],
             "authorization_by_proxy": acs_context["authorization_by_proxy"],
-            "mocking": True
+            "mocking": True,
         }

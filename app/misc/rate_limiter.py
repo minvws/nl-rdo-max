@@ -6,7 +6,7 @@ from app.exceptions.max_exceptions import (
     TooManyRequestsFromOrigin,
     TooBusyError,
     ExpectedCacheValue,
-    DependentServiceOutage
+    DependentServiceOutage,
 )
 
 
@@ -20,29 +20,28 @@ class RateLimiter:
         primary_identity_provider_user_limit_key: str,
         overflow_identity_provider_user_limit_key: str,
         ipaddress_max_count: int,
-        ipaddress_max_count_expire_seconds: int
+        ipaddress_max_count_expire_seconds: int,
     ):
         self._cache = cache
         self._identity_provider_outage_key = identity_provider_outage_key
         self._primary_identity_provider_key = primary_identity_provider_key
         self._overflow_identity_provider_key = overflow_identity_provider_key
-        self._primary_identity_provider_user_limit_key = primary_identity_provider_user_limit_key
-        self._overflow_identity_provider_user_limit_key = overflow_identity_provider_user_limit_key
+        self._primary_identity_provider_user_limit_key = (
+            primary_identity_provider_user_limit_key
+        )
+        self._overflow_identity_provider_user_limit_key = (
+            overflow_identity_provider_user_limit_key
+        )
         self._ipaddress_max_count = ipaddress_max_count
         self._ipaddress_max_count_expire_seconds = ipaddress_max_count_expire_seconds
 
-    def get_identity_provider_name_and_validate_request(
-        self,
-        ipaddress: str
-    ) -> str:
-        self._ip_limit_test(
-            ipaddress=ipaddress
-        )
+    def get_identity_provider_name_and_validate_request(self, ipaddress: str) -> str:
+        self._ip_limit_test(ipaddress=ipaddress)
         primary_idp = self._get_primary_identity_provider_name()
         try:
             self._user_limit_test(
                 user_limit_key=self._primary_identity_provider_user_limit_key,
-                identity_provider_name=primary_idp
+                identity_provider_name=primary_idp,
             )
             return primary_idp
         except TooBusyError as too_busy_error:
@@ -50,7 +49,7 @@ class RateLimiter:
             if overflow_idp is not None:
                 self._user_limit_test(
                     user_limit_key=self._overflow_identity_provider_user_limit_key,
-                    identity_provider_name=overflow_idp
+                    identity_provider_name=overflow_idp,
                 )
                 return overflow_idp
             raise too_busy_error
@@ -70,12 +69,12 @@ class RateLimiter:
     ) -> None:
         current_count = self._increase_ip_count(ipaddress)
         if current_count > self._ipaddress_max_count:
-            raise TooManyRequestsFromOrigin(str(self._ipaddress_max_count_expire_seconds))
+            raise TooManyRequestsFromOrigin(
+                str(self._ipaddress_max_count_expire_seconds)
+            )
 
     def _user_limit_test(
-        self,
-        user_limit_key: str,
-        identity_provider_name: str
+        self, user_limit_key: str, identity_provider_name: str
     ) -> None:
         user_limit = self._cache.get_int(user_limit_key)
         if user_limit is None:

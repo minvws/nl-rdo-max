@@ -8,7 +8,10 @@ from jinja2 import Template
 from starlette.background import BackgroundTask
 from starlette.responses import HTMLResponse, RedirectResponse
 
-from app.exceptions.max_exceptions import AuthorizationByProxyDisabled, UnexpectedAuthnBinding
+from app.exceptions.max_exceptions import (
+    AuthorizationByProxyDisabled,
+    UnexpectedAuthnBinding,
+)
 from app.models.saml.exceptions import ScopingAttributesNotAllowed
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
@@ -21,68 +24,71 @@ def _load_template(path, filename):
         return template_file.read()
 
 
-class SAMLResponseFactory():
+class SAMLResponseFactory:
     def __init__(
-            self,
-            html_templates_path: str,
-            saml_base_issuer: str,
-            oidc_authorize_endpoint: str
+        self,
+        html_templates_path: str,
+        saml_base_issuer: str,
+        oidc_authorize_endpoint: str,
     ):
         self._saml_base_issuer = saml_base_issuer
         self._oidc_authorize_endpoint = oidc_authorize_endpoint
 
-        self._authn_request_template = _load_template(html_templates_path, "authn_request.html")
-        self._assertion_consumer_service_template = _load_template(html_templates_path, "assertion_consumer_service.html")
+        self._authn_request_template = _load_template(
+            html_templates_path, "authn_request.html"
+        )
+        self._assertion_consumer_service_template = _load_template(
+            html_templates_path, "assertion_consumer_service.html"
+        )
 
-    def create_saml_response(self, mock_digid, saml_identity_provider, login_digid_request, randstate):
+    def create_saml_response(
+        self, mock_digid, saml_identity_provider, login_digid_request, randstate
+    ):
         if mock_digid:
             return self._create_digid_mock_response(
-                saml_identity_provider,
-                login_digid_request,
-                randstate)
+                saml_identity_provider, login_digid_request, randstate
+            )
         if saml_identity_provider.authn_binding.endswith("POST"):
             return self._create_saml_authn_submit_response(
-                saml_identity_provider,
-                login_digid_request,
-                randstate)
+                saml_identity_provider, login_digid_request, randstate
+            )
         if saml_identity_provider.authn_binding.endswith("Redirect"):
-            return self._create_saml_authn_redirect_response(saml_identity_provider,
-                                                             login_digid_request)
+            return self._create_saml_authn_redirect_response(
+                saml_identity_provider, login_digid_request
+            )
         raise UnexpectedAuthnBinding(
             f"Unknown Authn binding {saml_identity_provider.authn_binding} "
             f"configured in idp metadata: {saml_identity_provider.name}"
         )
 
     def create_saml_meta_redirect_response(
-            self,
-            redirect_url: str,
-            status_code: int = 200,
-            headers: dict = None,
-            media_type: str = None,
-            background: BackgroundTask = None,
+        self,
+        redirect_url: str,
+        status_code: int = 200,
+        headers: dict = None,
+        media_type: str = None,
+        background: BackgroundTask = None,
     ):
         template = Template(self._assertion_consumer_service_template)
-        rendered = template.render({
-            "redirect_url": redirect_url
-        })
+        rendered = template.render({"redirect_url": redirect_url})
 
         return HTMLResponse(
             content=rendered,
             status_code=status_code,
             headers=headers,
             media_type=media_type,
-            background=background
+            background=background,
         )
 
     def _create_saml_authn_submit_response(
-            self,
-            saml_identity_provider,
-            login_digid_request,
-            randstate,
-            status_code: int = 200,
-            headers: dict = None,
-            media_type: str = None,
-            background: BackgroundTask = None
+        self,
+        saml_identity_provider,
+        login_digid_request,
+        randstate,
+        status_code: int = 200,
+        headers: dict = None,
+        media_type: str = None,
+        background: BackgroundTask = None,
     ):
         try:
             authn_request = saml_identity_provider.create_authn_request(
@@ -91,24 +97,25 @@ class SAMLResponseFactory():
         except ScopingAttributesNotAllowed as scoping_not_allowed:
             raise AuthorizationByProxyDisabled() from scoping_not_allowed
         template = Template(self._authn_request_template)
-        rendered = template.render({
-            "sso_url": authn_request.sso_url,
-            "saml_request": authn_request.get_base64_string().decode(),
-            "relay_state": randstate,
-        }
+        rendered = template.render(
+            {
+                "sso_url": authn_request.sso_url,
+                "saml_request": authn_request.get_base64_string().decode(),
+                "relay_state": randstate,
+            }
         )
         return HTMLResponse(
             content=rendered,
             status_code=status_code,
             headers=headers,
             media_type=media_type,
-            background=background
+            background=background,
         )
 
     def _create_saml_authn_redirect_response(
-            self,
-            saml_identity_provider,
-            login_digid_request,
+        self,
+        saml_identity_provider,
+        login_digid_request,
     ):
         request = {
             "https": "on",
@@ -123,7 +130,9 @@ class SAMLResponseFactory():
             )
             raise AuthorizationByProxyDisabled()
 
-        auth = OneLogin_Saml2_Auth(request, custom_base_path=saml_identity_provider.base_dir)
+        auth = OneLogin_Saml2_Auth(
+            request, custom_base_path=saml_identity_provider.base_dir
+        )
         return RedirectResponse(
             auth.login(
                 return_to=login_digid_request.state,
@@ -132,11 +141,16 @@ class SAMLResponseFactory():
             )
         )
 
-    def _create_digid_mock_response(self, saml_identity_provider, login_digid_request, randstate,
-                                    status_code: int = 200,
-                                    headers: dict = None,
-                                    media_type: str = None,
-                                    background: BackgroundTask = None):
+    def _create_digid_mock_response(
+        self,
+        saml_identity_provider,
+        login_digid_request,
+        randstate,
+        status_code: int = 200,
+        headers: dict = None,
+        media_type: str = None,
+        background: BackgroundTask = None,
+    ):
         base64_authn_request = base64.urlsafe_b64encode(
             json.dumps(login_digid_request.authorize_request.dict()).encode()
         ).decode()
@@ -144,17 +158,17 @@ class SAMLResponseFactory():
 
         authn_request = saml_identity_provider.create_authn_request([], [])
         template = Template(self._authn_request_template)
-        rendered = template.render({
-            "sso_url": sso_url,
-            "saml_request": authn_request.get_base64_string().decode(),
-            "relay_state": randstate,
-        })
+        rendered = template.render(
+            {
+                "sso_url": sso_url,
+                "saml_request": authn_request.get_base64_string().decode(),
+                "relay_state": randstate,
+            }
+        )
         return HTMLResponse(
             content=rendered,
             status_code=status_code,
             headers=headers,
             media_type=media_type,
-            background=background
+            background=background,
         )
-
-

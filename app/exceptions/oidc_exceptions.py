@@ -32,5 +32,3 @@ class InvalidClientException(Exception):
 class InvalidRedirectUriException(Exception):
     def __init__(self) -> None:
         super().__init__()
-
-

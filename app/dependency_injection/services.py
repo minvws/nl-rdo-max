@@ -6,9 +6,15 @@ from app.providers.digid_mock_provider import DigidMockProvider
 from app.providers.oidc_provider import OIDCProvider
 from app.providers.saml_provider import SAMLProvider
 from app.misc.rate_limiter import RateLimiter
-from app.services.saml.artifact_resolving_service import ArtifactResolvingService, MockedArtifactResolvingService
+from app.services.saml.artifact_resolving_service import (
+    ArtifactResolvingService,
+    MockedArtifactResolvingService,
+)
 from app.services.userinfo.cc_userinfo_service import CCUserinfoService
-from app.services.userinfo.cibg_userinfo_service import CIBGUserinfoService, MockedCIBGUserinfoService
+from app.services.userinfo.cibg_userinfo_service import (
+    CIBGUserinfoService,
+    MockedCIBGUserinfoService,
+)
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 from app.services.saml.saml_response_factory import SAMLResponseFactory
 
@@ -26,7 +32,7 @@ class Services(containers.DeclarativeContainer):
         SAMLResponseFactory,
         html_templates_path=config.saml.html_templates_path,
         saml_base_issuer=config.saml.base_issuer,
-        oidc_authorize_endpoint=config.oidc.authorize_endpoint
+        oidc_authorize_endpoint=config.oidc.authorize_endpoint,
     )
 
     rate_limiter = providers.Singleton(
@@ -38,18 +44,16 @@ class Services(containers.DeclarativeContainer):
         primary_identity_provider_user_limit_key=config.ratelimiter.primary_identity_provider_user_limit_key,
         overflow_identity_provider_user_limit_key=config.ratelimiter.overflow_identity_provider_user_limit_key,
         ipaddress_max_count=config.ratelimiter.ipaddress_max_count.as_int(),
-        ipaddress_max_count_expire_seconds=config.ratelimiter.ipaddress_max_count_expire_seconds.as_int()
+        ipaddress_max_count_expire_seconds=config.ratelimiter.ipaddress_max_count_expire_seconds.as_int(),
     )
 
     saml_identity_provider_service = providers.Singleton(
         SamlIdentityProviderService,
         identity_providers_path=config.saml.identity_providers_path,
-        templates_path=config.saml.xml_templates_path
+        templates_path=config.saml.xml_templates_path,
     )
 
-    _artifact_resolving_service = providers.Singleton(
-        ArtifactResolvingService
-    )
+    _artifact_resolving_service = providers.Singleton(ArtifactResolvingService)
 
     mocked_artifact_resolving_service = providers.Singleton(
         MockedArtifactResolvingService
@@ -58,30 +62,28 @@ class Services(containers.DeclarativeContainer):
     artifact_resolving_service = providers.Selector(
         config.app.mock_digid.as_(str.lower),
         true=mocked_artifact_resolving_service,
-        false=_artifact_resolving_service
+        false=_artifact_resolving_service,
     )
 
-    cibg_external_user_authentication_service = providers.Singleton(
-        CIBGUserinfoService
-    )
+    cibg_external_user_authentication_service = providers.Singleton(CIBGUserinfoService)
 
     mocked_cibg_userinfo_service = providers.Singleton(
         MockedCIBGUserinfoService,
         jwe_service=encryption_services.jwe_service,
-        clients=pyop_services.clients
+        clients=pyop_services.clients,
     )
 
     cc_userinfo_service = providers.Singleton(
         CCUserinfoService,
         jwe_service=encryption_services.jwe_service,
         clients=pyop_services.clients,
-        app_mode=config.app.app_mode
+        app_mode=config.app.app_mode,
     )
 
     userinfo_service = providers.Selector(
         config.app.userinfo_service,
         cc=cc_userinfo_service,
-        cibg_mock=mocked_cibg_userinfo_service
+        cibg_mock=mocked_cibg_userinfo_service,
     )
 
     oidc_provider = providers.Singleton(
@@ -95,18 +97,18 @@ class Services(containers.DeclarativeContainer):
         saml_response_factory=saml_response_factory,
         artifact_resolving_service=artifact_resolving_service,
         userinfo_service=userinfo_service,
-        app_mode=config.app.app_mode
+        app_mode=config.app.app_mode,
     )
 
     digid_mock_provider = providers.Singleton(
         DigidMockProvider,
         saml_response_factory=saml_response_factory,
-        saml_identity_provider_service=saml_identity_provider_service
+        saml_identity_provider_service=saml_identity_provider_service,
     )
 
     saml_provider = providers.Singleton(
         SAMLProvider,
         authentication_cache=storage.authentication_cache,
         pyop_provider=pyop_services.pyop_provider,
-        saml_response_factory=saml_response_factory
+        saml_response_factory=saml_response_factory,
     )

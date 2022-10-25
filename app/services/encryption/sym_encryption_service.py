@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: EUPL-1.2
 #
-#todo: Add copyright to every file
+# todo: Add copyright to every file
 import base64
 import json
 
@@ -13,10 +13,8 @@ from nacl.secret import SecretBox
 from nacl.encoding import Base64Encoder
 
 
-class SymEncryptionService():
-    def __init__(
-            self, raw_local_sym_key: str
-    ) -> None:
+class SymEncryptionService:
+    def __init__(self, raw_local_sym_key: str) -> None:
         self.secret_box = SecretBox(bytes.fromhex(raw_local_sym_key))
 
     def symm_encrypt(self, data: bytes) -> bytes:

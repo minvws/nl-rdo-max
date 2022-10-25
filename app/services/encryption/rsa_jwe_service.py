@@ -6,11 +6,7 @@ from app.services.encryption.jwe_service import JweService
 
 
 class RsaJweService(JweService):
-    def __init__(
-            self,
-            jwe_sign_priv_key_path: str,
-            jwe_sign_crt_path: str
-    ):
+    def __init__(self, jwe_sign_priv_key_path: str, jwe_sign_crt_path: str):
         self._jwe_sign_priv_key = file_content(jwe_sign_priv_key_path)
         self._jwe_sign_crt_path = file_content(jwe_sign_crt_path)
         self._jwk_sign_key = JWK.from_pem(self._jwe_sign_priv_key.encode())
@@ -31,8 +27,10 @@ class RsaJweService(JweService):
         jwt_token = JWT(
             {
                 "alg": "RS256",
-                "x5t": get_fingerprint(self._jwe_sign_crt_path.encode("utf-8")).decode(),
-                "kid": crt.kid
+                "x5t": get_fingerprint(
+                    self._jwe_sign_crt_path.encode("utf-8")
+                ).decode(),
+                "kid": crt.kid,
             },
             claims=data,
         )

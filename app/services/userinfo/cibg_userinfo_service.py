@@ -11,9 +11,7 @@ class CIBGUserinfoService(UserinfoService):
         pass
 
     def request_userinfo_for_artifact(
-            self,
-            acs_context: Dict[str, Any],
-            resolved_artifact: Dict[str, Any]
+        self, acs_context: Dict[str, Any], resolved_artifact: Dict[str, Any]
     ) -> str:
         raise Exception("unimplemented")
 
@@ -25,16 +23,19 @@ class MockedCIBGUserinfoService(CIBGUserinfoService):
         self._clients = clients
 
     def request_userinfo_for_artifact(
-            self,
-            acs_context: Dict[str, Any],
-            resolved_artifact: Dict[str, Any]
+        self, acs_context: Dict[str, Any], resolved_artifact: Dict[str, Any]
     ) -> str:
         if not resolved_artifact["mocking"]:
             return super().request_userinfo_for_artifact(resolved_artifact)
-        return self._jwe_service.to_jwe({
-            "uraNumber": self._clients[acs_context["client_id"]]["external_id"],
-            "uziNumber": resolved_artifact["bsn"],
-            "roleCodes": ["01.041", "30.000", "01.010", "01.011"],
-            "givenName": "givenName",
-            "surName": "surName",
-        }, file_content(self._clients[acs_context["client_id"]]["client_certificate_path"]))
+        return self._jwe_service.to_jwe(
+            {
+                "uraNumber": self._clients[acs_context["client_id"]]["external_id"],
+                "uziNumber": resolved_artifact["bsn"],
+                "roleCodes": ["01.041", "30.000", "01.010", "01.011"],
+                "givenName": "givenName",
+                "surName": "surName",
+            },
+            file_content(
+                self._clients[acs_context["client_id"]]["client_certificate_path"]
+            ),
+        )

@@ -87,7 +87,9 @@ class RedisCache(Cache):
         return False
 
     def set(self, key: str, value: Any) -> bool:
-        return self.redis_client.set(self._prepend_with_namespace(key), value, ex=self.expires_in_s)
+        return self.redis_client.set(
+            self._prepend_with_namespace(key), value, ex=self.expires_in_s
+        )
 
     def set_complex_object(self, key: str, value: Any) -> bool:
         return self.set(key, _serialize(value))

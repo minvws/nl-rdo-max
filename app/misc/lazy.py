@@ -1,7 +1,7 @@
 from typing import TypeVar, Generic, Callable
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class Lazy(Generic[T]):
@@ -23,6 +23,7 @@ class Lazy(Generic[T]):
         if not self._initialized:
             self._initialize()
         if self._exception is not None:
-            raise ValueError('Unable to get value from lazy object') \
-                from self._exception
+            raise ValueError(
+                "Unable to get value from lazy object"
+            ) from self._exception
         return self._value

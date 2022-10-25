@@ -16,20 +16,22 @@ from app.services.saml.saml_identity_provider_service import SamlIdentityProvide
 
 class DigidMockProvider:
     def __init__(
-            self,
-            saml_response_factory: SAMLResponseFactory,
-            saml_identity_provider_service: SamlIdentityProviderService
+        self,
+        saml_response_factory: SAMLResponseFactory,
+        saml_identity_provider_service: SamlIdentityProviderService,
     ):
         self._saml_response_factory = saml_response_factory
         self._saml_identity_provider_service = saml_identity_provider_service
 
     def login_digid(self, login_digid_request: LoginDigiDRequest):
-        identity_provider = self._saml_identity_provider_service.get_identity_provider(login_digid_request.idp_name)
+        identity_provider = self._saml_identity_provider_service.get_identity_provider(
+            login_digid_request.idp_name
+        )
         return self._saml_response_factory.create_saml_response(
             mock_digid=not login_digid_request.force_digid,
             saml_identity_provider=identity_provider,
             login_digid_request=login_digid_request,
-            randstate=login_digid_request.state
+            randstate=login_digid_request.state,
         )
 
     @staticmethod

@@ -2,31 +2,22 @@
 import logging
 from configparser import ConfigParser
 
-from dependency_injector import providers
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
 
-from app.dependency_injection.container import Container
 from app.dependency_injection.config import get_config
-from app.routers.digid_mock_router import digid_mock_router
-from app.routers.saml_router import saml_router
-from app.routers.oidc_router import oidc_router
-
-from app.exceptions.oidc_exceptions import (
-    AuthorizeEndpointException,
-    InvalidClientException,
-    InvalidRedirectUriException,
-)
-
+from app.dependency_injection.container import Container
 from app.exceptions.oidc_exception_handlers import (
     invalid_client_exception_handler,
-    invalid_redirect_uri_exception_handler,
-    server_error_exception_handler
 )
+from app.exceptions.oidc_exceptions import (
+    InvalidClientException,
+)
+from app.routers.digid_mock_router import digid_mock_router
+from app.routers.oidc_router import oidc_router
+from app.routers.saml_router import saml_router
 
-_exception_handlers = [
-    [InvalidClientException, invalid_client_exception_handler]
-]
+_exception_handlers = [[InvalidClientException, invalid_client_exception_handler]]
 
 
 def kwargs_from_config():
@@ -37,13 +28,15 @@ def kwargs_from_config():
         "port": config.getint("uvicorn", "port"),
         "reload": config.getboolean("uvicorn", "reload"),
         "proxy_headers": True,
-        "workers": config.getint("uvicorn", "workers")
+        "workers": config.getint("uvicorn", "workers"),
     }
     if config.getboolean("uvicorn", "use_ssl"):
-        kwargs["ssl_keyfile"] = config.get("uvicorn", "base_dir") + \
-            "/" + config.get("uvicorn", "key_file")
-        kwargs["ssl_certfile"] = config.get("uvicorn", "base_dir") + \
-            "/" + config.get("uvicorn", "cert_file")
+        kwargs["ssl_keyfile"] = (
+            config.get("uvicorn", "base_dir") + "/" + config.get("uvicorn", "key_file")
+        )
+        kwargs["ssl_certfile"] = (
+            config.get("uvicorn", "base_dir") + "/" + config.get("uvicorn", "cert_file")
+        )
     return kwargs
 
 
@@ -57,8 +50,7 @@ def run():
 
 
 def create_fastapi_app(
-    config: ConfigParser = None,
-    container: Container = None
+    config: ConfigParser = None, container: Container = None
 ) -> FastAPI:
     container = container if container is not None else Container()
     config: ConfigParser = config if config is not None else get_config()
@@ -72,18 +64,17 @@ def create_fastapi_app(
     )
 
     container.wire(
-        modules=["app.routers.saml_router",
-                 "app.routers.oidc_router",
-                 "app.routers.digid_mock_router"
-                 ])
+        modules=[
+            "app.routers.saml_router",
+            "app.routers.oidc_router",
+            "app.routers.digid_mock_router",
+        ]
+    )
 
     container.config.from_dict(config)
     is_uvicorn_app = config.getboolean("app", "uvicorn", fallback=False)
     is_mock_digid = config.getboolean("app", "mock_digid", fallback=False)
-    fastapi_kwargs = {
-        "docs_url": "/ui",
-        "redoc_url": "/docs"
-    } if is_uvicorn_app else {}
+    fastapi_kwargs = {"docs_url": "/ui", "redoc_url": "/docs"} if is_uvicorn_app else {}
     fastapi = FastAPI(**fastapi_kwargs)
     fastapi.include_router(saml_router)
     fastapi.include_router(oidc_router)

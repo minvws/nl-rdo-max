@@ -4,12 +4,10 @@ from app.exceptions.oidc_exceptions import (
     InvalidClientException,
     InvalidRedirectUriException,
     UNAUTHORIZED_CLIENT,
-    SERVER_ERROR
+    SERVER_ERROR,
 )
 
-from app.exceptions.max_exceptions import (
-    ServerErrorException
-)
+from app.exceptions.max_exceptions import ServerErrorException
 
 from fastapi import Request
 
@@ -17,10 +15,7 @@ from fastapi import Request
 templates = Jinja2Templates(directory="html/jinja2")
 
 
-async def invalid_client_exception_handler(
-        request: Request,
-        _: InvalidClientException
-):
+async def invalid_client_exception_handler(request: Request, _: InvalidClientException):
     redirect_uri = request.query_params["redirect_uri"]
     state = request.query_params["state"]
     client_id = request.query_params["client_id"]
@@ -34,13 +29,12 @@ async def invalid_client_exception_handler(
             "exception_title": error,
             "exception_message": error_description,
             "redirect_uri": redirect_uri,
-        }
+        },
     )
 
 
 async def invalid_redirect_uri_exception_handler(
-        request: Request,
-        _: InvalidRedirectUriException
+    request: Request, _: InvalidRedirectUriException
 ):
     redirect_uri = request.query_params["redirect_uri"]
     state = request.query_params["state"]
@@ -54,14 +48,11 @@ async def invalid_redirect_uri_exception_handler(
             "exception_title": error,
             "exception_message": error_description,
             "redirect_uri": redirect_uri,
-        }
+        },
     )
 
 
-async def server_error_exception_handler(
-        request: Request,
-        _: ServerErrorException
-):
+async def server_error_exception_handler(request: Request, _: ServerErrorException):
     redirect_uri = request.query_params["redirect_uri"]
     state = request.query_params["state"]
     error = SERVER_ERROR
@@ -74,5 +65,5 @@ async def server_error_exception_handler(
             "exception_title": error,
             "exception_message": error_description,
             "redirect_uri": redirect_uri,
-        }
+        },
     )

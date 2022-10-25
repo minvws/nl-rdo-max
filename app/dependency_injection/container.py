@@ -12,27 +12,18 @@ class Container(containers.DeclarativeContainer):
 
     providers.Configuration()
 
-    encryption_services = providers.Container(
-        EncryptionServices,
-        config=config
-    )
+    encryption_services = providers.Container(EncryptionServices, config=config)
 
     storage = providers.Container(
-        Storage,
-        config=config,
-        encryption_services=encryption_services
+        Storage, config=config, encryption_services=encryption_services
     )
 
-    pyop_services = providers.Container(
-        PyopServices,
-        config=config,
-        storage=storage
-    )
+    pyop_services = providers.Container(PyopServices, config=config, storage=storage)
 
     services = providers.Container(
         Services,
         config=config,
         storage=storage,
         pyop_services=pyop_services,
-        encryption_services=encryption_services
+        encryption_services=encryption_services,
     )
