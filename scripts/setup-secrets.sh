@@ -6,7 +6,9 @@ SECRETS_DIR=secrets
 SAML_DIR=saml
 
 create_key_pair () {
+  echo "generating keypair and certificate $1/$2 with CN:$3"
   openssl genrsa -out $1/$2.key 2048
+  openssl rsa -in $1/$2.key -pubout > $1/$2.pub
 	openssl req -new -sha256 \
 	  -key $1/$2.key \
 	  -subj "/C=US/CN=$3" \
@@ -18,10 +20,6 @@ create_key_pair () {
 	  -CAcreateserial \
 	  -out $1/$2.crt
   rm $1/$2.csr
-}
-
-create_pub_key () {
-  openssl rsa -in $1/$2.key -pubout > $1/$2.pub
 }
 
 mkdir -p ./$SECRETS_DIR/userinfo
@@ -42,21 +40,26 @@ if [[ ! -f $SECRETS_DIR/cacert.crt ]]; then
 fi
 
 ###
-# OIDC JWT signing
+# SSL certs
 ###
 if [[ ! -f $SECRETS_DIR/ssl/server.crt ]]; then
   create_key_pair $SECRETS_DIR/ssl "server" "localhost"
-  create_pub_key $SECRETS_DIR/ssl "server"
-  cp $SECRETS_DIR/userinfo/jwe_sign.crt $SECRETS_DIR/jwks-certs
 fi
 
 ###
 # OIDC JWT signing
 ###
+if [[ ! -f $SECRETS_DIR/oidc/selfsigned.crt ]]; then
+  create_key_pair $SECRETS_DIR/oidc "selfsigned" "oidc_sign"
+  cp $SECRETS_DIR/oidc/selfsigned.crt $SECRETS_DIR/jwks-certs/
+fi
+
+###
+# userinfo JWT signing
+###
 if [[ ! -f $SECRETS_DIR/userinfo/jwe_sign.crt ]]; then
   create_key_pair $SECRETS_DIR/userinfo "jwe_sign" "max-jwe"
-  create_pub_key $SECRETS_DIR/userinfo "jwe_sign"
-  cp $SECRETS_DIR/userinfo/jwe_sign.crt $SECRETS_DIR/jwks-certs
+  cp $SECRETS_DIR/userinfo/jwe_sign.crt $SECRETS_DIR/jwks-certs/
 fi
 
 ###
@@ -65,5 +68,33 @@ fi
 if [[ ! -f $SECRETS_DIR/clients/test_client/test_client.pub ]]; then
   mkdir -p $SECRETS_DIR/clients/test_client
   create_key_pair $SECRETS_DIR/clients/test_client "test_client" "max-test-client"
-  create_pub_key $SECRETS_DIR/clients/test_client "test_client"
+fi
+
+###
+# saml tvs
+###
+if [[ ! -f $SAML_DIR/tvs/certs/sp.crt ]]; then
+  mkdir -p $SAML_DIR/tvs/certs
+  create_key_pair $SAML_DIR/tvs/certs "sp" "tvs-sp"
+fi
+
+###
+# saml digid
+###
+if [[ ! -f $SAML_DIR/digid/certs/sp.crt ]]; then
+  mkdir -p $SAML_DIR/digid/certs
+  create_key_pair $SAML_DIR/digid/certs "sp" "digid-sp"
+fi
+
+###
+# saml digid
+###
+if [[ ! -f $SECRETS_DIR/tls.crt ]]; then
+  create_key_pair $SECRETS_DIR "tls" "max-tls"
+fi
+###
+# saml digid
+###
+if [[ ! -f $SECRETS_DIR/userinfo/cibg-client-cert.crt ]]; then
+  create_key_pair $SECRETS_DIR/userinfo "cibg-client-cert" "cibg-client-cert"
 fi

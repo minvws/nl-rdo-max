@@ -13,6 +13,7 @@ class MaxPyopProvider(PyopProvider):
         super().__init__(signing_key, configuration_information, authz_state, clients, userinfo,
                          id_token_lifetime=id_token_lifetime, extra_scopes=extra_scopes)
         self._jwks_certs = super().jwks
+        self._jwks_certs["keys"][0]["kid"] = "oidc_signing_key"
         if trusted_certificates_directory is not None:
             self._keys = {}
             for filename in os.listdir(trusted_certificates_directory):

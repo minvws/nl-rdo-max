@@ -12,6 +12,7 @@ __pycache__
 
 ## Configuration and secrets
 secrets
+tests/secrets
 clients.json
 max.conf
 *.crt
