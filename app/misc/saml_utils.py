@@ -12,6 +12,7 @@ from app.models.saml.constants import NAMESPACES
 SOAP_NS = "http://www.w3.org/2003/05/soap-envelope"
 
 
+# todo: Test module!
 def from_settings(
     settings_dict, selector: str, default: Optional[str] = None
 ) -> Optional[str]:

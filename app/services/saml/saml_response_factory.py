@@ -10,7 +10,6 @@ from starlette.responses import HTMLResponse, RedirectResponse
 
 from app.exceptions.max_exceptions import AuthorizationByProxyDisabled, UnexpectedAuthnBinding
 from app.models.saml.exceptions import ScopingAttributesNotAllowed
-from app.models.saml.saml_request import AuthNRequest
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
 log = logging.getLogger(__package__)
@@ -20,6 +19,7 @@ def _load_template(path, filename):
     template_path = os.path.join(path, filename)
     with open(template_path, "r", encoding="utf-8") as template_file:
         return template_file.read()
+
 
 class SAMLResponseFactory():
     def __init__(

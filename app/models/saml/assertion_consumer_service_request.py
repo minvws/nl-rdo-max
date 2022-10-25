@@ -2,11 +2,11 @@ from pydantic import BaseModel, validator
 import html
 import nacl.hash
 
+
 class AssertionConsumerServiceRequest(BaseModel):
     SAMLart: str
     RelayState: str
     mocking: bool
-
 
     # pylint: disable=invalid-name
     # noinspection PyPep8Naming

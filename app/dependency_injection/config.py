@@ -4,7 +4,7 @@ _PATH = 'max.conf'
 _CONFIG = None
 
 
-def get_config(path=None):
+def get_config(path=None) -> configparser.ConfigParser:
     """
     Use this method only when it's not possible to inject config variables
     """

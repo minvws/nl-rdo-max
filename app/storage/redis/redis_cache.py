@@ -12,7 +12,7 @@ import pickle
 
 from redis import StrictRedis
 
-from .cache import Cache
+from app.storage.cache import Cache
 from .redis_debugger import RedisGetDebuggerFactory
 
 
@@ -58,22 +58,23 @@ class RedisCache(Cache):
             self.redis_debugger.start()
 
     def get(self, key: str) -> Any:
-        return self.redis_client.get(self._prepend_with_namespace(key))
+        key_with_namespace = self._prepend_with_namespace(key)
+        ret_value = self.redis_client.get(key_with_namespace)
+        if self.enable_debugger:
+            self.redis_debugger.debug_get(key_with_namespace, ret_value)
+        return ret_value
 
     def get_int(self, key: str) -> Optional[int]:
         i_int = self.get(key)
-        if isinstance(i_int, int):
-            return i_int
         if isinstance(i_int, bytes):
-            return int(i_int.decode("utf-8"))
-        if isinstance(i_int, str):
-            return int(i_int)
+            try:
+                return int(i_int.decode("utf-8"))
+            except ValueError as _:
+                pass
         return None
 
     def get_string(self, key: str) -> Optional[str]:
         s_string = self.get(key)
-        if isinstance(s_string, str):
-            return s_string
         if isinstance(s_string, bytes):
             return s_string.decode("utf-8")
         return None
@@ -81,31 +82,18 @@ class RedisCache(Cache):
     def get_bool(self, key: str) -> bool:
         b_byte = self.get(key)
         if b_byte is not None:
-            if b_byte is True:
-                return True
-            if b_byte == 1:
-                return True
             b_byte_lower = b_byte.decode("utf-8").lower()
             return b_byte_lower == "1" or b_byte_lower == "true"
         return False
 
-    def set(self, key: str, value: Any) -> Any:
-        return self.redis_client.set(self._prepend_with_namespace(key), value)
+    def set(self, key: str, value: Any) -> bool:
+        return self.redis_client.set(self._prepend_with_namespace(key), value, ex=self.expires_in_s)
 
-    def get_serialized(self, key: str) -> Any:
-        return _deserialize(self.redis_client.get(self._prepend_with_namespace(key)))
+    def set_complex_object(self, key: str, value: Any) -> bool:
+        return self.set(key, _serialize(value))
 
-    def set_complex_object(self, key: str, value: Any) -> Any:
-        return self.redis_client.set(self._prepend_with_namespace(key), _serialize(value))
-
-    def get_complex_object(self, key: str) -> Any:
-        return _deserialize(self.redis_client.get(self._prepend_with_namespace(key)))
-
-    def _prepend_with_namespace(self, key: str) -> str:
-        namespace_key = f"{self.key_prefix}:{key}"
-        if self.enable_debugger and not self.redis_client.exists(namespace_key) > 0:
-            return f"{self.key_prefix}:DEBUG:{key}"
-        return namespace_key
+    def get_complex_object(self, key: str) -> bool:
+        return _deserialize(self.get(key))
 
     def gen_token(self) -> Text:
         """
@@ -125,11 +113,17 @@ class RedisCache(Cache):
         Expires the value of a key
         """
         key = self._prepend_with_namespace(key)
-        return self.redis_client.expire(key, time_in_seconds, nx=True)
+        self.redis_client.expire(key, time_in_seconds, nx=True)
 
     def delete(self, key):
         """
         Deletes the value of the key
         """
         key = self._prepend_with_namespace(key)
-        return self.redis_client.delete(key)
+        self.redis_client.delete(key)
+
+    def _prepend_with_namespace(self, key: str) -> str:
+        namespace_key = f"{self.key_prefix}:{key}"
+        if self.enable_debugger and not self.redis_client.exists(namespace_key) > 0:
+            return f"{self.key_prefix}:DEBUG:{key}"
+        return namespace_key

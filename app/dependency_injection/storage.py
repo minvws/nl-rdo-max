@@ -1,11 +1,10 @@
 # pylint: disable=c-extension-no-member, too-few-public-methods
 
 from dependency_injector import containers, providers
-from app.services.certificate_store import CertificateStore
-from app.storage.redis_wrapper import RedisWrapper
-from app.storage.redis_client import create_redis_client
-from app.storage.redis_cache import RedisCache
-from app.storage.redis_debugger import RedisGetDebuggerFactory
+from app.storage.redis.redis_wrapper import RedisWrapper
+from app.storage.redis.redis_client import create_redis_client
+from app.storage.redis.redis_cache import RedisCache
+from app.storage.redis.redis_debugger import RedisGetDebuggerFactory
 from app.misc.utils import upper
 from app.storage.authentication_cache import AuthenticationCache
 
@@ -14,11 +13,6 @@ class Storage(containers.DeclarativeContainer):
     config = providers.Configuration()
 
     encryption_services = providers.DependenciesContainer()
-
-    certificate_store = providers.Singleton(
-        CertificateStore,
-        config.oidc.certificates_directory,
-    )
 
     redis_client = providers.Singleton(create_redis_client, config.redis)
 
@@ -70,5 +64,6 @@ class Storage(containers.DeclarativeContainer):
     authentication_cache = providers.Singleton(
         AuthenticationCache,
         cache=cache,
-        authentication_context_encryption_service=encryption_services.user_authentication_encryption_service
+        authentication_context_encryption_service=encryption_services.user_authentication_encryption_service,
+        app_mode=config.app.app_mode
     )

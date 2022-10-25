@@ -30,27 +30,31 @@ def _create_x25519_pubkey(key):
 
 
 class Ed25519JweService(JweService):
-    def __init__(self, raw_sign_key: bytes, raw_enc_key: bytes):
-        sign_key = PrivateKey(raw_sign_key, encoder=Base64Encoder)
-        enc_key = PublicKey(raw_enc_key, encoder=Base64Encoder)
-        self.jwk_sign = JWK.from_pyca(
-            Ed25519PrivateKey.from_private_bytes(bytes(sign_key))
-        )
-        self.jwk_enc = _create_x25519_pubkey(
-            X25519PublicKey.from_public_bytes(bytes(enc_key))
+    def __init__(self, raw_sign_key: bytes):
+        self._sign_key = PrivateKey(raw_sign_key, encoder=Base64Encoder)
+        self._jwk_sign = JWK.from_pyca(
+            Ed25519PrivateKey.from_private_bytes(bytes(self._sign_key))
         )
 
-    def to_jwe(self, data: Dict[Any, Any], _: Union[str, None] = None) -> str:
+    def to_jwe(self, data: Dict[Any, Any], pubkey: Union[str, None] = None) -> str:
+        jwk_enc = _create_x25519_pubkey(
+            X25519PublicKey.from_public_bytes(bytes(pubkey.encode("utf-8")))
+        )
         jws_token = JWT(
             {
                 "alg": "EdDSA",
             },
             claims=data,
         )
-        jws_token.make_signed_token(self.jwk_sign)
+        jws_token.make_signed_token(self._jwk_sign)
         etoken = JWT(
             header={"typ": "JWT", "alg": "ECDH-ES", "enc": "A128CBC-HS256"},
             claims=jws_token.serialize(),
         )
-        etoken.make_encrypted_token(self.jwk_enc)
+        etoken.make_encrypted_token(jwk_enc)
         return etoken.serialize()
+
+    def box_encrypt(self, data: str, client_key: str) -> str:
+        enc_key = PublicKey(client_key.encode("utf-8"), encoder=Base64Encoder)
+        box = Box(self._sign_key, enc_key)
+        return box.encrypt(data.encode('utf-8'), encoder=Base64Encoder).decode('utf-8')

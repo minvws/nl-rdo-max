@@ -1,4 +1,5 @@
 # pylint: disable=c-extension-no-member, too-few-public-methods
+import logging
 from configparser import ConfigParser
 
 from dependency_injector import providers
@@ -10,8 +11,6 @@ from app.dependency_injection.config import get_config
 from app.routers.digid_mock_router import digid_mock_router
 from app.routers.saml_router import saml_router
 from app.routers.oidc_router import oidc_router
-from app.routers.cc_router import cc_router
-from app.routers.irma_router import irma_router
 
 from app.exceptions.oidc_exceptions import (
     AuthorizeEndpointException,
@@ -60,22 +59,26 @@ def run():
 def create_fastapi_app(
     config: ConfigParser = None,
     container: Container = None
-):
+) -> FastAPI:
     container = container if container is not None else Container()
-    config: dict = config if config is not None else get_config()
+    config: ConfigParser = config if config is not None else get_config()
+
+    loglevel = logging.getLevelName(config.app.loglevel.upper())
+    if isinstance(loglevel, str):
+        raise ValueError(f"Invalid loglevel {loglevel.upper()}")
+    logging.basicConfig(
+        level=loglevel,
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+    )
+
     container.wire(
         modules=["app.routers.saml_router",
                  "app.routers.oidc_router",
-                 "app.routers.cc_router",
-                 "app.routers.uzi_router",
-                 "app.routers.irma_router",
                  "app.routers.digid_mock_router"
                  ])
 
     container.config.from_dict(config)
     is_uvicorn_app = config.getboolean("app", "uvicorn", fallback=False)
-    cc_routing_enabled = config.getboolean("app", "cc_routing_enabled", fallback=False)
-    uzi_routing_enabled = config.getboolean("app", "uzi_routing_enabled", fallback=False)
     is_mock_digid = config.getboolean("app", "mock_digid", fallback=False)
     fastapi_kwargs = {
         "docs_url": "/ui",
@@ -84,10 +87,6 @@ def create_fastapi_app(
     fastapi = FastAPI(**fastapi_kwargs)
     fastapi.include_router(saml_router)
     fastapi.include_router(oidc_router)
-    if cc_routing_enabled:
-        fastapi.include_router(cc_router)
-    # if uzi_routing_enabled:
-    #     container.services.override(UziServices)
     if is_mock_digid:
         fastapi.include_router(digid_mock_router)
 

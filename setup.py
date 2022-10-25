@@ -38,6 +38,10 @@ setup(
             "coverage-badge",
             "freezegun",
             "pytest",
+            "pytest-mock",
+            "pytest-docker",
+            'pytest_redis',
+            "freezegun"
         ]
     },
 )

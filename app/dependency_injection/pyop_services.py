@@ -4,23 +4,16 @@ from dependency_injector import containers, providers
 from pyop.authz_state import AuthorizationState
 from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
 from pyop.userinfo import Userinfo
-from jwcrypto.jwk import JWK
 from jwkest.jwk import RSAKey, import_rsa_key
 
 from app.providers.saml_provider import SAMLProvider
-from app.services.authentication_cache_service import AuthenticationCacheService
-from app.services.certificate_store import CertificateStore
 from app.misc.utils import file_content, as_list, clients_from_json
 from app.providers.pyop_provider import MaxPyopProvider
 
 
-def pyop_rsa_signing_key_callable(signing_key_path: str, certificate_store: CertificateStore):
+def pyop_rsa_signing_key_callable(signing_key_path: str):
     signing_key = file_content(signing_key_path)
-    kid = JWK.from_pem(str.encode(signing_key)).thumbprint()
-    public_certificate = certificate_store.get_by_thumbprint(kid)
-    if public_certificate:
-        kid = public_certificate.key_id
-    return RSAKey(key=import_rsa_key(signing_key), alg="RS256", kid=kid)
+    return RSAKey(key=import_rsa_key(signing_key), alg="RS256")
 
 
 def pyop_configuration_information_callable(
@@ -54,8 +47,7 @@ class PyopServices(containers.DeclarativeContainer):
 
     pyop_rsa_signing_key = providers.Callable(
         pyop_rsa_signing_key_callable,
-        signing_key_path=config.oidc.rsa_private_key,
-        certificate_store=storage.certificate_store
+        signing_key_path=config.oidc.rsa_private_key
     )
 
     pyop_configuration_information = providers.Callable(
@@ -82,13 +74,8 @@ class PyopServices(containers.DeclarativeContainer):
         subject_identifier_db=storage.subject_identifier_db
     )
 
-    authentication_cache_service = providers.Singleton(
-        AuthenticationCacheService
-    )
-
     saml_provider = providers.Singleton(
-        SAMLProvider,
-        authentication_cache_service=authentication_cache_service
+        SAMLProvider
     )
 
     clients = config.oidc.clients_file.as_(clients_from_json)

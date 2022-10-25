@@ -10,6 +10,7 @@ from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 SOAP_NS = "http://www.w3.org/2003/05/soap-envelope"
 
 
+# todo: Test module!
 def file_content(filepath: str) -> Union[str, None]:
     if filepath is not None and path.exists(filepath):
         with open(filepath, "r", encoding="utf-8") as file:

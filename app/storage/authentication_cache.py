@@ -1,3 +1,6 @@
+import json
+from typing import Any, Union
+
 from app.models.saml.assertion_consumer_service_request import AssertionConsumerServiceRequest
 from app.services.encryption.sym_encryption_service import SymEncryptionService
 from app.storage.cache import Cache
@@ -6,16 +9,19 @@ from pyop.message import AuthorizationRequest
 from app.models.authorize_request import AuthorizeRequest
 
 from app.constants import AUTHENTICATION_REQUEST_PREFIX, ACS_CONTEXT_PREFIX, ID_TOKEN_PREFIX
+from jwcrypto.jwt import JWT
 
 
-class AuthenticationCache():
+class AuthenticationCache:
     def __init__(
             self,
             cache: Cache,
-            authentication_context_encryption_service: SymEncryptionService
+            authentication_context_encryption_service: SymEncryptionService,
+            app_mode: Union[str, None]
     ):
         self._cache = cache
         self._authentication_context_encryption_service = authentication_context_encryption_service
+        self._app_mode = app_mode
 
     def create_authentication_request_state(
         self,
@@ -39,7 +45,7 @@ class AuthenticationCache():
     def get_authentication_request_state(
         self,
         rand_state: str
-    ) -> str:
+    ) -> Any:
         state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{rand_state}"
         return self._cache.get_complex_object(state_key)
 
@@ -48,8 +54,8 @@ class AuthenticationCache():
             pyop_authorize_response,
             pyop_authorize_request,
             acs_request: AssertionConsumerServiceRequest
-    ):
-        return self._cache.set_complex_object(
+    ) -> None:
+        self._cache.set_complex_object(
             f"{ACS_CONTEXT_PREFIX}:{pyop_authorize_response['code']}",
             {
                 "id_provider": pyop_authorize_request["id_provider"],
@@ -78,6 +84,14 @@ class AuthenticationCache():
                 self._authentication_context_encryption_service.symm_encrypt(
                     external_user_authentication_context.encode("utf-8"))
         }
+        if self._app_mode == "legacy":
+            user_authentication_context["access_token"] = pyop_token_response["access_token"]
+            id_jwt = JWT.from_jose_token(pyop_token_response['id_token'])
+            at_hash_key = json.loads(id_jwt.token.objects['payload'].decode('utf-8'))['at_hash']
+            return self._cache.set_complex_object(
+                f"{ID_TOKEN_PREFIX}:{at_hash_key}",
+                user_authentication_context
+            )
         return self._cache.set_complex_object(
             f"{ID_TOKEN_PREFIX}:{pyop_token_response['access_token']}",
             user_authentication_context
@@ -87,9 +101,16 @@ class AuthenticationCache():
             self,
             access_token: str
     ):
-        authentication_context = self._cache.get_complex_object(
-            f"{ID_TOKEN_PREFIX}:{access_token}"
-        )
+        if self._app_mode == "legacy":
+            id_jwt = JWT.from_jose_token(access_token)
+            at_hash_key = json.loads(id_jwt.token.objects['payload'].decode('utf-8'))['at_hash']
+            authentication_context = self._cache.get_complex_object(
+                f"{ID_TOKEN_PREFIX}:{at_hash_key}"
+            )
+        else:
+            authentication_context = self._cache.get_complex_object(
+                f"{ID_TOKEN_PREFIX}:{access_token}"
+            )
         authentication_context["external_user_authentication_context"] = \
             self._authentication_context_encryption_service.symm_decrypt(
                 authentication_context["external_user_authentication_context"]).decode("utf-8")

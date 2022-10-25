@@ -48,6 +48,8 @@ async def jwks(
     return oidc_provider.jwks()
 
 
+# Post is legacy until signing service supports get user_info
+@oidc_router.post(RouterConfig.userinfo_endpoint)
 @oidc_router.get(RouterConfig.userinfo_endpoint)
 @inject
 def userinfo(

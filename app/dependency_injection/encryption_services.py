@@ -12,12 +12,11 @@ class EncryptionServices(containers.DeclarativeContainer):
 
     user_authentication_encryption_service = providers.Singleton(
         SymEncryptionService,
-        raw_local_sym_key=config.app.external_user_authentication_sym_key
+        raw_local_sym_key=config.app.user_authentication_sym_key
     )
     _ed25519_jwe_service = providers.Singleton(
         Ed25519JweService,
-        raw_sign_key=config.app.i6_sign_privkey,
-        raw_enc_key=config.app.i4_encrypt_pubkey
+        raw_sign_key=config.app.jwe_sign_nacl_priv_key
     )
 
     _rsa_jwe_service = providers.Singleton(
@@ -31,5 +30,3 @@ class EncryptionServices(containers.DeclarativeContainer):
         ed25519=_ed25519_jwe_service,
         rsa=_rsa_jwe_service
     )
-
-

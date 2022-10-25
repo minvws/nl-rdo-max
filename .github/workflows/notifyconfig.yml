@@ -3,7 +3,7 @@ name: Notify RDObeheer on config-changes
 on:
   push:
     branches: [ main ]
-    paths: [ 'inge6.conf.example', 'clients.json' ]
+    paths: [ 'max.conf.example', 'clients.json.example' ]
 
 jobs:
   build:
@@ -13,9 +13,9 @@ jobs:
         with:
           fetch-depth: 0
       - name: Diff configfiles
-        run: git diff master~1:inge6.conf.example inge6.conf.example > inge6.conf.diff
+        run: git diff master~1:max.conf.example max.conf.example > max.conf.diff
       - name: Diff configfiles
-        run: git diff master~1:clients.json clients.json > clients.json.diff
+        run: git diff master~1:clients.example.json clients.example.json > clients.json.diff
       - name: Send mail
         uses: dawidd6/action-send-mail@v3
         with:
@@ -29,6 +29,6 @@ jobs:
           secure: false
           body: >
              Config change in ${{github.repository}}
-          attachments: inge6.conf.diff,clients.json.diff
+          attachments: max.conf.diff,clients.json.diff
           ignore_cert: false
           convert_markdown: false

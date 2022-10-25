@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from app.storage.cache import Cache
 from app.exceptions.max_exceptions import (
@@ -34,12 +35,10 @@ class RateLimiter:
         self,
         ipaddress: str
     ) -> str:
-        primary_idp = self._get_primary_identity_provider_name()
         self._ip_limit_test(
-            ipaddress=ipaddress,
-            identity_provider_name=primary_idp
+            ipaddress=ipaddress
         )
-
+        primary_idp = self._get_primary_identity_provider_name()
         try:
             self._user_limit_test(
                 user_limit_key=self._primary_identity_provider_user_limit_key,
@@ -68,11 +67,10 @@ class RateLimiter:
     def _ip_limit_test(
         self,
         ipaddress: str,
-        identity_provider_name: str
     ) -> None:
-        current_count = self._increase_ip_count(identity_provider_name, ipaddress)
+        current_count = self._increase_ip_count(ipaddress)
         if current_count > self._ipaddress_max_count:
-            raise TooManyRequestsFromOrigin(self._ipaddress_max_count_expire_seconds)
+            raise TooManyRequestsFromOrigin(str(self._ipaddress_max_count_expire_seconds))
 
     def _user_limit_test(
         self,
@@ -89,21 +87,20 @@ class RateLimiter:
         if num_users > user_limit:
             raise TooBusyError()
 
-    def _increase_ip_count(self, identity_provider_name, ipaddress):
-        ip_key = f"{identity_provider_name}:ipv4:{ipaddress}"
+    def _increase_ip_count(self, ipaddress) -> int:
+        ip_key = f"ipv4:{ipaddress}"
         count = self._cache.incr(ip_key)
         self._cache.expire(ip_key, self._ipaddress_max_count_expire_seconds)
         return count
 
-    def _increase_user_count(self, identity_provider_name, timeslot):
-        idp = identity_provider_name.upper()
-        timeslot_key = f"max:limiter:{idp}:{timeslot}"
+    def _increase_user_count(self, identity_provider_name: str, timeslot: str) -> int:
+        timeslot_key = f"max:limiter:{identity_provider_name}:{timeslot}"
         count = self._cache.incr(timeslot)
         self._cache.expire(timeslot_key, 2)
         return count
 
-    def _get_primary_identity_provider_name(self):
+    def _get_primary_identity_provider_name(self) -> Optional[str]:
         return self._cache.get_string(self._primary_identity_provider_key)
 
-    def _get_overflow_identity_provider_name(self):
+    def _get_overflow_identity_provider_name(self) -> Optional[str]:
         return self._cache.get_string(self._overflow_identity_provider_key)

@@ -18,10 +18,10 @@ jobs:
         run: ls -alR
 
       - name: Create tar
-        run: tar -czf inge6_${{ env.RELEASE_VERSION }}.tar.gz ./inge6 ./saml ./static ./*.sh
+        run: tar -czf max_${{ env.RELEASE_VERSION }}.tar.gz ./app ./html ./saml ./*.sh
 
       - name: Upload release tar
         uses: actions/upload-artifact@v1
         with:
-          name: inge6_${{ env.RELEASE_VERSION }}
-          path: inge6_${{ env.RELEASE_VERSION }}.tar.gz
+          name: max_${{ env.RELEASE_VERSION }}
+          path: max_${{ env.RELEASE_VERSION }}.tar.gz

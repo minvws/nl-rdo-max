@@ -36,7 +36,8 @@ class OIDCProvider():
             mock_digid: bool,
             saml_response_factory: SAMLResponseFactory,
             artifact_resolving_service: ArtifactResolvingService,
-            userinfo_service: UserinfoService
+            userinfo_service: UserinfoService,
+            app_mode: str
     ):
         self._pyop_provider = pyop_provider
         self._authentication_cache = authentication_cache
@@ -47,6 +48,7 @@ class OIDCProvider():
         self._saml_response_factory = saml_response_factory
         self._artifact_resolving_service = artifact_resolving_service
         self._userinfo_service = userinfo_service
+        self._app_mode = app_mode
 
     def well_known(self):
         return JSONResponse(
@@ -108,13 +110,17 @@ class OIDCProvider():
         bearer_token = extract_bearer_token_from_http_request(
             authz_header=request.headers.get("Authorization")
         )
-        #todo: id_token valid until same as redis cache ttl
-        introspection = self._pyop_provider.authz_state.introspect_access_token(bearer_token)
-        authentication_context = self._authentication_cache.get_authentication_context(bearer_token)
+        if self._app_mode == "legacy":
+            authentication_context = self._authentication_cache.get_authentication_context(bearer_token)
+            introspection = self._pyop_provider.authz_state.introspect_access_token(authentication_context["access_token"])
+        else:
+            # todo: id_token valid until same as redis cache ttl
+            introspection = self._pyop_provider.authz_state.introspect_access_token(bearer_token)
+            authentication_context = self._authentication_cache.get_authentication_context(bearer_token)
+
 
         if not introspection["active"]:
             raise Exception("not authorized")
-        print(authentication_context["external_user_authentication_context"])
         return Response(
             headers={"Content-Type": "application/jwt"},
             content=authentication_context["external_user_authentication_context"]

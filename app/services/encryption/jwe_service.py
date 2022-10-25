@@ -9,5 +9,5 @@ class JweService(abc.ABC):
     pass
 
     @abc.abstractmethod
-    def to_jwe(self, data: Dict[str, str], pubkey: Union[str, None] = None):
+    def to_jwe(self, data: Dict[str, str], pubkey: Union[str, None] = None) -> str:
         pass

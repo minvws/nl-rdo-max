@@ -15,14 +15,17 @@ class RedisGetDebuggerFactory:
         redis_default_cache_namespace: str,
     ):
         self.redis_client = redis_client
-        self.loglevel = loglevel
         self.redis_object_ttl = redis_object_ttl
         self.redis_default_cache_namespace = redis_default_cache_namespace
+
+        self.level_number = logging.getLevelName(loglevel.upper())
+        if isinstance(self.level_number, str):
+            raise ValueError(f"Invalid loglevel {loglevel.upper()}")
 
     def create(self, *args, **kwargs):
         return RedisGetDebugger(
             self.redis_client,
-            self.loglevel,
+            self.level_number,
             self.redis_object_ttl,
             self.redis_default_cache_namespace,
             *args,
@@ -34,19 +37,15 @@ class RedisGetDebugger(threading.Thread):
     def __init__(
         self,
         redis_client: StrictRedis,
-        loglevel: str,
+        loglevel: int,
         redis_object_ttl: int,
         redis_default_cache_namespace: str,
         *args,
         **kwargs,
     ) -> None:
         threading.Thread.__init__(self, *args, **kwargs)
-        logging.basicConfig(
-            level=getattr(logging, loglevel),
-            datefmt="%m/%d/%Y %I:%M:%S %p",
-        )
         self.log: logging.Logger = logging.getLogger(__package__)
-
+        self.log.level = loglevel
         self.psubscribe = "__keyevent@0__:expired"
         self.redis_client = redis_client
 
@@ -86,10 +85,8 @@ class RedisGetDebugger(threading.Thread):
                     set_key = set_key.decode()
                 else:
                     set_key = str(set_key)
-
                 if not set_key.startswith(f"{self.key_prefix}:"):
                     continue
-
                 expected_retrieved_key = f"{self.key_prefix}:retrieved:{set_key}"
                 self.log.debug(
                     "Attempting retrieval of debug-key: %s", expected_retrieved_key

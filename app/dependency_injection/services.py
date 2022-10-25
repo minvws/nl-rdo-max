@@ -4,12 +4,10 @@ from dependency_injector import containers, providers
 from app.misc.utils import as_bool
 from app.providers.digid_mock_provider import DigidMockProvider
 from app.providers.oidc_provider import OIDCProvider
-from app.providers.cc_provider import CCProvider
 from app.providers.saml_provider import SAMLProvider
-from app.providers.uzi_provider import UziProvider
-from app.providers.irma_provider import IRMAProvider
 from app.misc.rate_limiter import RateLimiter
 from app.services.saml.artifact_resolving_service import ArtifactResolvingService, MockedArtifactResolvingService
+from app.services.userinfo.cc_userinfo_service import CCUserinfoService
 from app.services.userinfo.cibg_userinfo_service import CIBGUserinfoService, MockedCIBGUserinfoService
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 from app.services.saml.saml_response_factory import SAMLResponseFactory
@@ -73,8 +71,16 @@ class Services(containers.DeclarativeContainer):
         clients=pyop_services.clients
     )
 
+    cc_userinfo_service = providers.Singleton(
+        CCUserinfoService,
+        jwe_service=encryption_services.jwe_service,
+        clients=pyop_services.clients,
+        app_mode=config.app.app_mode
+    )
+
     userinfo_service = providers.Selector(
-        config.app.external_user_authentication,
+        config.app.userinfo_service,
+        cc=cc_userinfo_service,
         cibg_mock=mocked_cibg_userinfo_service
     )
 
@@ -88,17 +94,14 @@ class Services(containers.DeclarativeContainer):
         mock_digid=config.app.mock_digid.as_(as_bool),
         saml_response_factory=saml_response_factory,
         artifact_resolving_service=artifact_resolving_service,
-        userinfo_service=userinfo_service
+        userinfo_service=userinfo_service,
+        app_mode=config.app.app_mode
     )
 
     digid_mock_provider = providers.Singleton(
         DigidMockProvider,
         saml_response_factory=saml_response_factory,
         saml_identity_provider_service=saml_identity_provider_service
-    )
-
-    irma_provider = providers.Singleton(
-        IRMAProvider
     )
 
     saml_provider = providers.Singleton(

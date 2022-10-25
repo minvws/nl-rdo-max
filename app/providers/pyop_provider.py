@@ -12,10 +12,9 @@ class MaxPyopProvider(PyopProvider):
                  id_token_lifetime=3600, extra_scopes=None, trusted_certificates_directory=None):
         super().__init__(signing_key, configuration_information, authz_state, clients, userinfo,
                          id_token_lifetime=id_token_lifetime, extra_scopes=extra_scopes)
-        self._jwks_certs = None
+        self._jwks_certs = super().jwks
         if trusted_certificates_directory is not None:
             self._keys = {}
-            self._jwks_certs = super().jwks
             for filename in os.listdir(trusted_certificates_directory):
                 with open(os.path.join(trusted_certificates_directory, filename), 'r') as file:
                     cert_str = file.read()
@@ -36,8 +35,4 @@ class MaxPyopProvider(PyopProvider):
 
     @property
     def jwks(self):
-        if self._jwks_certs is None:
-            return super().jwks
         return self._jwks_certs
-
-
