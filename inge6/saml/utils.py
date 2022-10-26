@@ -78,6 +78,8 @@ def has_valid_signatures(
 
             if node.find(".//dsig:DigestValue", NAMESPACES).text is None:
                 continue
+            if node.getparent().getparent() == root.find(".//saml2:Advice", NAMESPACES):
+                continue
 
             referred_node = get_referred_node(root, node)
             has_valid_signature(
