@@ -4,16 +4,14 @@
 #
 # SPDX-License-Identifier: EUPL-1.2
 #
-from typing import Dict, Any, Union
-
-from nacl.public import PrivateKey, Box, PublicKey
-from nacl.encoding import Base64Encoder
+from typing import Dict, Any
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
-
-from jwcrypto.jwt import JWT
 from jwcrypto.jwk import JWK
+from jwcrypto.jwt import JWT
+from nacl.encoding import Base64Encoder
+from nacl.public import PrivateKey, Box, PublicKey
 
 from app.services.encryption.jwe_service import JweService
 
@@ -36,7 +34,7 @@ class Ed25519JweService(JweService):
             Ed25519PrivateKey.from_private_bytes(bytes(self._sign_key))
         )
 
-    def to_jwe(self, data: Dict[Any, Any], pubkey: Union[str, None] = None) -> str:
+    def to_jwe(self, data: Dict[str, Any], pubkey: str) -> str:
         jwk_enc = _create_x25519_pubkey(
             X25519PublicKey.from_public_bytes(bytes(pubkey.encode("utf-8")))
         )

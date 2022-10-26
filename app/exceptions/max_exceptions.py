@@ -2,8 +2,8 @@ from app.models.enums import SomethingWrongReason
 
 
 class ServerErrorException(Exception):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, message: str):
+        super().__init__(message)
 
 
 class SomethingWrongError(RuntimeError):
@@ -13,7 +13,7 @@ class SomethingWrongError(RuntimeError):
 
 
 class DependentServiceOutage(SomethingWrongError):
-    def __init__(self, outage_key: str) -> None:
+    def __init__(self) -> None:
         super().__init__(
             SomethingWrongReason.OUTAGE,
             "Some service we depend on is down.",
@@ -24,7 +24,8 @@ class TooManyRequestsFromOrigin(SomethingWrongError):
     def __init__(self, ip_expire_s: str) -> None:
         super().__init__(
             SomethingWrongReason.TOO_MANY_REQUEST,
-            f"Too many requests from the same ip_address during the last {ip_expire_s} seconds.",
+            "Too many requests from the same ip_address during the last"
+            f" {ip_expire_s} seconds.",
         )
 
 
@@ -41,7 +42,7 @@ class ExpectedCacheValue(RuntimeError):
 
 
 class AuthorizationByProxyDisabled(SomethingWrongError):
-    def __init2__(self) -> None:
+    def __init__(self) -> None:
         super().__init__(
             SomethingWrongReason.AUTH_BY_PROXY_DISABLED,
             "Authorization by proxy is disabled for this provider",

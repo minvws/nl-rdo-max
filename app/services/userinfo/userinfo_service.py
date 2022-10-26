@@ -1,5 +1,5 @@
-from typing import Any, Text, Optional, Dict
 import abc
+from typing import Any, Dict
 
 
 class UserinfoService(abc.ABC):

@@ -202,6 +202,8 @@ tomli==2.0.1
     #   pytest
 tomlkit==0.11.4
     # via pylint
+types-redis==4.3.21.3
+    # via app (setup.py)
 typing-extensions==4.3.0
     # via
     #   mypy

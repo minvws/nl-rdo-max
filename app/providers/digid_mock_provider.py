@@ -9,9 +9,9 @@ import uuid
 from fastapi.responses import RedirectResponse, HTMLResponse
 
 from app.models.digid_mock_requests import DigiDMockRequest, DigiDMockCatchRequest
-from app.models.login_digid_request import LoginDigiDRequest
-from app.services.saml.saml_response_factory import SAMLResponseFactory
+from app.models.login_digid_request import LoginDigiDMockRequest
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
+from app.services.saml.saml_response_factory import SAMLResponseFactory
 
 
 class DigidMockProvider:
@@ -23,7 +23,7 @@ class DigidMockProvider:
         self._saml_response_factory = saml_response_factory
         self._saml_identity_provider_service = saml_identity_provider_service
 
-    def login_digid(self, login_digid_request: LoginDigiDRequest):
+    def login_digid(self, login_digid_request: LoginDigiDMockRequest):
         identity_provider = self._saml_identity_provider_service.get_identity_provider(
             login_digid_request.idp_name
         )

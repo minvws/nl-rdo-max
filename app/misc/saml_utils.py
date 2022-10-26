@@ -70,7 +70,6 @@ def has_valid_signatures(
 
     try:
         for node in signature_nodes:
-
             if node.find(".//dsig:DigestValue", NAMESPACES).text is None:
                 continue
 

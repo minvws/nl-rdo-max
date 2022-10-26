@@ -1,15 +1,15 @@
 # pylint: disable=c-extension-no-member
 import base64
 import secrets
-
 from abc import abstractmethod
-from typing import Optional, Any, Tuple
 from datetime import datetime
+from typing import Optional, Any, Tuple
 
 import xmlsec
 from lxml import etree
 
-from app.misc.utils import read_cert, to_soap_envelope
+from app.misc.saml_utils import to_soap_envelope
+from app.misc.utils import read_cert
 
 
 def get_issue_instant():
@@ -59,7 +59,8 @@ class SAMLRequest:
             )
             if reference_node is None:
                 raise ValueError(
-                    "Reference node not found, cannot set URI in reference node of signature element."
+                    "Reference node not found, cannot set URI in reference node of"
+                    " signature element."
                 )
             reference_node.attrib["URI"] = f"#{id_hash}"
 

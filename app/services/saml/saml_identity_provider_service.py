@@ -6,7 +6,6 @@ from app.models.saml.saml_identity_provider import SamlIdentityProvider
 
 class SamlIdentityProviderService:
     def __init__(self, identity_providers_path: str, templates_path: str):
-
         jinja_env = Environment(
             loader=FileSystemLoader(templates_path),
             autoescape=select_autoescape(),

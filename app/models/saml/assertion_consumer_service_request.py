@@ -1,6 +1,7 @@
-from pydantic import BaseModel, validator
 import html
+
 import nacl.hash
+from pydantic import BaseModel, validator
 
 
 class AssertionConsumerServiceRequest(BaseModel):
@@ -10,9 +11,9 @@ class AssertionConsumerServiceRequest(BaseModel):
 
     # pylint: disable=invalid-name
     # noinspection PyPep8Naming
-    @classmethod
+    @staticmethod
     def from_request(
-        cls, SAMLart: str, RelayState: str, mocking: int = 0
+        SAMLart: str, RelayState: str, mocking: int = 0
     ) -> "AssertionConsumerServiceRequest":
         return AssertionConsumerServiceRequest.parse_obj(
             {"SAMLart": SAMLart, "RelayState": RelayState, "mocking": mocking == 1}
@@ -23,5 +24,5 @@ class AssertionConsumerServiceRequest(BaseModel):
 
     @staticmethod
     @validator("SAMLart", "RelayState")
-    def convert_to_escaped_html(cls, text):  # pylint: disable=no-self-argument
+    def convert_to_escaped_html(text):  # pylint: disable=no-self-argument
         return html.escape(text)

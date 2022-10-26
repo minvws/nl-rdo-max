@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Request, Depends
 from dependency_injector.wiring import inject, Provide
-from pydantic.error_wrappers import ValidationError
+from fastapi import APIRouter, Request, Depends
 
-from app.models.token_request import TokenRequest
-from app.providers.oidc_provider import OIDCProvider
 from app.dependency_injection.config import RouterConfig
 from app.models.authorize_request import AuthorizeRequest
+from app.models.token_request import TokenRequest
+from app.providers.oidc_provider import OIDCProvider
 
 oidc_router = APIRouter()
 

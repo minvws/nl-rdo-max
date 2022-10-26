@@ -7,8 +7,8 @@ Required settings:
     - settings.redis.object_ttl, time to live for all objects stored in cache
 """
 
-from typing import Any, Text, Optional
 import pickle
+from typing import Any, Text, Optional
 
 from redis import StrictRedis
 
@@ -83,18 +83,18 @@ class RedisCache(Cache):
         b_byte = self.get(key)
         if b_byte is not None:
             b_byte_lower = b_byte.decode("utf-8").lower()
-            return b_byte_lower == "1" or b_byte_lower == "true"
+            return b_byte_lower in ("1", "true")
         return False
 
-    def set(self, key: str, value: Any) -> bool:
+    def set(self, key: str, value: Any) -> bool | None:
         return self.redis_client.set(
             self._prepend_with_namespace(key), value, ex=self.expires_in_s
         )
 
-    def set_complex_object(self, key: str, value: Any) -> bool:
+    def set_complex_object(self, key: str, value: Any) -> bool | None:
         return self.set(key, _serialize(value))
 
-    def get_complex_object(self, key: str) -> bool:
+    def get_complex_object(self, key: str) -> Any:
         return _deserialize(self.get(key))
 
     def gen_token(self) -> Text:

@@ -1,13 +1,13 @@
 from datetime import datetime
 from typing import Optional
 
-from app.storage.cache import Cache
 from app.exceptions.max_exceptions import (
     TooManyRequestsFromOrigin,
     TooBusyError,
-    ExpectedCacheValue,
     DependentServiceOutage,
+    ServerErrorException,
 )
+from app.storage.cache import Cache
 
 
 class RateLimiter:
@@ -38,6 +38,8 @@ class RateLimiter:
     def get_identity_provider_name_and_validate_request(self, ipaddress: str) -> str:
         self._ip_limit_test(ipaddress=ipaddress)
         primary_idp = self._get_primary_identity_provider_name()
+        if primary_idp is None:
+            raise ServerErrorException("Unable to get primary idp from Redis")
         try:
             self._user_limit_test(
                 user_limit_key=self._primary_identity_provider_user_limit_key,
@@ -46,6 +48,10 @@ class RateLimiter:
             return primary_idp
         except TooBusyError as too_busy_error:
             overflow_idp = self._get_overflow_identity_provider_name()
+            if overflow_idp is None:
+                raise ServerErrorException(  # pylint:disable=raise-missing-from
+                    "Unable to get overflow idp from Redis"
+                )
             if overflow_idp is not None:
                 self._user_limit_test(
                     user_limit_key=self._overflow_identity_provider_user_limit_key,
@@ -57,11 +63,7 @@ class RateLimiter:
     def validate_outage(self):
         if self._identity_provider_outage_key:
             if self._cache.get_bool(self._identity_provider_outage_key):
-                raise DependentServiceOutage(
-                    self._identity_provider_outage_key
-                    if self._identity_provider_outage_key is not None
-                    else ""
-                )
+                raise DependentServiceOutage()
 
     def _ip_limit_test(
         self,

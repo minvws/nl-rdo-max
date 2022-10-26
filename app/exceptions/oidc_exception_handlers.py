@@ -1,16 +1,13 @@
+from fastapi import Request
 from fastapi.templating import Jinja2Templates
 
+from app.exceptions.max_exceptions import ServerErrorException
 from app.exceptions.oidc_exceptions import (
     InvalidClientException,
     InvalidRedirectUriException,
     UNAUTHORIZED_CLIENT,
     SERVER_ERROR,
 )
-
-from app.exceptions.max_exceptions import ServerErrorException
-
-from fastapi import Request
-
 
 templates = Jinja2Templates(directory="html/jinja2")
 

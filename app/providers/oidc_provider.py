@@ -3,18 +3,16 @@ from urllib.parse import urlencode
 from fastapi import Request, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from pyop.provider import (
-    Provider as PyopProvider,
-    extract_bearer_token_from_http_request,
-)
+from pyop.provider import Provider as PyopProvider, extract_bearer_token_from_http_request  # type: ignore[attr-defined]
 
+from app.exceptions.max_exceptions import ServerErrorException
 from app.exceptions.oidc_exceptions import (
     InvalidClientException,
     InvalidRedirectUriException,
 )
 from app.misc.rate_limiter import RateLimiter
 from app.models.authorize_request import AuthorizeRequest
-from app.models.login_digid_request import LoginDigiDRequest
+from app.models.login_digid_request import LoginDigiDMockRequest
 from app.models.token_request import TokenRequest
 from app.services.saml.artifact_resolving_service import ArtifactResolvingService
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
@@ -63,10 +61,16 @@ class OIDCProvider:
         self._validate_authorize_request(authorize_request)
         self._rate_limiter.validate_outage()
 
-        pyop_authentication_request = self._pyop_provider.parse_authentication_request(
-            urlencode(authorize_request.dict()), request.headers
+        pyop_authentication_request = (
+            self._pyop_provider.parse_authentication_request(  # type:ignore
+                urlencode(authorize_request.dict()), request.headers
+            )
         )
 
+        if request.client is None:
+            raise ServerErrorException(
+                "No Client info available in the request content"
+            )
         identity_provider_name = (
             self._rate_limiter.get_identity_provider_name_and_validate_request(
                 request.client.host
@@ -82,7 +86,7 @@ class OIDCProvider:
             pyop_authentication_request, authorize_request, identity_provider_name
         )
 
-        login_digid_request = LoginDigiDRequest(
+        login_digid_request = LoginDigiDMockRequest(
             state=randstate, authorize_request=authorize_request
         )
 
@@ -97,7 +101,7 @@ class OIDCProvider:
                 400, detail="Code challenge has expired. Please retry authorization."
             )
 
-        token_response = self._pyop_provider.handle_token_request(
+        token_response = self._pyop_provider.handle_token_request(  # type:ignore
             token_request.query_string, headers
         )
         resolved_artifact = self._artifact_resolving_service.resolve_artifact(
@@ -121,13 +125,17 @@ class OIDCProvider:
             authentication_context = (
                 self._authentication_cache.get_authentication_context(bearer_token)
             )
-            introspection = self._pyop_provider.authz_state.introspect_access_token(
-                authentication_context["access_token"]
+            introspection = (
+                self._pyop_provider.authz_state.introspect_access_token(  # type:ignore
+                    authentication_context["access_token"]
+                )
             )
         else:
             # todo: id_token valid until same as redis cache ttl
-            introspection = self._pyop_provider.authz_state.introspect_access_token(
-                bearer_token
+            introspection = (
+                self._pyop_provider.authz_state.introspect_access_token(  # type:ignore
+                    bearer_token
+                )
             )
             authentication_context = (
                 self._authentication_cache.get_authentication_context(bearer_token)

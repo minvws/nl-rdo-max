@@ -25,10 +25,8 @@ class AuthorizeEndpointException(Exception):
 
 
 class InvalidClientException(Exception):
-    def __init__(self) -> None:
-        super().__init__()
+    pass
 
 
 class InvalidRedirectUriException(Exception):
-    def __init__(self) -> None:
-        super().__init__()
+    pass

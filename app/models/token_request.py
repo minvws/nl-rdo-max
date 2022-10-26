@@ -1,9 +1,6 @@
-from typing import Union
-
-from pydantic import BaseModel, validator
-import html
 from urllib.parse import parse_qs
 
+from pydantic import BaseModel
 from pydantic.error_wrappers import ValidationError
 
 
@@ -27,9 +24,11 @@ class TokenRequest(BaseModel):
             errors = [error["loc"][0] for error in validation_error.errors()]
             keys = ""
             if len(errors) == 1:
-                keys = errors[0]
+                keys = str(errors[0])
             elif len(errors) > 1:
-                keys = ", ".join(errors[:-1]) + " and " + errors[len(errors) - 1]
+                keys = (
+                    ", ".join(str(errors[:-1])) + " and " + str(errors[len(errors) - 1])
+                )
             raise ValueError(
                 f"Expects {keys} to be contained in the urlencoded body of the request"
-            )
+            ) from validation_error

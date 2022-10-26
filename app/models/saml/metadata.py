@@ -1,15 +1,12 @@
 # pylint: disable=c-extension-no-member
-import json
 import datetime
-
-from typing import Dict, Optional, List
+import json
 import secrets
+from typing import Dict, Optional, List
 
-from lxml import etree
 import xmlsec
+from lxml import etree
 
-from .saml_request import SAMLRequest
-from .constants import NAMESPACES
 from app.misc.saml_utils import (
     get_loc_bind,
     has_valid_signatures,
@@ -18,6 +15,8 @@ from app.misc.saml_utils import (
     strip_cert,
     enforce_cert_newlines,
 )
+from .constants import NAMESPACES
+from .saml_request import SAMLRequest
 
 
 class SPMetadata(SAMLRequest):
@@ -86,7 +85,6 @@ class SPMetadata(SAMLRequest):
 
     @property
     def authorization_by_proxy_request_ids(self):
-
         return self.settings_dict.get("security", {}).get(
             "authorizationByProxyRequestIds", []
         )

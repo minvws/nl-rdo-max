@@ -1,5 +1,5 @@
-from typing import Any, Text, Optional
 import abc
+from typing import Any, Text, Optional
 
 
 class Cache(abc.ABC):
@@ -12,11 +12,11 @@ class Cache(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def set(self, key: str, value: Any) -> None:
+    def set(self, key: str, value: Any) -> bool | None:
         pass
 
     @abc.abstractmethod
-    def set_complex_object(self, key: str, value: Any) -> None:
+    def set_complex_object(self, key: str, value: Any) -> bool | None:
         pass
 
     @abc.abstractmethod

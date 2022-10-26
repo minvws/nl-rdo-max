@@ -1,6 +1,7 @@
 # pylint: disable=c-extension-no-member, too-few-public-methods
 import logging
 from configparser import ConfigParser
+from typing import Type, Union, Callable, Tuple
 
 import uvicorn
 from fastapi import FastAPI
@@ -10,14 +11,14 @@ from app.dependency_injection.container import Container
 from app.exceptions.oidc_exception_handlers import (
     invalid_client_exception_handler,
 )
-from app.exceptions.oidc_exceptions import (
-    InvalidClientException,
-)
+from app.exceptions.oidc_exceptions import InvalidClientException
 from app.routers.digid_mock_router import digid_mock_router
 from app.routers.oidc_router import oidc_router
 from app.routers.saml_router import saml_router
 
-_exception_handlers = [[InvalidClientException, invalid_client_exception_handler]]
+_exception_handlers: list[Tuple[Union[int, Type[Exception]], Callable]] = [
+    (InvalidClientException, invalid_client_exception_handler)
+]
 
 
 def kwargs_from_config():
@@ -53,9 +54,9 @@ def create_fastapi_app(
     config: ConfigParser = None, container: Container = None
 ) -> FastAPI:
     container = container if container is not None else Container()
-    config: ConfigParser = config if config is not None else get_config()
+    _config: ConfigParser = config if config is not None else get_config()
 
-    loglevel = logging.getLevelName(config["app"]["loglevel"].upper())
+    loglevel = logging.getLevelName(_config.get("app", "loglevel").upper())
     if isinstance(loglevel, str):
         raise ValueError(f"Invalid loglevel {loglevel.upper()}")
     logging.basicConfig(
@@ -71,16 +72,17 @@ def create_fastapi_app(
         ]
     )
 
-    container.config.from_dict(config)
-    is_uvicorn_app = config.getboolean("app", "uvicorn", fallback=False)
-    is_mock_digid = config.getboolean("app", "mock_digid", fallback=False)
-    fastapi_kwargs = {"docs_url": "/ui", "redoc_url": "/docs"} if is_uvicorn_app else {}
-    fastapi = FastAPI(**fastapi_kwargs)
+    container.config.from_dict(dict(_config))
+    is_uvicorn_app = _config.getboolean("app", "uvicorn", fallback=False)
+    is_mock_digid = _config.getboolean("app", "mock_digid", fallback=False)
+    fastapi = (
+        FastAPI(docs_url="/ui", redoc_url="/docs") if is_uvicorn_app else FastAPI()
+    )
     fastapi.include_router(saml_router)
     fastapi.include_router(oidc_router)
     if is_mock_digid:
         fastapi.include_router(digid_mock_router)
 
-    fastapi.container = container
+    fastapi.container = container  # type: ignore
     _add_exception_handlers(fastapi)
     return fastapi

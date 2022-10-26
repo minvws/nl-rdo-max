@@ -13,9 +13,8 @@ class DigiDMockRequest(BaseModel):
 
     # pylint: disable=invalid-name
     # noinspection PyPep8Naming
-    @classmethod
+    @staticmethod
     def from_request(
-        cls,
         state: str,
         idp_name: str,
         authorize_request: str,  # base64 encoded
@@ -34,7 +33,7 @@ class DigiDMockRequest(BaseModel):
 
     @staticmethod
     @validator("state", "RelayState", "SAMLRequest")
-    def convert_to_escaped_html(cls, text):  # pylint: disable=no-self-argument
+    def convert_to_escaped_html(text):  # pylint: disable=no-self-argument
         return html.escape(text)
 
 
@@ -45,5 +44,5 @@ class DigiDMockCatchRequest(BaseModel):
 
     @staticmethod
     @validator("bsn", "SAMLart", "RelayState")
-    def convert_to_escaped_html(cls, text):  # pylint: disable=no-self-argument
+    def convert_to_escaped_html(text):  # pylint: disable=no-self-argument
         return html.escape(text)

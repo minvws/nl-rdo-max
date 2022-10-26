@@ -49,7 +49,9 @@ class SAMLProvider:
             )
 
         # TODO: Change this to client from clients.json, if possible
-        pyop_authorize_response = self._pyop_provider.authorize(auth_req, "client")
+        pyop_authorize_response = self._pyop_provider.authorize(  # type:ignore
+            auth_req, "client"
+        )
         self._authentication_cache.cache_acs_context(
             pyop_authorize_response, authentication_request, request
         )

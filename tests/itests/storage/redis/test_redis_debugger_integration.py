@@ -29,8 +29,8 @@ def test_listen_for_expiration_events_when_not_retrieved(
     time.sleep(1.1)
     # Should be in log:
     assert (
-        "Attempting retrieval of debug-key: debug_namespace:retrieved:debug_namespace:key"
-        in redis_caplog.text
+        "Attempting retrieval of debug-key:"
+        " debug_namespace:retrieved:debug_namespace:key" in redis_caplog.text
     )
     assert (
         "Key debug_namespace:key has expired, but was never retrieved"
@@ -48,8 +48,8 @@ def test_listen_for_expiration_events(
     time.sleep(1.1)
     # Should be in log:
     assert (
-        "Attempting retrieval of debug-key: debug_namespace:retrieved:debug_namespace:key"
-        in redis_caplog.text
+        "Attempting retrieval of debug-key:"
+        " debug_namespace:retrieved:debug_namespace:key" in redis_caplog.text
     )
     assert (
         "Key debug_namespace:key has expired, but was never retrieved"

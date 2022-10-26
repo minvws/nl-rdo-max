@@ -1,14 +1,15 @@
 from typing import Dict, Any, Union
+
 from jwcrypto.jwt import JWK, JWT
 
-from app.misc.utils import file_content, get_fingerprint
+from app.misc.utils import file_content_raise_if_none, get_fingerprint
 from app.services.encryption.jwe_service import JweService
 
 
 class RsaJweService(JweService):
     def __init__(self, jwe_sign_priv_key_path: str, jwe_sign_crt_path: str):
-        self._jwe_sign_priv_key = file_content(jwe_sign_priv_key_path)
-        self._jwe_sign_crt_path = file_content(jwe_sign_crt_path)
+        self._jwe_sign_priv_key = file_content_raise_if_none(jwe_sign_priv_key_path)
+        self._jwe_sign_crt_path = file_content_raise_if_none(jwe_sign_crt_path)
         self._jwk_sign_key = JWK.from_pem(self._jwe_sign_priv_key.encode())
 
     def to_jwe(self, data: Dict[Any, Any], pubkey: Union[str, None] = None) -> str:

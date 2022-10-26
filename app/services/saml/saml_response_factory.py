@@ -4,7 +4,7 @@ import logging
 import os
 
 from jinja2 import Template
-
+from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from starlette.background import BackgroundTask
 from starlette.responses import HTMLResponse, RedirectResponse
 
@@ -13,7 +13,6 @@ from app.exceptions.max_exceptions import (
     UnexpectedAuthnBinding,
 )
 from app.models.saml.exceptions import ScopingAttributesNotAllowed
-from onelogin.saml2.auth import OneLogin_Saml2_Auth
 
 log = logging.getLogger(__package__)
 
@@ -119,13 +118,16 @@ class SAMLResponseFactory:
     ):
         request = {
             "https": "on",
-            "http_host": f"https://{saml_identity_provider.name}.{self._saml_base_issuer}",
+            "http_host": (
+                f"https://{saml_identity_provider.name}.{self._saml_base_issuer}"
+            ),
             "script_name": self._oidc_authorize_endpoint,
             "get_data": login_digid_request.authorize_request.dict(),
         }
         if login_digid_request.authorize_request.authorization_by_proxy:
             log.warning(
-                "User attempted to login using authorization by proxy. But is not supported for this IDProvider: %s",
+                "User attempted to login using authorization by proxy. But is not"
+                " supported for this IDProvider: %s",
                 saml_identity_provider.name,
             )
             raise AuthorizationByProxyDisabled()

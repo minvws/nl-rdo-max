@@ -12,9 +12,9 @@ requirements = [
     "xmlsec",
     "lxml",
     "pyOpenSSL",
-    'python3-saml==1.14.0',
-    'python-multipart',
-    'pynacl'
+    "python3-saml==1.14.0",
+    "python-multipart",
+    "pynacl",
 ]
 
 setup(
@@ -22,9 +22,7 @@ setup(
     version=__version__,
     packages=find_packages(),
     package_dir={"app": "app"},
-    package_data={
-        "app": ["templates/saml/xml/*.jinja", "templates/saml/html/*.html"]
-    },
+    package_data={"app": ["templates/saml/xml/*.jinja", "templates/saml/html/*.html"]},
     install_requires=requirements,
     extras_require={
         "dev": [
@@ -40,8 +38,9 @@ setup(
             "pytest",
             "pytest-mock",
             "pytest-docker",
-            'pytest_redis',
-            "freezegun"
+            "pytest_redis",
+            "freezegun",
+            "types-redis",
         ]
     },
 )

@@ -38,11 +38,11 @@ setup-config:
 setup: setup-config setup-saml setup-secrets
 
 lint:
-	. .venv/bin/activate && ${env} pylint app tests
-	. .venv/bin/activate && ${env} black --check app tests
+	. .venv/bin/activate && ${env} pylint app
+	. .venv/bin/activate && ${env} black --check app
 
 audit:
-	. .venv/bin/activate && ${env} bandit app6
+	. .venv/bin/activate && ${env} bandit app
 
 fix:
 	. .venv/bin/activate && $(env) black app tests
@@ -51,6 +51,6 @@ test: venv setup
 	. .venv/bin/activate && ${env} pytest tests
 
 type-check:
-	. .venv/bin/activate && ${env} MYPYPATH=stubs/ mypy --show-error-codes inge6
+	. .venv/bin/activate && ${env} MYPYPATH=stubs/ mypy --show-error-codes app
 
 check-all: lint type-check test audit

@@ -1,10 +1,10 @@
 import logging
-from pydantic import BaseModel, validator
 from functools import cached_property
 
-from app.models.response_type import ResponseType
-from app import constants
+from pydantic import BaseModel, validator
 
+from app import constants
+from app.models.response_type import ResponseType
 
 log = logging.getLogger(__package__)
 
