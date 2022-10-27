@@ -1,5 +1,4 @@
 # pylint:disable=too-few-public-methods
-import os
 import random
 import uuid
 
@@ -27,9 +26,9 @@ redis_config = factories.redis_noproc(port=REDIS_PORT)
 redis = factories.redisdb("redis_config")
 
 
-@pytest.fixture(scope="session")
-def docker_compose_file(pytestconfig):
-    return os.path.join(str(pytestconfig.rootdir), "", "docker-compose.yml")
+# @pytest.fixture(scope="session")
+# def docker_compose_file(pytestconfig):
+#     return os.path.join(str(pytestconfig.rootdir), "", "docker-compose.yml")
 
 
 @pytest.fixture
@@ -94,12 +93,12 @@ def client():
 
 
 @pytest.fixture
-def overrides():
+def container_overrides():
     return []
 
 
 @pytest.fixture
-def pyop_override(config, legacy_client, client, overrides):
+def pyop_override(config, legacy_client, client, container_overrides):
     def override_pyop(container):
         pyop = PyopOverridingContainer()
         if config["app"]["app_mode"] == "legacy":
@@ -110,17 +109,17 @@ def pyop_override(config, legacy_client, client, overrides):
             )  # pylint:disable=c-extension-no-member
         container.pyop_services.override(pyop)
 
-    overrides.append(override_pyop)
+    container_overrides.append(override_pyop)
 
 
 @pytest.fixture
 # pylint:disable=redefined-outer-name
-def lazy_container(config, legacy_client, client, overrides, pyop_override):
+def lazy_container(config, legacy_client, client, container_overrides, pyop_override):
     def _container() -> Container:
         cont = Container()
         pyop = PyopOverridingContainer()
         cont.pyop_services.override(pyop)
-        for override in overrides:
+        for override in container_overrides:
             override(cont)
         return cont
 
