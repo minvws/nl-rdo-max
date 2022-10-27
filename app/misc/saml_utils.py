@@ -1,11 +1,12 @@
 # pylint: disable=c-extension-no-member
-from typing import Dict, Tuple, Any, Optional, Union
 import textwrap
-from lxml import etree
+from typing import Dict, Tuple, Any, Optional, Union, List
 
+import lxml
 import xmlsec
-
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
+from lxml import etree
+from lxml.etree import Element
 
 from app.models.saml.constants import NAMESPACES
 
@@ -63,14 +64,32 @@ def get_referred_node(root, signature_node):
     return root.find(f'.//*[@ID="{referrer_id}"]', NAMESPACES)
 
 
-def has_valid_signatures(
-    root, cert_data: str = None, cert_path: str = "saml/certs/sp.crt"
-) -> Tuple[Any, bool]:
-    signature_nodes = root.findall(".//dsig:Signature", NAMESPACES)
+def get_parents(node: Element) -> List[Element]:
+    parent = node.getparent()
+    parents = []
+    while parent is not None:
+        parents.append(parent)
+        parent = parent.getparent()
+    return parents
 
+
+def is_advice_node(node: Element, advice_nodes: List[Element]):
+    for parent in get_parents(node):
+        if parent in advice_nodes:
+            return True
+    return False
+
+
+def has_valid_signatures(
+    root: lxml.etree, cert_data: str = None, cert_path: str = "saml/certs/sp.crt"
+) -> Tuple[Any, bool]:
+    signature_nodes: List[Element] = root.findall(".//dsig:Signature", NAMESPACES)
+    advice_nodes: List[Element] = root.findall(".//saml2:Advice", NAMESPACES)
     try:
         for node in signature_nodes:
             if node.find(".//dsig:DigestValue", NAMESPACES).text is None:
+                continue
+            if is_advice_node(node, advice_nodes):
                 continue
             if node.getparent().getparent() == root.find(".//saml2:Advice", NAMESPACES):
                 continue
