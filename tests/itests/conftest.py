@@ -22,7 +22,7 @@ class PyopOverridingContainer(containers.DeclarativeContainer):
     clients = providers.Object({})
 
 
-REDIS_PORT = 6379
+REDIS_PORT = 16379
 redis_config = factories.redis_noproc(port=REDIS_PORT)
 redis = factories.redisdb("redis_config")
 
@@ -72,8 +72,8 @@ def pynacl_keys():
 
 @pytest.fixture
 def legacy_client(
-    client,  # pylint:disable=redefined-outer-name
-    pynacl_keys,  # pylint:disable=redefined-outer-name
+        client,  # pylint:disable=redefined-outer-name
+        pynacl_keys,  # pylint:disable=redefined-outer-name
 ):
     legacy_c = client[1].copy()
     del legacy_c["client_certificate_path"]
@@ -94,18 +94,34 @@ def client():
 
 
 @pytest.fixture
-# pylint:disable=redefined-outer-name
-def lazy_container(config, legacy_client, client):
-    def _container() -> Container:
-        cont = Container()
+def overrides():
+    return []
+
+
+@pytest.fixture
+def pyop_override(config, legacy_client, client, overrides):
+    def override_pyop(container):
         pyop = PyopOverridingContainer()
-        cont.pyop_services.override(pyop)
         if config["app"]["app_mode"] == "legacy":
             pyop.clients.override(providers.Object(dict([legacy_client])))
         else:
             pyop.clients.override(
                 providers.Object(dict([client]))
             )  # pylint:disable=c-extension-no-member
+        container.pyop_services.override(pyop)
+
+    overrides.append(override_pyop)
+
+
+@pytest.fixture
+# pylint:disable=redefined-outer-name
+def lazy_container(config, legacy_client, client, overrides, pyop_override):
+    def _container() -> Container:
+        cont = Container()
+        pyop = PyopOverridingContainer()
+        cont.pyop_services.override(pyop)
+        for override in overrides:
+            override(cont)
         return cont
 
     yield Lazy(_container)
