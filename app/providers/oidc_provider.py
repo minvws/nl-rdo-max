@@ -12,7 +12,7 @@ from app.exceptions.oidc_exceptions import (
 )
 from app.misc.rate_limiter import RateLimiter
 from app.models.authorize_request import AuthorizeRequest
-from app.models.login_digid_request import LoginDigiDMockRequest
+from app.models.login_digid_request import LoginDigiDRequest
 from app.models.token_request import TokenRequest
 from app.services.saml.artifact_resolving_service import ArtifactResolvingService
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
@@ -86,7 +86,7 @@ class OIDCProvider:
             pyop_authentication_request, authorize_request, identity_provider_name
         )
 
-        login_digid_request = LoginDigiDMockRequest(
+        login_digid_request = LoginDigiDRequest(
             state=randstate, authorize_request=authorize_request
         )
 
