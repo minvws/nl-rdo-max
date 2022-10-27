@@ -26,11 +26,6 @@ redis_config = factories.redis_noproc(port=REDIS_PORT)
 redis = factories.redisdb("redis_config")
 
 
-# @pytest.fixture(scope="session")
-# def docker_compose_file(pytestconfig):
-#     return os.path.join(str(pytestconfig.rootdir), "", "docker-compose.yml")
-
-
 @pytest.fixture
 def config():
     yield get_config("tests/max.conf.test")
