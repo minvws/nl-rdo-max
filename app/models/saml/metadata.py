@@ -237,6 +237,7 @@ class SPMetadata(SAMLRequest):
         return self.render_unclustered_template()
 
     def _valid_signature(self) -> bool:
+        # todo: This must be a dict of keyname to cert, conditions checken!
         with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
             signing_cert = cert_file.read()
 

@@ -4,6 +4,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.x509 import load_pem_x509_certificate
 from jwcrypto.jwt import JWK
+from jwkest.jwk import RSAKey
 from pyop.provider import Provider as PyopProvider
 
 from app.misc.utils import get_fingerprint
@@ -13,7 +14,7 @@ from app.misc.utils import get_fingerprint
 class MaxPyopProvider(PyopProvider):
     def __init__(
         self,
-        signing_key,
+        signing_key: RSAKey,
         configuration_information,
         authz_state,
         clients,
@@ -23,6 +24,7 @@ class MaxPyopProvider(PyopProvider):
         extra_scopes=None,
         trusted_certificates_directory=None
     ):
+        signing_key.kid = "oidc_signing_key"
         super().__init__(
             signing_key,
             configuration_information,
@@ -32,8 +34,7 @@ class MaxPyopProvider(PyopProvider):
             id_token_lifetime=id_token_lifetime,
             extra_scopes=extra_scopes,
         )
-        self._jwks_certs = super().jwks
-        self._jwks_certs["keys"][0]["kid"] = "oidc_signing_key"
+        self._jwks_certs = super().jwks  # type:ignore
         if trusted_certificates_directory is not None:
             self._keys = {}
             for filename in os.listdir(trusted_certificates_directory):

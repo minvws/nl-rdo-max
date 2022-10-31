@@ -91,8 +91,6 @@ def has_valid_signatures(
                 continue
             if is_advice_node(node, advice_nodes):
                 continue
-            if node.getparent().getparent() == root.find(".//saml2:Advice", NAMESPACES):
-                continue
 
             referred_node = get_referred_node(root, node)
             has_valid_signature(

@@ -53,4 +53,7 @@ test: venv setup
 type-check:
 	. .venv/bin/activate && ${env} MYPYPATH=stubs/ mypy --show-error-codes app
 
+coverage:
+	. .venv/bin/activate && ${env} coverage run -m pytest tests && coverage report && coverage html
+
 check-all: lint type-check test audit

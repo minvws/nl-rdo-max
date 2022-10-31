@@ -6,13 +6,17 @@
 #
 import uuid
 
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi import Request
+from fastapi.responses import RedirectResponse, Response
+from fastapi.templating import Jinja2Templates
 
 from app.models.digid_mock_requests import DigiDMockRequest, DigiDMockCatchRequest
 from app.models.login_digid_request import LoginDigiDRequest
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 from app.services.saml.saml_response_factory import SAMLResponseFactory
 from app.storage.authentication_cache import AuthenticationCache
+
+templates = Jinja2Templates(directory="html/jinja2")
 
 
 class DigidMockProvider:
@@ -21,12 +25,14 @@ class DigidMockProvider:
         saml_response_factory: SAMLResponseFactory,
         saml_identity_provider_service: SamlIdentityProviderService,
         authentication_cache: AuthenticationCache,
+        environment: str,
     ):
         self._saml_response_factory = saml_response_factory
         self._saml_identity_provider_service = saml_identity_provider_service
         self._authentication_cache = authentication_cache
+        self._environment = environment
 
-    def login_digid(self, login_digid_request: LoginDigiDRequest):
+    def login_digid(self, login_digid_request: LoginDigiDRequest) -> Response:
         authentication_request_state = (
             self._authentication_cache.get_authentication_request_state(
                 login_digid_request.state
@@ -36,51 +42,31 @@ class DigidMockProvider:
             authentication_request_state["id_provider"]
         )
         return self._saml_response_factory.create_saml_response(
-            mock_digid=not login_digid_request.force_digid,
+            mock_digid=not login_digid_request.force_digid
+            and not self._environment.startswith("prod"),
             saml_identity_provider=identity_provider,
             login_digid_request=login_digid_request,
             randstate=login_digid_request.state,
         )
 
     @staticmethod
-    def digid_mock(digid_mock_request: DigiDMockRequest) -> HTMLResponse:
+    def digid_mock(request: Request, digid_mock_request: DigiDMockRequest) -> Response:
         state = digid_mock_request.state
         authorize_request = digid_mock_request.authorize_request
         idp_name = digid_mock_request.idp_name
         relay_state = digid_mock_request.RelayState
         artifact = str(uuid.uuid4())
-        http_content = f"""
-        <html>
-        <h1> DigiD MOCK </h1>
-        <div style='font-size:36;'>
-            <form method="GET" action="/digid-mock-catch">
-                <label style='height:200px; width:400px' for="bsn">BSN Value:</label><br>
-                <input id='bsn_inp' style='height:200px; width:400px; font-size:36pt' type="text" id="bsn" value="999991772" name="bsn"><br>
-                <input type="hidden" name="SAMLart" value="{artifact}">
-                <input type="hidden" name="RelayState" value="{relay_state}">
-            </form>
-        </div>
-        <a href='' id="submit_two" relayState="{relay_state}" samlArt="{artifact}" style='font-size:55; color: white; background-color:grey; display:box'> Login / Submit </a>
-        <br />
-        <a href='/login-digid?force_digid=1&state={state}&idp_name={idp_name}&authorize_request={authorize_request}' style='font-size:55; background-color:purple; display:box'>Actual DigiD</a>
-        <script>
-            window.onload = function funLoad() {{
-                bsn_input_listener()
-                document.getElementById('bsn_inp').onchange = bsn_input_listener
-            }}
-    
-            function bsn_input_listener() {{
-                submitButton = document.getElementById("submit_two")
-                relayState = submitButton.getAttribute("relaystate")
-                bsn = document.getElementById("bsn_inp").value
-                samlArt = submitButton.getAttribute("samlart")
-                href = '/digid-mock-catch?bsn=' + bsn + '&SAMLart=' + samlArt + '&RelayState=' + relayState
-                submitButton.href = href
-            }}
-        </script>
-        </html>
-        """
-        return HTMLResponse(content=http_content, status_code=200)
+        return templates.TemplateResponse(
+            "digid_mock.html",
+            {
+                "request": request,
+                "artifact": artifact,
+                "relay_state": relay_state,
+                "state": state,
+                "idp_name": idp_name,
+                "authorize_request": authorize_request,
+            },
+        )
 
     @staticmethod
     def digid_mock_catch(request: DigiDMockCatchRequest) -> RedirectResponse:

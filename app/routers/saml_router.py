@@ -17,7 +17,9 @@ def assertion_consumer_service(
     ),
     saml_provider: SAMLProvider = Depends(Provide["services.saml_provider"]),
 ):
-    return saml_provider.assertion_consumer_service(assertion_consumer_service_request)
+    return saml_provider.handle_assertion_consumer_service(
+        assertion_consumer_service_request
+    )
 
 
 @saml_router.get("/metadata/{id_provider}")

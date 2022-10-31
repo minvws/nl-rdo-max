@@ -66,8 +66,8 @@ def pynacl_keys():
 
 @pytest.fixture
 def legacy_client(
-        client,  # pylint:disable=redefined-outer-name
-        pynacl_keys,  # pylint:disable=redefined-outer-name
+    client,  # pylint:disable=redefined-outer-name
+    pynacl_keys,  # pylint:disable=redefined-outer-name
 ):
     legacy_c = client[1].copy()
     del legacy_c["client_certificate_path"]

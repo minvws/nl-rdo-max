@@ -1,4 +1,6 @@
 [app]
+# possible app_modes are: *, production
+environment = test
 app_mode =
 userinfo_service =
 jwe_encryption =

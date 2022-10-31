@@ -16,9 +16,8 @@ class LoginDigiDRequest(BaseModel):
     def convert_to_escaped_html(cls, text):  # pylint: disable=no-self-argument
         return html.escape(text)
 
-    @classmethod
+    @staticmethod
     def from_request(
-        cls,
         state: str,
         authorize_request: str,
         force_digid: bool = False,

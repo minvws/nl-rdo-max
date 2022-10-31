@@ -35,6 +35,7 @@ class RsaJweService(JweService):
             },
             claims=data,
         )
+        print(crt.kid)
         jwt_token.make_signed_token(self._jwk_sign_key)
         etoken = JWT(header=header, claims=jwt_token.serialize())
         etoken.make_encrypted_token(jwk_uzipas_enc)

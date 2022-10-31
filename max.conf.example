@@ -1,5 +1,7 @@
 [app]
 app_mode = uzi
+environment = dev
+# possible services are: cc, cibg_mock
 external_user_authentication = cibg_mock
 jwe_encryption = rsa
 # jwe_encryption = ed25519

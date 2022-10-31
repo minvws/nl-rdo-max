@@ -26,7 +26,7 @@ def test_listen_for_expiration_events_when_not_retrieved(
     redis_mock,
 ):
     redis_mock.set("debug_namespace:key", "value", ex=1)
-    time.sleep(1.1)
+    time.sleep(1.3)
     # Should be in log:
     assert (
         "Attempting retrieval of debug-key:"

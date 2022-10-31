@@ -1,5 +1,5 @@
 from dependency_injector.wiring import inject, Provide
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.models.digid_mock_requests import DigiDMockRequest, DigiDMockCatchRequest
 from app.models.login_digid_request import LoginDigiDRequest
@@ -10,9 +10,10 @@ digid_mock_router = APIRouter()
 
 @digid_mock_router.post("/digid-mock")
 def digid_mock(
+    request: Request,
     digid_mock_request: DigiDMockRequest = Depends(DigiDMockRequest.from_request),
 ):
-    return DigidMockProvider.digid_mock(digid_mock_request)
+    return DigidMockProvider.digid_mock(request, digid_mock_request)
 
 
 @digid_mock_router.get("/login-digid")

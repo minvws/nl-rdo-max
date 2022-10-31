@@ -23,7 +23,9 @@ class SAMLProvider:
         self._authentication_cache = authentication_cache
         self._saml_response_factory = saml_response_factory
 
-    def assertion_consumer_service(self, request: AssertionConsumerServiceRequest):
+    def handle_assertion_consumer_service(
+        self, request: AssertionConsumerServiceRequest
+    ):
         """
         This callback function handles the redirects retrieved from the active IDP, once the resource owner
         has logged into the active IDP, the IDP redirects the user to this endpoint with the provided artifact.

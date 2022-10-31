@@ -8,6 +8,7 @@ class ArtifactResolvingService:
 
 class MockedArtifactResolvingService(ArtifactResolvingService):
     def resolve_artifact(self, acs_context: dict) -> Dict[str, Any]:
+        # todo: check environment in every mocking service
         if not acs_context["mocking"]:
             return super().resolve_artifact(acs_context)
         return {

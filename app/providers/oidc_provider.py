@@ -4,6 +4,7 @@ from fastapi import Request, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pyop.provider import Provider as PyopProvider, extract_bearer_token_from_http_request  # type: ignore[attr-defined]
+from starlette.datastructures import Headers
 
 from app.exceptions.max_exceptions import ServerErrorException
 from app.exceptions.oidc_exceptions import (
@@ -35,7 +36,12 @@ class OIDCProvider:
         artifact_resolving_service: ArtifactResolvingService,
         userinfo_service: UserinfoService,
         app_mode: str,
+        environment: str,
     ):
+        if mock_digid and environment.startswith("prod"):
+            raise ValueError(
+                f"Unable to enable mock_digid for environment {environment}"
+            )
         self._pyop_provider = pyop_provider
         self._authentication_cache = authentication_cache
         self._rate_limiter = rate_limiter
@@ -46,6 +52,7 @@ class OIDCProvider:
         self._artifact_resolving_service = artifact_resolving_service
         self._userinfo_service = userinfo_service
         self._app_mode = app_mode
+        self._environment = environment
 
     def well_known(self):
         return JSONResponse(
@@ -67,7 +74,7 @@ class OIDCProvider:
             )
         )
 
-        if request.client is None:
+        if request.client is None or request.client.host is None:
             raise ServerErrorException(
                 "No Client info available in the request content"
             )
@@ -94,7 +101,7 @@ class OIDCProvider:
             self._mock_digid, saml_identity_provider, login_digid_request, randstate
         )
 
-    def token(self, token_request: TokenRequest, headers):
+    def token(self, token_request: TokenRequest, headers: Headers) -> Response:
         acs_context = self._authentication_cache.get_acs_context(token_request.code)
         if acs_context is None:
             raise HTTPException(
@@ -107,13 +114,11 @@ class OIDCProvider:
         resolved_artifact = self._artifact_resolving_service.resolve_artifact(
             acs_context
         )
-        external_user_authentication_context = (
-            self._userinfo_service.request_userinfo_for_artifact(
-                acs_context, resolved_artifact
-            )
+        userinfo = self._userinfo_service.request_userinfo_for_artifact(
+            acs_context, resolved_artifact
         )
         self._authentication_cache.cache_authentication_context(
-            token_response, external_user_authentication_context
+            token_response, userinfo
         )
         return token_response
 
