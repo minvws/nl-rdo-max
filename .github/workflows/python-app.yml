@@ -14,32 +14,39 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: '3.8'
+          cache: 'pip' # caching pip dependencies
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install libxmlsec1-dev pkg-config
           python -m pip install --upgrade pip setuptools wheel
           make venv
+
       - name: Lint with pylint
         run: make lint
+
       - name: Type check with MyPy
         run: make type-check
+
       - name: Audit with bandid
         run: make audit
   tests:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: '3.8'
+          cache: 'pip' # caching pip dependencies
+
       - name: Install dependencies
         run: |
           sudo add-apt-repository ppa:redislabs/redis
@@ -47,7 +54,9 @@ jobs:
           sudo apt-get install libxmlsec1-dev pkg-config redis-server
           python -m pip install --upgrade pip setuptools wheel
           make venv
+
       - name: Setup settings and secrets
         run: make setup
+
       - name: Test with unittest
         run: make test

@@ -9,13 +9,16 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
       - name: Diff configfiles
         run: git diff master~1:inge6.conf.example inge6.conf.example > inge6.conf.diff
+
       - name: Diff configfiles
         run: git diff master~1:clients.json clients.json > clients.json.diff
+
       - name: Send mail
         uses: dawidd6/action-send-mail@v3
         with:
