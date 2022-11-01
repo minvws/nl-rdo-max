@@ -4,9 +4,12 @@
 #
 # SPDX-License-Identifier: EUPL-1.2
 #
+import base64
 from typing import Dict, Any
 
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PrivateKey,
+)
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
 from jwcrypto.jwk import JWK
 from jwcrypto.jwt import JWT
@@ -27,16 +30,21 @@ def _create_x25519_pubkey(key):
     return jwk
 
 
-class Ed25519JweService(JweService):
-    def __init__(self, raw_sign_key: bytes):
-        self._sign_key = PrivateKey(raw_sign_key, encoder=Base64Encoder)
-        self._jwk_sign = JWK.from_pyca(
-            Ed25519PrivateKey.from_private_bytes(bytes(self._sign_key))
+class XEd25519JweService(JweService):
+    def __init__(self, raw_sign_key: str):
+        sign_key = Ed25519PrivateKey.from_private_bytes(base64.b64decode(raw_sign_key))
+        self._nacl_box_encrypt_key = PrivateKey(
+            raw_sign_key.encode("utf-8"), encoder=Base64Encoder
         )
+        self._private_sign_jwk_key = JWK.from_pyca(sign_key)
+        self._public_sign_jwk_key = JWK.from_pyca(sign_key.public_key())
+
+    def get_pub_jwk(self) -> JWK:
+        return self._public_sign_jwk_key
 
     def to_jwe(self, data: Dict[str, Any], pubkey: str) -> str:
         jwk_enc = _create_x25519_pubkey(
-            X25519PublicKey.from_public_bytes(bytes(pubkey.encode("utf-8")))
+            X25519PublicKey.from_public_bytes(base64.b64decode(pubkey.encode("utf-8")))
         )
         jws_token = JWT(
             {
@@ -44,7 +52,8 @@ class Ed25519JweService(JweService):
             },
             claims=data,
         )
-        jws_token.make_signed_token(self._jwk_sign)
+        jws_token.make_signed_token(self._private_sign_jwk_key)
+        jws_token.validate(self._public_sign_jwk_key)
         etoken = JWT(
             header={"typ": "JWT", "alg": "ECDH-ES", "enc": "A128CBC-HS256"},
             claims=jws_token.serialize(),
@@ -54,5 +63,5 @@ class Ed25519JweService(JweService):
 
     def box_encrypt(self, data: str, client_key: str) -> str:
         enc_key = PublicKey(client_key.encode("utf-8"), encoder=Base64Encoder)
-        box = Box(self._sign_key, enc_key)
+        box = Box(self._nacl_box_encrypt_key, enc_key)
         return box.encrypt(data.encode("utf-8"), encoder=Base64Encoder).decode("utf-8")

@@ -213,9 +213,7 @@ def validate_userinfo(
     )
 
     assert userinfo_response.headers["content-type"] == "application/jwt"
-    with open(
-        "secrets/clients/test_client/test_client.key", "r", encoding="utf-8"
-    ) as file:
+    with open(CLIENT_RSA_PRIV_KEY_PATH, "r", encoding="utf-8") as file:
         pem = file.read().encode("utf-8")
     jwe = JWE.from_jose_token(userinfo_response.text)
     jwe.decrypt(JWK.from_pem(pem))
