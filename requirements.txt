@@ -151,7 +151,7 @@ pluggy==1.0.0
     # via pytest
 port-for==0.6.2
     # via pytest-redis
-psutil==5.9.2
+psutil==5.9.4
     # via mirakuru
 py==1.11.0
     # via pytest
