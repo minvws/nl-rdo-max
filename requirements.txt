@@ -74,7 +74,7 @@ dockerpty==0.4.1
     # via docker-compose
 docopt==0.6.2
     # via docker-compose
-fastapi==0.82.0
+fastapi==0.87.0
     # via inge6 (setup.py)
 freezegun==1.2.2
     # via inge6 (setup.py)
