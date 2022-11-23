@@ -170,7 +170,7 @@ pyflakes==2.5.0
     # via autoflake
 pyjwkest==1.4.2
     # via oic
-pyjwt==2.4.0
+pyjwt==2.6.0
     # via inge6 (setup.py)
 pylint==2.15.2
     # via inge6 (setup.py)
