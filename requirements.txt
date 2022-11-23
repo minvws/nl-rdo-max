@@ -22,7 +22,7 @@ autoflake==1.7.3
     # via inge6 (setup.py)
 bandit==1.7.4
     # via inge6 (setup.py)
-bcrypt==4.0.0
+bcrypt==4.0.1
     # via paramiko
 beaker==1.11.0
     # via oic
