@@ -4,7 +4,7 @@
 #
 #    pip-compile --extra=dev
 #
-anyio==3.6.1
+anyio==3.6.2
     # via starlette
 asgiref==3.5.2
     # via uvicorn
