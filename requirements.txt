@@ -200,7 +200,7 @@ pytest-cov==3.0.0
     # via inge6 (setup.py)
 pytest-docker==1.0.1
     # via inge6 (setup.py)
-pytest-mock==3.8.2
+pytest-mock==3.10.0
     # via inge6 (setup.py)
 pytest-redis==2.4.0
     # via inge6 (setup.py)
