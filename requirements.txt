@@ -18,7 +18,7 @@ attrs==22.1.0
     #   pytest
     #   pytest-docker
     #   zeep
-autoflake==1.7.7
+autoflake==2.0.0
     # via inge6 (setup.py)
 bandit==1.7.4
     # via inge6 (setup.py)
