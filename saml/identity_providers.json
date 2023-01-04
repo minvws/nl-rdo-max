@@ -1,11 +1,12 @@
 {
-    "tvs": {
-        "saml_specification_version": 4.5,
-        "base_dir": "saml/tvs",
-        "cert_path": "saml/tvs/certs/sp.crt",
-        "key_path": "saml/tvs/certs/sp.key",
-        "settings_path": "saml/tvs/settings.json",
-        "advanced_settings_path": "saml/tvs/advanced_settings.json",
-        "idp_metadata_path": "saml/tvs/metadata/idp_metadata.xml"
-    }
+  "tvs": {
+    "saml_specification_version": 4.5,
+    "base_dir": "saml/tvs",
+    "cert_path": "saml/tvs/certs/sp.crt",
+    "key_path": "saml/tvs/certs/sp.key",
+    "cluster_key_path": "saml/tvs/certs/poc-1-cibg.uzi.bavod.nl.key",
+    "settings_path": "saml/tvs/settings.json",
+    "advanced_settings_path": "saml/tvs/advanced_settings.json",
+    "idp_metadata_path": "saml/tvs/metadata/idp_metadata.xml"
+  } //todo: I've added a few settings in acc saml?
 }

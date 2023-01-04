@@ -12,6 +12,7 @@ i4_encrypt_pubkey                    = BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
 external_user_authentication_sym_key = 0000000000000000000000000000000000000000000000000000000000000000
 jwe_sign_priv_key_path = secrets/userinfo/jwe_sign.key
 jwe_sign_crt_path = secrets/userinfo/jwe_sign.crt
+login_methods = digid, mock_digid, irma
 
 [uvicorn]
 # The host to be running on

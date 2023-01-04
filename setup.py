@@ -14,7 +14,7 @@ requirements = [
     "pyOpenSSL",
     "python3-saml==1.14.0",
     "python-multipart",
-    "pynacl",
+    "pynacl"
 ]
 
 setup(

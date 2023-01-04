@@ -1,42 +1,54 @@
+import base64
+import json
+from typing import List
 from urllib.parse import urlencode
 
 from fastapi import Request, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from fastapi.templating import Jinja2Templates
+from jwcrypto.jwt import JWT
 from pyop.provider import Provider as PyopProvider, extract_bearer_token_from_http_request  # type: ignore[attr-defined]
 from starlette.datastructures import Headers
 
-from app.exceptions.max_exceptions import ServerErrorException
-from app.exceptions.oidc_exceptions import (
+from app.exceptions.max_exceptions import (
+    ServerErrorException,
+    UnauthorizedError,
     InvalidClientException,
     InvalidRedirectUriException,
 )
 from app.misc.rate_limiter import RateLimiter
+from app.models.acs_context import AcsContext
+from app.models.authentication_context import AuthenticationContext
 from app.models.authorize_request import AuthorizeRequest
-from app.models.login_digid_request import LoginDigiDRequest
 from app.models.token_request import TokenRequest
+from app.services.loginhandler.authentication_handler_factory import AuthenticationHandlerFactory
 from app.services.saml.artifact_resolving_service import ArtifactResolvingService
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
-from app.services.saml.saml_response_factory import SAMLResponseFactory
+from app.services.saml.saml_response_factory import SamlResponseFactory
 from app.services.userinfo.userinfo_service import UserinfoService
 from app.storage.authentication_cache import AuthenticationCache
+
+templates = Jinja2Templates(directory="jinja2")
 
 
 # pylint:disable=too-many-arguments
 class OIDCProvider:
     def __init__(
-        self,
-        pyop_provider: PyopProvider,
-        authentication_cache: AuthenticationCache,
-        rate_limiter: RateLimiter,
-        clients: dict,
-        saml_identity_provider_service: SamlIdentityProviderService,
-        mock_digid: bool,
-        saml_response_factory: SAMLResponseFactory,
-        artifact_resolving_service: ArtifactResolvingService,
-        userinfo_service: UserinfoService,
-        app_mode: str,
-        environment: str,
+            self,
+            pyop_provider: PyopProvider,
+            authentication_cache: AuthenticationCache,
+            rate_limiter: RateLimiter,
+            clients: dict,
+            saml_identity_provider_service: SamlIdentityProviderService,
+            mock_digid: bool,
+            saml_response_factory: SamlResponseFactory,
+            artifact_resolving_service: ArtifactResolvingService,
+            userinfo_service: UserinfoService,
+            app_mode: str,
+            environment: str,
+            login_methods: List[str],
+            authentication_handler_factory: AuthenticationHandlerFactory
     ):
         if mock_digid and environment.startswith("prod"):
             raise ValueError(
@@ -53,6 +65,8 @@ class OIDCProvider:
         self._userinfo_service = userinfo_service
         self._app_mode = app_mode
         self._environment = environment
+        self._login_methods = login_methods
+        self._authentication_handler_factory = authentication_handler_factory
 
     def well_known(self):
         return JSONResponse(
@@ -64,10 +78,15 @@ class OIDCProvider:
     def jwks(self):
         return JSONResponse(content=jsonable_encoder(self._pyop_provider.jwks))
 
-    def authorize(self, authorize_request: AuthorizeRequest, request: Request):
+    def present_login_options_or_authorize(self, request: Request, authorize_request: AuthorizeRequest):
         self._validate_authorize_request(authorize_request)
-        self._rate_limiter.validate_outage()
+        login_options_response = self._validate_login_methods(request, authorize_request)
+        if login_options_response:
+            return login_options_response
+        return self._authorize(request, authorize_request)
 
+    def _authorize(self, request: Request, authorize_request: AuthorizeRequest) -> Response:
+        self._rate_limiter.validate_outage()
         pyop_authentication_request = (
             self._pyop_provider.parse_authentication_request(  # type:ignore
                 urlencode(authorize_request.dict()), request.headers
@@ -76,30 +95,62 @@ class OIDCProvider:
 
         if request.client is None or request.client.host is None:
             raise ServerErrorException(
-                "No Client info available in the request content"
+                error_description="No Client info available in the request content",
+                redirect_uri=authorize_request.redirect_uri
             )
-        identity_provider_name = (
-            self._rate_limiter.get_identity_provider_name_and_validate_request(
-                request.client.host
-            )
-        )
 
-        saml_identity_provider = (
-            self._saml_identity_provider_service.get_identity_provider(
-                identity_provider_name
-            )
-        )
+        self._rate_limiter.ip_limit_test(request.client.host)
+
+        login_handler = self._authentication_handler_factory.create(authorize_request.login_hints[0])
+
+        authentication_state = login_handler.authentication_state(authorize_request)
+
         randstate = self._authentication_cache.create_authentication_request_state(
-            pyop_authentication_request, authorize_request, identity_provider_name
+            pyop_authentication_request,
+            authorize_request,
+            authentication_state
         )
 
-        login_digid_request = LoginDigiDRequest(
-            state=randstate, authorize_request=authorize_request
+        return login_handler.authorize_response(
+            request,
+            authorize_request,
+            pyop_authentication_request,
+            authentication_state,
+            randstate
         )
 
-        return self._saml_response_factory.create_saml_response(
-            self._mock_digid, saml_identity_provider, login_digid_request, randstate
+    def get_authentication_request_state(self, randstate: str) -> AuthenticationContext:
+        authentication_request = self._authentication_cache.get_authentication_request_state(randstate)
+        if authentication_request is None:
+            client_id = json.loads(base64.b64decode(randstate))["client_id"]
+            redirect_uri = None
+            if client_id in self._clients:
+                redirect_uri = self._clients[client_id]["error_page"]
+            raise UnauthorizedError(
+                error_description="No active login state found for this request.",
+                redirect_uri=redirect_uri
+            )
+        return authentication_request
+
+    def handle_external_authentication(self, authentication_request: AuthenticationContext, userinfo: str):
+        auth_req = authentication_request.authorization_request
+
+        # TODO: Change this to client from clients.json, if possible
+        pyop_authorize_response = self._pyop_provider.authorize(  # type:ignore
+            auth_req, "client"
         )
+
+        acs_context = AcsContext(
+            client_id=authentication_request.authorization_request["client_id"],
+            authentication_method=authentication_request.authentication_method,
+            authentication_state=authentication_request.authentication_state,
+            userinfo=userinfo
+        )
+        self._authentication_cache.cache_acs_context(pyop_authorize_response["code"], acs_context)
+
+        response_url = pyop_authorize_response.request(auth_req["redirect_uri"], False)
+
+        return response_url
 
     def token(self, token_request: TokenRequest, headers: Headers) -> Response:
         acs_context = self._authentication_cache.get_acs_context(token_request.code)
@@ -111,15 +162,19 @@ class OIDCProvider:
         token_response = self._pyop_provider.handle_token_request(  # type:ignore
             token_request.query_string, headers
         )
-        resolved_artifact = self._artifact_resolving_service.resolve_artifact(
-            acs_context
-        )
-        userinfo = self._userinfo_service.request_userinfo_for_artifact(
-            acs_context, resolved_artifact
-        )
-        self._authentication_cache.cache_authentication_context(
-            token_response, userinfo
-        )
+
+        if self._app_mode == "legacy":
+            id_jwt = JWT.from_jose_token(token_response["id_token"])
+            at_hash_key = json.loads(id_jwt.token.objects["payload"].decode("utf-8"))[
+                "at_hash"
+            ]
+            self._authentication_cache.cache_userinfo_context(
+                at_hash_key, token_response["access_token"], acs_context
+            )
+        else:
+            self._authentication_cache.cache_userinfo_context(
+                token_response["access_token"], token_response["access_token"], acs_context
+            )
         return token_response
 
     def userinfo(self, request: Request):
@@ -127,12 +182,16 @@ class OIDCProvider:
             authz_header=request.headers.get("Authorization")
         )
         if self._app_mode == "legacy":
-            authentication_context = (
-                self._authentication_cache.get_authentication_context(bearer_token)
+            id_jwt = JWT.from_jose_token(bearer_token)
+            at_hash_key = json.loads(id_jwt.token.objects["payload"].decode("utf-8"))[
+                "at_hash"
+            ]
+            userinfo_context = (
+                self._authentication_cache.get_userinfo_context(at_hash_key)
             )
             introspection = (
                 self._pyop_provider.authz_state.introspect_access_token(  # type:ignore
-                    authentication_context["access_token"]
+                    userinfo_context.access_token
                 )
             )
         else:
@@ -142,16 +201,33 @@ class OIDCProvider:
                     bearer_token
                 )
             )
-            authentication_context = (
-                self._authentication_cache.get_authentication_context(bearer_token)
+            userinfo_context = (
+                self._authentication_cache.get_userinfo_context(bearer_token)
             )
-
         if not introspection["active"]:
             raise Exception("not authorized")
         return Response(
             headers={"Content-Type": "application/jwt"},
-            content=authentication_context["external_user_authentication_context"],
+            content=userinfo_context.userinfo,
         )
+
+    def _validate_login_methods(self, request: Request, authorize_request: AuthorizeRequest):
+        redirect_url = request.url.remove_query_params("login_hints")
+        login_methods = [x for x in self._login_methods if x in authorize_request.login_hints]
+
+        if not login_methods:
+            login_methods = self._login_methods
+        if len(login_methods) > 1:
+            return templates.TemplateResponse(
+                "login_options.html",
+                {
+                    "request": request,
+                    "login_methods": login_methods,
+                    "ura_name": self._clients[authorize_request.client_id]["name"],
+                    "redirect_uri": redirect_url,
+                }
+            )
+        return None
 
     def _validate_authorize_request(self, authorize_request: AuthorizeRequest):
         """
@@ -159,9 +235,12 @@ class OIDCProvider:
         user. Instead, return a 400 should be returned.
         """
         if authorize_request.client_id not in self._clients:
-            raise InvalidClientException()
+            raise InvalidClientException(
+                error_description=f"Client id {authorize_request.client_id} is not known for this OIDC server",
+                redirect_uri=authorize_request.redirect_uri
+            )
 
         if authorize_request.redirect_uri not in self._clients[
             authorize_request.client_id
         ].get("redirect_uris", []):
-            raise InvalidRedirectUriException()
+            raise InvalidRedirectUriException(redirect_uri=authorize_request.redirect_uri)

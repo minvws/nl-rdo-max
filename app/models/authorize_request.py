@@ -1,5 +1,6 @@
 import logging
 from functools import cached_property
+from typing import Union
 
 from pydantic import BaseModel, validator
 
@@ -18,6 +19,8 @@ class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
     state: str
     code_challenge: str
     code_challenge_method: str
+    login_hint: Union[str, None] = None
+    claims: str = "{}"
 
     @staticmethod
     def get_allowed_scopes():
@@ -26,6 +29,12 @@ class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
     @property
     def splitted_scopes(self):
         return self.scope.split()
+
+    @property
+    def login_hints(self):
+        if self.login_hint is None:
+            return []
+        return self.login_hint.split(',')
 
     @validator("scope")
     def validate_scopes(cls, scopes):  # pylint: disable=no-self-argument

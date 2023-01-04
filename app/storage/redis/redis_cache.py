@@ -41,12 +41,12 @@ def _deserialize(serialized_value: Optional[Any]) -> Any:
 
 class RedisCache(Cache):
     def __init__(
-        self,
-        default_cache_namespace: str,
-        enable_debugger,
-        expires_in_seconds: int,
-        redis_client: StrictRedis,
-        redis_get_debugger_factory: RedisGetDebuggerFactory,
+            self,
+            default_cache_namespace: str,
+            enable_debugger,
+            expires_in_seconds: int,
+            redis_client: StrictRedis,
+            redis_get_debugger_factory: RedisGetDebuggerFactory,
     ):
         self.key_prefix: str = default_cache_namespace
         self.expires_in_s: int = expires_in_seconds
@@ -60,6 +60,13 @@ class RedisCache(Cache):
     def get(self, key: str) -> Any:
         key_with_namespace = self._prepend_with_namespace(key)
         ret_value = self.redis_client.get(key_with_namespace)
+        if self.enable_debugger:
+            self.redis_debugger.debug_get(key_with_namespace, ret_value)
+        return ret_value
+
+    def get_and_delete(self, key: str) -> Any: # todo: Test this method
+        key_with_namespace = self._prepend_with_namespace(key)
+        ret_value = self.redis_client.getdel(key_with_namespace)
         if self.enable_debugger:
             self.redis_debugger.debug_get(key_with_namespace, ret_value)
         return ret_value
@@ -95,6 +102,9 @@ class RedisCache(Cache):
         return self.set(key, _serialize(value))
 
     def get_complex_object(self, key: str) -> Any:
+        return _deserialize(self.get(key))
+
+    def get_and_delete_complex_object(self, key: str) -> Any:
         return _deserialize(self.get(key))
 
     def gen_token(self) -> Text:

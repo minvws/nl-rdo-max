@@ -1,7 +1,9 @@
+import base64
 import json
-from typing import Any, Union
+import pickle
+#validate for trusted data only: https://docs.python.org/3/library/pickle.html
+from typing import Any, Union, Dict
 
-from jwcrypto.jwt import JWT
 from pyop.message import AuthorizationRequest
 
 from app.constants import (
@@ -9,20 +11,20 @@ from app.constants import (
     ACS_CONTEXT_PREFIX,
     ID_TOKEN_PREFIX,
 )
+from app.models.acs_context import AcsContext
+from app.models.authentication_context import AuthenticationContext
+from app.models.authentication_request_context import UserinfoContext
 from app.models.authorize_request import AuthorizeRequest
-from app.models.saml.assertion_consumer_service_request import (
-    AssertionConsumerServiceRequest,
-)
 from app.services.encryption.sym_encryption_service import SymEncryptionService
 from app.storage.cache import Cache
 
 
 class AuthenticationCache:
     def __init__(
-        self,
-        cache: Cache,
-        authentication_context_encryption_service: SymEncryptionService,
-        app_mode: Union[str, None],
+            self,
+            cache: Cache,
+            authentication_context_encryption_service: SymEncryptionService,
+            app_mode: Union[str, None],
     ):
         self._cache = cache
         self._authentication_context_encryption_service = (
@@ -31,97 +33,60 @@ class AuthenticationCache:
         self._app_mode = app_mode
 
     def create_authentication_request_state(
-        self,
-        pyop_authentication_request: AuthorizationRequest,
-        authorize_request: AuthorizeRequest,
-        identity_provider_name: str,
+            self,
+            authorization_request: AuthorizationRequest,
+            authorize_request: AuthorizeRequest,
+            authentication_state: Dict[str, Any],
     ) -> str:
-        rand_state = self._cache.gen_token()
+        #todo: is this client_id still necessary
+        rand_state = base64.b64encode(
+            json.dumps({"state": self._cache.gen_token(), "client_id": authorize_request.client_id}).encode("utf-8")
+        ).decode("utf-8")
         state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{rand_state}"
-        value = {
-            "auth_req": pyop_authentication_request,
-            "code_challenge": authorize_request.code_challenge,
-            "code_challenge_method": authorize_request.code_challenge_method,
-            "authorization_by_proxy": authorize_request.authorization_by_proxy,
-            "id_provider": identity_provider_name,
-            "client_id": authorize_request.client_id,
-        }
-        self._cache.set_complex_object(state_key, value)
+        authentication_context = AuthenticationContext(
+            authorization_request=authorization_request,
+            authorization_by_proxy=authorize_request.authorization_by_proxy,
+            authentication_method=authorize_request.login_hints[0],
+            authentication_state=authentication_state
+        )
+        self._cache.set_complex_object(state_key, authentication_context)
         return rand_state
 
-    def get_authentication_request_state(self, rand_state: str) -> Any:
+    def get_authentication_request_state(self, rand_state: str) -> Union[AuthenticationContext, None]:
         state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{rand_state}"
-        return self._cache.get_complex_object(state_key)
+        return self._cache.get_and_delete_complex_object(state_key)
 
     def cache_acs_context(
-        self,
-        pyop_authorize_response,
-        pyop_authorize_request,
-        acs_request: AssertionConsumerServiceRequest,
+            self,
+            code: str,
+            acs_context: AcsContext
     ) -> None:
-        self._cache.set_complex_object(
-            f"{ACS_CONTEXT_PREFIX}:{pyop_authorize_response['code']}",
-            {
-                "id_provider": pyop_authorize_request["id_provider"],
-                "authorization_by_proxy": pyop_authorize_request[
-                    "authorization_by_proxy"
-                ],
-                "code_challenge": pyop_authorize_request["code_challenge"],
-                "code_challenge_method": pyop_authorize_request[
-                    "code_challenge_method"
-                ],
-                "artifact": acs_request.SAMLart,
-                "mocking": acs_request.mocking,
-                "client_id": pyop_authorize_request["client_id"],
-            },
-        )
+        acs_context_key = f"{ACS_CONTEXT_PREFIX}:{code}"
+        self._cache.set_complex_object(acs_context_key, acs_context)
 
-    def get_acs_context(self, code: str):
-        return self._cache.get_complex_object(f"{ACS_CONTEXT_PREFIX}:{code}")
+    def get_acs_context(self, code: str) -> Union[AcsContext, None]:
+        return self._cache.get_and_delete_complex_object(f"{ACS_CONTEXT_PREFIX}:{code}")
 
-    def cache_authentication_context(
-        self, pyop_token_response: dict, external_user_authentication_context: str
+    def cache_userinfo_context(
+            self, userinfo_key: str, access_token: str, acs_context: AcsContext
     ):
-        user_authentication_context = {
-            "id_token": pyop_token_response["id_token"],
-            "external_user_authentication_context": self._authentication_context_encryption_service.symm_encrypt(
-                external_user_authentication_context.encode("utf-8")
-            ),
-        }
-        if self._app_mode == "legacy":
-            user_authentication_context["access_token"] = pyop_token_response[
-                "access_token"
-            ]
-            id_jwt = JWT.from_jose_token(pyop_token_response["id_token"])
-            at_hash_key = json.loads(id_jwt.token.objects["payload"].decode("utf-8"))[
-                "at_hash"
-            ]
-            return self._cache.set_complex_object(
-                f"{ID_TOKEN_PREFIX}:{at_hash_key}", user_authentication_context
+        userinfo_context_serialized = self._authentication_context_encryption_service.symm_encrypt(
+            pickle.dumps( #fixme: Is this really trusted input?
+                UserinfoContext(
+                    client_id=acs_context.client_id,
+                    authentication_method=acs_context.authentication_method,
+                    access_token=access_token,
+                    userinfo=acs_context.userinfo
+                )
             )
-        return self._cache.set_complex_object(
-            f"{ID_TOKEN_PREFIX}:{pyop_token_response['access_token']}",
-            user_authentication_context,
+        )
+        return self._cache.set(
+            f"{ID_TOKEN_PREFIX}:{userinfo_key}",
+            userinfo_context_serialized,
         )
 
-    def get_authentication_context(self, access_token: str):
-        if self._app_mode == "legacy":
-            id_jwt = JWT.from_jose_token(access_token)
-            at_hash_key = json.loads(id_jwt.token.objects["payload"].decode("utf-8"))[
-                "at_hash"
-            ]
-            authentication_context = self._cache.get_complex_object(
-                f"{ID_TOKEN_PREFIX}:{at_hash_key}"
-            )
-        else:
-            authentication_context = self._cache.get_complex_object(
-                f"{ID_TOKEN_PREFIX}:{access_token}"
-            )
-        authentication_context[
-            "external_user_authentication_context"
-        ] = self._authentication_context_encryption_service.symm_decrypt(
-            authentication_context["external_user_authentication_context"]
-        ).decode(
-            "utf-8"
-        )
-        return authentication_context
+    def get_userinfo_context(self, access_token: str) -> Union[UserinfoContext, None]:
+        value = self._cache.get(f"{ID_TOKEN_PREFIX}:{access_token}")
+        if value is not None:
+            return pickle.loads(self._authentication_context_encryption_service.symm_decrypt(value))
+        return None

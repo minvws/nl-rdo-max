@@ -1,53 +1,156 @@
-from app.models.enums import SomethingWrongReason
+import abc
+from typing import Union
+
+from app.exceptions.oidc_exceptions import (
+    UNAUTHORIZED_CLIENT, SERVER_ERROR, ACCESS_DENIED, TEMPORARILY_UNAVAILABLE,
+    INVALID_REQUEST,
+)
 
 
-class ServerErrorException(Exception):
-    def __init__(self, message: str):
-        super().__init__(message)
+class RedirectBaseException(Exception, abc.ABC):
+    def __init__(
+            self,
+            *,
+            error: str,
+            error_description: str,
+            redirect_uri: Union[str, None]
+    ):
+        super().__init__(error_description)
+        self.error = error
+        self.error_description = error_description
+        self.redirect_uri = redirect_uri
 
 
-class SomethingWrongError(RuntimeError):
-    def __init__(self, reason: SomethingWrongReason, message: str):
-        super().__init__(message)
-        self.reason = reason
+class JsonBaseException(RedirectBaseException, abc.ABC):
+    def __init__(
+            self,
+            *,
+            error: str,
+            error_description: str,
+            redirect_uri: Union[str, None]
+    ):
+        super().__init__(error=error, error_description=error_description, redirect_uri=redirect_uri)
 
 
-class DependentServiceOutage(SomethingWrongError):
-    def __init__(self) -> None:
+class TemplateBaseException(RedirectBaseException, abc.ABC):
+    def __init__(
+            self,
+            *,
+            error: str,
+            error_description: str,
+            redirect_uri: Union[str, None]
+    ):
+        super().__init__(error=error, error_description=error_description, redirect_uri=redirect_uri)
+
+
+class InvalidClientException(TemplateBaseException):
+    """
+    https://openid.net/specs/openid-connect-core-1_0.html#AuthError
+    """
+
+    def __init__(
+            self,
+            *,
+            error_description,
+            redirect_uri: Union[str, None]
+    ):
         super().__init__(
-            SomethingWrongReason.OUTAGE,
-            "Some service we depend on is down.",
+            error=UNAUTHORIZED_CLIENT,
+            error_description=error_description,
+            redirect_uri=redirect_uri
         )
 
 
-class TooManyRequestsFromOrigin(SomethingWrongError):
-    def __init__(self, ip_expire_s: str) -> None:
+class InvalidRedirectUriException(TemplateBaseException):
+    def __init__(
+            self,
+            *,
+            redirect_uri: Union[str, None]
+    ):
         super().__init__(
-            SomethingWrongReason.TOO_MANY_REQUEST,
+            error=UNAUTHORIZED_CLIENT,
+            error_description="Invalid redirect uri",
+            redirect_uri=redirect_uri
+        )
+
+
+class ServerErrorException(JsonBaseException):
+    def __init__(
+            self,
+            *,
+            error_description: str,
+            redirect_uri: Union[str, None]
+    ):
+        super().__init__(
+            error=SERVER_ERROR,
+            error_description=error_description,
+            redirect_uri=redirect_uri
+        )
+
+
+class UnauthorizedError(JsonBaseException):
+    def __init__(
+            self,
+            *,
+            error_description: str,
+            redirect_uri: Union[str, None]
+    ):
+        super().__init__(
+            error=ACCESS_DENIED,
+            error_description=error_description,
+            redirect_uri=redirect_uri
+        )
+
+
+class DependentServiceOutage(JsonBaseException):
+    def __init__(self, *, redirect_uri: Union[str, None]) -> None:
+        super().__init__(
+            error=TEMPORARILY_UNAVAILABLE,
+            error_description="Some service we depend on is down.",
+            redirect_uri=redirect_uri
+        )
+
+
+class TooManyRequestsFromOrigin(JsonBaseException):
+    def __init__(
+            self,
+            *,
+            ip_expire_s: str,
+            redirect_uri: Union[str, None]
+    ) -> None:
+        super().__init__(
+            error=TEMPORARILY_UNAVAILABLE,
+            error_description=
             "Too many requests from the same ip_address during the last"
             f" {ip_expire_s} seconds.",
+            redirect_uri=redirect_uri
         )
 
 
-class TooBusyError(SomethingWrongError):
-    def __init__(self) -> None:
+class TooBusyError(JsonBaseException):
+    def __init__(self, *, redirect_uri: Union[str, None]) -> None:
         super().__init__(
-            SomethingWrongReason.TOO_BUSY,
+            error=TEMPORARILY_UNAVAILABLE,
+            error_description=
             "Servers are too busy at this point, please try again later",
+            redirect_uri=redirect_uri
         )
 
 
-class ExpectedCacheValue(RuntimeError):
-    pass
-
-
-class AuthorizationByProxyDisabled(SomethingWrongError):
-    def __init__(self) -> None:
+class AuthorizationByProxyDisabled(JsonBaseException):
+    def __init__(self, *, redirect_uri: Union[str, None]) -> None:
         super().__init__(
-            SomethingWrongReason.AUTH_BY_PROXY_DISABLED,
+            error=INVALID_REQUEST,
+            error_description=
             "Authorization by proxy is disabled for this provider",
+            redirect_uri=redirect_uri
         )
 
 
-class UnexpectedAuthnBinding(RuntimeError):
-    pass
+class UnexpectedAuthnBinding(JsonBaseException):
+    def __init__(self, *, redirect_uri: Union[str, None]) -> None:
+        super().__init__(
+            error=SERVER_ERROR,
+            error_description="Unexpected Authn binding",
+            redirect_uri=redirect_uri
+        )

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Notificaties - Rijksoverheid CSS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="static/css/manon-mint-green.css" rel="stylesheet">
+</head>
+
+<main id="main-content" tabindex="-1">
+
+    <section class="bg-color-offset auth">
+        <div>
+            <h1>Inloggen {{ ura_name }}</h1>
+
+            <div class="explanation" role="group" aria-label="toelichting">
+                <span>Toelichting:</span>
+                <p>Kies hier met behulp van welke dienst u wil inloggen bij "{{ ura_name }}"</p>
+            </div>
+
+            <div class="tile options-overview">
+
+                <h1>Inlogmiddelen:</h1>
+                <ul class="tiles">
+                    {% if 'digid' in login_methods %}
+                        <li>
+                            <a href="{{ redirect_uri }}&login_hint=digid" class="horizontal-view">
+                                <img src="static/img/digid-logo.svg" alt="DigiD logo">
+                                Inloggen met DigiD
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% if 'digid_mock' in login_methods %}
+                        <li>
+                            <a href="{{ redirect_uri }}&login_hint=digid_mock" class="horizontal-view">
+                                <img src="static/img/digid-logo.svg" alt="DigiD logo">
+                                Inloggen met DigiD MOCK
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% if 'uzipas' in login_methods %}
+                        <li>
+                            <a href="{{ redirect_uri }}&login_hint=uzipas" class="horizontal-view">
+                                <img src="static/img/uzipas.svg" alt="Uzipas logo">
+                                Inloggen met Uzipas
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% if 'irma' in login_methods %}
+                        <li>
+                            <a href="{{ redirect_uri }}&login_hint=irma" class="horizontal-view">
+                                <img src="static/img/irma-logo.svg" alt="Irma logo">
+                                Inloggen met IRMA
+                            </a>
+                        </li>
+                    {% endif %}
+
+                </ul>
+
+                <div class="button-container">
+                    <a href="" class="button secondary">Terug</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+</html>

@@ -18,8 +18,8 @@ clean_venv: ## Remove virtual environment
 	@rm -rf .venv
 
 run:
-	docker-compose stop && docker-compose up -d
-	source .venv/bin/activate && python3 -m app.main
+	docker-compose up -d
+	. .venv/bin/activate && ${env} python -m app.main
 
 pip-sync: ## synchronizes the .venv with the state of requirements.txt
 	. .venv/bin/activate && ${env} pip-compile --extra dev
@@ -35,7 +35,10 @@ setup-saml:
 setup-config:
 	scripts/./setup-config.sh
 
-setup: setup-config setup-saml setup-secrets
+setup-irma:
+	scripts/./setup-irma.sh
+
+setup: setup-config setup-saml setup-secrets setup-irma
 
 lint:
 	. .venv/bin/activate && ${env} pylint app

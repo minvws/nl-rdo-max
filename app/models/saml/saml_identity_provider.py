@@ -1,14 +1,12 @@
 import json
+from functools import cached_property
 from typing import Tuple
 
-from functools import cached_property
+from packaging.version import Version, parse as version_parse
 
-from packaging.version import Version
-from packaging.version import parse as version_parse
-
-from app.models.saml.saml_request import ArtifactResolveRequest, AuthNRequest
-from app.models.saml.metadata import IdPMetadata, SPMetadata
 from app.models.saml.exceptions import ScopingAttributesNotAllowed
+from app.models.saml.metadata import IdPMetadata, SPMetadata
+from app.models.saml.saml_request import ArtifactResolveRequest, AuthNRequest
 
 
 class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
@@ -23,17 +21,25 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
         self.settings_path = idp_setting["settings_path"]
         self.advanced_settings_path = idp_setting["advanced_settings_path"]
         self.idp_metadata_path = idp_setting["idp_metadata_path"]
+        self.expected_response_destination = idp_setting["expected_response_destination"]
+        self.expected_entity_id = idp_setting["expected_entity_id"]
+        self.expected_service_uuid = idp_setting["expected_service_uuid"]
+
 
         self.jinja_env = jinja_env
         with open(self.settings_path, "r", encoding="utf-8") as settings_file:
             self.settings_dict = json.loads(settings_file.read())
         with open(
-            self.advanced_settings_path, "r", encoding="utf-8"
+                self.advanced_settings_path, "r", encoding="utf-8"
         ) as adv_settings_file:
             self.settings_dict.update(json.loads(adv_settings_file.read()))
 
         with open(self.key_path, "r", encoding="utf-8") as key_file:
             self.priv_key = key_file.read()
+
+        if "cluster_key_path" in idp_setting:
+            with open(idp_setting["cluster_key_path"], "r", encoding="utf-8") as cluster_key_file:
+                self.cluster_priv_key = cluster_key_file.read()
 
         self._idp_metadata = IdPMetadata(self.idp_metadata_path)
         self._sp_metadata = SPMetadata(
@@ -68,6 +74,7 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
         scoping_list, request_ids = self.determine_scoping_attributes(
             authorization_by_proxy
         )
+        scoping_list = [] # todo: Remove this
         sso_url = self.idp_metadata.get_sso()["location"]
 
         return AuthNRequest(

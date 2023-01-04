@@ -13,19 +13,19 @@ from fastapi.templating import Jinja2Templates
 from app.models.digid_mock_requests import DigiDMockRequest, DigiDMockCatchRequest
 from app.models.login_digid_request import LoginDigiDRequest
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
-from app.services.saml.saml_response_factory import SAMLResponseFactory
+from app.services.saml.saml_response_factory import SamlResponseFactory
 from app.storage.authentication_cache import AuthenticationCache
 
-templates = Jinja2Templates(directory="html/jinja2")
+templates = Jinja2Templates(directory="jinja2")
 
 
 class DigidMockProvider:
     def __init__(
-        self,
-        saml_response_factory: SAMLResponseFactory,
-        saml_identity_provider_service: SamlIdentityProviderService,
-        authentication_cache: AuthenticationCache,
-        environment: str,
+            self,
+            saml_response_factory: SamlResponseFactory,
+            saml_identity_provider_service: SamlIdentityProviderService,
+            authentication_cache: AuthenticationCache,
+            environment: str,
     ):
         self._saml_response_factory = saml_response_factory
         self._saml_identity_provider_service = saml_identity_provider_service
@@ -41,13 +41,14 @@ class DigidMockProvider:
         identity_provider = self._saml_identity_provider_service.get_identity_provider(
             authentication_request_state["id_provider"]
         )
-        return self._saml_response_factory.create_saml_response(
-            mock_digid=not login_digid_request.force_digid
-            and not self._environment.startswith("prod"),
-            saml_identity_provider=identity_provider,
-            login_digid_request=login_digid_request,
-            randstate=login_digid_request.state,
-        )
+        # FIXME: What does this do?
+        # return self._saml_response_factory.create_saml_response(
+        #     mock_digid=not login_digid_request.force_digid
+        #                and not self._environment.startswith("prod"),
+        #     saml_identity_provider=identity_provider,
+        #     login_digid_request=login_digid_request,
+        #     randstate=login_digid_request.state,
+        # )
 
     @staticmethod
     def digid_mock(request: Request, digid_mock_request: DigiDMockRequest) -> Response:

@@ -1,12 +1,12 @@
 # pylint: disable=c-extension-no-member, too-few-public-methods
 
 from dependency_injector import containers, providers
-from app.storage.redis.redis_wrapper import RedisWrapper
-from app.storage.redis.redis_client import create_redis_client
-from app.storage.redis.redis_cache import RedisCache
-from app.storage.redis.redis_debugger import RedisGetDebuggerFactory
-from app.misc.utils import upper
+
 from app.storage.authentication_cache import AuthenticationCache
+from app.storage.redis.redis_cache import RedisCache
+from app.storage.redis.redis_client import create_redis_client
+from app.storage.redis.redis_debugger import RedisGetDebuggerFactory
+from app.storage.redis.redis_wrapper import RedisWrapper
 
 
 class Storage(containers.DeclarativeContainer):
@@ -19,7 +19,7 @@ class Storage(containers.DeclarativeContainer):
     redis_get_debugger_factory = providers.Singleton(
         RedisGetDebuggerFactory,
         redis_client=redis_client,
-        loglevel=config.app.loglevel.as_(upper),
+        loglevel=config.app.loglevel.as_(str.upper),
         redis_object_ttl=config.redis.object_ttl.as_int(),
         redis_default_cache_namespace=config.redis.default_cache_namespace,
     )

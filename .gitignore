@@ -1,6 +1,8 @@
 ## Local dev files
 .idea
 .venv
+.fleet
+env
 *.egg-info
 *.pytest_cache
 __pycache__
@@ -9,7 +11,7 @@ __pycache__
 *.pyc
 .coverage*
 .DS_Store
-
+*.bak
 ## Configuration and secrets
 secrets
 tests/secrets
@@ -17,6 +19,8 @@ clients.json
 max.conf
 *.crt
 *.key
+saml/digid/metadata/idp_metadata.xml
+saml/tvs/metadata/idp_metadata.xml
 saml/digid/advanced_settings.json
 saml/digid/settings.json
 saml/tvs/advanced_settings.json

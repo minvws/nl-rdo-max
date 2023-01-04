@@ -1,7 +1,10 @@
+import json
 from typing import Dict, Any
 
 from cryptography.hazmat.primitives import hashes
-from jwcrypto.jwt import JWK, JWT
+from jwcrypto.jwe import JWE
+from jwcrypto.jwk import JWK
+from jwcrypto.jwt import JWT
 
 from app.misc.utils import file_content_raise_if_none
 from app.services.encryption.jwe_service import JweService
@@ -17,7 +20,7 @@ class RSAJweService(JweService):
     def get_pub_jwk(self) -> JWK:
         return self._public_sign_jwk_key
 
-    def to_jwe(self, data: Dict[Any, Any], pubkey: str) -> str:
+    def to_jwe(self, data: Dict[str, Any], pubkey: str) -> str:
         header = {
             "typ": "JWT",
             "cty": "JWT",
@@ -37,3 +40,11 @@ class RSAJweService(JweService):
         etoken = JWT(header=header, claims=jwt_token.serialize())
         etoken.make_encrypted_token(JWK.from_pem(pubkey.encode("utf-8")))
         return etoken.serialize()
+
+    def from_jwe(self, jwe_str: str, privkey: str) -> Dict[str, Any]:
+        jwe = JWE.from_jose_token(jwe_str)
+        jwk = JWK.from_pem(privkey.encode("utf-8"))
+        jwe.decrypt(jwk)
+        jwt = JWT.from_jose_token(jwe.payload.decode("utf-8"))
+        jwt.validate(self._public_sign_jwk_key)
+        return json.loads(jwt.claims)

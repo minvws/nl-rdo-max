@@ -12,15 +12,15 @@ from app.storage.cache import Cache
 
 class RateLimiter:
     def __init__(
-        self,
-        cache: Cache,
-        identity_provider_outage_key: str,
-        primary_identity_provider_key: str,
-        overflow_identity_provider_key: str,
-        primary_identity_provider_user_limit_key: str,
-        overflow_identity_provider_user_limit_key: str,
-        ipaddress_max_count: int,
-        ipaddress_max_count_expire_seconds: int,
+            self,
+            cache: Cache,
+            identity_provider_outage_key: str,
+            primary_identity_provider_key: str,
+            overflow_identity_provider_key: str,
+            primary_identity_provider_user_limit_key: str,
+            overflow_identity_provider_user_limit_key: str,
+            ipaddress_max_count: int,
+            ipaddress_max_count_expire_seconds: int,
     ):
         self._cache = cache
         self._identity_provider_outage_key = identity_provider_outage_key
@@ -35,8 +35,7 @@ class RateLimiter:
         self._ipaddress_max_count = ipaddress_max_count
         self._ipaddress_max_count_expire_seconds = ipaddress_max_count_expire_seconds
 
-    def get_identity_provider_name_and_validate_request(self, ipaddress: str) -> str:
-        self._ip_limit_test(ipaddress=ipaddress)
+    def get_identity_provider_name_based_on_request_limits(self) -> str:
         primary_idp = self._get_primary_identity_provider_name()
         if primary_idp is None:
             raise ServerErrorException("Unable to get primary idp from Redis")
@@ -65,9 +64,9 @@ class RateLimiter:
             if self._cache.get_bool(self._identity_provider_outage_key):
                 raise DependentServiceOutage()
 
-    def _ip_limit_test(
-        self,
-        ipaddress: str,
+    def ip_limit_test(
+            self,
+            ipaddress: str,
     ) -> None:
         current_count = self._increase_ip_count(ipaddress)
         if current_count > self._ipaddress_max_count:
@@ -76,7 +75,7 @@ class RateLimiter:
             )
 
     def _user_limit_test(
-        self, user_limit_key: str, identity_provider_name: str
+            self, user_limit_key: str, identity_provider_name: str
     ) -> None:
         user_limit = self._cache.get_int(user_limit_key)
         if user_limit is None:

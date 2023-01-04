@@ -5,12 +5,14 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
 import base64
+import json
 from typing import Dict, Any
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
 )
-from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey, X25519PrivateKey
+from jwcrypto.jwe import JWE
 from jwcrypto.jwk import JWK
 from jwcrypto.jwt import JWT
 from nacl.encoding import Base64Encoder
@@ -60,6 +62,16 @@ class XEd25519JweService(JweService):
         )
         etoken.make_encrypted_token(jwk_enc)
         return etoken.serialize()
+
+    def from_jwe(self, jwe_str: str, privkey: str) -> Dict[str, Any]:
+        jwe = JWE.from_jose_token(jwe_str)
+        jwk = JWK()
+        # noinspection PyProtectedMember
+        jwk._import_pyca_pri_okp(X25519PrivateKey.from_private_bytes(base64.b64decode(privkey)))
+        jwe.decrypt(jwk)
+        jwt = JWT.from_jose_token(jwe.payload.decode("utf-8"))
+        jwt.validate(self._public_sign_jwk_key)
+        return json.loads(jwt.claims)
 
     def box_encrypt(self, data: str, client_key: str) -> str:
         enc_key = PublicKey(client_key.encode("utf-8"), encoder=Base64Encoder)

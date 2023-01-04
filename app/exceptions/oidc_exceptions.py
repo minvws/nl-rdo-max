@@ -15,18 +15,3 @@ INVALID_REQUEST_OBJECT = "invalid_request_object"
 REQUEST_NOT_SUPPORTED = "request_not_supported"
 REQUEST_URI_NOT_SUPPORTED = "request_uri_not_supported"
 REGISTRATION_NOT_SUPPORTED = "registration_not_supported"
-
-
-class AuthorizeEndpointException(Exception):
-    def __init__(self, error: str, error_description: str) -> None:
-        super().__init__()
-        self.error = error
-        self.error_description = error_description
-
-
-class InvalidClientException(Exception):
-    pass
-
-
-class InvalidRedirectUriException(Exception):
-    pass
