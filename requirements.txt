@@ -263,7 +263,7 @@ sniffio==1.3.0
     # via anyio
 starlette==0.21.0
     # via fastapi
-stevedore==4.0.0
+stevedore==4.1.1
     # via bandit
 texttable==1.6.4
     # via docker-compose
