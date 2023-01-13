@@ -20,7 +20,7 @@ class MockSamlAuthenticationHandler(SamlAuthenticationHandler):
             authorize_state: Dict[str, Any],
             randstate: str
     ) -> Response:
-        identity_provider = self._get_identity_provider()
+        identity_provider = self._get_identity_provider(authorize_state["identity_provider_name"])
         return self._saml_response_factory.create_saml_mock_response(identity_provider, authorize_request, randstate)
 
     def resolve_authentication_artifact(self, acs_context: AcsContext) -> Any:

@@ -35,10 +35,7 @@ setup-saml:
 setup-config:
 	scripts/./setup-config.sh
 
-setup-irma:
-	scripts/./setup-irma.sh
-
-setup: setup-config setup-saml setup-secrets setup-irma
+setup: setup-config setup-saml setup-secrets
 
 lint:
 	. .venv/bin/activate && ${env} pylint app

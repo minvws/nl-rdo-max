@@ -1,8 +1,13 @@
+import base64
+import json
 from unittest.mock import MagicMock
 
+from app.models.authentication_context import AuthenticationContext
+from app.models.authentication_request_context import UserinfoContext
 from app.services.encryption.sym_encryption_service import SymEncryptionService
 from app.storage.authentication_cache import AuthenticationCache
 from app.storage.cache import Cache
+from pyop.message import AuthorizationRequest
 
 
 def create_authentication_cache(
@@ -14,32 +19,32 @@ def create_authentication_cache(
 
 
 def test_create_authentication_request_state():
-    pyop_authentication_request = MagicMock()
+    pyop_authentication_request = MagicMock(spec=AuthorizationRequest)
     authorize_request = MagicMock()
-    identity_provider_name = "ipn"
+    authentication_state = MagicMock()
     cache = MagicMock()
 
-    expected = "bla"
+    authorize_request.login_hints = ["login_hint"]
+    authorize_request.authorization_by_proxy = False
+    authorize_request.client_id = "client_id"
+    expected = base64.b64encode(json.dumps({"state": "bla", "client_id": "client_id"}).encode("utf-8")).decode("utf-8")
 
-    cache.gen_token.return_value = expected
+    cache.gen_token.return_value = "bla"
 
     acache = create_authentication_cache(cache)
 
     actual = acache.create_authentication_request_state(
-        pyop_authentication_request, authorize_request, identity_provider_name
+        pyop_authentication_request, authorize_request, authentication_state
     )
 
     cache.set_complex_object.assert_called_with(
         "auth_req:" + expected,
-        # pylint:disable=duplicate-code
-        {
-            "auth_req": pyop_authentication_request,
-            "code_challenge": authorize_request.code_challenge,
-            "code_challenge_method": authorize_request.code_challenge_method,
-            "authorization_by_proxy": authorize_request.authorization_by_proxy,
-            "id_provider": identity_provider_name,
-            "client_id": authorize_request.client_id,
-        },
+        AuthenticationContext(
+            authorization_request=pyop_authentication_request,
+            authorization_by_proxy=authorize_request.authorization_by_proxy,
+            authentication_method=authorize_request.login_hints[0],
+            authentication_state=authentication_state
+        )
     )
     assert actual == expected
 
@@ -50,37 +55,28 @@ def test_get_authentication_request_state():
     randstate = "bla"
     expected = MagicMock()
 
-    cache.get_complex_object.return_value = expected
+    cache.get_and_delete_complex_object.return_value = expected
 
     acache = create_authentication_cache(cache)
     actual = acache.get_authentication_request_state(randstate)
 
     assert actual == expected
-    cache.get_complex_object.assert_called_with("auth_req:" + randstate)
+    cache.get_and_delete_complex_object.assert_called_with("auth_req:" + randstate)
 
 
 def test_cache_acs_context():
     cache = MagicMock()
-    pyop_authorize_response = MagicMock()
-    pyop_authorize_request = MagicMock()
-    acs_request = MagicMock()
+    code = MagicMock(name="code")
+    acs_context = MagicMock()
 
     acache = create_authentication_cache(cache)
     acache.cache_acs_context(
-        pyop_authorize_response, pyop_authorize_request, acs_request
+        code, acs_context
     )
 
     cache.set_complex_object.assert_called_with(
-        "pyop_auth_req:" + str(pyop_authorize_response["code"]),
-        {
-            "id_provider": pyop_authorize_request["id_provider"],
-            "authorization_by_proxy": pyop_authorize_request["authorization_by_proxy"],
-            "code_challenge": pyop_authorize_request["code_challenge"],
-            "code_challenge_method": pyop_authorize_request["code_challenge_method"],
-            "artifact": acs_request.SAMLart,
-            "mocking": acs_request.mocking,
-            "client_id": pyop_authorize_request["client_id"],
-        },
+        f"pyop_auth_req:{code}",
+        acs_context,
     )
 
 
@@ -90,57 +86,62 @@ def test_get_acs_context():
     code = "code"
     expected = MagicMock()
 
-    cache.get_complex_object.return_value = expected
+    cache.get_and_delete_complex_object.return_value = expected
 
     acache = create_authentication_cache(cache)
     actual = acache.get_acs_context(code)
 
     assert actual == expected
-    cache.get_complex_object.assert_called_with("pyop_auth_req:" + code)
+    cache.get_and_delete_complex_object.assert_called_with("pyop_auth_req:" + code)
 
 
-def test_cache_authentication_context():
+def test_cache_userinfo_context():
     cache = MagicMock()
     sym_encryption_service = MagicMock()
-    pyop_token_response = MagicMock()
-    external_user_authentication_context = MagicMock()
+    acs_context = MagicMock()
+    acs_context.client_id = "client_id"
+    acs_context.authentication_method = "authentication_method"
+    acs_context.userinfo = "userinfo"
     sym_encryption_service.symm_encrypt.return_value = "encrypted"
-    external_user_authentication_context.encode.return_value = "encoded"
+    userinfo_key = "userinfo_key"
+    access_token = "access_token"
 
     acache = create_authentication_cache(cache, sym_encryption_service)
-    acache.cache_authentication_context(
-        pyop_token_response, external_user_authentication_context
+    acache.cache_userinfo_context(
+        userinfo_key, access_token, acs_context
     )
 
-    cache.set_complex_object.assert_called_with(
-        "access_token:" + str(pyop_token_response["access_token"]),
-        {
-            "id_token": pyop_token_response["id_token"],
-            "external_user_authentication_context": "encrypted",
-        },
+    cache.set.assert_called_with(
+        "access_token:" + "userinfo_key",
+        "encrypted"
     )
-    sym_encryption_service.symm_encrypt.assert_called_with("encoded")
-    external_user_authentication_context.encode.assert_called_with("utf-8")
+    expected = json.dumps({
+        "client_id": "client_id",
+        "authentication_method": "authentication_method",
+        "access_token": "access_token",
+        "userinfo": "userinfo"}
+    )
+    sym_encryption_service.symm_encrypt.assert_called_with(expected.encode("utf-8"))
 
 
-def test_get_authentication_context():
+def test_get_userinfo_context():
     cache = MagicMock()
     sym_encryption_service = MagicMock()
 
     access_token = "access_token"
-    decrypted = MagicMock(name="decrypted")
-    decoded = MagicMock(name="decoded")
-    from_cache = {"external_user_authentication_context": "euac"}
+    encrypted = MagicMock(name="encrypted")
+    userinfo_context = UserinfoContext(**{
+        "client_id": "client_id",
+        "authentication_method": "authentication_method",
+        "access_token": "access_token",
+        "userinfo": "userinfo"})
 
-    cache.get_complex_object.return_value = from_cache
-    sym_encryption_service.symm_decrypt.return_value = decrypted
-    decrypted.decode.return_value = decoded
+    cache.get.return_value = encrypted
+    sym_encryption_service.symm_decrypt.return_value = userinfo_context.json().encode("utf-8")
 
     acache = create_authentication_cache(cache, sym_encryption_service)
-    actual = acache.get_authentication_context(access_token)
+    actual = acache.get_userinfo_context(access_token)
 
-    assert actual == from_cache
-    assert from_cache["external_user_authentication_context"] == decoded
-    cache.get_complex_object.assert_called_with("access_token:" + access_token)
-    sym_encryption_service.symm_decrypt.assert_called_with("euac")
-    decrypted.decode.assert_called_with("utf-8")
+    assert actual == userinfo_context
+    cache.get.assert_called_with("access_token:" + access_token)
+    sym_encryption_service.symm_decrypt.assert_called_with(encrypted)

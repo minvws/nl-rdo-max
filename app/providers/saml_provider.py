@@ -35,9 +35,8 @@ class SAMLProvider:
     def handle_assertion_consumer_service(
             self, request: AssertionConsumerServiceRequest
     ):
-        identity_provider_name = self._rate_limiter.get_identity_provider_name_based_on_request_limits()
-        identity_provider = self._saml_identity_provider_service.get_identity_provider(identity_provider_name)
         authentication_context = self._oidc_provider.get_authentication_request_state(request.RelayState)
+        identity_provider = self._saml_identity_provider_service.get_identity_provider(authentication_context.authentication_state["identity_provider_name"])
 
         if not self._environment.startswith("prod") and authentication_context.authentication_method == "digid_mock":
             artifact_response = ArtifactResponseMock(request.SAMLart)

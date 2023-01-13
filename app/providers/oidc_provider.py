@@ -23,7 +23,6 @@ from app.models.authentication_context import AuthenticationContext
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
 from app.services.loginhandler.authentication_handler_factory import AuthenticationHandlerFactory
-from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 from app.services.saml.saml_response_factory import SamlResponseFactory
 from app.services.userinfo.userinfo_service import UserinfoService
 from app.storage.authentication_cache import AuthenticationCache
@@ -39,7 +38,6 @@ class OIDCProvider:
             authentication_cache: AuthenticationCache,
             rate_limiter: RateLimiter,
             clients: dict,
-            saml_identity_provider_service: SamlIdentityProviderService,
             mock_digid: bool,
             saml_response_factory: SamlResponseFactory,
             userinfo_service: UserinfoService,
@@ -56,7 +54,6 @@ class OIDCProvider:
         self._authentication_cache = authentication_cache
         self._rate_limiter = rate_limiter
         self._clients = clients
-        self._saml_identity_provider_service = saml_identity_provider_service
         self._mock_digid = mock_digid
         self._saml_response_factory = saml_response_factory
         self._userinfo_service = userinfo_service

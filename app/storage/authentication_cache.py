@@ -1,7 +1,5 @@
 import base64
 import json
-import pickle
-#validate for trusted data only: https://docs.python.org/3/library/pickle.html
 from typing import Any, Union, Dict
 
 from pyop.message import AuthorizationRequest
@@ -38,9 +36,12 @@ class AuthenticationCache:
             authorize_request: AuthorizeRequest,
             authentication_state: Dict[str, Any],
     ) -> str:
-        #todo: is this client_id still necessary
         rand_state = base64.b64encode(
-            json.dumps({"state": self._cache.gen_token(), "client_id": authorize_request.client_id}).encode("utf-8")
+            json.dumps(
+                {
+                    "state": self._cache.gen_token(),
+                    "client_id": authorize_request.client_id
+                }).encode("utf-8")
         ).decode("utf-8")
         state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{rand_state}"
         authentication_context = AuthenticationContext(
@@ -71,14 +72,12 @@ class AuthenticationCache:
             self, userinfo_key: str, access_token: str, acs_context: AcsContext
     ):
         userinfo_context_serialized = self._authentication_context_encryption_service.symm_encrypt(
-            pickle.dumps( #fixme: Is this really trusted input?
-                UserinfoContext(
-                    client_id=acs_context.client_id,
-                    authentication_method=acs_context.authentication_method,
-                    access_token=access_token,
-                    userinfo=acs_context.userinfo
-                )
-            )
+            UserinfoContext(
+                client_id=acs_context.client_id,
+                authentication_method=acs_context.authentication_method,
+                access_token=access_token,
+                userinfo=acs_context.userinfo
+            ).json().encode("utf-8")
         )
         return self._cache.set(
             f"{ID_TOKEN_PREFIX}:{userinfo_key}",
@@ -88,5 +87,11 @@ class AuthenticationCache:
     def get_userinfo_context(self, access_token: str) -> Union[UserinfoContext, None]:
         value = self._cache.get(f"{ID_TOKEN_PREFIX}:{access_token}")
         if value is not None:
-            return pickle.loads(self._authentication_context_encryption_service.symm_decrypt(value))
+            return UserinfoContext(
+                **json.loads(
+                    self._authentication_context_encryption_service.symm_decrypt(
+                        value
+                    ).decode("utf-8")
+                )
+            )
         return None

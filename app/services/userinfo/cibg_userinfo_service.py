@@ -89,7 +89,6 @@ class MockedCIBGUserinfoService(CIBGUserinfoService):
                 "loa_uzi": "substantial",
                 "uzi_id": bsn,
                 "relations": relations,
-                "client_claims": authentication_context.authorization_request["claims"].to_dict()
             },
             file_content_raise_if_none(
                 client["client_certificate_path"]

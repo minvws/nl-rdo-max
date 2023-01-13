@@ -20,7 +20,6 @@ class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
     code_challenge: str
     code_challenge_method: str
     login_hint: Union[str, None] = None
-    claims: str = "{}"
 
     @staticmethod
     def get_allowed_scopes():

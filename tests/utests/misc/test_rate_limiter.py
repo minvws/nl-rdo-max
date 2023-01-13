@@ -43,12 +43,10 @@ def create_rate_limiter(
     )
 
 
-def test_get_identity_provider_name_and_validate_request_happy_path():
+def test_get_identity_provider_name_based_on_request_limits_happy_path():
     with patch.object(
         RateLimiter, "_get_primary_identity_provider_name", return_value="pipn"
     ) as get_primary_idp_method, patch.object(
-        RateLimiter, "_ip_limit_test"
-    ) as ip_limit_test_method, patch.object(
         RateLimiter, "_user_limit_test"
     ) as user_limit_test_method, patch.object(
         RateLimiter, "_get_overflow_identity_provider_name"
@@ -57,11 +55,8 @@ def test_get_identity_provider_name_and_validate_request_happy_path():
             primary_identity_provider_user_limit_key="pipulk",
             overflow_identity_provider_user_limit_key="oipulk",
         )
-        actual = rate_limiter.get_identity_provider_name_and_validate_request(
-            "ipaddress"
-        )
+        actual = rate_limiter.get_identity_provider_name_based_on_request_limits()
         assert actual == "pipn"
-        ip_limit_test_method.assert_called_with(ipaddress="ipaddress")
         get_primary_idp_method.assert_called()
         user_limit_test_method.assert_called_with(
             user_limit_key="pipulk", identity_provider_name="pipn"
@@ -69,13 +64,11 @@ def test_get_identity_provider_name_and_validate_request_happy_path():
         get_overflow_idp_method.assert_not_called()
 
 
-def test_get_identity_provider_name_and_validate_request_with_too_many_users_for_oidp():
+def test_get_identity_provider_name_based_on_request_limits_with_too_many_users_for_oidp():
     with patch.object(
         RateLimiter, "_get_primary_identity_provider_name", return_value="pipn"
     ) as get_primary_idp_method, patch.object(
-        RateLimiter, "_ip_limit_test"
-    ) as ip_limit_test_method, patch.object(
-        RateLimiter, "_user_limit_test", side_effect=TooBusyError()
+        RateLimiter, "_user_limit_test", side_effect=TooBusyError(redirect_uri=None)
     ) as user_limit_test_method, patch.object(
         RateLimiter, "_get_overflow_identity_provider_name", return_value="oipn"
     ) as get_overflow_idp_method:
@@ -84,8 +77,7 @@ def test_get_identity_provider_name_and_validate_request_with_too_many_users_for
             overflow_identity_provider_user_limit_key="oipulk",
         )
         with pytest.raises(TooBusyError):
-            rate_limiter.get_identity_provider_name_and_validate_request("ipaddress")
-        ip_limit_test_method.assert_called_with(ipaddress="ipaddress")
+            rate_limiter.get_identity_provider_name_based_on_request_limits()
         get_primary_idp_method.assert_called()
         user_limit_test_method.assert_has_calls(
             [
@@ -96,13 +88,11 @@ def test_get_identity_provider_name_and_validate_request_with_too_many_users_for
         get_overflow_idp_method.assert_called()
 
 
-def test_get_identity_provider_name_and_validate_request_with_too_many_users_for_pidp():
+def test_get_identity_provider_name_based_on_request_limits_with_too_many_users_for_pidp():
     with patch.object(
         RateLimiter, "_get_primary_identity_provider_name", return_value="pipn"
     ) as get_primary_idp_method, patch.object(
-        RateLimiter, "_ip_limit_test"
-    ) as ip_limit_test_method, patch.object(
-        RateLimiter, "_user_limit_test", side_effect=[TooBusyError(), None]
+        RateLimiter, "_user_limit_test", side_effect=[TooBusyError(redirect_uri=None), None]
     ) as user_limit_test_method, patch.object(
         RateLimiter, "_get_overflow_identity_provider_name", return_value="oipn"
     ) as get_overflow_idp_method:
@@ -110,11 +100,8 @@ def test_get_identity_provider_name_and_validate_request_with_too_many_users_for
             primary_identity_provider_user_limit_key="pipulk",
             overflow_identity_provider_user_limit_key="oipulk",
         )
-        actual = rate_limiter.get_identity_provider_name_and_validate_request(
-            "ipaddress"
-        )
+        actual = rate_limiter.get_identity_provider_name_based_on_request_limits()
         assert actual == "oipn"
-        ip_limit_test_method.assert_called_with(ipaddress="ipaddress")
         get_primary_idp_method.assert_called()
         user_limit_test_method.assert_has_calls(
             [
@@ -123,25 +110,6 @@ def test_get_identity_provider_name_and_validate_request_with_too_many_users_for
             ]
         )
         get_overflow_idp_method.assert_called()
-
-
-def test_get_identity_provider_name_and_validate_request_when_too_many_requests_from_origin():
-    with patch.object(
-        RateLimiter, "_ip_limit_test", side_effect=TooManyRequestsFromOrigin("")
-    ) as ip_limit_test_method, patch.object(
-        RateLimiter, "_get_primary_identity_provider_name"
-    ) as get_primary_idp_method, patch.object(
-        RateLimiter, "_user_limit_test"
-    ) as user_limit_test_method, patch.object(
-        RateLimiter, "_get_overflow_identity_provider_name"
-    ) as get_overflow_idp_method:
-        rate_limiter = create_rate_limiter()
-        with pytest.raises(TooManyRequestsFromOrigin):
-            rate_limiter.get_identity_provider_name_and_validate_request("ipaddress")
-        ip_limit_test_method.assert_called_with(ipaddress="ipaddress")
-        get_primary_idp_method.assert_not_called()
-        user_limit_test_method.assert_not_called()
-        get_overflow_idp_method.assert_not_called()
 
 
 def test_validate_outage():
@@ -170,7 +138,7 @@ def test_validate_outage_without_provider_outage_key():
 def test_ip_limit_test():
     with patch.object(RateLimiter, "_increase_ip_count", return_value=6) as mock_method:
         rate_limiter = create_rate_limiter(ip_address_max_count=6)
-        rate_limiter._ip_limit_test("ipaddress")
+        rate_limiter.ip_limit_test("ipaddress")
 
         mock_method.assert_called_with("ipaddress")
 
@@ -180,7 +148,7 @@ def test_ip_limit_test_raises_too_many_requests():
         rate_limiter = create_rate_limiter(ip_address_max_count=6)
 
         with pytest.raises(TooManyRequestsFromOrigin):
-            rate_limiter._ip_limit_test("ipaddress")
+            rate_limiter.ip_limit_test("ipaddress")
 
         mock_method.assert_called_with("ipaddress")
 

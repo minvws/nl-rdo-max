@@ -49,7 +49,8 @@ class RateLimiter:
             overflow_idp = self._get_overflow_identity_provider_name()
             if overflow_idp is None:
                 raise ServerErrorException(  # pylint:disable=raise-missing-from
-                    "Unable to get overflow idp from Redis"
+                    error_description="Unable to get overflow idp from Redis",
+                    redirect_uri=None
                 )
             if overflow_idp is not None:
                 self._user_limit_test(
@@ -62,7 +63,7 @@ class RateLimiter:
     def validate_outage(self):
         if self._identity_provider_outage_key:
             if self._cache.get_bool(self._identity_provider_outage_key):
-                raise DependentServiceOutage()
+                raise DependentServiceOutage(redirect_uri=None)
 
     def ip_limit_test(
             self,
@@ -71,7 +72,8 @@ class RateLimiter:
         current_count = self._increase_ip_count(ipaddress)
         if current_count > self._ipaddress_max_count:
             raise TooManyRequestsFromOrigin(
-                str(self._ipaddress_max_count_expire_seconds)
+                ip_expire_s=str(self._ipaddress_max_count_expire_seconds),
+                redirect_uri=None
             )
 
     def _user_limit_test(
@@ -85,7 +87,7 @@ class RateLimiter:
 
         num_users = self._increase_user_count(identity_provider_name, timeslot)
         if num_users > user_limit:
-            raise TooBusyError()
+            raise TooBusyError(redirect_uri=None)
 
     def _increase_ip_count(self, ipaddress) -> int:
         ip_key = f"ipv4:{ipaddress}"

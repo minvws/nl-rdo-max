@@ -30,18 +30,17 @@ class SamlAuthenticationHandler(AuthenticationHandler):
         self._saml_response_factory = saml_response_factory
         self._userinfo_service = userinfo_service
 
-    def _get_identity_provider(self):
-        identity_provider_name = self._rate_limiter.get_identity_provider_name_based_on_request_limits()
+    def _get_identity_provider(self, identity_provider_name: str):
         return self._saml_identity_provider_service.get_identity_provider(identity_provider_name)
 
     def authentication_state(self, authorize_request: AuthorizeRequest) -> Dict[str, Any]:
         return {
-            "id_provider_name": self._rate_limiter.get_identity_provider_name_based_on_request_limits()
+            "identity_provider_name": self._rate_limiter.get_identity_provider_name_based_on_request_limits()
         }
 
     def resolve_authentication_artifact(self, acs_context: AcsContext) -> Any:
         identity_provider = self._saml_identity_provider_service.get_identity_provider(
-            acs_context.authentication_state["id_provider_name"]
+            acs_context.authentication_state["identity_provider_name"]
         )
         url = identity_provider.idp_metadata.get_artifact_rs()["location"]
         resolve_artifact_req = identity_provider.create_artifactresolve_request(acs_context.context.SAMLart)
@@ -65,7 +64,7 @@ class SamlAuthenticationHandler(AuthenticationHandler):
             randstate: str
     ) -> Response:
         id_provider = self._saml_identity_provider_service.get_identity_provider(
-            authentication_state["id_provider_name"]
+            authentication_state["identity_provider_name"]
         )
         return self._saml_response_factory.create_saml_response(
             id_provider, authorize_request, randstate
