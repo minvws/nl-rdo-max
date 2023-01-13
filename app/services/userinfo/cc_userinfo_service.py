@@ -1,5 +1,7 @@
+import logging
 from typing import Dict, Any
 
+from app.exceptions.max_exceptions import UnauthorizedError
 from app.misc.utils import file_content_raise_if_none
 from app.models.authentication_context import AuthenticationContext
 from app.models.saml.artifact_response import ArtifactResponse
@@ -15,15 +17,12 @@ class CCUserinfoService(UserinfoService):
         self._app_mode = app_mode
 
     def request_userinfo_for_artifact(
-            self,
-            authentication_context: AuthenticationContext,
-            saml_artifact: str,
-            saml_identity_provider: SamlIdentityProvider
+        self,
+        authentication_context: AuthenticationContext,
+        artifact_response: ArtifactResponse,
+        saml_identity_provider: SamlIdentityProvider
     ) -> str:
-        artifact_response = ArtifactResponse.from_string(
-            xml_response=saml_artifact,
-            provider=saml_identity_provider,
-        )
+
         client_id = authentication_context.authorization_request["client_id"]
         bsn = artifact_response.get_bsn(authorization_by_proxy=False)
         if self._app_mode == "legacy":
@@ -39,7 +38,7 @@ class CCUserinfoService(UserinfoService):
             content,
         )
 
-# todo: Get rid of the notImplementedError
+    # todo: Get rid of the notImplementedError
     def irma_disclosure(self, userinfo: Dict[Any, Any]):
         raise NotImplementedError()
 

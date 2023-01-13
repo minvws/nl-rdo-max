@@ -23,6 +23,11 @@ def file_content_raise_if_none(filepath: str) -> str:
     return optional_file_content
 
 
+def json_from_file(filepath: str) -> Any:
+    with open(filepath, "r", encoding="utf-8") as json_file:
+        return json.loads(json_file.read())
+
+
 def as_list(input_str: str) -> List[str]:
     return input_str.split(", ")
 

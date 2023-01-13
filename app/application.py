@@ -65,8 +65,8 @@ def create_fastapi_app(
 ) -> FastAPI:
     container = container if container is not None else Container()
     _config: ConfigParser = config if config is not None else get_config()
-
     loglevel = logging.getLevelName(_config.get("app", "loglevel").upper())
+
     if isinstance(loglevel, str):
         raise ValueError(f"Invalid loglevel {loglevel.upper()}")
     logging.basicConfig(

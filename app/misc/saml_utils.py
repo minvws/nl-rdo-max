@@ -6,7 +6,6 @@ import lxml
 import xmlsec
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 from lxml import etree
-from lxml.etree import Element
 
 from app.models.saml.constants import NAMESPACES
 
@@ -64,7 +63,7 @@ def get_referred_node(root, signature_node):
     return root.find(f'.//*[@ID="{referrer_id}"]', NAMESPACES)
 
 
-def get_parents(node: Element) -> List[Element]:
+def get_parents(node: etree.Element) -> List[etree.Element]:
     parent = node.getparent()
     parents = []
     while parent is not None:
@@ -73,7 +72,7 @@ def get_parents(node: Element) -> List[Element]:
     return parents
 
 
-def is_advice_node(node: Element, advice_nodes: List[Element]):
+def is_advice_node(node: etree.Element, advice_nodes: List[etree.Element]):
     for parent in get_parents(node):
         if parent in advice_nodes:
             return True
@@ -83,8 +82,8 @@ def is_advice_node(node: Element, advice_nodes: List[Element]):
 def has_valid_signatures(
         root: lxml.etree, cert_data: str = None, cert_path: str = "saml/certs/sp.crt"
 ) -> Tuple[Any, bool]:
-    signature_nodes: List[Element] = root.findall(".//dsig:Signature", NAMESPACES)
-    advice_nodes: List[Element] = root.findall(".//saml2:Advice", NAMESPACES)
+    signature_nodes: List[etree.Element] = root.findall(".//dsig:Signature", NAMESPACES)
+    advice_nodes: List[etree.Element] = root.findall(".//saml2:Advice", NAMESPACES)
     try:
         for node in signature_nodes:
             if node.find(".//dsig:DigestValue", NAMESPACES).text is None:
@@ -114,17 +113,6 @@ def compute_keyname(cert):
 
 def enforce_cert_newlines(cert_data):
     return "\n".join(textwrap.wrap(cert_data.replace("\n", ""), 64))
-
-
-def strip_cert(cert_data):
-    return "\n".join(cert_data.strip().split("\n")[1:-1])
-
-
-def read_cert(cert_path: str) -> None:
-    with open(cert_path, "r", encoding="utf-8") as cert_file:
-        cert_data = strip_cert(cert_file.read())
-
-    return cert_data
 
 
 def to_soap_envelope(node):

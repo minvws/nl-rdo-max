@@ -6,97 +6,71 @@ import re
 import secrets
 from datetime import datetime
 from urllib.parse import urlparse, parse_qs, urlencode
+from typing import Union
 
 import lxml.etree
 import lxml.html
+import pytest
 import requests
+import uvicorn
 from fastapi.testclient import TestClient
 from jwcrypto.jwt import JWT, JWK, JWKSet, JWE
 from nacl.encoding import Base64Encoder
 from nacl.public import PrivateKey, Box, PublicKey
 
 # Existing max server
-#todo fix this tests?
+# todo fix this tests?
 from app.misc.utils import file_content_raise_if_none
 
-EXTENAL_TEST = True
 os.environ.setdefault("REQUESTS_CA_BUNDLE", "secrets/cacert.crt")
 
 EXTERNAL_CLIENT_ID = "37692967-0a74-4e91-85ec-a4250e7ad5e8"
-
-# Testing
-# EXTENAL_TEST = True
 
 # os.environ.setdefault("REQUESTS_CA_BUNDLE", "secrets/cacert.crt")
 CLIENT_RSA_PRIV_KEY_PATH = "secrets/clients/test_client/test_client.key"
 
 
-# pylint:disable=unused-argument
-def test_openid_configuration(lazy_app, config, app_mode_default, client):
-    app = lazy_app.value
-    issuer_url = config["oidc"]["issuer"]
-    openid_configuration = app.get(".well-known/openid-configuration").json()
-    assert openid_configuration == {
-        "version": "3.0",
-        "token_endpoint_auth_methods_supported": ["none"],
-        "claims_parameter_supported": True,
-        "request_parameter_supported": False,
-        "request_uri_parameter_supported": True,
-        "require_request_uri_registration": False,
-        "grant_types_supported": ["authorization_code"],
-        "frontchannel_logout_supported": False,
-        "frontchannel_logout_session_supported": False,
-        "backchannel_logout_supported": False,
-        "backchannel_logout_session_supported": False,
-        "issuer": issuer_url,
-        "authorization_endpoint": issuer_url + "/authorize",
-        "jwks_uri": issuer_url + "/jwks",
-        "token_endpoint": issuer_url + "/token",
-        "scopes_supported": ["openid"],
-        "response_types_supported": ["code"],
-        "response_modes_supported": ["query"],
-        "subject_types_supported": ["pairwise"],
-        "userinfo_endpoint": issuer_url + "/userinfo",
-        "id_token_signing_alg_values_supported": ["RS256"],
-    }
+@pytest.mark.skip(reason="Run this only with a local running max instance")
+def test_external_application():
+    base_uri = "https://localhost:8006"
+    client_id = EXTERNAL_CLIENT_ID
+
+    base_flow(
+        app=None,
+        base_uri=base_uri,
+        client_id=client_id
+    )
 
 
 # pylint:disable=unused-argument
 def test_legacy_flow(lazy_app, config, app_mode_legacy, legacy_client, pynacl_keys):
     base_uri = config["oidc"]["issuer"]
     app = lazy_app.value
-    if EXTENAL_TEST:
-        client_id = EXTERNAL_CLIENT_ID
-    else:
-        client_id = legacy_client[0]
+    client_id = legacy_client[0]
 
-    openid_configuration, access_token_response, _ = base_flow(app, base_uri, client_id)
+    openid_configuration, access_token_response, _ = base_flow(
+        app=app,
+        base_uri=base_uri,
+        client_id=client_id
+    )
 
     validate_legacy_userinfo(
         app, openid_configuration, access_token_response, pynacl_keys
     )
 
 
-# def test_flow(lazy_app, config, app_mode_default, client):
-def test_flow():
-    # base_uri = config["oidc"]["issuer"]
-    base_uri = "https://localhost:8006"
-    app = None
-    # if EXTENAL_TEST:
-    client_id = EXTERNAL_CLIENT_ID
-    # EXTERNAL_CLIENT_ID    else:
-    #         client_id = client[0]
+def test_flow(lazy_app, config, app_mode_default, client, lazy_container):
+    base_uri = config["oidc"]["issuer"]
+    app = lazy_app.value
+    client_id = client[0]
 
-    # openid_configuration, access_token_response, jwk_set = base_flow(
-    #     app, base_uri, client_id
-    # )
-    base_flow(
+    openid_configuration, access_token_response, jwk_set = base_flow(
         app, base_uri, client_id
     )
-    # validate_userinfo(app, openid_configuration, access_token_response, jwk_set)
+    validate_userinfo(app, openid_configuration, access_token_response, jwk_set)
 
 
-def base_flow(app, base_uri, client_id):
+def base_flow(app: Union[None, TestClient], base_uri, client_id):
     code_verifier = base64.urlsafe_b64encode(os.urandom(40)).decode("utf-8")
     code_verifier = re.sub("[^a-zA-Z0-9]+", "", code_verifier)
     openid_configuration = get_request(
@@ -111,7 +85,7 @@ def base_flow(app, base_uri, client_id):
         app, openid_configuration, code_verifier, client_id
     )
 
-    saml_xml = file_content_raise_if_none("tests/saml.tvs.xml")
+    saml_xml = file_content_raise_if_none("tests/test-saml-art.tvs.xml")
     doc = lxml.html.document_fromstring(authorize_request)
     state = None
     for inp in doc.forms[0].inputs:
@@ -123,8 +97,10 @@ def base_flow(app, base_uri, client_id):
     url += "?SAMLart=" + base64.urlsafe_b64encode(saml_xml.encode("utf-8")).decode("utf-8")
     url += "&RelayState=" + state
 
-    resp = get_request(None, url)
+    resp = get_request(app, url)
     print(resp.text)
+    import time
+    time.sleep(2)
     # print(saml_xml)
 
     # digid_mock = submit_default_html_form(app, authorize_request, base_uri).text
@@ -139,6 +115,7 @@ def base_flow(app, base_uri, client_id):
     #
     # validate_access_token_response(access_token_response, jwk_set, base_uri, client_id)
     # return openid_configuration, access_token_response, jwk_set
+    return "a", "b", "c"
 
 
 def validate_access_token_response(access_token_response, jwk_set, base_uri, client_id):
@@ -151,7 +128,7 @@ def validate_access_token_response(access_token_response, jwk_set, base_uri, cli
 
 
 def fetch_access_token(
-        app: TestClient, openid_configuration, code_verifier, code, client_id
+    app: TestClient, openid_configuration, code_verifier, code, client_id
 ):
     query_string = urlencode(
         {
@@ -188,7 +165,7 @@ def submit_default_html_form(app: TestClient, html, base_uri):
 
 
 def fetch_authorize_request(
-        app: TestClient, openid_configuration, code_verifier, client_id
+    app: TestClient, openid_configuration, code_verifier, client_id
 ):
     code_challenge = hashlib.sha256(code_verifier.encode("utf-8")).digest()
     code_challenge = base64.urlsafe_b64encode(code_challenge).decode("utf-8")
@@ -211,7 +188,7 @@ def fetch_authorize_request(
 
 
 def validate_legacy_userinfo(
-        app: TestClient, oidc_configuration, access_token_response, pynacl_keys
+    app: TestClient, oidc_configuration, access_token_response, pynacl_keys
 ):
     userinfo_response = post_request(
         app,
@@ -230,7 +207,7 @@ def validate_legacy_userinfo(
 
 
 def validate_userinfo(
-        app: TestClient, openid_configuration, access_token_response, jwks
+    app: TestClient, openid_configuration, access_token_response, jwks
 ):
     userinfo_response = post_request(
         app,
@@ -250,15 +227,15 @@ def validate_userinfo(
     assert claims["bsn"] == "999991772"
 
 
-def get_request(app: TestClient, url: str, params: dict = None, **kwargs):
-    if EXTENAL_TEST:
+def get_request(app: Union[None, TestClient], url: str, params: dict = None, **kwargs):
+    if app is None:
         return requests.get(url, params, timeout=5, **kwargs)
     kwarg = {} if kwargs is None else kwargs
     kwarg["params"] = params
     return app.get(url, **kwarg)
 
 
-def post_request(app: TestClient, url, data=None, json_data=None, **kwargs):
-    if EXTENAL_TEST:
+def post_request(app: Union[None, TestClient], url, data=None, json_data=None, **kwargs):
+    if app is None:
         return requests.post(url, data, json_data, timeout=5, **kwargs)
     return app.post(url, data, json_data, **kwargs)

@@ -14,6 +14,7 @@ from app.application import create_fastapi_app
 from app.dependency_injection.config import get_config
 from app.dependency_injection.container import Container
 from app.misc.lazy import Lazy
+from app.services.userinfo.userinfo_service import UserinfoService
 
 
 class PyopOverridingContainer(containers.DeclarativeContainer):
@@ -28,7 +29,7 @@ redis = factories.redisdb("redis_config")
 
 @pytest.fixture
 def config():
-    yield get_config("tests/max.conf.test")
+    yield get_config("tests/max.test.conf")
 
 
 @pytest.fixture
@@ -131,7 +132,6 @@ def lazy_app(docker_services, config, lazy_container):
 
     def _app() -> TestClient:
         return TestClient(create_fastapi_app(config, lazy_container.value))
-
     yield Lazy(_app)
 
 

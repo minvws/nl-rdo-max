@@ -15,8 +15,8 @@ __pycache__
 ## Configuration and secrets
 secrets
 tests/secrets
-clients.json
-max.conf
+*.json
+*.conf
 *.crt
 *.key
 saml/digid/metadata/idp_metadata.xml

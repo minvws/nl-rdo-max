@@ -12,11 +12,11 @@ from app.misc.saml_utils import (
     has_valid_signatures,
     from_settings,
     compute_keyname,
-    strip_cert,
     enforce_cert_newlines,
 )
 from .constants import NAMESPACES
 from .saml_request import SAMLRequest
+from ...misc.utils import strip_cert
 
 
 class SPMetadata(SAMLRequest):

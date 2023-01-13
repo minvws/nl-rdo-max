@@ -11,10 +11,7 @@ from app.services.loginhandler.authentication_handler_factory import Authenticat
 from app.services.loginhandler.irma_authentication_handler import IrmaAuthenticationHandler
 from app.services.loginhandler.mock_saml_authentication_handler import MockSamlAuthenticationHandler
 from app.services.loginhandler.saml_authentication_handler import SamlAuthenticationHandler
-from app.services.saml.artifact_resolving_service import (
-    ArtifactResolvingService,
-    MockedArtifactResolvingService,
-)
+
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 from app.services.saml.saml_response_factory import SamlResponseFactory
 from app.services.userinfo.cc_userinfo_service import CCUserinfoService
@@ -56,18 +53,6 @@ class Services(containers.DeclarativeContainer):
         SamlIdentityProviderService,
         identity_providers_path=config.saml.identity_providers_path,
         templates_path=config.saml.xml_templates_path,
-    )
-
-    _artifact_resolving_service = providers.Singleton(ArtifactResolvingService)
-
-    mocked_artifact_resolving_service = providers.Singleton(
-        MockedArtifactResolvingService
-    )
-
-    artifact_resolving_service = providers.Selector(
-        config.app.mock_digid.as_(str.lower),
-        true=mocked_artifact_resolving_service,
-        false=_artifact_resolving_service,
     )
 
     cibg_external_user_authentication_service = providers.Singleton(CIBGUserinfoService)
@@ -133,7 +118,6 @@ class Services(containers.DeclarativeContainer):
         saml_identity_provider_service=saml_identity_provider_service,
         mock_digid=config.app.mock_digid.as_(as_bool),
         saml_response_factory=saml_response_factory,
-        artifact_resolving_service=artifact_resolving_service,
         userinfo_service=userinfo_service,
         app_mode=config.app.app_mode,
         environment=config.app.environment,
@@ -154,7 +138,8 @@ class Services(containers.DeclarativeContainer):
         oidc_provider=oidc_provider,
         saml_identity_provider_service=saml_identity_provider_service,
         rate_limiter=rate_limiter,
-        userinfo_service=userinfo_service
+        userinfo_service=userinfo_service,
+        environment=config.app.environment.as_(str.lower)
     )
 
     irma_provider = providers.Singleton(

@@ -1,85 +1,65 @@
 import json
+import logging
 from functools import cached_property
 from typing import Tuple
+import requests
 
 from packaging.version import Version, parse as version_parse
 
+from app.exceptions.max_exceptions import UnauthorizedError
+from app.misc.utils import file_content, file_content_raise_if_none, json_from_file
+from app.models.saml.artifact_response import ArtifactResponse
 from app.models.saml.exceptions import ScopingAttributesNotAllowed
 from app.models.saml.metadata import IdPMetadata, SPMetadata
 from app.models.saml.saml_request import ArtifactResolveRequest, AuthNRequest
+from app.models.saml.artifact_response_factory import ArtifactResponseFactory
+from lxml import etree
 
 
 class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
     def __init__(self, name, idp_setting, jinja_env) -> None:
         self.name = name
-        self.saml_spec_version = version_parse(
-            str(idp_setting["saml_specification_version"])
-        )
-        self.base_dir = idp_setting["base_dir"]
-        self.cert_path = idp_setting["cert_path"]
-        self.key_path = idp_setting["key_path"]
-        self.settings_path = idp_setting["settings_path"]
-        self.advanced_settings_path = idp_setting["advanced_settings_path"]
-        self.idp_metadata_path = idp_setting["idp_metadata_path"]
-        self.expected_response_destination = idp_setting["expected_response_destination"]
-        self.expected_entity_id = idp_setting["expected_entity_id"]
-        self.expected_service_uuid = idp_setting["expected_service_uuid"]
-
+        self.log: logging.Logger = logging.getLogger(__package__)
 
         self.jinja_env = jinja_env
-        with open(self.settings_path, "r", encoding="utf-8") as settings_file:
-            self.settings_dict = json.loads(settings_file.read())
-        with open(
-                self.advanced_settings_path, "r", encoding="utf-8"
-        ) as adv_settings_file:
-            self.settings_dict.update(json.loads(adv_settings_file.read()))
 
-        with open(self.key_path, "r", encoding="utf-8") as key_file:
-            self.priv_key = key_file.read()
-
-        if "cluster_key_path" in idp_setting:
-            with open(idp_setting["cluster_key_path"], "r", encoding="utf-8") as cluster_key_file:
-                self.cluster_priv_key = cluster_key_file.read()
-
-        self._idp_metadata = IdPMetadata(self.idp_metadata_path)
+        settings_dict = json_from_file(idp_setting["settings_path"])
+        self._verify_ssl = idp_setting.get("verify_ssl", True)
+        self._client_cert_with_key = (idp_setting["cert_path"], idp_setting["key_path"])
+        self._idp_metadata = IdPMetadata(idp_setting["idp_metadata_path"])
         self._sp_metadata = SPMetadata(
-            self.settings_dict, self.keypair_paths, self.jinja_env
+            settings_dict, self._client_cert_with_key, self.jinja_env
+        )
+        self._authn_binding = settings_dict["idp"]["singleSignOnService"]["binding"]
+
+        self._artifact_response_factory = ArtifactResponseFactory(
+            cluster_key=file_content(idp_setting.get("cluster_key_path", None)),
+            priv_key=file_content_raise_if_none(idp_setting.get("cluster_key_path", None)),
+            expected_service_uuid=idp_setting["expected_service_uuid"],
+            expected_response_destination=idp_setting["expected_response_destination"],
+            expected_entity_id=idp_setting["expected_entity_id"],
+            sp_metadata=self._sp_metadata,
+            idp_metadata=self._idp_metadata,
+            saml_specification_version=version_parse(
+                str(idp_setting["saml_specification_version"])),
+            strict=idp_setting.get("strict", True) is True,
+            insecure=idp_setting.get("insecure", False) is True
         )
 
     @cached_property
     def authn_binding(self):
-        return self.settings_dict["idp"]["singleSignOnService"]["binding"]
-
-    @property
-    def keypair_paths(self) -> Tuple[str, str]:
-        return (self.cert_path, self.key_path)
-
-    @property
-    def sp_metadata(self) -> SPMetadata:
-        return self._sp_metadata
-
-    @property
-    def idp_metadata(self) -> IdPMetadata:
-        return self._idp_metadata
-
-    @property
-    def saml_is_new_version(self):
-        return self.saml_spec_version >= Version("4.4")
-
-    @property
-    def saml_is_legacy_version(self):
-        return self.saml_spec_version == Version("3.5")
+        return self._authn_binding
 
     def create_authn_request(self, authorization_by_proxy, cluster_name=None):
         scoping_list, request_ids = self.determine_scoping_attributes(
             authorization_by_proxy
         )
         scoping_list = [] # todo: Remove this
-        sso_url = self.idp_metadata.get_sso()["location"]
+        sso_url = self._idp_metadata.get_sso()["location"]
 
         return AuthNRequest(
             sso_url,
-            self.sp_metadata,
+            self._sp_metadata,
             self.jinja_env,
             scoping_list=scoping_list,
             request_ids=request_ids,
@@ -87,13 +67,13 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
         )
 
     def create_artifactresolve_request(self, artifact: str):
-        sso_url = self.idp_metadata.get_sso()["location"]
+        sso_url = self._idp_metadata.get_sso()["location"]
         return ArtifactResolveRequest(
-            artifact, sso_url, self.sp_metadata, self.jinja_env
+            artifact, sso_url, self._sp_metadata, self.jinja_env
         )
 
     def determine_scoping_attributes(self, authorization_by_proxy):
-        if self.sp_metadata.allow_scoping:
+        if self._sp_metadata.allow_scoping:
             return (
                 self.determine_scoping_list(authorization_by_proxy),
                 self.determine_request_ids(authorization_by_proxy),
@@ -107,10 +87,35 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
 
     def determine_scoping_list(self, authorization_by_proxy):
         if authorization_by_proxy:
-            return self.sp_metadata.authorization_by_proxy_scopes
-        return self.sp_metadata.default_scopes
+            return self._sp_metadata.authorization_by_proxy_scopes
+        return self._sp_metadata.default_scopes
 
     def determine_request_ids(self, authorization_by_proxy):
         if authorization_by_proxy:
-            return self.sp_metadata.authorization_by_proxy_request_ids
+            return self._sp_metadata.authorization_by_proxy_request_ids
         return []
+
+    def resolve_artifact(self, saml_artifact) -> ArtifactResponse:
+        url = self._idp_metadata.get_artifact_rs()["location"]
+        headers = {"SOAPAction": "resolve_artifact", "content-type": "text/xml"}
+        resolve_artifact_req = self.create_artifactresolve_request(saml_artifact)
+
+        # todo: test and fix this method
+        # todo: error handling, raise for status
+        #todo: catch faulty responses
+        response = requests.post(
+            url,
+            headers=headers,
+            data=resolve_artifact_req.get_xml(xml_declaration=True),
+            cert=self._client_cert_with_key,
+            verify=self._verify_ssl
+        )
+        try:
+            return self._artifact_response_factory.from_string(
+                xml_response=response.text,
+            )
+        except etree.XMLSyntaxError as xmlSyntaxError:
+            self.log.debug("XMLSyntaxError from external authorization: %s", xmlSyntaxError)
+            self.log.debug("Received SAMLart: %s", saml_artifact)
+            # todo: Do we know the redirect_uri here?
+            raise UnauthorizedError(error_description="External authorization failed", redirect_uri=None)

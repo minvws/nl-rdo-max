@@ -23,7 +23,6 @@ from app.models.authentication_context import AuthenticationContext
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
 from app.services.loginhandler.authentication_handler_factory import AuthenticationHandlerFactory
-from app.services.saml.artifact_resolving_service import ArtifactResolvingService
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 from app.services.saml.saml_response_factory import SamlResponseFactory
 from app.services.userinfo.userinfo_service import UserinfoService
@@ -43,7 +42,6 @@ class OIDCProvider:
             saml_identity_provider_service: SamlIdentityProviderService,
             mock_digid: bool,
             saml_response_factory: SamlResponseFactory,
-            artifact_resolving_service: ArtifactResolvingService,
             userinfo_service: UserinfoService,
             app_mode: str,
             environment: str,
@@ -61,7 +59,6 @@ class OIDCProvider:
         self._saml_identity_provider_service = saml_identity_provider_service
         self._mock_digid = mock_digid
         self._saml_response_factory = saml_response_factory
-        self._artifact_resolving_service = artifact_resolving_service
         self._userinfo_service = userinfo_service
         self._app_mode = app_mode
         self._environment = environment
