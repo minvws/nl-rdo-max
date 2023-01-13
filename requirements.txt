@@ -4,7 +4,7 @@
 #
 #    pip-compile --extra=dev
 #
-anyio==3.6.1
+anyio==3.6.2
     # via starlette
 astroid==2.12.9
     # via pylint
@@ -65,9 +65,9 @@ future==0.18.2
     # via pyjwkest
 gitdb==4.0.9
     # via gitpython
-gitpython==3.1.27
+gitpython==3.1.30
     # via bandit
-h11==0.13.0
+h11==0.14.0
     # via uvicorn
 idna==3.3
     # via
@@ -118,7 +118,7 @@ pathspec==0.10.1
     # via black
 pbr==5.10.0
     # via stevedore
-platformdirs==2.5.2
+platformdirs==2.6.2
     # via
     #   black
     #   pylint
@@ -139,7 +139,7 @@ pycryptodomex==3.15.0
     #   pyop
 pydantic==1.10.2
     # via fastapi
-pyflakes==2.5.0
+pyflakes==3.0.1
     # via autoflake
 pyjwkest==1.4.2
     # via oic
@@ -199,7 +199,7 @@ sniffio==1.3.0
     # via anyio
 starlette==0.19.1
     # via fastapi
-stevedore==4.0.0
+stevedore==4.1.1
     # via bandit
 toml==0.10.2
     # via autoflake
