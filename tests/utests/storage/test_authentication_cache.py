@@ -27,7 +27,9 @@ def test_create_authentication_request_state():
     authorize_request.login_hints = ["login_hint"]
     authorize_request.authorization_by_proxy = False
     authorize_request.client_id = "client_id"
-    expected = base64.b64encode(json.dumps({"state": "bla", "client_id": "client_id"}).encode("utf-8")).decode("utf-8")
+    expected = base64.b64encode(
+        json.dumps({"state": "bla", "client_id": "client_id"}).encode("utf-8")
+    ).decode("utf-8")
 
     cache.gen_token.return_value = "bla"
 
@@ -43,8 +45,8 @@ def test_create_authentication_request_state():
             authorization_request=pyop_authentication_request,
             authorization_by_proxy=authorize_request.authorization_by_proxy,
             authentication_method=authorize_request.login_hints[0],
-            authentication_state=authentication_state
-        )
+            authentication_state=authentication_state,
+        ),
     )
     assert actual == expected
 
@@ -70,9 +72,7 @@ def test_cache_acs_context():
     acs_context = MagicMock()
 
     acache = create_authentication_cache(cache)
-    acache.cache_acs_context(
-        code, acs_context
-    )
+    acache.cache_acs_context(code, acs_context)
 
     cache.set_complex_object.assert_called_with(
         f"pyop_auth_req:{code}",
@@ -107,19 +107,16 @@ def test_cache_userinfo_context():
     access_token = "access_token"
 
     acache = create_authentication_cache(cache, sym_encryption_service)
-    acache.cache_userinfo_context(
-        userinfo_key, access_token, acs_context
-    )
+    acache.cache_userinfo_context(userinfo_key, access_token, acs_context)
 
-    cache.set.assert_called_with(
-        "access_token:" + "userinfo_key",
-        "encrypted"
-    )
-    expected = json.dumps({
-        "client_id": "client_id",
-        "authentication_method": "authentication_method",
-        "access_token": "access_token",
-        "userinfo": "userinfo"}
+    cache.set.assert_called_with("access_token:" + "userinfo_key", "encrypted")
+    expected = json.dumps(
+        {
+            "client_id": "client_id",
+            "authentication_method": "authentication_method",
+            "access_token": "access_token",
+            "userinfo": "userinfo",
+        }
     )
     sym_encryption_service.symm_encrypt.assert_called_with(expected.encode("utf-8"))
 
@@ -130,14 +127,19 @@ def test_get_userinfo_context():
 
     access_token = "access_token"
     encrypted = MagicMock(name="encrypted")
-    userinfo_context = UserinfoContext(**{
-        "client_id": "client_id",
-        "authentication_method": "authentication_method",
-        "access_token": "access_token",
-        "userinfo": "userinfo"})
+    userinfo_context = UserinfoContext(
+        **{
+            "client_id": "client_id",
+            "authentication_method": "authentication_method",
+            "access_token": "access_token",
+            "userinfo": "userinfo",
+        }
+    )
 
     cache.get.return_value = encrypted
-    sym_encryption_service.symm_decrypt.return_value = userinfo_context.json().encode("utf-8")
+    sym_encryption_service.symm_decrypt.return_value = userinfo_context.json().encode(
+        "utf-8"
+    )
 
     acache = create_authentication_cache(cache, sym_encryption_service)
     actual = acache.get_userinfo_context(access_token)

@@ -5,6 +5,7 @@ from dependency_injector import containers, providers
 from fastapi import Response, Request
 from fastapi.datastructures import Headers
 
+from app.dependency_injection.config import RouterConfig
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
 
@@ -47,15 +48,16 @@ def test_authorize(lazy_app, oidc_provider_mocked):
         code_challenge="cc",
         code_challenge_method="ccc",
     )
-    mocked_provider.authorize.return_value = fake_response
+    mocked_provider.present_login_options_or_authorize.return_value = fake_response
     app = lazy_app.value
     actual_response = app.get(
         "/authorize?client_id=ci&redirect_uri=ru&response_type=code&nonce=n&scope=s&state=s&code_challenge=cc&code_challenge_method=ccc"
     )
     assert actual_response.text == "expected"
     assert actual_response.status_code == 234
-    mocked_provider.authorize.assert_called_with(
-        authorize_request, mocked_provider.authorize.call_args_list[0][0][1]
+    mocked_provider.present_login_options_or_authorize.assert_called_with(
+        mocked_provider.present_login_options_or_authorize.call_args_list[0][0][0],
+        authorize_request,
     )
 
 
@@ -112,4 +114,4 @@ def test_userinfo(lazy_app, oidc_provider_mocked):
     assert actual_response.status_code == 234
 
     mocked_provider.userinfo.assert_called()
-    assert isinstance(mocked_provider.authorize.call_args_list[0][0][1], Request)
+    assert isinstance(mocked_provider.userinfo.call_args_list[0][0][0], Request)

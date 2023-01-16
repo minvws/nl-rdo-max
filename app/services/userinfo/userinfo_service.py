@@ -8,9 +8,9 @@ from app.models.saml.artifact_response import ArtifactResponse
 class UserinfoService(abc.ABC):
     @abc.abstractmethod
     def request_userinfo_for_artifact(
-            self,
-            authentication_context: AuthenticationContext,
-            saml_artifact: ArtifactResponse,
-            saml_identity_provider: SamlIdentityProvider
+        self,
+        authentication_context: AuthenticationContext,
+        artifact_response: ArtifactResponse,
+        saml_identity_provider: SamlIdentityProvider,
     ) -> str:
         pass

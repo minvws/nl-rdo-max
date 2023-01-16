@@ -6,10 +6,7 @@ from .artifact_response import ArtifactResponse
 
 
 class ArtifactResponseMock(ArtifactResponse):
-    def __init__(
-        self,
-        artifact_response_str
-    ) -> None:
+    def __init__(self, artifact_response_str) -> None:
         ArtifactResponse.__init__(
             self,
             artifact_response_str=artifact_response_str,
@@ -23,7 +20,7 @@ class ArtifactResponseMock(ArtifactResponse):
             idp_metadata=None,
             saml_specification_version=Version("0.1"),
             is_verified=False,
-            strict=False
+            strict=False,
         )
         self.artifact_response_str = artifact_response_str
 

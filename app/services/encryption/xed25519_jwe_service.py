@@ -11,7 +11,10 @@ from typing import Dict, Any
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
 )
-from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey, X25519PrivateKey
+from cryptography.hazmat.primitives.asymmetric.x25519 import (
+    X25519PublicKey,
+    X25519PrivateKey,
+)
 from jwcrypto.jwe import JWE
 from jwcrypto.jwk import JWK
 from jwcrypto.jwt import JWT
@@ -67,7 +70,9 @@ class XEd25519JweService(JweService):
         jwe = JWE.from_jose_token(jwe_str)
         jwk = JWK()
         # noinspection PyProtectedMember
-        jwk._import_pyca_pri_okp(X25519PrivateKey.from_private_bytes(base64.b64decode(privkey)))
+        jwk._import_pyca_pri_okp(  # pylint: disable=protected-access
+            X25519PrivateKey.from_private_bytes(base64.b64decode(privkey))
+        )
         jwe.decrypt(jwk)
         jwt = JWT.from_jose_token(jwe.payload.decode("utf-8"))
         jwt.validate(self._public_sign_jwk_key)

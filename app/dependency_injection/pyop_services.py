@@ -1,5 +1,6 @@
 # pylint: disable=c-extension-no-member, too-few-public-methods
 from dependency_injector import containers, providers
+from dependency_injector.providers import Singleton
 from jwkest.jwk import RSAKey, import_rsa_key
 from pyop.authz_state import AuthorizationState
 from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
@@ -60,7 +61,7 @@ class PyopServices(containers.DeclarativeContainer):
 
     subject_identifier_factory = providers.Singleton(
         HashBasedSubjectIdentifierFactory, config.oidc.subject_id_hash_salt
-    )
+    )  # type: Singleton[HashBasedSubjectIdentifierFactory]
 
     authz_state = providers.Singleton(
         AuthorizationState,
@@ -69,7 +70,7 @@ class PyopServices(containers.DeclarativeContainer):
         access_token_db=storage.authorization_code_db,
         refresh_token_db=storage.access_token_db,
         subject_identifier_db=storage.subject_identifier_db,
-    )
+    )  # type: Singleton[AuthorizationState]
 
     saml_provider = providers.Singleton(SAMLProvider)
 

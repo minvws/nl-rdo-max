@@ -21,7 +21,7 @@ def create_oidc_provider(
     app_mode="am",
     environment="test",
     login_methods: list[str] = "login_method",
-    authentication_handler_factory=MagicMock()
+    authentication_handler_factory=MagicMock(),
 ):
     return OIDCProvider(
         pyop_provider,
@@ -34,7 +34,7 @@ def create_oidc_provider(
         app_mode,
         environment,
         login_methods,
-        authentication_handler_factory
+        authentication_handler_factory,
     )
 
 
@@ -57,9 +57,7 @@ def test_jwks():
 
 
 def test_validate_login_methods_with_default_login_method():
-    oidc_provider = create_oidc_provider(
-        login_methods=["a"]
-    )
+    oidc_provider = create_oidc_provider(login_methods=["a"])
     request = MagicMock()
     authorize_request = MagicMock()
 
@@ -69,9 +67,7 @@ def test_validate_login_methods_with_default_login_method():
 
 
 def test_validate_login_methods_with_provided_login_methods():
-    oidc_provider = create_oidc_provider(
-        login_methods=["a", "b"]
-    )
+    oidc_provider = create_oidc_provider(login_methods=["a", "b"])
     request = MagicMock()
     authorize_request = MagicMock()
     authorize_request.login_hints = ["b"]
@@ -83,8 +79,7 @@ def test_validate_login_methods_with_provided_login_methods():
 
 def test_validate_login_methods_with_multiple_login_methods(mocker):
     oidc_provider = create_oidc_provider(
-        login_methods=["a", "b"],
-        clients={"client_id": {"name": "name"}}
+        login_methods=["a", "b"], clients={"client_id": {"name": "name"}}
     )
     request = MagicMock()
     request.url.remove_query_params.return_value = "redirect_url"
@@ -104,7 +99,7 @@ def test_validate_login_methods_with_multiple_login_methods(mocker):
             "login_methods": ["a", "b"],
             "ura_name": "name",
             "redirect_uri": "redirect_url",
-        }
+        },
     )
     request.url.remove_query_params.assert_called_with("login_hints")
 
@@ -117,16 +112,16 @@ def test_present_login_options_or_authorize():
 
     with patch.object(
         OIDCProvider, "_validate_authorize_request"
-    ) as validate_authorize_request, \
-        patch.object(
-            OIDCProvider, "_validate_login_methods"
-    ) as validate_login_method, \
-        patch.object(
-            OIDCProvider, "_authorize"
+    ) as validate_authorize_request, patch.object(
+        OIDCProvider, "_validate_login_methods"
+    ) as validate_login_method, patch.object(
+        OIDCProvider, "_authorize"
     ) as authorize_method:
         validate_login_method.return_value = False
         authorize_method.return_value = ret_value
-        login_options_or_authorize = oidc_provider.present_login_options_or_authorize(request, authorize_request)
+        login_options_or_authorize = oidc_provider.present_login_options_or_authorize(
+            request, authorize_request
+        )
 
         validate_authorize_request.assert_called_with(authorize_request)
         validate_login_method.assert_called_with(request, authorize_request)
@@ -158,7 +153,7 @@ def test_authorize():
         state="str",
         code_challenge="str",
         code_challenge_method="str",
-        login_hint="a"
+        login_hint="a",
     )
 
     pyop_provider.parse_authentication_request.return_value = (
@@ -172,7 +167,7 @@ def test_authorize():
         rate_limiter=rate_limiter,
         authentication_cache=authentication_cache,
         mock_digid=True,
-        authentication_handler_factory=authentication_handler_factory
+        authentication_handler_factory=authentication_handler_factory,
     )
     login_handler_response = oidc_provider._authorize(request, authorize_request)
     assert login_handler_response == authorize_response
@@ -196,7 +191,11 @@ def test_authorize():
     )
 
     login_handler.authorize_response.assert_called_with(
-        request, authorize_request, pyop_authentication_request, authentication_state, "rand"
+        request,
+        authorize_request,
+        pyop_authentication_request,
+        authentication_state,
+        "rand",
     )
 
 
@@ -219,7 +218,7 @@ def test_authorize_without_client():
         state="str",
         code_challenge="str",
         code_challenge_method="str",
-        login_hint="a,b"
+        login_hint="a,b",
     )
 
     pyop_provider.parse_authentication_request.return_value = (
@@ -282,4 +281,3 @@ def test_token():
     authentication_cache.cache_userinfo_context.assert_called_with(
         token_response["access_token"], token_response["access_token"], acs_context
     )
-

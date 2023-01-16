@@ -41,12 +41,12 @@ def _deserialize(serialized_value: Optional[Any]) -> Any:
 
 class RedisCache(Cache):
     def __init__(
-            self,
-            default_cache_namespace: str,
-            enable_debugger,
-            expires_in_seconds: int,
-            redis_client: StrictRedis,
-            redis_get_debugger_factory: RedisGetDebuggerFactory,
+        self,
+        default_cache_namespace: str,
+        enable_debugger,
+        expires_in_seconds: int,
+        redis_client: StrictRedis,
+        redis_get_debugger_factory: RedisGetDebuggerFactory,
     ):
         self.key_prefix: str = default_cache_namespace
         self.expires_in_s: int = expires_in_seconds
@@ -64,7 +64,7 @@ class RedisCache(Cache):
             self.redis_debugger.debug_get(key_with_namespace, ret_value)
         return ret_value
 
-    def get_and_delete(self, key: str) -> Any: # todo: Test this method
+    def get_and_delete(self, key: str) -> Any:  # todo: Test this method
         key_with_namespace = self._prepend_with_namespace(key)
         ret_value = self.redis_client.getdel(key_with_namespace)
         if self.enable_debugger:

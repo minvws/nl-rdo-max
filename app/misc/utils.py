@@ -1,7 +1,7 @@
 import base64
 import json
 from os import path
-from typing import Union, List, Dict, Any
+from typing import Union, List, Any
 
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 
@@ -61,23 +61,6 @@ def compute_fingerpint(cert: bytes, the_hash: str = "sha256") -> bytes:
 def get_fingerprint(signing_cert: bytes) -> bytes:
     sha1_fingerprint = compute_fingerpint(signing_cert, "sha1").decode()
     return base64.urlsafe_b64encode(sha1_fingerprint.encode())
-
-
-def dict_intersection(dict_a: Dict[Any, Any], dict_b: Dict[Any, Any]) -> Dict[Any, Any]:
-    return_dict = {}
-    for key in dict_a:
-        value = None
-        if key in dict_b:
-            if isinstance(dict_a[key], type(dict_b[key])):
-                if type(dict_a[key]) is dict:
-                    value = dict_intersection(dict_a[key], dict_b[key])
-                if type(dict_a[key]) is list:
-                    value = [x for x in dict_a[key] if x in dict_b[key]]
-                if dict_a[key] == dict_b[key]:
-                    value = dict_a[key]
-        if value is not None and value != {} and value != []:
-            return_dict[key] = value
-    return return_dict
 
 
 def extract_error_uri_from_state(clients: dict, state: str) -> Union[str, None]:

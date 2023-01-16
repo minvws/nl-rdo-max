@@ -1,19 +1,17 @@
-import json
 import logging
 from functools import cached_property
-from typing import Tuple
-import requests
 
-from packaging.version import Version, parse as version_parse
+import requests
+from lxml import etree
+from packaging.version import parse as version_parse
 
 from app.exceptions.max_exceptions import UnauthorizedError
 from app.misc.utils import file_content, file_content_raise_if_none, json_from_file
 from app.models.saml.artifact_response import ArtifactResponse
+from app.models.saml.artifact_response_factory import ArtifactResponseFactory
 from app.models.saml.exceptions import ScopingAttributesNotAllowed
 from app.models.saml.metadata import IdPMetadata, SPMetadata
 from app.models.saml.saml_request import ArtifactResolveRequest, AuthNRequest
-from app.models.saml.artifact_response_factory import ArtifactResponseFactory
-from lxml import etree
 
 
 class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
@@ -34,16 +32,19 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
 
         self._artifact_response_factory = ArtifactResponseFactory(
             cluster_key=file_content(idp_setting.get("cluster_key_path", None)),
-            priv_key=file_content_raise_if_none(idp_setting.get("cluster_key_path", None)),
+            priv_key=file_content_raise_if_none(
+                idp_setting.get("cluster_key_path", None)
+            ),
             expected_service_uuid=idp_setting["expected_service_uuid"],
             expected_response_destination=idp_setting["expected_response_destination"],
             expected_entity_id=idp_setting["expected_entity_id"],
             sp_metadata=self._sp_metadata,
             idp_metadata=self._idp_metadata,
             saml_specification_version=version_parse(
-                str(idp_setting["saml_specification_version"])),
+                str(idp_setting["saml_specification_version"])
+            ),
             strict=idp_setting.get("strict", True) is True,
-            insecure=idp_setting.get("insecure", False) is True
+            insecure=idp_setting.get("insecure", False) is True,
         )
 
     @cached_property
@@ -54,7 +55,7 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
         scoping_list, request_ids = self.determine_scoping_attributes(
             authorization_by_proxy
         )
-        scoping_list = [] # todo: Remove this
+        scoping_list = []  # todo: Remove this
         sso_url = self._idp_metadata.get_sso()["location"]
 
         return AuthNRequest(
@@ -102,20 +103,24 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
 
         # todo: test and fix this method
         # todo: error handling, raise for status
-        #todo: catch faulty responses
+        # todo: catch faulty responses
         response = requests.post(
             url,
             headers=headers,
             data=resolve_artifact_req.get_xml(xml_declaration=True),
             cert=self._client_cert_with_key,
-            verify=self._verify_ssl
+            verify=self._verify_ssl,
+            timeout=30,  # seconds
         )
         try:
             return self._artifact_response_factory.from_string(
                 xml_response=response.text,
             )
-        except etree.XMLSyntaxError as xmlSyntaxError:
-            self.log.debug("XMLSyntaxError from external authorization: %s", xmlSyntaxError)
+        except etree.XMLSyntaxError as xml_syntax_error:  # pylint: disable=c-extension-no-member
+            self.log.debug(
+                "XMLSyntaxError from external authorization: %s", xml_syntax_error
+            )
             self.log.debug("Received SAMLart: %s", saml_artifact)
-            # todo: Do we know the redirect_uri here?
-            raise UnauthorizedError(error_description="External authorization failed", redirect_uri=None)
+            raise UnauthorizedError(
+                error_description="External authorization failed", redirect_uri=None
+            ) from xml_syntax_error

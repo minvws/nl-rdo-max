@@ -33,7 +33,7 @@ class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
     def login_hints(self):
         if self.login_hint is None:
             return []
-        return self.login_hint.split(',')
+        return self.login_hint.split(",")
 
     @validator("scope")
     def validate_scopes(cls, scopes):  # pylint: disable=no-self-argument

@@ -92,7 +92,9 @@ def test_get_identity_provider_name_based_on_request_limits_with_too_many_users_
     with patch.object(
         RateLimiter, "_get_primary_identity_provider_name", return_value="pipn"
     ) as get_primary_idp_method, patch.object(
-        RateLimiter, "_user_limit_test", side_effect=[TooBusyError(redirect_uri=None), None]
+        RateLimiter,
+        "_user_limit_test",
+        side_effect=[TooBusyError(redirect_uri=None), None],
     ) as user_limit_test_method, patch.object(
         RateLimiter, "_get_overflow_identity_provider_name", return_value="oipn"
     ) as get_overflow_idp_method:

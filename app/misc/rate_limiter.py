@@ -12,15 +12,15 @@ from app.storage.cache import Cache
 
 class RateLimiter:
     def __init__(
-            self,
-            cache: Cache,
-            identity_provider_outage_key: str,
-            primary_identity_provider_key: str,
-            overflow_identity_provider_key: str,
-            primary_identity_provider_user_limit_key: str,
-            overflow_identity_provider_user_limit_key: str,
-            ipaddress_max_count: int,
-            ipaddress_max_count_expire_seconds: int,
+        self,
+        cache: Cache,
+        identity_provider_outage_key: str,
+        primary_identity_provider_key: str,
+        overflow_identity_provider_key: str,
+        primary_identity_provider_user_limit_key: str,
+        overflow_identity_provider_user_limit_key: str,
+        ipaddress_max_count: int,
+        ipaddress_max_count_expire_seconds: int,
     ):
         self._cache = cache
         self._identity_provider_outage_key = identity_provider_outage_key
@@ -38,7 +38,10 @@ class RateLimiter:
     def get_identity_provider_name_based_on_request_limits(self) -> str:
         primary_idp = self._get_primary_identity_provider_name()
         if primary_idp is None:
-            raise ServerErrorException("Unable to get primary idp from Redis")
+            raise ServerErrorException(
+                error_description="Unable to get primary idp from Redis",
+                redirect_uri=None,
+            )
         try:
             self._user_limit_test(
                 user_limit_key=self._primary_identity_provider_user_limit_key,
@@ -50,7 +53,7 @@ class RateLimiter:
             if overflow_idp is None:
                 raise ServerErrorException(  # pylint:disable=raise-missing-from
                     error_description="Unable to get overflow idp from Redis",
-                    redirect_uri=None
+                    redirect_uri=None,
                 )
             if overflow_idp is not None:
                 self._user_limit_test(
@@ -66,18 +69,18 @@ class RateLimiter:
                 raise DependentServiceOutage(redirect_uri=None)
 
     def ip_limit_test(
-            self,
-            ipaddress: str,
+        self,
+        ipaddress: str,
     ) -> None:
         current_count = self._increase_ip_count(ipaddress)
         if current_count > self._ipaddress_max_count:
             raise TooManyRequestsFromOrigin(
                 ip_expire_s=str(self._ipaddress_max_count_expire_seconds),
-                redirect_uri=None
+                redirect_uri=None,
             )
 
     def _user_limit_test(
-            self, user_limit_key: str, identity_provider_name: str
+        self, user_limit_key: str, identity_provider_name: str
     ) -> None:
         user_limit = self._cache.get_int(user_limit_key)
         if user_limit is None:

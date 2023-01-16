@@ -1,24 +1,26 @@
-from app.models.saml.artifact_response import ArtifactResponse
+from typing import Union, Optional
 from lxml import etree
+from packaging.version import Version, LegacyVersion
+
+from app.models.saml.artifact_response import ArtifactResponse
 from app.models.saml.metadata import IdPMetadata, SPMetadata
-from packaging.version import Version
-from ...misc.saml_utils import has_valid_signatures
 from .exceptions import ValidationError
+from ...misc.saml_utils import has_valid_signatures
 
 
 class ArtifactResponseFactory:
-    def __init__(
-            self,
-            cluster_key: str,
-            priv_key: str,
-            expected_entity_id: str,
-            expected_service_uuid: str,
-            expected_response_destination: str,
-            sp_metadata: SPMetadata,
-            idp_metadata: IdPMetadata,
-            saml_specification_version: Version,
-            strict: bool,
-            insecure: bool
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        cluster_key: Optional[str],
+        priv_key: str,
+        expected_entity_id: str,
+        expected_service_uuid: str,
+        expected_response_destination: str,
+        sp_metadata: SPMetadata,
+        idp_metadata: IdPMetadata,
+        saml_specification_version: Union["LegacyVersion", "Version"],
+        strict: bool,
+        insecure: bool,
     ):
         self._cluster_key = cluster_key
         self._priv_key = priv_key
@@ -38,13 +40,16 @@ class ArtifactResponseFactory:
             raise ValidationError("Invalid signatures")
         return root
 
-    def from_string(
-        self,
-        xml_response: str
-    ):
+    def from_string(self, xml_response: str):
         # Remove XML declaration if exists, appears etree doesn't handle it too well.
-        artifact_str = xml_response.split('<?xml version="1.0" encoding="UTF-8"?>\n')[-1]
-        artifact_tree = etree.fromstring(artifact_str).getroottree().getroot()
+        artifact_str = xml_response.split('<?xml version="1.0" encoding="UTF-8"?>\n')[
+            -1
+        ]
+        artifact_tree = (
+            etree.fromstring(artifact_str)  # pylint: disable=c-extension-no-member
+            .getroottree()
+            .getroot()
+        )
 
         is_verified = False
         if not self._insecure:

@@ -10,36 +10,37 @@ import re
 from datetime import datetime, timedelta
 from functools import cached_property
 from logging import Logger
+
 # pylint: disable=c-extension-no-member
-from typing import Text, List, AnyStr, Union
+from typing import Text, List, Union, Optional
 
 import dateutil.parser
 from Cryptodome.Cipher import AES
 from lxml import etree
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
-from packaging.version import Version
+from packaging.version import Version, LegacyVersion
 
 from .constants import NAMESPACES
 from .exceptions import UserNotAuthenticated, ValidationError
-from ...misc.saml_utils import has_valid_signatures, remove_padding
+from ...misc.saml_utils import remove_padding
 
 CAMEL_TO_SNAKE_RE = re.compile(r"(?<!^)(?=[A-Z])")
 
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
 class ArtifactResponse:
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         artifact_response_str,
         artifact_tree,
-        cluster_priv_key: Union[AnyStr|None],
-        priv_key: AnyStr,
+        cluster_priv_key: Optional[str],
+        priv_key: str,
         expected_entity_id: str,
         expected_service_uuid: str,
         expected_response_destination: str,
         sp_metadata,
         idp_metadata,
-        saml_specification_version: Version,
+        saml_specification_version: Union["LegacyVersion", "Version"],
         is_verified: bool,
         strict: bool,
     ) -> None:
@@ -82,9 +83,7 @@ class ArtifactResponse:
         if not self._sp_metadata.clustered:
             return [entity_id]
 
-        return [conn.entity_id for conn in self._sp_metadata.connections] + [
-            entity_id
-        ]
+        return [conn.entity_id for conn in self._sp_metadata.connections] + [entity_id]
 
     @cached_property
     def response(self):
@@ -137,10 +136,7 @@ class ArtifactResponse:
                     recipient = encrypted_id.find(
                         "./xenc:EncryptedKey", NAMESPACES
                     ).attrib.get("Recipient")
-                    if (
-                        self.strict
-                        and recipient != self._sp_metadata.entity_id
-                    ):
+                    if self.strict and recipient != self._sp_metadata.entity_id:
                         self.log.debug(
                             "Recipients did not match. Was %s, expected %s",
                             recipient,
@@ -204,7 +200,6 @@ class ArtifactResponse:
         return self.status
 
     def validate_in_response_to(self) -> List[ValidationError]:
-        # fixme: from conf
         expected_entity_id = self._expected_entity_id
         response_conditions_aud = self.response_audience_restriction.find(
             ".//saml:Audience", NAMESPACES
@@ -418,7 +413,6 @@ class ArtifactResponse:
         )
         return aes_key
 
-    # pylint: disable=no-self-use
     def _decrypt_enc_data(self, enc_data_elem, aes_key: bytes) -> bytes:
         encrypted_ciphervalue = enc_data_elem.find(
             ".//xenc:CipherValue", {"xenc": "http://www.w3.org/2001/04/xmlenc#"}

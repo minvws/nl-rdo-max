@@ -1,7 +1,6 @@
-import logging
 from typing import Dict, Any
 
-from app.exceptions.max_exceptions import UnauthorizedError
+# pylint: disable=
 from app.misc.utils import file_content_raise_if_none
 from app.models.authentication_context import AuthenticationContext
 from app.models.saml.artifact_response import ArtifactResponse
@@ -20,7 +19,7 @@ class CCUserinfoService(UserinfoService):
         self,
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
-        saml_identity_provider: SamlIdentityProvider
+        saml_identity_provider: SamlIdentityProvider,
     ) -> str:
 
         client_id = authentication_context.authorization_request["client_id"]

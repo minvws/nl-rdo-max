@@ -11,7 +11,7 @@ from nacl.public import PrivateKey
 from pytest_redis import factories
 
 from app.application import create_fastapi_app
-from app.dependency_injection.config import get_config
+from app.dependency_injection.config import get_config, RouterConfig
 from app.dependency_injection.container import Container
 from app.misc.lazy import Lazy
 from app.services.userinfo.userinfo_service import UserinfoService
@@ -132,6 +132,7 @@ def lazy_app(docker_services, config, lazy_container):
 
     def _app() -> TestClient:
         return TestClient(create_fastapi_app(config, lazy_container.value))
+
     yield Lazy(_app)
 
 

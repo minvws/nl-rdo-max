@@ -11,16 +11,11 @@ from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from app.models.digid_mock_requests import DigiDMockRequest, DigiDMockCatchRequest
-from app.models.login_digid_request import LoginDigiDRequest
-from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
-from app.services.saml.saml_response_factory import SamlResponseFactory
-from app.storage.authentication_cache import AuthenticationCache
 
 templates = Jinja2Templates(directory="jinja2")
 
 
 class DigidMockProvider:
-       
     @staticmethod
     def digid_mock(request: Request, digid_mock_request: DigiDMockRequest) -> Response:
         state = digid_mock_request.state

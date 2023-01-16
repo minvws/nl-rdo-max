@@ -4,21 +4,24 @@ from dependency_injector import containers, providers
 from app.misc.rate_limiter import RateLimiter
 from app.misc.utils import as_bool, as_list
 from app.providers.digid_mock_provider import DigidMockProvider
-from app.providers.irma_provider import IRMAProvider
 from app.providers.oidc_provider import OIDCProvider
 from app.providers.saml_provider import SAMLProvider
-from app.services.loginhandler.authentication_handler_factory import AuthenticationHandlerFactory
-from app.services.loginhandler.irma_authentication_handler import IrmaAuthenticationHandler
-from app.services.loginhandler.mock_saml_authentication_handler import MockSamlAuthenticationHandler
-from app.services.loginhandler.saml_authentication_handler import SamlAuthenticationHandler
-
+from app.services.loginhandler.authentication_handler_factory import (
+    AuthenticationHandlerFactory,
+)
+from app.services.loginhandler.mock_saml_authentication_handler import (
+    MockSamlAuthenticationHandler,
+)
+from app.services.loginhandler.saml_authentication_handler import (
+    SamlAuthenticationHandler,
+)
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 from app.services.saml.saml_response_factory import SamlResponseFactory
 from app.services.userinfo.cc_userinfo_service import CCUserinfoService
 from app.services.userinfo.cibg_userinfo_service import (
     CIBGUserinfoService,
-    MockedCIBGUserinfoService,
 )
+from app.services.userinfo.mock_cibg_userinfo_service import MockedCIBGUserinfoService
 
 
 class Services(containers.DeclarativeContainer):
@@ -62,7 +65,7 @@ class Services(containers.DeclarativeContainer):
         jwe_service=encryption_services.jwe_service,
         clients=pyop_services.clients,
         environment=config.app.environment,
-        mock_cibg=config.app.mock_cibg.as_(as_bool)
+        mock_cibg=config.app.mock_cibg.as_(as_bool),
     )
 
     cc_userinfo_service = providers.Singleton(
@@ -84,7 +87,7 @@ class Services(containers.DeclarativeContainer):
         saml_identity_provider_service=saml_identity_provider_service,
         authentication_cache=storage.authentication_cache,
         saml_response_factory=saml_response_factory,
-        userinfo_service=userinfo_service
+        userinfo_service=userinfo_service,
     )
 
     mock_saml_login_handler = providers.Singleton(
@@ -93,20 +96,13 @@ class Services(containers.DeclarativeContainer):
         saml_identity_provider_service=saml_identity_provider_service,
         authentication_cache=storage.authentication_cache,
         saml_response_factory=saml_response_factory,
-        userinfo_service=userinfo_service
-    )
-
-    irma_login_handler = providers.Singleton(
-        IrmaAuthenticationHandler,
-        jwe_service=encryption_services.jwe_service,
-        clients=pyop_services.clients
+        userinfo_service=userinfo_service,
     )
 
     login_handler_factory = providers.Singleton(
         AuthenticationHandlerFactory,
         saml_authentication_handler=saml_login_handler,
         mock_saml_authentication_handler=mock_saml_login_handler,
-        irma_authentication_handler=irma_login_handler
     )
 
     oidc_provider = providers.Singleton(
@@ -121,7 +117,7 @@ class Services(containers.DeclarativeContainer):
         app_mode=config.app.app_mode,
         environment=config.app.environment,
         login_methods=config.app.login_methods.as_(as_list),
-        authentication_handler_factory=login_handler_factory
+        authentication_handler_factory=login_handler_factory,
     )
 
     digid_mock_provider = providers.Singleton(
@@ -138,14 +134,5 @@ class Services(containers.DeclarativeContainer):
         saml_identity_provider_service=saml_identity_provider_service,
         rate_limiter=rate_limiter,
         userinfo_service=userinfo_service,
-        environment=config.app.environment.as_(str.lower)
-    )
-
-    irma_provider = providers.Singleton(
-        IRMAProvider,
-        authentication_cache=storage.authentication_cache,
-        userinfo_service=userinfo_service,
-        jwe_service=encryption_services.jwe_service,
-        clients=pyop_services.clients,
-        pyop_provider=pyop_services.pyop_provider
+        environment=config.app.environment.as_(str.lower),
     )

@@ -41,6 +41,8 @@ setup(
             "pytest_redis",
             "freezegun",
             "types-redis",
+            "types-python-dateutil",
+            "types-requests"
         ]
     },
 )

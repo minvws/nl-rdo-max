@@ -44,42 +44,6 @@ def test_digid_mock(lazy_app, mocker):
     assert isinstance(request, Request)
 
 
-def test_login_digid(lazy_app, digid_mock_provider_mocked, mocker):
-    fake_response = Response("expected", status_code=234)
-    encoded_auth_request = "eyJjbGllbnRfaWQiOiAiY2kiLCAicmVkaXJlY3RfdXJpIjogInJ1IiwgInJlc3BvbnNlX3R5cGUiOiAiY29kZSIsICJub25jZSI6ICJuIiwgInNjb3BlIjogInMiLCAic3RhdGUiOiAicyIsICJjb2RlX2NoYWxsZW5nZSI6ICJjYyIsICJjb2RlX2NoYWxsZW5nZV9tZXRob2QiOiAiY2NjIn0="
-    digid_mock.login_digid.return_value = fake_response
-    login_digid_request = LoginDigiDRequest.from_request(
-        state="d", authorize_request=encoded_auth_request, force_digid=False
-    )
-    # digid_mock.login_digid.return_value = fake_response
-    app = lazy_app.value
-    digid_get = app.get(
-        f"/login-digid?state=d&authorize_request={encoded_auth_request}"
-    )
-    assert digid_get.text == "expected"
-    assert digid_get.status_code == 234
-
-    digid_mock.login_digid.assert_called_with(login_digid_request=login_digid_request)
-
-
-def test_login_digid_with_force_digid(lazy_app, digid_mock_provider_mocked, mocker):
-    fake_response = Response("expected", status_code=234)
-    encoded_auth_request = "eyJjbGllbnRfaWQiOiAiY2kiLCAicmVkaXJlY3RfdXJpIjogInJ1IiwgInJlc3BvbnNlX3R5cGUiOiAiY29kZSIsICJub25jZSI6ICJuIiwgInNjb3BlIjogInMiLCAic3RhdGUiOiAicyIsICJjb2RlX2NoYWxsZW5nZSI6ICJjYyIsICJjb2RlX2NoYWxsZW5nZV9tZXRob2QiOiAiY2NjIn0="
-    digid_mock.login_digid.return_value = fake_response
-    login_digid_request = LoginDigiDRequest.from_request(
-        state="d", authorize_request=encoded_auth_request, force_digid=True
-    )
-    # digid_mock.login_digid.return_value = fake_response
-    app = lazy_app.value
-    digid_get = app.get(
-        f"/login-digid?state=d&authorize_request={encoded_auth_request}&force_digid=true"
-    )
-    assert digid_get.text == "expected"
-    assert digid_get.status_code == 234
-
-    digid_mock.login_digid.assert_called_with(login_digid_request=login_digid_request)
-
-
 def test_digid_mock_catch(lazy_app, digid_mock_provider_mocked, mocker):
     fake_response = Response("expected", status_code=234)
     digid_mock_method = mocker.patch(

@@ -35,11 +35,7 @@ def test_external_application():
     base_uri = "https://localhost:8006"
     client_id = EXTERNAL_CLIENT_ID
 
-    base_flow(
-        app=None,
-        base_uri=base_uri,
-        client_id=client_id
-    )
+    base_flow(app=None, base_uri=base_uri, client_id=client_id)
 
 
 # pylint:disable=unused-argument
@@ -49,9 +45,7 @@ def test_legacy_flow(lazy_app, config, app_mode_legacy, legacy_client, pynacl_ke
     client_id = legacy_client[0]
 
     openid_configuration, access_token_response, _ = base_flow(
-        app=app,
-        base_uri=base_uri,
-        client_id=client_id
+        app=app, base_uri=base_uri, client_id=client_id
     )
 
     validate_legacy_userinfo(
@@ -73,49 +67,30 @@ def test_flow(lazy_app, config, app_mode_default, client, lazy_container):
 def base_flow(app: Union[None, TestClient], base_uri, client_id):
     code_verifier = base64.urlsafe_b64encode(os.urandom(40)).decode("utf-8")
     code_verifier = re.sub("[^a-zA-Z0-9]+", "", code_verifier)
-    openid_configuration = get_request(
+    oidc_configuration = get_request(
         app, base_uri + "/.well-known/openid-configuration"
     ).json()
 
     jwk_set = JWKSet.from_json(
-        json.dumps(get_request(app, openid_configuration["jwks_uri"]).json())
+        json.dumps(get_request(app, oidc_configuration["jwks_uri"]).json())
     )
 
     authorize_request = fetch_authorize_request(
-        app, openid_configuration, code_verifier, client_id
+        app, oidc_configuration, code_verifier, client_id
     )
 
-    saml_xml = file_content_raise_if_none("tests/test-saml-art.tvs.xml")
-    doc = lxml.html.document_fromstring(authorize_request)
-    state = None
-    for inp in doc.forms[0].inputs:
-        if inp.name == "RelayState":
-            state = inp.value
-            break
-    url = base_uri
-    url += "/acs"
-    url += "?SAMLart=" + base64.urlsafe_b64encode(saml_xml.encode("utf-8")).decode("utf-8")
-    url += "&RelayState=" + state
+    digid_mock = submit_default_html_form(app, authorize_request, base_uri).text
+    authorize_response = submit_default_html_form(app, digid_mock, base_uri).text
 
-    resp = get_request(app, url)
-    print(resp.text)
-    import time
-    time.sleep(2)
-    # print(saml_xml)
+    (code, state) = parse_redirect_uri(authorize_response)
+    assert base64.b64decode(state).decode("utf-8") == "staat"
 
-    # digid_mock = submit_default_html_form(app, authorize_request, base_uri).text
-    # authorize_response = submit_default_html_form(app, digid_mock, base_uri).text
-    #
-    # (code, state) = parse_redirect_uri(authorize_response)
-    # assert base64.b64decode(state).decode("utf-8") == "staat"
-    #
-    # access_token_response = fetch_access_token(
-    #     app, openid_configuration, code_verifier, code, client_id
-    # )
-    #
-    # validate_access_token_response(access_token_response, jwk_set, base_uri, client_id)
-    # return openid_configuration, access_token_response, jwk_set
-    return "a", "b", "c"
+    access_token_response = fetch_access_token(
+        app, oidc_configuration, code_verifier, code, client_id
+    )
+
+    validate_access_token_response(access_token_response, jwk_set, base_uri, client_id)
+    return oidc_configuration, access_token_response, jwk_set
 
 
 def validate_access_token_response(access_token_response, jwk_set, base_uri, client_id):
@@ -156,7 +131,6 @@ def parse_redirect_uri(authorize_response):
 def submit_default_html_form(app: TestClient, html, base_uri):
     doc = lxml.html.document_fromstring(html)
     data = {}
-    print(html)
     for inp in doc.forms[0].inputs:
         data[inp.name] = inp.value
     if doc.forms[0].method == "POST":
@@ -180,7 +154,7 @@ def fetch_authorize_request(
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
         "nonce": secrets.token_urlsafe(),
-        "login_hint": "digid"
+        "login_hint": "digid_mock",
     }
     return get_request(
         app, openid_configuration["authorization_endpoint"], authorize_params
@@ -206,12 +180,10 @@ def validate_legacy_userinfo(
     assert decrypted == "999991772"
 
 
-def validate_userinfo(
-    app: TestClient, openid_configuration, access_token_response, jwks
-):
+def validate_userinfo(app: TestClient, oidc_configuration, access_token_response, jwks):
     userinfo_response = post_request(
         app,
-        openid_configuration["userinfo_endpoint"],
+        oidc_configuration["userinfo_endpoint"],
         headers={"Authorization": "Bearer " + access_token_response["access_token"]},
     )
 
@@ -223,7 +195,6 @@ def validate_userinfo(
     jwt = JWT()
     jwt.deserialize(jwe.payload.decode("utf-8"), jwks)
     claims = json.loads(jwt.claims)
-    print(claims)
     assert claims["bsn"] == "999991772"
 
 
@@ -235,7 +206,9 @@ def get_request(app: Union[None, TestClient], url: str, params: dict = None, **k
     return app.get(url, **kwarg)
 
 
-def post_request(app: Union[None, TestClient], url, data=None, json_data=None, **kwargs):
+def post_request(
+    app: Union[None, TestClient], url, data=None, json_data=None, **kwargs
+):
     if app is None:
         return requests.post(url, data, json_data, timeout=5, **kwargs)
     return app.post(url, data, json_data, **kwargs)

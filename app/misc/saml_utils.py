@@ -14,7 +14,7 @@ SOAP_NS = "http://www.w3.org/2003/05/soap-envelope"
 
 # todo: Test module! Merge with existing saml utils?
 def from_settings(
-        settings_dict, selector: str, default: Optional[str] = None
+    settings_dict, selector: str, default: Optional[str] = None
 ) -> Optional[str]:
     key_hierarchy = selector.split(".")
     value = settings_dict
@@ -40,7 +40,7 @@ def get_loc_bind(element) -> Dict[str, str]:
 
 
 def has_valid_signature(
-        root, signature_node, cert_data: str = None, cert_path: str = "saml/certs/sp.crt"
+    root, signature_node, cert_data: str = None, cert_path: str = "saml/certs/sp.crt"
 ):
     # Create a digital signature context (no key manager is needed).
     ctx = xmlsec.SignatureContext()
@@ -80,7 +80,7 @@ def is_advice_node(node: etree.Element, advice_nodes: List[etree.Element]):
 
 
 def has_valid_signatures(
-        root: lxml.etree, cert_data: str = None, cert_path: str = "saml/certs/sp.crt"
+    root: lxml.etree, cert_data: str = None, cert_path: str = "saml/certs/sp.crt"
 ) -> Tuple[Any, bool]:
     signature_nodes: List[etree.Element] = root.findall(".//dsig:Signature", NAMESPACES)
     advice_nodes: List[etree.Element] = root.findall(".//saml2:Advice", NAMESPACES)
