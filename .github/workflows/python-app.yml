@@ -18,7 +18,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.10'
           cache: 'pip' # caching pip dependencies
 
       - name: Install dependencies
@@ -29,7 +29,9 @@ jobs:
           make venv
 
       - name: Lint with pylint
-        run: make lint
+        run: |
+            . .venv/bin/activate && pylint --version
+            make lint
 
       - name: Type check with MyPy
         run: make type-check
@@ -44,7 +46,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.10'
           cache: 'pip' # caching pip dependencies
 
       - name: Install dependencies
