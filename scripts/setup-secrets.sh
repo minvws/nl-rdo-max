@@ -81,7 +81,7 @@ fi
 ###
 # saml tvs tls
 ###
-if [[ ! -f $SAML_DIR/tvs/certs/sp.crt ]]; then
+if [[ ! -f $SAML_DIR/tvs/certs/tls.crt ]]; then
   mkdir -p $SAML_DIR/tvs/certs
   create_key_pair $SAML_DIR/tvs/certs "tls" "max-tvs"
 fi
