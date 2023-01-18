@@ -18,7 +18,7 @@ jobs:
         run: ls -alR
 
       - name: Create tar
-        run: tar -czf max_${{ env.RELEASE_VERSION }}.tar.gz ./app ./html ./saml ./*.sh
+        run: tar -czf max_${{ env.RELEASE_VERSION }}.tar.gz ./app ./static ./jinja2 ./saml
 
       - name: Upload release tar
         uses: actions/upload-artifact@v1
