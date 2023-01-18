@@ -87,6 +87,14 @@ if [[ ! -f $SAML_DIR/tvs/certs/tls.crt ]]; then
 fi
 
 ###
+# saml tvs dv-cluster-cert
+###
+if [[ ! -f $SAML_DIR/tvs/certs/dv.crt ]]; then
+  mkdir -p $SAML_DIR/tvs/certs
+  create_key_pair $SAML_DIR/tvs/certs "dv" "dv"
+fi
+
+###
 # max tls
 ###
 if [[ ! -f $SECRETS_DIR/tls.crt ]]; then
