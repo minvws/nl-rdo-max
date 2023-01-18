@@ -79,21 +79,21 @@ if [[ ! -f $SAML_DIR/tvs/certs/sp.crt ]]; then
 fi
 
 ###
-# saml digid
+# saml tvs tls
 ###
-if [[ ! -f $SAML_DIR/digid/certs/sp.crt ]]; then
-  mkdir -p $SAML_DIR/digid/certs
-  create_key_pair $SAML_DIR/digid/certs "sp" "digid-sp"
+if [[ ! -f $SAML_DIR/tvs/certs/sp.crt ]]; then
+  mkdir -p $SAML_DIR/tvs/certs
+  create_key_pair $SAML_DIR/tvs/certs "tls" "max-tvs"
 fi
 
 ###
-# saml digid
+# max tls
 ###
 if [[ ! -f $SECRETS_DIR/tls.crt ]]; then
   create_key_pair $SECRETS_DIR "tls" "max-tls"
 fi
 ###
-# saml digid
+# cibg client certs
 ###
 if [[ ! -f $SECRETS_DIR/userinfo/cibg-client-cert.crt ]]; then
   create_key_pair $SECRETS_DIR/userinfo "cibg-client-cert" "cibg-client-cert"
