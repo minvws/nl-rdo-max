@@ -42,7 +42,11 @@ class SamlIdentityProviderService:
                 full_folder_path = os.path.join(
                     identity_providers_base_path, folder_name
                 )
-                if os.path.isdir(full_folder_path) and "." not in folder_name and folder_name != "templates":
+                if (
+                    os.path.isdir(full_folder_path)
+                    and "." not in folder_name
+                    and folder_name != "templates"
+                ):
                     with open(
                         os.path.join(full_folder_path, "settings.json"),
                         "r",
