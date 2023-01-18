@@ -22,7 +22,7 @@ class SamlIdentityProviderService:
             )
         )
 
-    def get_identity_provider(self, identity_provider_name: str):
+    def get_identity_provider(self, identity_provider_name: str) -> SamlIdentityProvider:
         """
         Get ID provider from parsed identity_providers_file
         """
@@ -35,7 +35,7 @@ class SamlIdentityProviderService:
     @staticmethod
     def _parse_identity_providers(
         identity_providers_base_path: str, jinja_env: Environment
-    ) -> dict:
+    ) -> dict[str, SamlIdentityProvider]:
         providers = {}
         for folder_name in os.listdir(identity_providers_base_path):
             try:

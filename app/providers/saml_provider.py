@@ -1,5 +1,7 @@
 import logging
 
+from fastapi import Response, HTTPException
+
 from app.misc.rate_limiter import RateLimiter
 from app.models.saml.artifact_response_mock import ArtifactResponseMock
 from app.models.saml.assertion_consumer_service_request import (
@@ -58,10 +60,13 @@ class SAMLProvider:
             response_url
         )
 
-    # todo: Implement metadata request
-    # pylint:disable= unused-argument
     def metadata(self, id_provider_name: str):
         """
         Endpoint retrieving metadata for the specified identity providers if configured properly.
         """
-        return ""
+        identity_provider = self._saml_identity_provider_service.get_identity_provider(id_provider_name)
+        errors = identity_provider.sp_metadata.validate()
+        if len(errors) == 0:
+            return Response(content=identity_provider.sp_metadata.get_xml().decode(), media_type="application/xml")
+
+        raise HTTPException(status_code=500, detail=', '.join(errors))
