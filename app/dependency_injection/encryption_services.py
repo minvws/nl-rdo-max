@@ -2,6 +2,7 @@
 
 from dependency_injector import containers, providers
 
+from app.services.encryption.jwe_service_provider import JweServiceProvider
 from app.services.encryption.xed25519_jwe_service import XEd25519JweService
 from app.services.encryption.rsa_jwe_service import RSAJweService
 from app.services.encryption.sym_encryption_service import SymEncryptionService
@@ -23,6 +24,8 @@ class EncryptionServices(containers.DeclarativeContainer):
         jwe_sign_crt_path=config.app.jwe_sign_crt_path,
     )
 
-    jwe_service = providers.Selector(
-        config.app.jwe_encryption, ed25519=_ed25519_jwe_service, rsa=_rsa_jwe_service
+    jwe_service_provider = providers.Singleton(
+        JweServiceProvider,
+        rsa=_rsa_jwe_service,
+        x25519=_ed25519_jwe_service
     )

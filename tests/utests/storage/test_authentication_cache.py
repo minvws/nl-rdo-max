@@ -36,7 +36,7 @@ def test_create_authentication_request_state():
     acache = create_authentication_cache(cache)
 
     actual = acache.create_authentication_request_state(
-        pyop_authentication_request, authorize_request, authentication_state
+        pyop_authentication_request, authorize_request, authentication_state, "login_option"
     )
 
     cache.set_complex_object.assert_called_with(
@@ -44,7 +44,7 @@ def test_create_authentication_request_state():
         AuthenticationContext(
             authorization_request=pyop_authentication_request,
             authorization_by_proxy=authorize_request.authorization_by_proxy,
-            authentication_method=authorize_request.login_hints[0],
+            authentication_method="login_option",
             authentication_state=authentication_state,
         ),
     )

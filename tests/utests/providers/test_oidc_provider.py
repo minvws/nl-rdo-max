@@ -169,7 +169,7 @@ def test_authorize():
         mock_digid=True,
         authentication_handler_factory=authentication_handler_factory,
     )
-    login_handler_response = oidc_provider._authorize(request, authorize_request)
+    login_handler_response = oidc_provider._authorize(request, authorize_request, "login_hint")
     assert login_handler_response == authorize_response
 
     rate_limiter.validate_outage.assert_called()
@@ -182,12 +182,12 @@ def test_authorize():
 
     rate_limiter.ip_limit_test.assert_called_with(request.client.host)
 
-    authentication_handler_factory.create.assert_called_with("a")
+    authentication_handler_factory.create.assert_called_with("login_hint")
 
     login_handler.authentication_state.assert_called_with(authorize_request)
 
     authentication_cache.create_authentication_request_state.assert_called_with(
-        pyop_authentication_request, authorize_request, authentication_state
+        pyop_authentication_request, authorize_request, authentication_state, "login_hint"
     )
 
     login_handler.authorize_response.assert_called_with(
@@ -233,7 +233,7 @@ def test_authorize_without_client():
         mock_digid=True,
     )
     with pytest.raises(ServerErrorException):
-        oidc_provider._authorize(request, authorize_request)
+        oidc_provider._authorize(request, authorize_request, "login_option")
 
     rate_limiter.validate_outage.assert_called()
     pyop_provider.parse_authentication_request.assert_called_with(

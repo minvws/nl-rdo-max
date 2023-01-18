@@ -38,7 +38,7 @@ def app_mode_legacy(config, pynacl_keys):
     config["app"]["app_mode"] = "legacy"
     config["app"]["jwe_encryption"] = "ed25519"
     config["app"]["userinfo_service"] = "cc"
-    config["app"]["jwe_sign_nacl_priv_key"] = pynacl_keys["server_key"]
+    config["app"]["client_public_key_path"] = pynacl_keys["server_key"]
 
 
 @pytest.fixture
@@ -71,8 +71,8 @@ def legacy_client(
     pynacl_keys,  # pylint:disable=redefined-outer-name
 ):
     legacy_c = client[1].copy()
-    del legacy_c["client_certificate_path"]
-    legacy_c["client_public_nacl_key"] = pynacl_keys["client_pub"]
+    del legacy_c["client_public_key_path"]
+    legacy_c["client_public_key_path"] = pynacl_keys["client_pub"]
     return client[0], legacy_c
 
 
@@ -84,7 +84,7 @@ def client():
         "token_endpoint_auth_method": "none",
         "redirect_uris": ["http://localhost:3000/login"],
         "response_types": ["code"],
-        "client_certificate_path": "secrets/clients/test_client/test_client.crt",
+        "client_public_key_path": "secrets/clients/test_client/test_client.crt",
     }
 
 

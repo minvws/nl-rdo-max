@@ -8,6 +8,7 @@
         ],
         "error_page": "http://localhost:3000/login",
         "response_types": ["code"],
-        "client_certificate_path": "secrets/clients/test_client/test_client.crt"
+        "pubkey_type": "RSA",
+        "client_public_key_path": "secrets/clients/test_client/test_client.crt"
     }
 }

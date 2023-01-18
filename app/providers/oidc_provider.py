@@ -1,6 +1,6 @@
 import base64
 import json
-from typing import List
+from typing import List, Union
 from urllib.parse import urlencode
 
 from fastapi import Request, HTTPException, Response
@@ -81,15 +81,16 @@ class OIDCProvider:
         self, request: Request, authorize_request: AuthorizeRequest
     ):
         self._validate_authorize_request(authorize_request)
-        login_options_response = self._validate_login_methods(
-            request, authorize_request
+        login_options = self._get_login_methods(authorize_request)
+        login_options_response = self._provide_login_options_response(
+            request, authorize_request, login_options
         )
         if login_options_response:
             return login_options_response
-        return self._authorize(request, authorize_request)
+        return self._authorize(request, authorize_request, login_options[0])
 
     def _authorize(
-        self, request: Request, authorize_request: AuthorizeRequest
+            self, request: Request, authorize_request: AuthorizeRequest, login_option: str
     ) -> Response:
         self._rate_limiter.validate_outage()
         pyop_authentication_request = (
@@ -107,13 +108,13 @@ class OIDCProvider:
         self._rate_limiter.ip_limit_test(request.client.host)
 
         login_handler = self._authentication_handler_factory.create(
-            authorize_request.login_hints[0]
+            login_option
         )
 
         authentication_state = login_handler.authentication_state(authorize_request)
 
         randstate = self._authentication_cache.create_authentication_request_state(
-            pyop_authentication_request, authorize_request, authentication_state
+            pyop_authentication_request, authorize_request, authentication_state, login_option
         )
 
         return login_handler.authorize_response(
@@ -228,17 +229,21 @@ class OIDCProvider:
             content=userinfo_context.userinfo,
         )
 
-    def _validate_login_methods(
-        self, request: Request, authorize_request: AuthorizeRequest
-    ):
-        redirect_url = request.url.remove_query_params("login_hints")
+    def _get_login_methods(
+        self, authorize_request: AuthorizeRequest
+    ) -> list[str]:
         login_methods = [
             x for x in self._login_methods if x in authorize_request.login_hints
         ]
-
         if not login_methods:
-            login_methods = self._login_methods
+            return self._login_methods
+        return login_methods
+
+    def _provide_login_options_response(
+            self, request: Request, authorize_request: AuthorizeRequest, login_methods: list[str]
+    ) -> Union[None, Response]:
         if len(login_methods) > 1:
+            redirect_url = request.url.remove_query_params("login_hints")
             return templates.TemplateResponse(
                 "login_options.html",
                 {
@@ -248,6 +253,8 @@ class OIDCProvider:
                     "redirect_uri": redirect_url,
                 },
             )
+        if len(login_methods) != 1:
+            raise UnauthorizedError(error_description="No valid login_methods available", redirect_uri=None)
         return None
 
     def _validate_authorize_request(self, authorize_request: AuthorizeRequest):

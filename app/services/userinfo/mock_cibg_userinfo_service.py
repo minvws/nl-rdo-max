@@ -5,7 +5,7 @@ from app.misc.utils import file_content_raise_if_none
 from app.models.authentication_context import AuthenticationContext
 from app.models.saml.artifact_response import ArtifactResponse
 from app.models.saml.saml_identity_provider import SamlIdentityProvider
-from app.services.encryption.jwe_service import JweService
+from app.services.encryption.jwe_service_provider import JweServiceProvider
 from app.services.userinfo.cibg_userinfo_service import CIBGUserinfoService
 
 log = logging.getLogger(__name__)
@@ -13,10 +13,10 @@ log = logging.getLogger(__name__)
 
 class MockedCIBGUserinfoService(CIBGUserinfoService):
     def __init__(
-        self, jwe_service: JweService, clients: dict, environment: str, mock_cibg: bool
+        self, jwe_service_provider: JweServiceProvider, clients: dict, environment: str, mock_cibg: bool
     ):
         super().__init__()
-        self._jwe_service = jwe_service
+        self._jwe_service_provider = jwe_service_provider
         self._clients = clients
         self._environment = environment
         self._mock_cibg = mock_cibg
@@ -63,7 +63,7 @@ class MockedCIBGUserinfoService(CIBGUserinfoService):
                     "roles": ["01.041", "30.000", "01.010", "01.011"],
                 }
             )
-        return self._jwe_service.to_jwe(
+        return self._jwe_service_provider.get_jwe_service(client["pubkey_type"]).to_jwe(
             {
                 # todo create json schema
                 "json_schema": "https://www.inge6.nl/json_schema_v1.json",
@@ -75,5 +75,5 @@ class MockedCIBGUserinfoService(CIBGUserinfoService):
                 "uzi_id": bsn,
                 "relations": relations,
             },
-            file_content_raise_if_none(client["client_certificate_path"]),
+            file_content_raise_if_none(client["client_public_key_path"]),
         )

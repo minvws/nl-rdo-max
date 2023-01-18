@@ -62,7 +62,7 @@ class Services(containers.DeclarativeContainer):
 
     mocked_cibg_userinfo_service = providers.Singleton(
         MockedCIBGUserinfoService,
-        jwe_service=encryption_services.jwe_service,
+        jwe_service_provider=encryption_services.jwe_service_provider,
         clients=pyop_services.clients,
         environment=config.app.environment,
         mock_cibg=config.app.mock_cibg.as_(as_bool),
@@ -70,7 +70,7 @@ class Services(containers.DeclarativeContainer):
 
     cc_userinfo_service = providers.Singleton(
         CCUserinfoService,
-        jwe_service=encryption_services.jwe_service,
+        jwe_service_provider=encryption_services.jwe_service_provider,
         clients=pyop_services.clients,
         app_mode=config.app.app_mode,
     )

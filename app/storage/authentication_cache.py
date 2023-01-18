@@ -35,6 +35,7 @@ class AuthenticationCache:
         authorization_request: AuthorizationRequest,
         authorize_request: AuthorizeRequest,
         authentication_state: Dict[str, Any],
+        login_option: str
     ) -> str:
         rand_state = base64.b64encode(
             json.dumps(
@@ -48,7 +49,7 @@ class AuthenticationCache:
         authentication_context = AuthenticationContext(
             authorization_request=authorization_request,
             authorization_by_proxy=authorize_request.authorization_by_proxy,
-            authentication_method=authorize_request.login_hints[0],
+            authentication_method=login_option,
             authentication_state=authentication_state,
         )
         self._cache.set_complex_object(state_key, authentication_context)
