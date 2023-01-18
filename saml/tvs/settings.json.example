@@ -14,7 +14,8 @@
     },
     "idp_settings": {
         "entity_id": "idp_entity_id",
-        "authn_binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+        "authn_binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
+        "metadata_path": "saml/tvs/metadata/idp_metadata.xml"
     },
     "cluster_settings": {
         "tls_keypath": "saml/tvs/certs/tls.crt",
