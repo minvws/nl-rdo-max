@@ -13,7 +13,7 @@
         "serviceDescription": "Max Inlogservice"
     },
     "idp_settings": {
-        "entity_id": "idp_entity_id"
+        "entity_id": "idp_entity_id",
         "authn_binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
     },
     "cluster_settings": {
