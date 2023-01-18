@@ -3,6 +3,7 @@ import logging
 from fastapi import Response, HTTPException
 
 from app.misc.rate_limiter import RateLimiter
+from app.models.saml.artifact_response import ArtifactResponse
 from app.models.saml.artifact_response_mock import ArtifactResponseMock
 from app.models.saml.assertion_consumer_service_request import (
     AssertionConsumerServiceRequest,
@@ -46,7 +47,7 @@ class SAMLProvider:
             not self._environment.startswith("prod")
             and authentication_context.authentication_method == "digid_mock"
         ):
-            artifact_response = ArtifactResponseMock(request.SAMLart)
+            artifact_response: ArtifactResponse = ArtifactResponseMock(request.SAMLart)
         else:
             artifact_response = identity_provider.resolve_artifact(request.SAMLart)
 
@@ -64,9 +65,14 @@ class SAMLProvider:
         """
         Endpoint retrieving metadata for the specified identity providers if configured properly.
         """
-        identity_provider = self._saml_identity_provider_service.get_identity_provider(id_provider_name)
+        identity_provider = self._saml_identity_provider_service.get_identity_provider(
+            id_provider_name
+        )
         errors = identity_provider.sp_metadata.validate()
         if len(errors) == 0:
-            return Response(content=identity_provider.sp_metadata.get_xml().decode(), media_type="application/xml")
+            return Response(
+                content=identity_provider.sp_metadata.get_xml().decode(),
+                media_type="application/xml",
+            )
 
-        raise HTTPException(status_code=500, detail=', '.join(errors))
+        raise HTTPException(status_code=500, detail=", ".join(errors))

@@ -22,7 +22,9 @@ class SamlIdentityProviderService:
             )
         )
 
-    def get_identity_provider(self, identity_provider_name: str) -> SamlIdentityProvider:
+    def get_identity_provider(
+        self, identity_provider_name: str
+    ) -> SamlIdentityProvider:
         """
         Get ID provider from parsed identity_providers_file
         """

@@ -58,7 +58,7 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
     @cached_property
     def sp_metadata(self):
         return self._sp_metadata
-    
+
     def create_authn_request(self, authorization_by_proxy, cluster_name=None):
         scoping_list, request_ids = self.determine_scoping_attributes(
             authorization_by_proxy
