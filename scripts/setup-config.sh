@@ -11,9 +11,4 @@ copy_example_config () {
 
 copy_example_config "max.conf"
 copy_example_config "clients.json"
-copy_example_config "saml/tvs/cluster.json"
 copy_example_config "saml/tvs/settings.json"
-copy_example_config "saml/tvs/advanced_settings.json"
-copy_example_config "saml/digid/settings.json"
-copy_example_config "saml/digid/advanced_settings.json"
-copy_example_config "saml/identity_providers.json"

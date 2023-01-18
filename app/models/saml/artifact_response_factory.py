@@ -11,7 +11,7 @@ from ...misc.saml_utils import has_valid_signatures
 class ArtifactResponseFactory:
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        cluster_key: Optional[str],
+        cluster_key: Optional[str],  # todo: Remove this key
         priv_key: str,
         expected_entity_id: str,
         expected_service_uuid: str,

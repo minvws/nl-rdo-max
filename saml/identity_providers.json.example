@@ -4,12 +4,12 @@
         "base_dir": "saml/tvs",
         "cert_path": "saml/tvs/certs/sp.crt",
         "key_path": "saml/tvs/certs/sp.key",
-        "cluster_key_path": "saml/tvs/certs/poc-1-cibg.uzi.bavod.nl.key",
+        "cluster_key_path": "saml/tvs/certs/cluster.key",
         "settings_path": "saml/tvs/settings.json",
-        "advanced_settings_path": "saml/tvs/advanced_settings.json",
         "idp_metadata_path": "saml/tvs/metadata/idp_metadata.xml",
-        "expected_response_destination": "https://max.acc.coronacheck.nl/acs",
-        "expected_entity_id": "urn:nl-eid-gdi:1.0:DV:00000002003182447001:entities:9001",
-        "expected_service_uuid": "c282ff81-005f-86cb-e053-0c069d0ae01a"
-    }# todo: Remove variables
+        "expected_response_destination": "https://poc-1.uzi.bavod.nl/acs",
+        "expected_entity_id": "urn:nl-eid-gdi:0.0:LC:00000000000000000000:entities:0000",
+        "expected_service_uuid": "9ad7cc4b-aaf5-4e00-8cab-eede7815b9fa",
+        "verify_ssl": true
+    }
 }

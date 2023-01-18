@@ -1,6 +1,5 @@
 # pylint: disable=c-extension-no-member
 import datetime
-import json
 import secrets
 from typing import Dict, Optional, List
 
@@ -10,7 +9,6 @@ from lxml import etree
 from app.misc.saml_utils import (
     get_loc_bind,
     has_valid_signatures,
-    from_settings,
     compute_keyname,
     enforce_cert_newlines,
 )
@@ -32,33 +30,24 @@ class SPMetadata(SAMLRequest):
     CLUSTER_TEMPLATE_NAME = "sp_metadata.clustered.xml.jinja"
     DELTA_DAYS_VALID_UNTIL = 365
 
-    def __init__(self, settings_dict, keypair_sign, jinja_env) -> None:
+    def __init__(self, settings, keypair_sign, jinja_env) -> None:
         """
         Initialize SPMetadata using the settings in the settings dict, for idp_name. And sign it
         using the keypair_sign, which is also the pair used for receiving encrypted material.
 
-        :param settings_dict: dictionary containing the settings for the SP
+        :param settings: dictionary containing the settings for the SP
         :param keypair_sign: paths to the private and public key for signing and signature validation
-        :param idp_name: Identity Provider this service provider metadata is configured for.
         :param pubkey_enc: (OPTIONAL) path to the public key the IdP should use for XML encryption, useful when
         decryption of the messages is done by another party. Otherwise, same key as for signing is used.
         """
         super().__init__(keypair_sign)
 
         self.jinja_env = jinja_env
-        self.settings_dict = settings_dict
+        self.settings = settings
 
         self.dv_keynames: List[str] = []
 
-        self.cluster_settings = None
-        self.clustered = False
-        if "clustered" in settings_dict and settings_dict["clustered"] != "":
-            with open(
-                settings_dict["clustered"], "r", encoding="utf-8"
-            ) as cluster_settings_file:
-                self.cluster_settings = json.loads(cluster_settings_file.read())
-            self.clustered = True
-
+        self.clustered = "cluster_settings" in settings
         self._root = etree.fromstring(self.render_template())
 
         with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
@@ -70,28 +59,30 @@ class SPMetadata(SAMLRequest):
         self.sign(self.root, self._id_hash)
 
     @property
-    def connections(self):
-        return self.cluster_settings["connections"]
+    def sp_settings(self):
+        return self.settings.get("sp_settings", {})
 
     @property
-    def allow_scoping(self):
-        return self.settings_dict.get("security", {}).get("allowScoping", False)
+    def cluster_settings(self):
+        return self.settings.get("cluster_settings", {})
+
+    @property
+    def connections(self):
+        return self.cluster_settings.get("connections", [])
 
     @property
     def authorization_by_proxy_scopes(self):
-        return self.settings_dict.get("security", {}).get(
-            "authorizationByProxyScopes", []
-        )
+        return self.settings.get("security", {}).get("authorizationByProxyScopes", [])
 
     @property
     def authorization_by_proxy_request_ids(self):
-        return self.settings_dict.get("security", {}).get(
+        return self.settings.get("security", {}).get(
             "authorizationByProxyRequestIds", []
         )
 
     @property
     def default_scopes(self):
-        return self.settings_dict.get("security", {}).get("defaultScopes", [])
+        return self.settings.get("security", {}).get("defaultScopes", [])
 
     @property
     def root(self):
@@ -99,7 +90,7 @@ class SPMetadata(SAMLRequest):
 
     @property
     def entity_id(self):
-        return from_settings(self.settings_dict, "sp.entityId")
+        return self.sp_settings.get("entity_id", "")
 
     @property
     def issuer_id(self):
@@ -108,9 +99,7 @@ class SPMetadata(SAMLRequest):
     @property
     def service_uuid(self):
         try:
-            return self.settings_dict["sp"]["attributeConsumingService"][
-                "requestedAttributes"
-            ][0]["attributeValue"][0]
+            return self.sp_settings.get("service_uuid")
         except KeyError as key_error:
             raise KeyError(
                 "key does not exist. please check your settings.json"
@@ -118,40 +107,26 @@ class SPMetadata(SAMLRequest):
 
     @property
     def service_name(self):
-        return from_settings(
-            self.settings_dict,
-            "sp.attributeConsumingService.serviceName",
-            "CoronaCheck",
-        )
+        return self.sp_settings.get("service_name")
 
     @property
     def service_desc(self):
-        return from_settings(
-            self.settings_dict,
-            "sp.attributeConsumingService.serviceDescription",
-            "CoronaCheck Inlogservice",
-        )
+        return self.sp_settings.get("service_description")
 
     @property
     def acs_url(self):
-        return from_settings(self.settings_dict, "sp.assertionConsumerService.url")
+        return self.sp_settings.get("response_destination")
 
     @property
     def acs_binding(self):
-        return from_settings(self.settings_dict, "sp.assertionConsumerService.binding")
+        return self.sp_settings.get("assertion_binding")
 
     def get_cert_data(self, cluster_name: Optional[str]):
         if cluster_name is None:
             # When cluster name is none, we want the certs of our service.
             cert_path = self.signing_cert_path
         else:
-            if self.cluster_settings is None:
-                # This should never happen (key cannot exist without cluster settings), but makes mypy happy
-                raise RuntimeError(
-                    "Cluster settings dict seems to be None, initilization failed."
-                )
-
-            cert_path = self.connections[cluster_name]["cert_path"]
+            cert_path = self.connections.get(cluster_name, {}).get("cert_path")
 
         with open(cert_path, "r", encoding="utf-8") as cert_file:
             cert_data = cert_file.read()
@@ -170,17 +145,13 @@ class SPMetadata(SAMLRequest):
         }
 
     def create_entity_descriptor(self, cluster_name: Optional[str]):
-        if self.cluster_settings is None:
-            # This should never happen, but makes mypy happy
-            raise RuntimeError(
-                "Cluster settings dict seems to be None, initilization failed."
-            )
-
         return {
             "id": "_" + secrets.token_hex(41),  # total length 42.
-            "entity_id": self.entity_id
-            if cluster_name is None
-            else self.connections[cluster_name]["entity_id"],
+            "entity_id": (
+                self.entity_id
+                if cluster_name is None
+                else self.connections.get(cluster_name, {}).get("entity_id")
+            ),
             "spsso": self.get_spsso(cluster_name),
         }
 

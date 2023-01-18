@@ -29,9 +29,7 @@ jobs:
           make venv
 
       - name: Lint with pylint
-        run: |
-            . .venv/bin/activate && pylint --version
-            make lint
+        run: make lint
 
       - name: Type check with MyPy
         run: make type-check

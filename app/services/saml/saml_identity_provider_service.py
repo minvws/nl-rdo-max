@@ -1,18 +1,25 @@
 import json
+import logging
+import os
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from app.models.saml.saml_identity_provider import SamlIdentityProvider
 
 
+log = logging.getLogger(__name__)
+
+
 class SamlIdentityProviderService:
-    def __init__(self, identity_providers_path: str, templates_path: str):
+    def __init__(self, identity_providers_base_path: str, templates_path: str):
         jinja_env = Environment(
             loader=FileSystemLoader(templates_path),
             autoescape=select_autoescape(),
         )
 
-        self._identity_providers = self._parse_identity_providers(
-            identity_providers_path, jinja_env
+        self._identity_providers = (
+            SamlIdentityProviderService._parse_identity_providers(
+                identity_providers_base_path, jinja_env
+            )
         )
 
     def get_identity_provider(self, identity_provider_name: str):
@@ -25,17 +32,33 @@ class SamlIdentityProviderService:
             f"Provider not known: {identity_provider_name}, please check your configs."
         )
 
+    @staticmethod
     def _parse_identity_providers(
-        self, identity_providers_path: str, jinja_env: Environment
+        identity_providers_base_path: str, jinja_env: Environment
     ) -> dict:
-        with open(
-            identity_providers_path, "r", encoding="utf-8"
-        ) as identity_providers_file:
-            identity_providers = json.loads(identity_providers_file.read())
         providers = {}
-        for provider in identity_providers.keys():
-            providers[provider] = SamlIdentityProvider(
-                provider, identity_providers[provider], jinja_env
-            )
-
+        for folder_name in os.listdir(identity_providers_base_path):
+            try:
+                full_folder_path = os.path.join(
+                    identity_providers_base_path, folder_name
+                )
+                if os.path.isdir(full_folder_path) and "." not in folder_name and folder_name != "templates":
+                    with open(
+                        os.path.join(full_folder_path, "settings.json"),
+                        "r",
+                        encoding="utf-8",
+                    ) as idp_settings:
+                        providers[folder_name] = SamlIdentityProvider(
+                            folder_name, json.loads(idp_settings.read()), jinja_env
+                        )
+            except Exception as err:  # pylint: disable=broad-except
+                log.warning(
+                    "Unable to instantiate SamlIdentityProvider for %s with error: %s",
+                    os.path.join(
+                        os.path.join(identity_providers_base_path, folder_name),
+                        "settings.json",
+                    ),
+                    err,
+                )
+                log.exception(err)
         return providers

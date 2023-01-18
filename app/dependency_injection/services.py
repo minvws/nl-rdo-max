@@ -54,7 +54,7 @@ class Services(containers.DeclarativeContainer):
 
     saml_identity_provider_service = providers.Singleton(
         SamlIdentityProviderService,
-        identity_providers_path=config.saml.identity_providers_path,
+        identity_providers_base_path=config.saml.identity_providers_base_path,
         templates_path=config.saml.xml_templates_path,
     )
 

@@ -6,7 +6,7 @@ from lxml import etree
 from packaging.version import parse as version_parse
 
 from app.exceptions.max_exceptions import UnauthorizedError
-from app.misc.utils import file_content, file_content_raise_if_none, json_from_file
+from app.misc.utils import file_content_raise_if_none
 from app.models.saml.artifact_response import ArtifactResponse
 from app.models.saml.artifact_response_factory import ArtifactResponseFactory
 from app.models.saml.exceptions import ScopingAttributesNotAllowed
@@ -15,36 +15,40 @@ from app.models.saml.saml_request import ArtifactResolveRequest, AuthNRequest
 
 
 class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
-    def __init__(self, name, idp_setting, jinja_env) -> None:
+    def __init__(self, name, settings, jinja_env) -> None:
         self.name = name
         self.log: logging.Logger = logging.getLogger(__package__)
 
         self.jinja_env = jinja_env
 
-        settings_dict = json_from_file(idp_setting["settings_path"])
-        self._verify_ssl = idp_setting.get("verify_ssl", True)
-        self._client_cert_with_key = (idp_setting["cert_path"], idp_setting["key_path"])
-        self._idp_metadata = IdPMetadata(idp_setting["idp_metadata_path"])
-        self._sp_metadata = SPMetadata(
-            settings_dict, self._client_cert_with_key, self.jinja_env
+        self._settings_dict = settings
+        sp_settings = settings.get("sp_settings", {})
+        self._verify_ssl = settings.get("verify_ssl", True)
+        self._client_cert_with_key = (
+            sp_settings.get("cert_path"),
+            sp_settings.get("key_path"),
         )
-        self._authn_binding = settings_dict["idp"]["singleSignOnService"]["binding"]
+        self._idp_metadata = IdPMetadata(
+            settings.get("idp_settings", {}).get("metadata_path")
+        )
+        self._sp_metadata = SPMetadata(
+            self._settings_dict, self._client_cert_with_key, self.jinja_env
+        )
+        self._authn_binding = self._settings_dict["idp_settings"]["authn_binding"]
 
         self._artifact_response_factory = ArtifactResponseFactory(
-            cluster_key=file_content(idp_setting.get("cluster_key_path", None)),
-            priv_key=file_content_raise_if_none(
-                idp_setting.get("cluster_key_path", None)
-            ),
-            expected_service_uuid=idp_setting["expected_service_uuid"],
-            expected_response_destination=idp_setting["expected_response_destination"],
-            expected_entity_id=idp_setting["expected_entity_id"],
+            cluster_key=None,
+            priv_key=file_content_raise_if_none(sp_settings.get("key_path", None)),
+            expected_service_uuid=sp_settings.get("service_uuid"),
+            expected_response_destination=sp_settings.get("response_destination"),
+            expected_entity_id=sp_settings.get("entity_id"),
             sp_metadata=self._sp_metadata,
             idp_metadata=self._idp_metadata,
             saml_specification_version=version_parse(
-                str(idp_setting["saml_specification_version"])
+                str(settings.get("saml_specification_version"))
             ),
-            strict=idp_setting.get("strict", True) is True,
-            insecure=idp_setting.get("insecure", False) is True,
+            strict=settings.get("strict", True) is True,
+            insecure=settings.get("insecure", False) is True,
         )
 
     @cached_property
@@ -74,7 +78,7 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
         )
 
     def determine_scoping_attributes(self, authorization_by_proxy):
-        if self._sp_metadata.allow_scoping:
+        if self._settings_dict.get("security").get("allowScoping"):
             return (
                 self.determine_scoping_list(authorization_by_proxy),
                 self.determine_request_ids(authorization_by_proxy),
