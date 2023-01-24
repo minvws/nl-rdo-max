@@ -128,7 +128,7 @@ py==1.11.0
     # via pytest
 pycparser==2.21
     # via cffi
-pycryptodomex==3.15.0
+pycryptodomex==3.16.0
     # via
     #   oic
     #   pyjwkest
