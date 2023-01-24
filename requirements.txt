@@ -47,7 +47,7 @@ cryptography==38.0.1
     #   pyopenssl
 defusedxml==0.7.1
     # via oic
-dependency-injector==4.40.0
+dependency-injector==4.41.0
     # via app (setup.py)
 deprecated==1.2.13
     # via
