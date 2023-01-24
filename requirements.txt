@@ -133,7 +133,7 @@ pycryptodomex==3.15.0
     #   oic
     #   pyjwkest
     #   pyop
-pydantic==1.10.2
+pydantic==1.10.4
     # via fastapi
 pyflakes==3.0.1
     # via autoflake
