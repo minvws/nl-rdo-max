@@ -1,3 +1,4 @@
+from typing import Union
 from pyop.storage import RedisWrapper as PRW
 
 try:
@@ -15,7 +16,9 @@ class RedisWrapper(PRW):
     """
 
     # pylint: disable=super-init-not-called, dangerous-default-value
-    def __init__(self, redis_client: Redis, collection: str, ttl: int = None):
+    def __init__(
+        self, redis_client: Redis, collection: str, ttl: Union[int, None] = None
+    ):
         if not _HAS_REDIS:
             raise ImportError("redis module is required but it is not available")
 

@@ -3,7 +3,7 @@ import base64
 import secrets
 from abc import abstractmethod
 from datetime import datetime
-from typing import Optional, Any, Tuple
+from typing import Optional, Any, Tuple, Union
 
 import xmlsec
 from lxml import etree
@@ -92,8 +92,8 @@ class AuthNRequest(SAMLRequest):
         sp_metadata,
         jinja_env,
         scoping_list: list,
-        request_ids: list = None,
-        cluster_name: str = None,
+        request_ids: Union[list, None] = None,
+        cluster_name: Union[str, None] = None,
     ) -> None:
         """
         :param sso_url: Single Sign On URL to be used in the request

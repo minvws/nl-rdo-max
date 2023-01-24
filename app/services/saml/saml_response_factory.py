@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from urllib import parse
+from typing import Union
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from starlette.background import BackgroundTask
@@ -62,9 +63,9 @@ class SamlResponseFactory:
         self,
         redirect_url: str,
         status_code: int = 200,
-        headers: dict = None,
-        media_type: str = None,
-        background: BackgroundTask = None,
+        headers: Union[dict, None] = None,
+        media_type: Union[str, None] = None,
+        background: Union[BackgroundTask, None] = None,
     ):
         template = Template(self._assertion_consumer_service_template)
         rendered = template.render({"redirect_url": redirect_url})
@@ -83,9 +84,9 @@ class SamlResponseFactory:
         authorize_request,
         randstate,
         status_code: int = 200,
-        headers: dict = None,
-        media_type: str = None,
-        background: BackgroundTask = None,
+        headers: Union[dict, None] = None,
+        media_type: Union[str, None] = None,
+        background: Union[BackgroundTask, None] = None,
     ):
         try:
             authn_request = saml_identity_provider.create_authn_request(

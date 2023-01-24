@@ -50,7 +50,7 @@ def run():
 
 
 def create_fastapi_app(
-    config: ConfigParser = None, container: Container = None
+    config: Union[ConfigParser, None] = None, container: Union[Container, None] = None
 ) -> FastAPI:
     container = container if container is not None else Container()
     _config: ConfigParser = config if config is not None else get_config()

@@ -98,7 +98,7 @@ mccabe==0.7.0
     # via pylint
 mirakuru==2.4.2
     # via pytest-redis
-mypy==0.971
+mypy==0.991
     # via app (setup.py)
 mypy-extensions==0.4.3
     # via

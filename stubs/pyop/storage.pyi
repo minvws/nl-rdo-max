@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Union
 from redis import Redis
 
 class StorageBase(ABC): ...
@@ -9,6 +10,6 @@ class RedisWrapper(StorageBase):
         collection: str,
         db_uri: str = ...,
         redis: Redis = ...,
-        ttl: int = None,
+        ttl: Union[int, None] = None,
         extra_options: dict = {},
     ) -> None: ...

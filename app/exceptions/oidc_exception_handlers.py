@@ -23,7 +23,7 @@ def _base_exception_handler(
     request: Request,
     error: str,
     error_description: str,
-    redirect_uri: str = None,
+    redirect_uri: Union[str, None] = None,
     redirect_html_delay: int = 0,
 ):
     context = {
