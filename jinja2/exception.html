@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <title>Max: {{ exception_title }}</title>
+    <link href="static/css/manon-mint-green.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    {% if redirect_uri and redirect_delay %}
+    <meta http-equiv="refresh" content="{{ redirect_delay }};url={{ redirect_uri }}" />
+    {% endif %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<main id="main-content" tabindex="-1">
+    <section class="bg-color-offset auth">
+        <div>
+            <h1>{{ exception_title }}</h1>
+            {{ exception_message }}
+        </div>
+        {% if redirect_uri %}
+            <div>
+                <a href="{{ redirect_uri }}">Continue</a>
+                {% if redirect_delay %}
+                <p>You will automatically be redirected in {{ redirect_delay }} seconds</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+</main>
+</html>

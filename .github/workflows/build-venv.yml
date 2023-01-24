@@ -32,10 +32,10 @@ jobs:
         run: cd /var/www/html; make venv
 
       - name: Create archive
-        run: cd /var/www/html; tar -czf /home/runner/work/nl-rdo-max/inge-6/inge6_venv_${{ env.RELEASE_VERSION }}.tar.gz .venv
+        run: cd /var/www/html; tar -czf /home/runner/work/nl-rdo-max-private/nl-rdo-max-private/max_venv_${{ env.RELEASE_VERSION }}.tar.gz .venv
 
       - name: Upload venv tar
         uses: actions/upload-artifact@v1
         with:
-          name: inge6_venv_${{ env.RELEASE_VERSION }}
-          path: inge6_venv_${{ env.RELEASE_VERSION }}.tar.gz
+          name: max_venv_${{ env.RELEASE_VERSION }}
+          path: max_venv_${{ env.RELEASE_VERSION }}.tar.gz
