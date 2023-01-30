@@ -59,7 +59,7 @@ fastapi==0.83.0
     # via app (setup.py)
 freezegun==1.2.2
     # via app (setup.py)
-future==0.18.2
+future==0.18.3
     # via pyjwkest
 gitdb==4.0.9
     # via gitpython
