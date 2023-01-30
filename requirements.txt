@@ -71,7 +71,7 @@ idna==3.3
     # via
     #   anyio
     #   requests
-iniconfig==1.1.1
+iniconfig==2.0.0
     # via pytest
 isodate==0.6.1
     # via python3-saml
