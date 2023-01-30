@@ -120,7 +120,7 @@ platformdirs==2.6.2
     #   pylint
 pluggy==1.0.0
     # via pytest
-port-for==0.6.2
+port-for==0.6.3
     # via pytest-redis
 psutil==5.9.3
     # via mirakuru
