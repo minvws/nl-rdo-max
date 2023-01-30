@@ -169,7 +169,7 @@ python3-saml==1.14.0
     # via app (setup.py)
 pyyaml==6.0
     # via bandit
-redis==4.3.4
+redis==4.4.2
     # via
     #   app (setup.py)
     #   pytest-redis
