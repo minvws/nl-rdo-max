@@ -22,7 +22,7 @@ beaker==1.11.0
     # via oic
 black==22.12.0
     # via app (setup.py)
-certifi==2022.6.15.2
+certifi==2022.12.7
     # via requests
 cffi==1.15.1
     # via
