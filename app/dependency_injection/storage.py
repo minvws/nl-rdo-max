@@ -2,6 +2,7 @@
 
 from dependency_injector import containers, providers
 
+from app.misc.utils import as_bool
 from app.storage.authentication_cache import AuthenticationCache
 from app.storage.redis.redis_cache import RedisCache
 from app.storage.redis.redis_client import create_redis_client
@@ -27,7 +28,7 @@ class Storage(containers.DeclarativeContainer):
     cache = providers.Singleton(
         RedisCache,
         default_cache_namespace=config.redis.default_cache_namespace,
-        enable_debugger=config.redis.enable_debugger.as_(bool),
+        enable_debugger=config.redis.enable_debugger.as_(as_bool),
         expires_in_seconds=config.redis.object_ttl.as_int(),
         redis_client=redis_client,
         redis_get_debugger_factory=redis_get_debugger_factory,

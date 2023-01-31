@@ -2,21 +2,31 @@
 app_mode = uzi
 environment = development
 # possible services are: cc, cibg_mock
-external_user_authentication = cibg_mock
-jwe_encryption = rsa
-# jwe_encryption = ed25519
+userinfo_service = cibg_mock
+# External url for max without trailing slash
+external_base_url = https://localhost:8006
+
 loglevel = debug
-i6_sign_privkey                      = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-i4_encrypt_pubkey                    = BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=
+
 external_user_authentication_sym_key = 0000000000000000000000000000000000000000000000000000000000000000
-jwe_sign_priv_key_path = secrets/userinfo/jwe_sign.key
-jwe_sign_crt_path = secrets/userinfo/jwe_sign.crt
+
 login_methods = digid, mock_digid
 
 # only used with html redirect
 redirect_html_delay = 5
 # possible values: http, html
 redirect_type = html
+
+[jwe]
+# list with comma seperated values
+services = x25519,rsa
+
+#rsa
+jwe_sign_priv_key_path = secrets/userinfo/jwe_sign.key
+jwe_sign_crt_path = secrets/userinfo/jwe_sign.crt
+
+#x25519
+jwe_sign_nacl_priv_key = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 
 [uvicorn]
 # The host to be running on

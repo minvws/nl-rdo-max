@@ -57,7 +57,10 @@ class SamlIdentityProviderService:
                         encoding="utf-8",
                     ) as idp_settings:
                         providers[folder_name] = SamlIdentityProvider(
-                            folder_name, json.loads(idp_settings.read()), jinja_env
+                            folder_name,
+                            identity_providers_base_path + "/" + folder_name,
+                            json.loads(idp_settings.read()),
+                            jinja_env,
                         )
             except Exception as err:  # pylint: disable=broad-except
                 log.warning(

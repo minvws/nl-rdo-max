@@ -213,7 +213,7 @@ def test_expire():
     redis_client = MagicMock()
     cache = create_redis_cache(redis_client=redis_client)
     cache.expire(A_KEY, 5434)
-    redis_client.expire.assert_called_with(f"{A_NAMESPACE}:{A_KEY}", 5434, nx=True)
+    redis_client.expire.assert_called_with(f"{A_NAMESPACE}:{A_KEY}", 5434)
 
 
 def test_delete():

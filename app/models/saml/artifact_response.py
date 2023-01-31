@@ -20,7 +20,7 @@ from lxml import etree
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 from packaging.version import Version, LegacyVersion
 
-from .constants import NAMESPACES
+from .constants import NAMESPACES, SECTOR_CODES, SectorNumber
 from .exceptions import UserNotAuthenticated, ValidationError
 from ...misc.saml_utils import remove_padding
 
@@ -443,6 +443,12 @@ class ArtifactResponse:
 
         else:
             bsn_element = self._plaintext_bsn()
+            sector_split = bsn_element.split(":")
+            if len(sector_split) == 2:
+                sector_number = SECTOR_CODES[sector_split[0]]
+                if sector_number != SectorNumber.BSN:
+                    raise ValueError(f"Expected BSN number, received: {sector_number}")
+                return sector_split[1]
         return bsn_element.text
 
     def to_string(self) -> bytes:

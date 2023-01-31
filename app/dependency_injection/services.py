@@ -122,6 +122,7 @@ class Services(containers.DeclarativeContainer):
         environment=config.app.environment,
         login_methods=config.app.login_methods.as_(as_list),
         authentication_handler_factory=login_handler_factory,
+        external_base_url=config.app.external_base_url,
     )
 
     digid_mock_provider = providers.Singleton(

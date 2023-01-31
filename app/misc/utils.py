@@ -32,10 +32,8 @@ def as_list(input_str: str) -> List[str]:
     return input_str.split(", ")
 
 
-def as_bool(input_str: str) -> bool:
-    if input_str is not None:
-        return isinstance(input_str, str) and input_str.lower() == "true"
-    return False
+def as_bool(input_str: Union[str, None]) -> bool:
+    return input_str is not None and input_str.lower() == "true"
 
 
 def clients_from_json(filepath: str) -> str:

@@ -24,6 +24,7 @@ def create_oidc_provider(
     environment="test",
     login_methods: List[str] = "login_method",
     authentication_handler_factory=MagicMock(),
+    external_base_url="external_base_url",
 ):
     return OIDCProvider(
         pyop_provider,
@@ -37,6 +38,7 @@ def create_oidc_provider(
         environment,
         login_methods,
         authentication_handler_factory,
+        external_base_url,
     )
 
 
@@ -59,13 +61,18 @@ def test_jwks():
 
 
 def test_provide_login_options_response_with_multiple_login_options(mocker):
-    oidc_provider = create_oidc_provider(clients={"client_id": {"name": "name"}})
+    oidc_provider = create_oidc_provider(
+        clients={"client_id": {"name": "name"}}, external_base_url="base_url"
+    )
     request = MagicMock()
     authorize_request = MagicMock()
     template_response = MagicMock()
+    redirect_url = MagicMock()
     login_methods = ["a", "b"]
 
-    request.url.remove_query_params.return_value = "redirect_url"
+    request.url.remove_query_params.return_value = redirect_url
+    redirect_url.path = "/redirect_path"
+    redirect_url.query = "query"
     authorize_request.client_id = "client_id"
 
     templates_mock = mocker.patch("app.providers.oidc_provider.templates")
@@ -82,7 +89,7 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
             "request": request,
             "login_methods": ["a", "b"],
             "ura_name": "name",
-            "redirect_uri": "redirect_url",
+            "redirect_uri": "base_url/redirect_path?query",
         },
     )
     assert actual == template_response

@@ -36,18 +36,16 @@ def config():
 # pylint:disable=redefined-outer-name
 def app_mode_legacy(config, pynacl_keys):
     config["app"]["app_mode"] = "legacy"
-    config["app"]["jwe_encryption"] = "ed25519"
     config["app"]["userinfo_service"] = "cc"
-    config["app"]["jwe_sign_nacl_priv_key"] = pynacl_keys["server_key"]
+    config["jwe"]["jwe_sign_nacl_priv_key"] = pynacl_keys["server_key"]
 
 
 @pytest.fixture
 # pylint:disable=redefined-outer-name
 def app_mode_default(config, pynacl_keys):
     config["app"]["app_mode"] = ""
-    config["app"]["jwe_encryption"] = "rsa"
     config["app"]["userinfo_service"] = "cc"
-    config["app"]["jwe_sign_nacl_priv_key"] = pynacl_keys["server_key"]
+    config["jwe"]["jwe_sign_nacl_priv_key"] = pynacl_keys["server_key"]
 
 
 @pytest.fixture

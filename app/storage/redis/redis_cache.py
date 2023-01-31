@@ -125,7 +125,7 @@ class RedisCache(Cache):
         Expires the value of a key
         """
         key = self._prepend_with_namespace(key)
-        self.redis_client.expire(key, time_in_seconds, nx=True)
+        self.redis_client.expire(key, time_in_seconds)
 
     def delete(self, key):
         """

@@ -35,7 +35,7 @@ templates = Jinja2Templates(directory="jinja2")
 
 
 # pylint:disable=too-many-arguments
-class OIDCProvider:
+class OIDCProvider:  # pylint:disable=too-many-instance-attributes
     def __init__(
         self,
         pyop_provider: PyopProvider,
@@ -49,6 +49,7 @@ class OIDCProvider:
         environment: str,
         login_methods: List[str],
         authentication_handler_factory: AuthenticationHandlerFactory,
+        external_base_url: str,
     ):
         if mock_digid and environment.startswith("prod"):
             raise ValueError(
@@ -65,6 +66,7 @@ class OIDCProvider:
         self._environment = environment
         self._login_methods = login_methods
         self._authentication_handler_factory = authentication_handler_factory
+        self._external_base_url = external_base_url
 
     def well_known(self):
         return JSONResponse(
@@ -245,7 +247,7 @@ class OIDCProvider:
                     "request": request,
                     "login_methods": login_methods,
                     "ura_name": self._clients[authorize_request.client_id]["name"],
-                    "redirect_uri": redirect_url,
+                    "redirect_uri": f"{self._external_base_url}{redirect_url.path}?{redirect_url.query}",
                 },
             )
         if len(login_methods) != 1:

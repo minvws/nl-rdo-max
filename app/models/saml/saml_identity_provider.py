@@ -15,33 +15,38 @@ from app.models.saml.saml_request import ArtifactResolveRequest, AuthNRequest
 
 
 class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
-    def __init__(self, name, settings, jinja_env) -> None:
+    def __init__(self, name, base_dir, settings, jinja_env) -> None:
         self.name = name
+        self.base_dir = base_dir
         self.log: logging.Logger = logging.getLogger(__package__)
 
         self.jinja_env = jinja_env
 
         self._settings_dict = settings
-        sp_settings = settings.get("sp_settings", {})
+        sp_settings = settings.get("sp", {})
         self._verify_ssl = settings.get("verify_ssl", True)
         self._client_cert_with_key = (
             sp_settings.get("cert_path"),
             sp_settings.get("key_path"),
         )
-        self._idp_metadata = IdPMetadata(
-            settings.get("idp_settings", {}).get("metadata_path")
-        )
+        self._idp_metadata = IdPMetadata(settings.get("idp", {}).get("metadata_path"))
         self._sp_metadata = SPMetadata(
             self._settings_dict, self._client_cert_with_key, self.jinja_env
         )
-        self._authn_binding = self._settings_dict["idp_settings"]["authn_binding"]
+        self._authn_binding = self._settings_dict["idp"]["singleSignOnService"][
+            "binding"
+        ]
 
         self._artifact_response_factory = ArtifactResponseFactory(
             cluster_key=None,
             priv_key=file_content_raise_if_none(sp_settings.get("key_path", None)),
-            expected_service_uuid=sp_settings.get("service_uuid"),
-            expected_response_destination=sp_settings.get("response_destination"),
-            expected_entity_id=sp_settings.get("entity_id"),
+            expected_service_uuid=sp_settings["attributeConsumingService"][
+                "requestedAttributes"
+            ][0]["attributeValue"][0],
+            expected_response_destination=sp_settings["assertionConsumerService"].get(
+                "url"
+            ),
+            expected_entity_id=sp_settings.get("entityId"),
             sp_metadata=self._sp_metadata,
             idp_metadata=self._idp_metadata,
             saml_specification_version=version_parse(

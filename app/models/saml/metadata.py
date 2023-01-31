@@ -60,7 +60,7 @@ class SPMetadata(SAMLRequest):
 
     @property
     def sp_settings(self):
-        return self.settings.get("sp_settings", {})
+        return self.settings.get("sp", {})
 
     @property
     def cluster_settings(self):
@@ -90,7 +90,7 @@ class SPMetadata(SAMLRequest):
 
     @property
     def entity_id(self):
-        return self.sp_settings.get("entity_id", "")
+        return self.sp_settings.get("entityId", "")
 
     @property
     def issuer_id(self):
@@ -99,7 +99,9 @@ class SPMetadata(SAMLRequest):
     @property
     def service_uuid(self):
         try:
-            return self.sp_settings.get("service_uuid")
+            return self.sp_settings["attributeConsumingService"]["requestedAttributes"][
+                0
+            ]["attributeValue"][0]
         except KeyError as key_error:
             raise KeyError(
                 "key does not exist. please check your settings.json"
@@ -107,19 +109,19 @@ class SPMetadata(SAMLRequest):
 
     @property
     def service_name(self):
-        return self.sp_settings.get("service_name")
+        return self.sp_settings["attributeConsumingService"]["serviceName"]
 
     @property
     def service_desc(self):
-        return self.sp_settings.get("service_description")
+        return self.sp_settings["attributeConsumingService"]["serviceDescription"]
 
     @property
     def acs_url(self):
-        return self.sp_settings.get("response_destination")
+        return self.sp_settings["assertionConsumerService"]["url"]
 
     @property
     def acs_binding(self):
-        return self.sp_settings.get("assertion_binding")
+        return self.sp_settings["assertionConsumerService"]["binding"]
 
     def get_cert_data(self, cluster_name: Optional[str]):
         if cluster_name is None:
