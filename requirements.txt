@@ -6,7 +6,7 @@
 #
 anyio==3.6.2
     # via starlette
-astroid==2.12.9
+astroid==2.13.4
     # via pylint
 async-timeout==4.0.2
     # via redis
