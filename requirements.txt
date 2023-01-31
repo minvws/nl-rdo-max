@@ -219,7 +219,7 @@ typing-extensions==4.4.0
     #   pydantic
     #   pylint
     #   starlette
-urllib3==1.26.12
+urllib3==1.26.14
     # via requests
 uvicorn==0.20.0
     # via app (setup.py)
