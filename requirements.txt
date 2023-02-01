@@ -88,7 +88,7 @@ lxml==4.9.1
     #   app (setup.py)
     #   python3-saml
     #   xmlsec
-mako==1.2.2
+mako==1.2.4
     # via oic
 markupsafe==2.1.1
     # via
