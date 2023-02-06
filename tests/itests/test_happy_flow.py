@@ -169,7 +169,7 @@ def validate_legacy_userinfo(
         oidc_configuration["userinfo_endpoint"],
         headers={"Authorization": "Bearer " + access_token_response["id_token"]},
     )
-
+    assert userinfo_response.headers["authentication-method"] == "digid_mock"
     box = Box(
         PrivateKey(pynacl_keys["client_key"].encode("utf-8"), encoder=Base64Encoder),
         PublicKey(pynacl_keys["server_pub"].encode("utf-8"), encoder=Base64Encoder),
@@ -188,6 +188,7 @@ def validate_userinfo(app: TestClient, oidc_configuration, access_token_response
     )
 
     assert userinfo_response.headers["content-type"] == "application/jwt"
+    assert userinfo_response.headers["authentication-method"] == "digid_mock"
     with open(CLIENT_RSA_PRIV_KEY_PATH, "r", encoding="utf-8") as file:
         pem = file.read().encode("utf-8")
     jwe = JWE.from_jose_token(userinfo_response.text)

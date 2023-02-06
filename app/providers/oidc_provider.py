@@ -221,7 +221,10 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         if not introspection["active"] or not userinfo_context:
             raise Exception("not authorized")
         return Response(
-            headers={"Content-Type": "application/jwt"},
+            headers={
+                "Content-Type": "application/jwt",
+                "Authentication-Method": userinfo_context.authentication_method,
+            },
             content=userinfo_context.userinfo,
         )
 
