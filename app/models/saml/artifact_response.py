@@ -443,7 +443,7 @@ class ArtifactResponse:
 
         else:
             bsn_element = self._plaintext_bsn()
-            sector_split = bsn_element.split(":")
+            sector_split = bsn_element.text.split(":")
             if len(sector_split) == 2:
                 sector_number = SECTOR_CODES[sector_split[0]]
                 if sector_number != SectorNumber.BSN:

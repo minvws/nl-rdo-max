@@ -18,8 +18,6 @@ autoflake==2.0.1
     # via app (setup.py)
 bandit==1.7.4
     # via app (setup.py)
-beaker==1.11.0
-    # via oic
 black==22.12.0
     # via app (setup.py)
 certifi==2022.12.7
@@ -50,11 +48,11 @@ defusedxml==0.7.1
 dependency-injector==4.41.0
     # via app (setup.py)
 deprecated==1.2.13
-    # via
-    #   jwcrypto
-    #   redis
+    # via jwcrypto
 dill==0.3.5.1
     # via pylint
+exceptiongroup==1.1.0
+    # via pytest
 fastapi==0.83.0
     # via app (setup.py)
 freezegun==1.2.2
@@ -107,9 +105,7 @@ mypy-extensions==0.4.3
 oic==1.5.0
     # via pyop
 packaging==21.3
-    # via
-    #   pytest
-    #   redis
+    # via pytest
 pathspec==0.11.0
     # via black
 pbr==5.10.0
@@ -124,8 +120,6 @@ port-for==0.6.3
     # via pytest-redis
 psutil==5.9.4
     # via mirakuru
-py==1.11.0
-    # via pytest
 pycparser==2.21
     # via cffi
 pycryptodomex==3.16.0
@@ -192,10 +186,9 @@ starlette==0.23.1
     # via fastapi
 stevedore==4.1.1
     # via bandit
-toml==0.10.2
-    # via autoflake
 tomli==2.0.1
     # via
+    #   autoflake
     #   black
     #   mypy
     #   pylint
