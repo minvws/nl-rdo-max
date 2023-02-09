@@ -81,7 +81,7 @@ jwcrypto==1.4.2
     # via app (setup.py)
 lazy-object-proxy==1.9.0
     # via astroid
-lxml==4.9.1
+lxml==4.9.2
     # via
     #   app (setup.py)
     #   python3-saml
