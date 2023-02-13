@@ -182,7 +182,7 @@ smmap==5.0.0
     # via gitdb
 sniffio==1.3.0
     # via anyio
-starlette==0.23.1
+starlette==0.24.0
     # via fastapi
 stevedore==4.1.1
     # via bandit
