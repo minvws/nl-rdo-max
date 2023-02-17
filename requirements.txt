@@ -184,7 +184,7 @@ sniffio==1.3.0
     # via anyio
 starlette==0.25.0
     # via fastapi
-stevedore==4.1.1
+stevedore==5.0.0
     # via bandit
 tomli==2.0.1
     # via
