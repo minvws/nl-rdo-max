@@ -4,11 +4,13 @@ from dependency_injector import containers, providers
 from app.misc.rate_limiter import RateLimiter
 from app.misc.utils import as_bool, as_list
 from app.providers.digid_mock_provider import DigidMockProvider
+from app.providers.irma_provider import IRMAProvider
 from app.providers.oidc_provider import OIDCProvider
 from app.providers.saml_provider import SAMLProvider
 from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
 )
+from app.services.loginhandler.irma_authentication_handler import IrmaAuthenticationHandler
 from app.services.loginhandler.mock_saml_authentication_handler import (
     MockSamlAuthenticationHandler,
 )
@@ -17,6 +19,7 @@ from app.services.loginhandler.saml_authentication_handler import (
 )
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 from app.services.saml.saml_response_factory import SamlResponseFactory
+from app.services.response_factory import ResponseFactory
 from app.services.userinfo.cc_userinfo_service import CCUserinfoService
 from app.services.userinfo.cibg_userinfo_service import (
     CIBGUserinfoService,
@@ -44,6 +47,9 @@ class Services(containers.DeclarativeContainer):
         oidc_authorize_endpoint=config.oidc.authorize_endpoint,
     )
 
+    response_factory = providers.Singleton(
+        ResponseFactory
+    )
     rate_limiter = providers.Singleton(
         RateLimiter,
         cache=storage.cache,
@@ -103,10 +109,17 @@ class Services(containers.DeclarativeContainer):
         userinfo_service=userinfo_service,
     )
 
+    irma_authentication_handler = providers.Singleton(
+        IrmaAuthenticationHandler,
+        jwe_service_provider=encryption_services.jwe_service_provider,
+        clients=pyop_services.clients
+    )
+
     login_handler_factory = providers.Singleton(
         AuthenticationHandlerFactory,
         saml_authentication_handler=saml_login_handler,
         mock_saml_authentication_handler=mock_saml_login_handler,
+        irma_authentication_handler=irma_authentication_handler,
     )
 
     oidc_provider = providers.Singleton(
@@ -123,6 +136,15 @@ class Services(containers.DeclarativeContainer):
         login_methods=config.app.login_methods.as_(as_list),
         authentication_handler_factory=login_handler_factory,
         external_base_url=config.app.external_base_url,
+    )
+
+    irma_provider = providers.Singleton(
+        IRMAProvider,
+        authentication_cache=storage.authentication_cache,
+        irma_internal_server_url=config.irma.irma_internal_server_url,
+        userinfo_service=userinfo_service,
+        oidc_provider=oidc_provider,
+        response_factory=response_factory
     )
 
     digid_mock_provider = providers.Singleton(

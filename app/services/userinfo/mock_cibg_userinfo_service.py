@@ -1,5 +1,5 @@
 import logging
-
+from typing import Any
 from app.exceptions.max_exceptions import ServerErrorException
 from app.misc.utils import file_content_raise_if_none
 from app.models.authentication_context import AuthenticationContext
@@ -25,7 +25,7 @@ class MockedCIBGUserinfoService(CIBGUserinfoService):
         self._environment = environment
         self._mock_cibg = mock_cibg
 
-    def request_userinfo_for_artifact(
+    def request_userinfo_for_digid_artifact(
         self,
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
@@ -39,10 +39,29 @@ class MockedCIBGUserinfoService(CIBGUserinfoService):
             not self._mock_cibg
             and not authentication_context.authentication_method.endswith("mock")
         ):
-            return super().request_userinfo_for_artifact(
+            return super().request_userinfo_for_digid_artifact(
                 authentication_context, artifact_response, saml_identity_provider
             )
         bsn = artifact_response.get_bsn(False)
+        uzi_id = "123456789" if bsn is None else bsn
+        return self._create_mocked_cibg_response(authentication_context, uzi_id)
+
+    def request_userinfo_for_irma_response(
+            self,
+            authentication_context: AuthenticationContext,
+            irma_response: Any
+    ) -> str:
+        uzi_id = list(filter(lambda p: p["id"] == 'irma-demo.uzipoc-cibg.uzi-2.uziId', irma_response["disclosed"][0]))[0]["rawvalue"]
+        return self._create_mocked_cibg_response(
+            authentication_context,
+            uzi_id
+        )
+
+    def _create_mocked_cibg_response(
+            self,
+            authentication_context,
+            uzi_id
+            ):
         relations = []
         client = self._clients[
             authentication_context.authorization_request["client_id"]
@@ -73,7 +92,7 @@ class MockedCIBGUserinfoService(CIBGUserinfoService):
                 "surname": "Jansen",
                 "loa_authn": "substantial",
                 "loa_uzi": "substantial",
-                "uzi_id": bsn,
+                "uzi_id": uzi_id,
                 "relations": relations,
             },
             file_content_raise_if_none(client["client_public_key_path"]),

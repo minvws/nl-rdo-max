@@ -37,7 +37,7 @@ class AuthenticationCache:
         authentication_state: Dict[str, Any],
         login_option: str,
     ) -> str:
-        rand_state = base64.b64encode(
+        rand_state = base64.urlsafe_b64encode(
             json.dumps(
                 {
                     "state": self._cache.gen_token(),
@@ -46,15 +46,22 @@ class AuthenticationCache:
                 }
             ).encode("utf-8")
         ).decode("utf-8")
-        state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{rand_state}"
         authentication_context = AuthenticationContext(
             authorization_request=authorization_request,
             authorization_by_proxy=authorize_request.authorization_by_proxy,
             authentication_method=login_option,
             authentication_state=authentication_state,
         )
-        self._cache.set_complex_object(state_key, authentication_context)
+        self.cache_authentication_context(rand_state, authentication_context)
         return rand_state
+
+    def cache_authentication_context(
+            self,
+            rand_state: str,
+            authentication_context: AuthenticationContext
+    ):
+        state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{rand_state}"
+        self._cache.set_complex_object(state_key, authentication_context)
 
     def get_authentication_request_state(
         self, rand_state: str

@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 from os import path
 from typing import Union, List, Any
 
@@ -66,3 +67,9 @@ def extract_error_uri_from_state(clients: dict, state: str) -> Union[str, None]:
     if client_id in clients:
         return clients[client_id]["error_page"]
     return None
+
+def load_template(path, filename):
+    print(path)
+    template_path = os.path.join(path, filename)
+    with open(template_path, "r", encoding="utf-8") as template_file:
+        return template_file.read()

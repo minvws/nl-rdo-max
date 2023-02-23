@@ -17,7 +17,7 @@ class CCUserinfoService(UserinfoService):
         self._clients = clients
         self._app_mode = app_mode
 
-    def request_userinfo_for_artifact(
+    def request_userinfo_for_digid_artifact(
         self,
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
@@ -43,10 +43,3 @@ class CCUserinfoService(UserinfoService):
             {"bsn": bsn},  # type:ignore
             content,
         )
-
-    # todo: Get rid of the notImplementedError
-    def irma_disclosure(self, userinfo: Dict[Any, Any]):
-        raise NotImplementedError()
-
-    def from_irma_disclosure(self, irma_disclosure):
-        raise NotImplementedError()

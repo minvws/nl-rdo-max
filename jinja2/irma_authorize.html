@@ -5,9 +5,8 @@
     <title>Notificaties - Rijksoverheid CSS</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="static/css/manon-mint-green.css" rel="stylesheet">
-    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script> <!-- todo: CDN allowed? -->
+    <script src="static/irmajs-v0.4.2/irma.js"></script>
 </head>
-
 <main id="main-content" tabindex="-1">
 
     <section class="bg-color-offset auth">
@@ -20,32 +19,40 @@
             </div>
 
             <div class="tile options-overview">
-                <div id="qr-code"></div>
+                <div id="irma-web-form"></div>
             </div>
         </div>
     </section>
 </main>
 <script>
-    new QRCode(document.getElementById("qr-code"), {
-        text: atob('{{ qr_code }}'),
-        width: 500,
-        height: 500,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
+    let options = {
+        // Developer options
+        debugging: true,
+
+        // Front-end options
+        language:  'en',
+        translations: {
+            header:  'Uzipoc login',
+            loading: 'Just one second please!'
+        },
+
+        // Back-end options
+        session: {
+            start: {
+                url: o => `${o.url}` + '{{ session_url }}',
+                method: 'POST',
+            },
+            result: false
+        }
+    };
+
+    const irmaPopup = irma.newPopup({
+        ...options,
+        element: '#irma-web-form'
     });
-    const check_redirect = async function () {
-        const valid_states = ["INITIALIZED", "CONNECTED", "DONE"]
-        const session = await fetch('{{session_url}}')
-        const session_state = await session.json()
-        if (!valid_states.includes(session_state.status)) {
-            location.reload();
-        }
-        console.log(session_state)
-        if (session_state.redirect_url !== undefined) {
-            window.location.href = session_state.redirect_url;
-        }
-    }
-    setInterval(check_redirect, 500);
+    irmaPopup.start()
+        .then(() => {
+            window.location.replace('/irma/result?state={{ state }}');
+        })
 </script>
 </html>
