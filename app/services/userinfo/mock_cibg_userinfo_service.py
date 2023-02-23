@@ -47,21 +47,17 @@ class MockedCIBGUserinfoService(CIBGUserinfoService):
         return self._create_mocked_cibg_response(authentication_context, uzi_id)
 
     def request_userinfo_for_irma_response(
-            self,
-            authentication_context: AuthenticationContext,
-            irma_response: Any
+        self, authentication_context: AuthenticationContext, irma_response: Any
     ) -> str:
-        uzi_id = list(filter(lambda p: p["id"] == 'irma-demo.uzipoc-cibg.uzi-2.uziId', irma_response["disclosed"][0]))[0]["rawvalue"]
-        return self._create_mocked_cibg_response(
-            authentication_context,
-            uzi_id
-        )
+        uzi_id = list(
+            filter(
+                lambda p: p["id"] == "irma-demo.uzipoc-cibg.uzi-2.uziId",
+                irma_response["disclosed"][0],
+            )
+        )[0]["rawvalue"]
+        return self._create_mocked_cibg_response(authentication_context, uzi_id)
 
-    def _create_mocked_cibg_response(
-            self,
-            authentication_context,
-            uzi_id
-            ):
+    def _create_mocked_cibg_response(self, authentication_context, uzi_id):
         relations = []
         client = self._clients[
             authentication_context.authorization_request["client_id"]

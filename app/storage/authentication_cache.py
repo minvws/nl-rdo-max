@@ -56,9 +56,7 @@ class AuthenticationCache:
         return rand_state
 
     def cache_authentication_context(
-            self,
-            rand_state: str,
-            authentication_context: AuthenticationContext
+        self, rand_state: str, authentication_context: AuthenticationContext
     ):
         state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{rand_state}"
         self._cache.set_complex_object(state_key, authentication_context)

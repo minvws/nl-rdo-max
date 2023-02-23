@@ -10,7 +10,9 @@ from app.providers.saml_provider import SAMLProvider
 from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
 )
-from app.services.loginhandler.irma_authentication_handler import IrmaAuthenticationHandler
+from app.services.loginhandler.irma_authentication_handler import (
+    IrmaAuthenticationHandler,
+)
 from app.services.loginhandler.mock_saml_authentication_handler import (
     MockSamlAuthenticationHandler,
 )
@@ -47,9 +49,7 @@ class Services(containers.DeclarativeContainer):
         oidc_authorize_endpoint=config.oidc.authorize_endpoint,
     )
 
-    response_factory = providers.Singleton(
-        ResponseFactory
-    )
+    response_factory = providers.Singleton(ResponseFactory)
     rate_limiter = providers.Singleton(
         RateLimiter,
         cache=storage.cache,
@@ -112,7 +112,7 @@ class Services(containers.DeclarativeContainer):
     irma_authentication_handler = providers.Singleton(
         IrmaAuthenticationHandler,
         jwe_service_provider=encryption_services.jwe_service_provider,
-        clients=pyop_services.clients
+        clients=pyop_services.clients,
     )
 
     login_handler_factory = providers.Singleton(
@@ -144,7 +144,7 @@ class Services(containers.DeclarativeContainer):
         irma_internal_server_url=config.irma.irma_internal_server_url,
         userinfo_service=userinfo_service,
         oidc_provider=oidc_provider,
-        response_factory=response_factory
+        response_factory=response_factory,
     )
 
     digid_mock_provider = providers.Singleton(

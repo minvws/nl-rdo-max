@@ -7,7 +7,9 @@ from app.services.loginhandler.mock_saml_authentication_handler import (
 from app.services.loginhandler.saml_authentication_handler import (
     SamlAuthenticationHandler,
 )
-from app.services.loginhandler.irma_authentication_handler import IrmaAuthenticationHandler
+from app.services.loginhandler.irma_authentication_handler import (
+    IrmaAuthenticationHandler,
+)
 
 
 class AuthenticationHandlerFactory:
@@ -15,7 +17,7 @@ class AuthenticationHandlerFactory:
         self,
         saml_authentication_handler: SamlAuthenticationHandler,
         mock_saml_authentication_handler: MockSamlAuthenticationHandler,
-        irma_authentication_handler: IrmaAuthenticationHandler
+        irma_authentication_handler: IrmaAuthenticationHandler,
     ):
         self._saml_authentication_handler = saml_authentication_handler
         self._mock_saml_authentication_handler = mock_saml_authentication_handler

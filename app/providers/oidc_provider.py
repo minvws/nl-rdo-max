@@ -67,8 +67,9 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self._login_methods = login_methods
         self._authentication_handler_factory = authentication_handler_factory
         self._external_base_url = external_base_url
-        self._pyop_provider.configuration_information["code_challenge_methods_supported"] = ["S256"]
-
+        self._pyop_provider.configuration_information[
+            "code_challenge_methods_supported"
+        ] = ["S256"]
 
     def well_known(self):
         return JSONResponse(

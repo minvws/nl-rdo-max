@@ -35,7 +35,9 @@ def _base_exception_handler(
     if redirect_uri is not None:
         context["redirect_uri"] = redirect_uri
 
-    return templates.TemplateResponse("exception.html", status_code=500, context=context)
+    return templates.TemplateResponse(
+        "exception.html", status_code=500, context=context
+    )
 
 
 def client_and_redirect_uri(

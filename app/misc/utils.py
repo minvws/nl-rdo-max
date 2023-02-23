@@ -68,6 +68,7 @@ def extract_error_uri_from_state(clients: dict, state: str) -> Union[str, None]:
         return clients[client_id]["error_page"]
     return None
 
+
 def load_template(path, filename):
     print(path)
     template_path = os.path.join(path, filename)

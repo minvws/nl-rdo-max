@@ -65,7 +65,7 @@ def create_fastapi_app(
         datefmt="%m/%d/%Y %I:%M:%S %p",
     )
 
-    modules=[
+    modules = [
         "app.routers.saml_router",
         "app.routers.oidc_router",
         "app.routers.digid_mock_router",
@@ -86,9 +86,7 @@ def create_fastapi_app(
         fastapi.include_router(irma_router)
         modules.append("app.routers.irma_router")
     fastapi.mount("/static", StaticFiles(directory="static"), name="static")
-    container.wire(
-        modules=modules
-    )
+    container.wire(modules=modules)
     fastapi.container = container  # type: ignore
     app.dependency_injection.container._container = (  # pylint: disable=protected-access
         container

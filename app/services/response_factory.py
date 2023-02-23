@@ -14,9 +14,7 @@ log = logging.getLogger(__package__)
 
 class ResponseFactory:
     def __init__(self):
-        self._redirect_template = load_template(
-            "jinja2", "redirect.html"
-        )
+        self._redirect_template = load_template("jinja2", "redirect.html")
 
     def create_saml_meta_redirect_response(
         self,

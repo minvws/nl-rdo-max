@@ -24,8 +24,6 @@ class CIBGUserinfoService(UserinfoService):
         raise Exception("unimplemented")
 
     def request_userinfo_for_irma_response(
-            self,
-            authentication_context: AuthenticationContext,
-            irma_response: Any
+        self, authentication_context: AuthenticationContext, irma_response: Any
     ) -> str:
         raise Exception("unimplemented")
