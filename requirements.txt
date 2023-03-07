@@ -143,7 +143,7 @@ pyopenssl==23.0.0
     # via app (setup.py)
 pyparsing==3.0.9
     # via packaging
-pytest==7.2.1
+pytest==7.2.2
     # via
     #   app (setup.py)
     #   pytest-docker
