@@ -39,6 +39,15 @@ async def accesstoken(
     )
 
 
+@oidc_router.get("/continue")
+@inject
+async def continue_(
+    state: str,
+    oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
+):
+    return oidc_provider.continue_flow(state)
+
+
 @oidc_router.get(RouterConfig.jwks_endpoint)
 @inject
 async def jwks(

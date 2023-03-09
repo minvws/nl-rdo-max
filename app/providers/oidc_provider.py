@@ -28,6 +28,8 @@ from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
 )
 from app.services.saml.saml_response_factory import SamlResponseFactory
+from app.services.response_factory import ResponseFactory
+
 from app.services.userinfo.userinfo_service import UserinfoService
 from app.storage.authentication_cache import AuthenticationCache
 
@@ -44,6 +46,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         clients: dict,
         mock_digid: bool,
         saml_response_factory: SamlResponseFactory,
+        response_factory: ResponseFactory,
         userinfo_service: UserinfoService,
         app_mode: str,
         environment: str,
@@ -61,6 +64,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self._clients = clients
         self._mock_digid = mock_digid
         self._saml_response_factory = saml_response_factory
+        self._response_factory = response_factory
         self._userinfo_service = userinfo_service
         self._app_mode = app_mode
         self._environment = environment
@@ -230,6 +234,21 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             },
             content=userinfo_context.userinfo,
         )
+
+    def continue_flow(self, state: str):
+        authentication_context = self.get_authentication_request_state(state)
+
+        userinfo = self._userinfo_service.request_userinfo_for_exchange_token(
+            authentication_context,
+            authentication_context.authentication_state["exchange_token"],
+        )
+        return self.authenticate(authentication_context, userinfo)
+
+    def authenticate(self, authentication_context, userinfo):
+        response_url = self.handle_external_authentication(
+            authentication_context, userinfo
+        )
+        return self._response_factory.create_redirect_response(response_url)
 
     def _get_login_methods(self, authorize_request: AuthorizeRequest) -> List[str]:
         login_methods = [

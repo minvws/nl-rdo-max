@@ -1,10 +1,8 @@
 import abc
 
-from typing import Any
-
 from app.models.authentication_context import AuthenticationContext
-from app.models.saml.saml_identity_provider import SamlIdentityProvider
 from app.models.saml.artifact_response import ArtifactResponse
+from app.models.saml.saml_identity_provider import SamlIdentityProvider
 
 
 class UserinfoService(abc.ABC):
@@ -18,7 +16,7 @@ class UserinfoService(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def request_userinfo_for_irma_response(
-        self, authentication_context: AuthenticationContext, irma_response: Any
+    def request_userinfo_for_exchange_token(
+        self, authentication_context: AuthenticationContext, exchange_token: str
     ) -> str:
         pass

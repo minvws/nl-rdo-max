@@ -1,14 +1,12 @@
 import base64
 import json
 import logging
-import os
-from urllib import parse
 from typing import Union
+from urllib import parse
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from starlette.background import BackgroundTask
 from starlette.responses import HTMLResponse, RedirectResponse
-
 from jinja2 import Template
 
 from app.exceptions.max_exceptions import (
@@ -75,6 +73,7 @@ class SamlResponseFactory:
                 "relay_state": randstate,
             }
         )
+        # pylint: disable=duplicate-code
         return HTMLResponse(
             content=rendered,
             status_code=status_code,

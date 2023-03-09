@@ -41,9 +41,18 @@ def _base_exception_handler(
 
 
 def client_and_redirect_uri(
-    input_dict: Mapping,
+    input_dict: Mapping, clients: Dict[str, Dict]
 ) -> Tuple[Union[str, None], Union[str, None]]:
-    return input_dict.get("redirect_uri"), input_dict.get("client_id")
+    client_id = input_dict.get("client_id")
+    redirect_uri = input_dict.get("redirect_uri")
+    if (
+        redirect_uri is None
+        or client_id is None
+        or client_id not in clients
+        or redirect_uri not in clients[client_id]["redirect_uris"]
+    ):
+        return None, None
+    return redirect_uri, client_id
 
 
 def handle_exception_redirect(
@@ -56,12 +65,16 @@ def handle_exception_redirect(
 ) -> Response:
     redirect_uri, client_id = None, None
     try:
-        redirect_uri, client_id = client_and_redirect_uri(request.query_params)
-        if redirect_uri is None and "RelayState" in request.query_params:
-            state = json.loads(
-                base64.urlsafe_b64decode(request.query_params["RelayState"])
+        redirect_uri, client_id = client_and_redirect_uri(request.query_params, clients)
+        if redirect_uri is None:
+            state_key = (
+                "RelayState" if "RelayState" in request.query_params else "state"
             )
-            redirect_uri, client_id = client_and_redirect_uri(state)
+            if state_key in request.query_params:
+                state = json.loads(
+                    base64.urlsafe_b64decode(request.query_params[state_key])
+                )
+                redirect_uri, client_id = client_and_redirect_uri(state, clients)
     except Exception as input_handling_exception:  # pylint: disable=broad-except
         if log.isEnabledFor(logging.DEBUG):
             log.exception(input_handling_exception)

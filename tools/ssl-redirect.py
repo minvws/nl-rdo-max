@@ -35,11 +35,6 @@ async def catch_all(request: Request, full_path: str):
     )
 
 
-# @app.post("/{full_path:path}")
-# async def catch_all(request: Request, full_path: str):
-#     print("post: "+full_path)
-
-
 if __name__ == "__main__":
     kwargs = {
         "host": "0.0.0.0",

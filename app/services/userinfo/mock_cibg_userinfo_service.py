@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+
 from app.exceptions.max_exceptions import ServerErrorException
 from app.misc.utils import file_content_raise_if_none
 from app.models.authentication_context import AuthenticationContext
@@ -10,7 +10,7 @@ from app.services.userinfo.cibg_userinfo_service import CIBGUserinfoService
 
 log = logging.getLogger(__name__)
 
-
+# pylint: disable=too-many-arguments
 class MockedCIBGUserinfoService(CIBGUserinfoService):
     def __init__(
         self,
@@ -18,8 +18,22 @@ class MockedCIBGUserinfoService(CIBGUserinfoService):
         clients: dict,
         environment: str,
         mock_cibg: bool,
+        userinfo_request_signing_priv_key_path: str,
+        userinfo_request_signing_crt_path: str,
+        cibg_exchange_token_endpoint: str,
+        jwt_issuer: str,
+        jwt_expiration_duration: int,
+        jwt_nbf_lag: int,
     ):
-        super().__init__()
+        super().__init__(
+            userinfo_request_signing_priv_key_path,
+            userinfo_request_signing_crt_path,
+            clients,
+            cibg_exchange_token_endpoint,
+            jwt_issuer,
+            jwt_expiration_duration,
+            jwt_nbf_lag,
+        )
         self._jwe_service_provider = jwe_service_provider
         self._clients = clients
         self._environment = environment
@@ -44,17 +58,6 @@ class MockedCIBGUserinfoService(CIBGUserinfoService):
             )
         bsn = artifact_response.get_bsn(False)
         uzi_id = "123456789" if bsn is None else bsn
-        return self._create_mocked_cibg_response(authentication_context, uzi_id)
-
-    def request_userinfo_for_irma_response(
-        self, authentication_context: AuthenticationContext, irma_response: Any
-    ) -> str:
-        uzi_id = list(
-            filter(
-                lambda p: p["id"] == "irma-demo.uzipoc-cibg.uzi-2.uziId",
-                irma_response["disclosed"][0],
-            )
-        )[0]["rawvalue"]
         return self._create_mocked_cibg_response(authentication_context, uzi_id)
 
     def _create_mocked_cibg_response(self, authentication_context, uzi_id):

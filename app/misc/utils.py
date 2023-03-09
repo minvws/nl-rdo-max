@@ -5,8 +5,11 @@ from os import path
 from typing import Union, List, Any
 
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
+from fastapi.templating import Jinja2Templates
 
 SOAP_NS = "http://www.w3.org/2003/05/soap-envelope"
+
+templates = Jinja2Templates(directory="jinja2")
 
 
 # todo: Test module!
@@ -69,8 +72,7 @@ def extract_error_uri_from_state(clients: dict, state: str) -> Union[str, None]:
     return None
 
 
-def load_template(path, filename):
-    print(path)
-    template_path = os.path.join(path, filename)
+def load_template(file_path, filename):
+    template_path = os.path.join(file_path, filename)
     with open(template_path, "r", encoding="utf-8") as template_file:
         return template_file.read()

@@ -4,7 +4,6 @@ from dependency_injector import containers, providers
 from app.misc.rate_limiter import RateLimiter
 from app.misc.utils import as_bool, as_list
 from app.providers.digid_mock_provider import DigidMockProvider
-from app.providers.irma_provider import IRMAProvider
 from app.providers.oidc_provider import OIDCProvider
 from app.providers.saml_provider import SAMLProvider
 from app.services.loginhandler.authentication_handler_factory import (
@@ -49,7 +48,7 @@ class Services(containers.DeclarativeContainer):
         oidc_authorize_endpoint=config.oidc.authorize_endpoint,
     )
 
-    response_factory = providers.Singleton(ResponseFactory)
+    response_factory = providers.Singleton(ResponseFactory, redirect_type=redirect_type)
     rate_limiter = providers.Singleton(
         RateLimiter,
         cache=storage.cache,
@@ -76,6 +75,12 @@ class Services(containers.DeclarativeContainer):
         clients=pyop_services.clients,
         environment=config.app.environment,
         mock_cibg=config.app.mock_cibg.as_(as_bool),
+        userinfo_request_signing_priv_key_path=config.jwe.jwe_sign_priv_key_path,
+        userinfo_request_signing_crt_path=config.jwe.jwe_sign_crt_path,
+        cibg_exchange_token_endpoint=config.cibg.cibg_exchange_token_endpoint,
+        jwt_issuer=config.cibg.jwt_issuer,
+        jwt_expiration_duration=config.cibg.jwt_expiration_duration.as_int(),
+        jwt_nbf_lag=config.cibg.jwt_nbf_lag.as_int(),
     )
 
     cc_userinfo_service = providers.Singleton(
@@ -112,6 +117,9 @@ class Services(containers.DeclarativeContainer):
     irma_authentication_handler = providers.Singleton(
         IrmaAuthenticationHandler,
         jwe_service_provider=encryption_services.jwe_service_provider,
+        response_factory=response_factory,
+        create_irma_session_url=config.app.create_irma_session_url,
+        irma_login_redirect_url=config.app.irma_login_redirect_url,
         clients=pyop_services.clients,
     )
 
@@ -130,21 +138,13 @@ class Services(containers.DeclarativeContainer):
         clients=pyop_services.clients,
         mock_digid=config.app.mock_digid.as_(as_bool),
         saml_response_factory=saml_response_factory,
+        response_factory=response_factory,
         userinfo_service=userinfo_service,
         app_mode=config.app.app_mode,
         environment=config.app.environment,
         login_methods=config.app.login_methods.as_(as_list),
         authentication_handler_factory=login_handler_factory,
         external_base_url=config.app.external_base_url,
-    )
-
-    irma_provider = providers.Singleton(
-        IRMAProvider,
-        authentication_cache=storage.authentication_cache,
-        irma_internal_server_url=config.irma.irma_internal_server_url,
-        userinfo_service=userinfo_service,
-        oidc_provider=oidc_provider,
-        response_factory=response_factory,
     )
 
     digid_mock_provider = providers.Singleton(

@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any
 
 # pylint: disable=
 from app.misc.utils import file_content_raise_if_none
@@ -43,3 +43,8 @@ class CCUserinfoService(UserinfoService):
             {"bsn": bsn},  # type:ignore
             content,
         )
+
+    def request_userinfo_for_exchange_token(
+        self, authentication_context: AuthenticationContext, exchange_token: Any
+    ) -> str:
+        raise Exception("Not implemented")

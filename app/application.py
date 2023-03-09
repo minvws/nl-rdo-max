@@ -14,7 +14,6 @@ from app.exceptions.oidc_exception_handlers import general_exception_handler
 from app.routers.digid_mock_router import digid_mock_router
 from app.routers.oidc_router import oidc_router
 from app.routers.saml_router import saml_router
-from app.routers.irma_router import irma_router
 
 
 _exception_handlers: List[Tuple[Union[int, Type[Exception]], Callable]] = [
@@ -74,7 +73,6 @@ def create_fastapi_app(
     container.config.from_dict(dict(_config))
     is_uvicorn_app = _config.getboolean("app", "uvicorn", fallback=False)
     is_production = _config.get("app", "environment").startswith("production")
-    irma_enabled = "irma" in _config.get("app", "login_methods").split(", ")
     fastapi = (
         FastAPI(docs_url="/ui", redoc_url="/docs") if is_uvicorn_app else FastAPI()
     )
@@ -82,9 +80,6 @@ def create_fastapi_app(
     fastapi.include_router(oidc_router)
     if not is_production:
         fastapi.include_router(digid_mock_router)
-    if irma_enabled:
-        fastapi.include_router(irma_router)
-        modules.append("app.routers.irma_router")
     fastapi.mount("/static", StaticFiles(directory="static"), name="static")
     container.wire(modules=modules)
     fastapi.container = container  # type: ignore

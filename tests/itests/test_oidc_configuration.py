@@ -25,4 +25,5 @@ def test_openid_configuration(lazy_app, config, app_mode_default, client):
         "subject_types_supported": ["pairwise"],
         "userinfo_endpoint": issuer_url + "/userinfo",
         "id_token_signing_alg_values_supported": ["RS256"],
+        "code_challenge_methods_supported": ["S256"],
     }
