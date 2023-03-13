@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from typing import Any, Dict
@@ -7,9 +6,9 @@ import requests
 from cryptography.hazmat.primitives import hashes
 from fastapi import Request
 from jwcrypto.jwk import JWK
+from jwcrypto.jwt import JWT
 from pyop.message import AuthorizationRequest
 from starlette.responses import Response
-from jwcrypto.jwt import JWT
 
 from app.exceptions.max_exceptions import (
     UnauthorizedError,
@@ -36,7 +35,7 @@ class IrmaAuthenticationHandler(AuthenticationHandler):
         session_jwt_issuer: str,
         session_jwt_audience: str,
         jwt_sign_priv_key_path: str,
-        jwt_sign_crt_path: str
+        jwt_sign_crt_path: str,
     ):
         self._jwe_service_provider = jwe_service_provider
         self._response_factory = response_factory
@@ -54,7 +53,7 @@ class IrmaAuthenticationHandler(AuthenticationHandler):
         self, authorize_request: AuthorizeRequest
     ) -> Dict[str, Any]:
         client = self._clients[authorize_request.client_id]
-        header={
+        header = {
             "alg": "RS256",
             "x5t": self._private_sign_jwk_key.thumbprint(hashes.SHA256()),
             "kid": self._public_sign_jwk_key.kid,
@@ -64,9 +63,9 @@ class IrmaAuthenticationHandler(AuthenticationHandler):
             "aud": self._session_jwt_audience,
             "nbf": int(time.time()) - 10,
             "exp": int(time.time()) + 60,
-            "disclosures": [{"disclose_type": "uziId"}, {"disclose_type": "roles"}]
+            "disclosures": [{"disclose_type": "uziId"}, {"disclose_type": "roles"}],
         }
-        jwt = JWT(header=header, claims= claims)
+        jwt = JWT(header=header, claims=claims)
         jwt.make_signed_token(self._private_sign_jwk_key)
 
         disclose = [{"disclose_type": "uziId"}, {"disclose_type": "roles"}]
