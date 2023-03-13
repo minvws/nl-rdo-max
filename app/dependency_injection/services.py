@@ -121,6 +121,10 @@ class Services(containers.DeclarativeContainer):
         create_irma_session_url=config.app.create_irma_session_url,
         irma_login_redirect_url=config.app.irma_login_redirect_url,
         clients=pyop_services.clients,
+        session_jwt_issuer=config.irma.session_jwt_issuer,
+        session_jwt_audience=config.irma.session_jwt_audience,
+        jwt_sign_priv_key_path=config.irma.session_jwt_sign_priv_key_path,
+        jwt_sign_crt_path=config.irma.session_jwt_sign_crt_path,
     )
 
     login_handler_factory = providers.Singleton(
