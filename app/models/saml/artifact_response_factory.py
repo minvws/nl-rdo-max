@@ -41,6 +41,7 @@ class ArtifactResponseFactory:
         return root
 
     def from_string(self, xml_response: str):
+        print(xml_response)
         # Remove XML declaration if exists, appears etree doesn't handle it too well.
         artifact_str = xml_response.split('<?xml version="1.0" encoding="UTF-8"?>\n')[
             -1

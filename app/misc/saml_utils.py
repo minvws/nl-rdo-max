@@ -1,6 +1,6 @@
 # pylint: disable=c-extension-no-member
 import textwrap
-from typing import Dict, Tuple, Any, Optional, Union, List
+from typing import Dict, Tuple, Any, Union, List
 
 import lxml
 import xmlsec
@@ -10,27 +10,6 @@ from lxml import etree
 from app.models.saml.constants import NAMESPACES
 
 SOAP_NS = "http://www.w3.org/2003/05/soap-envelope"
-
-
-# todo: Test module! Merge with existing saml utils?
-def from_settings(
-    settings_dict, selector: str, default: Optional[str] = None
-) -> Optional[str]:
-    key_hierarchy = selector.split(".")
-    value = settings_dict
-
-    key: Union[str, int] = ""
-    for key in key_hierarchy:
-        try:
-            key = int(key)
-        except ValueError:
-            pass
-
-        try:
-            value = value[key]
-        except KeyError as _:
-            return default
-    return value
 
 
 def get_loc_bind(element) -> Dict[str, str]:
@@ -89,10 +68,18 @@ def has_valid_signatures(
 ) -> Tuple[Any, bool]:
     signature_nodes: List[etree.Element] = root.findall(".//dsig:Signature", NAMESPACES)
     advice_nodes: List[etree.Element] = root.findall(".//saml2:Advice", NAMESPACES)
-    try:
-        for node in signature_nodes:
+    for node in signature_nodes:
+        try:
             if node.find(".//dsig:DigestValue", NAMESPACES).text is None:
                 continue
+
+            if len(signature_nodes) == 3 and node == signature_nodes[2]:
+                parent_nodes = get_parents(node)
+                print("advice?")
+                print(is_advice_node(node, advice_nodes))
+                print(node)
+                print(parent_nodes)
+                print(advice_nodes)
             if is_advice_node(node, advice_nodes):
                 continue
 
@@ -100,8 +87,8 @@ def has_valid_signatures(
             has_valid_signature(
                 referred_node, node, cert_data=cert_data, cert_path=cert_path
             )
-    except xmlsec.VerificationError:
-        return None, False
+        except xmlsec.VerificationError:
+            return None, False
 
     return get_referred_node(root, signature_nodes[0]), True
 

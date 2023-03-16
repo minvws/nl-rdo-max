@@ -9,6 +9,9 @@ from app.providers.saml_provider import SAMLProvider
 from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
 )
+from app.services.loginhandler.irma_authentication_handler import (
+    IrmaAuthenticationHandler,
+)
 from app.services.loginhandler.mock_saml_authentication_handler import (
     MockSamlAuthenticationHandler,
 )
@@ -17,11 +20,11 @@ from app.services.loginhandler.saml_authentication_handler import (
 )
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 from app.services.saml.saml_response_factory import SamlResponseFactory
+from app.services.response_factory import ResponseFactory
 from app.services.userinfo.cc_userinfo_service import CCUserinfoService
 from app.services.userinfo.cibg_userinfo_service import (
     CIBGUserinfoService,
 )
-from app.services.userinfo.mock_cibg_userinfo_service import MockedCIBGUserinfoService
 
 
 class Services(containers.DeclarativeContainer):
@@ -44,6 +47,7 @@ class Services(containers.DeclarativeContainer):
         oidc_authorize_endpoint=config.oidc.authorize_endpoint,
     )
 
+    response_factory = providers.Singleton(ResponseFactory, redirect_type=redirect_type)
     rate_limiter = providers.Singleton(
         RateLimiter,
         cache=storage.cache,
@@ -64,12 +68,18 @@ class Services(containers.DeclarativeContainer):
 
     cibg_external_user_authentication_service = providers.Singleton(CIBGUserinfoService)
 
-    mocked_cibg_userinfo_service = providers.Singleton(
-        MockedCIBGUserinfoService,
+    cibg_userinfo_service = providers.Singleton(
+        CIBGUserinfoService,
         jwe_service_provider=encryption_services.jwe_service_provider,
-        clients=pyop_services.clients,
         environment=config.app.environment,
-        mock_cibg=config.app.mock_cibg.as_(as_bool),
+        clients=pyop_services.clients,
+        userinfo_request_signing_priv_key_path=config.jwe.jwe_sign_priv_key_path,
+        userinfo_request_signing_crt_path=config.jwe.jwe_sign_crt_path,
+        cibg_exchange_token_endpoint=config.cibg.cibg_exchange_token_endpoint,
+        cibg_saml_endpoint=config.cibg.cibg_saml_endpoint,
+        jwt_issuer=config.cibg.jwt_issuer,
+        jwt_expiration_duration=config.cibg.jwt_expiration_duration.as_int(),
+        jwt_nbf_lag=config.cibg.jwt_nbf_lag.as_int(),
     )
 
     cc_userinfo_service = providers.Singleton(
@@ -82,7 +92,7 @@ class Services(containers.DeclarativeContainer):
     userinfo_service = providers.Selector(
         config.app.userinfo_service,
         cc=cc_userinfo_service,
-        cibg_mock=mocked_cibg_userinfo_service,
+        cibg=cibg_userinfo_service,
     )
 
     saml_login_handler = providers.Singleton(
@@ -103,10 +113,24 @@ class Services(containers.DeclarativeContainer):
         userinfo_service=userinfo_service,
     )
 
+    irma_authentication_handler = providers.Singleton(
+        IrmaAuthenticationHandler,
+        jwe_service_provider=encryption_services.jwe_service_provider,
+        response_factory=response_factory,
+        create_irma_session_url=config.app.create_irma_session_url,
+        irma_login_redirect_url=config.app.irma_login_redirect_url,
+        clients=pyop_services.clients,
+        session_jwt_issuer=config.irma.session_jwt_issuer,
+        session_jwt_audience=config.irma.session_jwt_audience,
+        jwt_sign_priv_key_path=config.irma.session_jwt_sign_priv_key_path,
+        jwt_sign_crt_path=config.irma.session_jwt_sign_crt_path,
+    )
+
     login_handler_factory = providers.Singleton(
         AuthenticationHandlerFactory,
         saml_authentication_handler=saml_login_handler,
         mock_saml_authentication_handler=mock_saml_login_handler,
+        irma_authentication_handler=irma_authentication_handler,
     )
 
     oidc_provider = providers.Singleton(
@@ -117,6 +141,7 @@ class Services(containers.DeclarativeContainer):
         clients=pyop_services.clients,
         mock_digid=config.app.mock_digid.as_(as_bool),
         saml_response_factory=saml_response_factory,
+        response_factory=response_factory,
         userinfo_service=userinfo_service,
         app_mode=config.app.app_mode,
         environment=config.app.environment,

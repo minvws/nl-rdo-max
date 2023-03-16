@@ -1,5 +1,3 @@
-from typing import Dict, Any
-
 # pylint: disable=
 from app.misc.utils import file_content_raise_if_none
 from app.models.authentication_context import AuthenticationContext
@@ -17,7 +15,7 @@ class CCUserinfoService(UserinfoService):
         self._clients = clients
         self._app_mode = app_mode
 
-    def request_userinfo_for_artifact(
+    def request_userinfo_for_digid_artifact(
         self,
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
@@ -44,9 +42,7 @@ class CCUserinfoService(UserinfoService):
             content,
         )
 
-    # todo: Get rid of the notImplementedError
-    def irma_disclosure(self, userinfo: Dict[Any, Any]):
-        raise NotImplementedError()
-
-    def from_irma_disclosure(self, irma_disclosure):
-        raise NotImplementedError()
+    def request_userinfo_for_exchange_token(
+        self, authentication_context: AuthenticationContext
+    ) -> str:
+        raise Exception("Not implemented")

@@ -15,6 +15,7 @@ from app.routers.digid_mock_router import digid_mock_router
 from app.routers.oidc_router import oidc_router
 from app.routers.saml_router import saml_router
 
+
 _exception_handlers: List[Tuple[Union[int, Type[Exception]], Callable]] = [
     (Exception, general_exception_handler),
 ]
@@ -63,15 +64,12 @@ def create_fastapi_app(
         datefmt="%m/%d/%Y %I:%M:%S %p",
     )
 
-    container.wire(
-        modules=[
-            "app.routers.saml_router",
-            "app.routers.oidc_router",
-            "app.routers.digid_mock_router",
-            "app.exceptions.oidc_exception_handlers",
-        ]
-    )
-
+    modules = [
+        "app.routers.saml_router",
+        "app.routers.oidc_router",
+        "app.routers.digid_mock_router",
+        "app.exceptions.oidc_exception_handlers",
+    ]
     container.config.from_dict(dict(_config))
     is_uvicorn_app = _config.getboolean("app", "uvicorn", fallback=False)
     is_production = _config.get("app", "environment").startswith("production")
@@ -83,6 +81,7 @@ def create_fastapi_app(
     if not is_production:
         fastapi.include_router(digid_mock_router)
     fastapi.mount("/static", StaticFiles(directory="static"), name="static")
+    container.wire(modules=modules)
     fastapi.container = container  # type: ignore
     app.dependency_injection.container._container = (  # pylint: disable=protected-access
         container

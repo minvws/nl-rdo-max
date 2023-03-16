@@ -54,15 +54,10 @@ class SAMLProvider:
         else:
             artifact_response = identity_provider.resolve_artifact(request.SAMLart)
 
-        userinfo = self._userinfo_service.request_userinfo_for_artifact(
+        userinfo = self._userinfo_service.request_userinfo_for_digid_artifact(
             authentication_context, artifact_response, identity_provider
         )
-        response_url = self._oidc_provider.handle_external_authentication(
-            authentication_context, userinfo
-        )
-        return self._saml_response_factory.create_saml_meta_redirect_response(
-            response_url
-        )
+        return self._oidc_provider.authenticate(authentication_context, userinfo)
 
     def metadata(self, id_provider_name: str):
         """

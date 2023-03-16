@@ -1,29 +1,22 @@
 import base64
 import json
 import logging
-import os
-from urllib import parse
 from typing import Union
+from urllib import parse
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from starlette.background import BackgroundTask
 from starlette.responses import HTMLResponse, RedirectResponse
-
 from jinja2 import Template
 
 from app.exceptions.max_exceptions import (
     AuthorizationByProxyDisabled,
     UnexpectedAuthnBinding,
 )
+from app.misc.utils import load_template
 from app.models.saml.exceptions import ScopingAttributesNotAllowed
 
 log = logging.getLogger(__package__)
-
-
-def _load_template(path, filename):
-    template_path = os.path.join(path, filename)
-    with open(template_path, "r", encoding="utf-8") as template_file:
-        return template_file.read()
 
 
 class SamlResponseFactory:
@@ -36,11 +29,8 @@ class SamlResponseFactory:
         self._saml_base_issuer = saml_base_issuer
         self._oidc_authorize_endpoint = oidc_authorize_endpoint
 
-        self._authn_request_template = _load_template(
+        self._authn_request_template = load_template(
             html_templates_path, "authn_request.html"
-        )
-        self._assertion_consumer_service_template = _load_template(
-            html_templates_path, "assertion_consumer_service.html"
         )
 
     def create_saml_response(
@@ -57,25 +47,6 @@ class SamlResponseFactory:
         raise UnexpectedAuthnBinding(
             error_description=f"Unknown Authn binding {saml_identity_provider.authn_binding} "
             f"configured in idp metadata: {saml_identity_provider.name}"
-        )
-
-    def create_saml_meta_redirect_response(
-        self,
-        redirect_url: str,
-        status_code: int = 200,
-        headers: Union[dict, None] = None,
-        media_type: Union[str, None] = None,
-        background: Union[BackgroundTask, None] = None,
-    ):
-        template = Template(self._assertion_consumer_service_template)
-        rendered = template.render({"redirect_url": redirect_url})
-
-        return HTMLResponse(
-            content=rendered,
-            status_code=status_code,
-            headers=headers,
-            media_type=media_type,
-            background=background,
         )
 
     def _create_saml_authn_submit_response(
@@ -102,6 +73,7 @@ class SamlResponseFactory:
                 "relay_state": randstate,
             }
         )
+        # pylint: disable=duplicate-code
         return HTMLResponse(
             content=rendered,
             status_code=status_code,

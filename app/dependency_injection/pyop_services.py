@@ -84,9 +84,7 @@ class PyopServices(containers.DeclarativeContainer):
         configuration_information=pyop_configuration_information,
         authz_state=authz_state,
         clients=clients,
-        userinfo=Userinfo(
-            {"client": {"key": "value"}}
-        ),  # TODO Changes this to all clients in clients.json to seperate clients in pyopProvider
+        userinfo=Userinfo({"_": {}}),
         id_token_lifetime=config.redis.object_ttl.as_int(),
         trusted_certificates_directory=config.oidc.certificates_directory,
     )
