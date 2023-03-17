@@ -31,6 +31,7 @@ class CIBGUserinfoService(UserinfoService):
         cibg_exchange_token_endpoint: str,
         cibg_saml_endpoint: str,
         jwt_issuer: str,
+        req_issuer: str,
         jwt_expiration_duration: int,
         jwt_nbf_lag: int,
     ):
@@ -52,12 +53,14 @@ class CIBGUserinfoService(UserinfoService):
         self._cibg_exchange_token_endpoint = cibg_exchange_token_endpoint
         self._cibg_saml_endpoint = cibg_saml_endpoint
         self._jwt_issuer = jwt_issuer
+        self._req_issuer = req_issuer
         self._jwt_expiration_duration = jwt_expiration_duration
         self._jwt_nbf_lag = jwt_nbf_lag
 
     def _request_userinfo(
         self,
         cibg_endpoint: str,
+        client_id: str,
         client: Dict[str, Any],
         claims: Dict[str, Any],
         data: Union[str, None] = None,
@@ -78,7 +81,9 @@ class CIBGUserinfoService(UserinfoService):
             "x5t": self._private_sign_jwk_key.thumbprint(hashes.SHA256()),
         }
         jwt_payload = {
-            "req_iss": self._jwt_issuer,
+            "iss": self._jwt_issuer,
+            "req_iss": self._req_issuer,
+            "req_aud": client_id,
             "aud": "cibg",
             "nbf": int(time.time()) - self._jwt_nbf_lag,
             "exp": int(time.time()) + self._jwt_expiration_duration,
@@ -118,11 +123,19 @@ class CIBGUserinfoService(UserinfoService):
         artifact_response: ArtifactResponse,
         saml_identity_provider: SamlIdentityProvider,
     ) -> str:
+        client_id = authentication_context.authorization_request["client_id"]
+        client = self._clients[client_id]
+        if (
+            authentication_context.authentication_method == "digid_mock"
+            and not self._environment.startswith("prod")
+        ):
+            return self._request_userinfo_for_mock_artifact(
+                client_id=client_id, client=client, artifact_response=artifact_response
+            )
         return self._request_userinfo(
             cibg_endpoint=self._cibg_saml_endpoint,
-            client=self._clients[
-                authentication_context.authorization_request["client_id"]
-            ],
+            client_id=client_id,
+            client=client,
             claims={"saml-id": artifact_response.root.attrib["ID"]},
             data=artifact_response.to_envelope_string(),
         )
@@ -132,6 +145,7 @@ class CIBGUserinfoService(UserinfoService):
     ) -> str:
         return self._request_userinfo(
             cibg_endpoint=self._cibg_exchange_token_endpoint,
+            client_id=authentication_context.authorization_request["client_id"],
             client=self._clients[
                 authentication_context.authorization_request["client_id"]
             ],
@@ -144,7 +158,7 @@ class CIBGUserinfoService(UserinfoService):
         )
 
     def _request_userinfo_for_mock_artifact(
-        self, client: Any, artifact_response: ArtifactResponse
+        self, client_id: str, client: Any, artifact_response: ArtifactResponse
     ):
         bsn = artifact_response.get_bsn(False)
         relations = []
@@ -165,9 +179,12 @@ class CIBGUserinfoService(UserinfoService):
                     "roles": ["01.041", "30.000", "01.010", "01.011"],
                 }
             )
+        ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
         return self._jwe_service_provider.get_jwe_service(client["pubkey_type"]).to_jwe(
             {
                 # todo create json schema
+                "iss": self._req_issuer,
+                "aud": client_id,
                 "json_schema": "https://www.inge6.nl/json_schema_v1.json",
                 "initials": "J.J",
                 "surname_prefix": "van der",
@@ -176,6 +193,9 @@ class CIBGUserinfoService(UserinfoService):
                 "loa_uzi": "substantial",
                 "uzi_id": bsn,
                 "relations": relations,
+                "nbf": int(time.time()) - self._jwt_nbf_lag,
+                "exp": int(time.time()) + self._jwt_expiration_duration,
+                "x5c": strip_cert(ura_pubkey),
             },
             file_content_raise_if_none(client["client_public_key_path"]),
         )

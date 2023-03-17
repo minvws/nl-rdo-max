@@ -66,8 +66,6 @@ class Services(containers.DeclarativeContainer):
         templates_path=config.saml.xml_templates_path,
     )
 
-    cibg_external_user_authentication_service = providers.Singleton(CIBGUserinfoService)
-
     cibg_userinfo_service = providers.Singleton(
         CIBGUserinfoService,
         jwe_service_provider=encryption_services.jwe_service_provider,
@@ -78,6 +76,7 @@ class Services(containers.DeclarativeContainer):
         cibg_exchange_token_endpoint=config.cibg.cibg_exchange_token_endpoint,
         cibg_saml_endpoint=config.cibg.cibg_saml_endpoint,
         jwt_issuer=config.cibg.jwt_issuer,
+        req_issuer=config.oidc.issuer,
         jwt_expiration_duration=config.cibg.jwt_expiration_duration.as_int(),
         jwt_nbf_lag=config.cibg.jwt_nbf_lag.as_int(),
     )
