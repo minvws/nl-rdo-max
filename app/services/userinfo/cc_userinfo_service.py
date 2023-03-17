@@ -21,7 +21,6 @@ class CCUserinfoService(UserinfoService):
         artifact_response: ArtifactResponse,
         saml_identity_provider: SamlIdentityProvider,
     ) -> str:
-
         client_id = authentication_context.authorization_request["client_id"]
         bsn = artifact_response.get_bsn(authorization_by_proxy=False)
         jwe_service = self._jwe_service_provider.get_jwe_service(

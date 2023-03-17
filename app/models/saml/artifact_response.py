@@ -12,13 +12,13 @@ from functools import cached_property
 from logging import Logger
 
 # pylint: disable=c-extension-no-member
-from typing import Text, List, Union, Optional
+from typing import Text, List, Optional
 
 import dateutil.parser
 from Cryptodome.Cipher import AES
 from lxml import etree
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
-from packaging.version import Version, LegacyVersion
+from packaging.version import Version
 
 from .constants import NAMESPACES, SECTOR_CODES, SectorNumber
 from .exceptions import UserNotAuthenticated, ValidationError
@@ -40,7 +40,7 @@ class ArtifactResponse:
         expected_response_destination: str,
         sp_metadata,
         idp_metadata,
-        saml_specification_version: Union["LegacyVersion", "Version"],
+        saml_specification_version: Version,
         is_verified: bool,
         strict: bool,
     ) -> None:

@@ -7,6 +7,7 @@
 anyio==3.6.2
     # via starlette
 astroid==2.15.0
+
     # via pylint
 async-timeout==4.0.2
     # via redis
@@ -18,7 +19,7 @@ autoflake==2.0.1
     # via app (setup.py)
 bandit==1.7.5
     # via app (setup.py)
-black==22.12.0
+black==23.1.0
     # via app (setup.py)
 certifi==2022.12.7
     # via requests
@@ -90,12 +91,16 @@ lxml==4.9.2
     #   xmlsec
 mako==1.2.4
     # via oic
+markdown-it-py==2.2.0
+    # via rich
 markupsafe==2.1.2
     # via
     #   jinja2
     #   mako
 mccabe==0.7.0
     # via pylint
+mdurl==0.1.2
+    # via markdown-it-py
 mirakuru==2.4.2
     # via pytest-redis
 mypy==1.1.1
@@ -106,8 +111,10 @@ mypy-extensions==1.0.0
     #   mypy
 oic==1.5.0
     # via pyop
-packaging==21.3
-    # via pytest
+packaging==23.0
+    # via
+    #   black
+    #   pytest
 pathspec==0.11.0
     # via black
 pbr==5.11.1
@@ -133,6 +140,8 @@ pydantic==1.10.6
     # via fastapi
 pyflakes==3.0.1
     # via autoflake
+pygments==2.14.0
+    # via rich
 pyjwkest==1.4.2
     # via oic
 pylint==2.17.0
@@ -143,8 +152,6 @@ pyop==3.4.0
     # via app (setup.py)
 pyopenssl==23.0.0
     # via app (setup.py)
-pyparsing==3.0.9
-    # via packaging
 pytest==7.2.2
     # via
     #   app (setup.py)
@@ -173,13 +180,14 @@ requests==2.28.2
     # via
     #   oic
     #   pyjwkest
+rich==13.3.2
+    # via bandit
 six==1.16.0
     # via
     #   dependency-injector
     #   isodate
     #   pyjwkest
     #   python-dateutil
-    #   python-multipart
 smmap==5.0.0
     # via gitdb
 sniffio==1.3.0
@@ -215,6 +223,7 @@ typing-extensions==4.5.0
     #   oic
     #   pydantic
     #   pylint
+    #   rich
     #   starlette
 urllib3==1.26.14
     # via requests

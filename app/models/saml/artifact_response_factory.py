@@ -1,6 +1,6 @@
-from typing import Union, Optional
+from typing import Optional
 from lxml import etree
-from packaging.version import Version, LegacyVersion
+from packaging.version import Version
 
 from app.models.saml.artifact_response import ArtifactResponse
 from app.models.saml.metadata import IdPMetadata, SPMetadata
@@ -18,7 +18,7 @@ class ArtifactResponseFactory:
         expected_response_destination: str,
         sp_metadata: SPMetadata,
         idp_metadata: IdPMetadata,
-        saml_specification_version: Union["LegacyVersion", "Version"],
+        saml_specification_version: Version,
         strict: bool,
         insecure: bool,
     ):

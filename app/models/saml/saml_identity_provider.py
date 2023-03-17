@@ -129,7 +129,9 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
             return self._artifact_response_factory.from_string(
                 xml_response=response.text,
             )
-        except etree.XMLSyntaxError as xml_syntax_error:  # pylint: disable=c-extension-no-member
+        except (
+            etree.XMLSyntaxError  # pylint: disable=c-extension-no-member
+        ) as xml_syntax_error:
             self.log.debug(
                 "XMLSyntaxError from external authorization: %s", xml_syntax_error
             )
