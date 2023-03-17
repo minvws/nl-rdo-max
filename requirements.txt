@@ -101,7 +101,7 @@ mccabe==0.7.0
     # via pylint
 mdurl==0.1.2
     # via markdown-it-py
-mirakuru==2.4.2
+mirakuru==2.5.1
     # via pytest-redis
 mypy==1.1.1
     # via app (setup.py)
