@@ -207,7 +207,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                 at_hash_key
             )
             if not userinfo_context:
-                raise Exception("not authorized")
+                raise UnauthorizedError(error_description="not authorized")
             introspection = (
                 self._pyop_provider.authz_state.introspect_access_token(  # type:ignore
                     userinfo_context.access_token
@@ -224,9 +224,9 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                 bearer_token
             )
             if not userinfo_context:
-                raise Exception("not authorized")
+                raise UnauthorizedError(error_description="not authorized")
         if not introspection["active"] or not userinfo_context:
-            raise Exception("not authorized")
+            raise UnauthorizedError(error_description="not authorized")
         return Response(
             headers={
                 "Content-Type": "application/jwt",

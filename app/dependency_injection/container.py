@@ -36,4 +36,4 @@ _container: Union[Container, None] = None
 
 def container():
     if _container is None:
-        raise Exception("Application should first be instantiated")
+        raise RuntimeError("Application should first be instantiated")

@@ -45,4 +45,4 @@ class CCUserinfoService(UserinfoService):
     def request_userinfo_for_exchange_token(
         self, authentication_context: AuthenticationContext
     ) -> str:
-        raise Exception("Not implemented")
+        raise NotImplementedError()
