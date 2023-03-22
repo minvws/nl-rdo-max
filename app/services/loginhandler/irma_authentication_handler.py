@@ -64,6 +64,8 @@ class IrmaAuthenticationHandler(AuthenticationHandler):
             "nbf": int(time.time()) - 10,
             "exp": int(time.time()) + 60,
             "disclosures": [{"disclose_type": "uziId"}, {"disclose_type": "roles"}],
+            "session_type": "irma",
+            "login_title": client["name"],
         }
         jwt = JWT(header=header, claims=claims)
         jwt.make_signed_token(self._private_sign_jwk_key)
