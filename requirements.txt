@@ -19,7 +19,7 @@ autoflake==2.0.2
     # via app (setup.py)
 bandit==1.7.5
     # via app (setup.py)
-black==23.1.0
+black==23.3.0
     # via app (setup.py)
 certifi==2022.12.7
     # via requests
