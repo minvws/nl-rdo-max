@@ -12,7 +12,12 @@ log = logging.getLogger(__name__)
 
 
 class SamlIdentityProviderService:
-    def __init__(self, identity_providers_base_path: str, templates_path: str):
+    def __init__(
+        self,
+        identity_providers_base_path: str,
+        templates_path: str,
+        external_http_requests_timeout_seconds: int,
+    ):
         jinja_env = Environment(
             loader=FileSystemLoader(templates_path),
             autoescape=select_autoescape(),
@@ -20,7 +25,9 @@ class SamlIdentityProviderService:
 
         self._identity_providers = (
             SamlIdentityProviderService._parse_identity_providers(
-                identity_providers_base_path, jinja_env
+                identity_providers_base_path,
+                jinja_env,
+                external_http_requests_timeout_seconds,
             )
         )
 
@@ -38,7 +45,9 @@ class SamlIdentityProviderService:
 
     @staticmethod
     def _parse_identity_providers(
-        identity_providers_base_path: str, jinja_env: Environment
+        identity_providers_base_path: str,
+        jinja_env: Environment,
+        external_http_requests_timeout_seconds: int,
     ) -> Dict[str, SamlIdentityProvider]:
         providers = {}
         for folder_name in os.listdir(identity_providers_base_path):
@@ -61,6 +70,7 @@ class SamlIdentityProviderService:
                             identity_providers_base_path + "/" + folder_name,
                             json.loads(idp_settings.read()),
                             jinja_env,
+                            external_http_requests_timeout_seconds=external_http_requests_timeout_seconds,
                         )
             except Exception as err:  # pylint: disable=broad-except
                 log.warning(

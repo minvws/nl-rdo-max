@@ -1,8 +1,9 @@
+from functools import cached_property
 from typing import Text
 
 from packaging.version import Version
 
-from .artifact_response import ArtifactResponse
+from .artifact_response import ArtifactResponse, ArtifactResponseStatus
 
 
 class ArtifactResponseMock(ArtifactResponse):
@@ -29,3 +30,7 @@ class ArtifactResponseMock(ArtifactResponse):
 
     def get_bsn(self, authorization_by_proxy: bool) -> Text:
         return self.artifact_response_str
+
+    @cached_property
+    def saml_status(self) -> ArtifactResponseStatus:
+        return ArtifactResponseStatus(code="success", message="mock")

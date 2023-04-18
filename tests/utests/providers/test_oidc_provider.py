@@ -26,6 +26,8 @@ def create_oidc_provider(
     login_methods: List[str] = "login_method",
     authentication_handler_factory=MagicMock(),
     external_base_url="external_base_url",
+    irma_session_url="local.example",
+    external_http_requests_timeout_seconds=2,
 ):
     return OIDCProvider(
         pyop_provider,
@@ -41,6 +43,8 @@ def create_oidc_provider(
         login_methods,
         authentication_handler_factory,
         external_base_url,
+        irma_session_url,
+        external_http_requests_timeout_seconds,
     )
 
 
@@ -69,13 +73,15 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
     request = MagicMock()
     authorize_request = MagicMock()
     template_response = MagicMock()
-    redirect_url = MagicMock()
+    request_url = MagicMock()
+    redirect_url = "redirect_url"
     login_methods = ["a", "b"]
 
-    request.url.remove_query_params.return_value = redirect_url
-    redirect_url.path = "/redirect_path"
-    redirect_url.query = "query"
+    request.url.remove_query_params.return_value = request_url
+    request_url.path = "/redirect_path"
+    request_url.query = "query"
     authorize_request.client_id = "client_id"
+    authorize_request.redirect_uri = redirect_url
 
     templates_mock = mocker.patch("app.providers.oidc_provider.templates")
     templates_mock.TemplateResponse.return_value = template_response
@@ -91,7 +97,8 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
             "request": request,
             "login_methods": ["a", "b"],
             "ura_name": "name",
-            "redirect_uri": "base_url/redirect_path?query",
+            "authorize_uri": "base_url/redirect_path?query",
+            "redirect_uri": "redirect_url?error=access_denied&error_description=Authentication%20cancelled",
         },
     )
     assert actual == template_response

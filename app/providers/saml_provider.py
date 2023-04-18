@@ -3,6 +3,8 @@ from typing import Dict
 
 from fastapi import Response, HTTPException
 
+from app.exceptions.max_exceptions import UnauthorizedError
+from app.exceptions.oidc_exceptions import TEMPORARILY_UNAVAILABLE
 from app.misc.rate_limiter import RateLimiter
 from app.models.saml.artifact_response import ArtifactResponse
 from app.models.saml.artifact_response_mock import ArtifactResponseMock
@@ -53,7 +55,21 @@ class SAMLProvider:
             artifact_response: ArtifactResponse = ArtifactResponseMock(request.SAMLart)
         else:
             artifact_response = identity_provider.resolve_artifact(request.SAMLart)
-
+        if artifact_response.saml_status.code.lower() != "success":
+            if artifact_response.saml_status.message is not None:
+                error_description = artifact_response.saml_status.message
+            else:
+                error_description = TEMPORARILY_UNAVAILABLE
+                log.warning(
+                    "Invalid saml response received with status: %s, %s",
+                    artifact_response.saml_status.code,
+                    artifact_response.saml_status.message,
+                )
+            raise UnauthorizedError(
+                log_message="Invalid saml response received with status: "
+                f"{artifact_response.saml_status.code}, {artifact_response.saml_status.message}",
+                error_description=error_description,
+            )
         userinfo = self._userinfo_service.request_userinfo_for_digid_artifact(
             authentication_context, artifact_response, identity_provider
         )

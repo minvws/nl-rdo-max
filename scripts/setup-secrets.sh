@@ -27,6 +27,7 @@ mkdir -p ./$SECRETS_DIR/oidc
 mkdir -p ./$SECRETS_DIR/ssl
 mkdir -p ./$SECRETS_DIR/clients
 mkdir -p ./$SECRETS_DIR/jwks-certs
+mkdir -p ./tests/resources/secrets
 
 ###
  # Create ca for local selfsigned certificates
@@ -105,4 +106,26 @@ fi
 ###
 if [[ ! -f $SECRETS_DIR/userinfo/cibg-client-cert.crt ]]; then
   create_key_pair $SECRETS_DIR/userinfo "cibg-client-cert" "cibg-client-cert"
+fi
+
+#####
+# Test certificates
+#####
+###
+# test tls
+###
+if [[ ! -f tests/resources/secrets/tls.crt ]]; then
+  create_key_pair tests/resources/secrets "tls" "test-tls"
+fi
+###
+# test sp
+###
+if [[ ! -f tests/resources/secrets/sp.crt ]]; then
+  create_key_pair tests/resources/secrets "sp" "test-sp"
+fi
+###
+# test cluster
+###
+if [[ ! -f tests/resources/secrets/cluster.crt ]]; then
+  create_key_pair tests/resources/secrets "cluster" "test-cluster"
 fi

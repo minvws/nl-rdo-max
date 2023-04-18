@@ -24,7 +24,7 @@
                 <ul class="tiles">
                     {% if 'digid' in login_methods %}
                         <li>
-                            <a href="{{ redirect_uri }}&login_hint=digid" class="horizontal-view">
+                            <a href="{{ authorize_uri }}&login_hint=digid" class="horizontal-view">
                                 <img src="static/img/digid-logo.svg" alt="DigiD logo">
                                 Inloggen met DigiD
                             </a>
@@ -32,7 +32,7 @@
                     {% endif %}
                     {% if 'digid_mock' in login_methods %}
                         <li>
-                            <a href="{{ redirect_uri }}&login_hint=digid_mock" class="horizontal-view">
+                            <a href="{{ authorize_uri }}&login_hint=digid_mock" class="horizontal-view">
                                 <img src="static/img/digid-logo.svg" alt="DigiD logo">
                                 Inloggen met DigiD MOCK
                             </a>
@@ -40,7 +40,7 @@
                     {% endif %}
                     {% if 'uzipas' in login_methods %}
                         <li>
-                            <a href="{{ redirect_uri }}&login_hint=uzipas" class="horizontal-view">
+                            <a href="{{ authorize_uri }}&login_hint=uzipas" class="horizontal-view">
                                 <img src="static/img/uzipas.svg" alt="Uzipas logo">
                                 Inloggen met Uzipas
                             </a>
@@ -48,7 +48,7 @@
                     {% endif %}
                     {% if 'irma' in login_methods %}
                         <li>
-                            <a href="{{ redirect_uri }}&login_hint=irma" class="horizontal-view">
+                            <a href="{{ authorize_uri }}&login_hint=irma" class="horizontal-view">
                                 <img src="static/img/irma-logo.svg" alt="Irma logo">
                                 Inloggen met IRMA
                             </a>
@@ -58,7 +58,7 @@
                 </ul>
 
                 <div class="button-container">
-                    <a href="" class="button secondary">Terug</a>
+                    <a href="{{ redirect_uri }}" class="button secondary">Terug</a>
                 </div>
             </div>
         </div>

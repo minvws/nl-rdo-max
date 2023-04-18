@@ -10,7 +10,8 @@ class JweServiceProvider:
         self._jwe_services: Dict[str, JweService] = {}
         if "rsa" in config["services"].split(","):
             self._jwe_services["rsa"] = RSAJweService(
-                config["jwe_sign_priv_key_path"], config["jwe_sign_crt_path"]
+                config["jwe_sign_priv_key_path"],
+                config["jwe_sign_crt_path"],
             )
         if "x25519" in config["services"]:
             self._jwe_services["x25519"] = XEd25519JweService(

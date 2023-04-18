@@ -3,6 +3,7 @@ from dependency_injector import containers, providers
 
 from app.misc.rate_limiter import RateLimiter
 from app.misc.utils import as_bool, as_list
+from app.models.enums import RedirectType
 from app.providers.digid_mock_provider import DigidMockProvider
 from app.providers.oidc_provider import OIDCProvider
 from app.providers.saml_provider import SAMLProvider
@@ -27,6 +28,10 @@ from app.services.userinfo.cibg_userinfo_service import (
 )
 
 
+def as_redirect_type(value):
+    return RedirectType(value)
+
+
 class Services(containers.DeclarativeContainer):
     config = providers.Configuration()
 
@@ -38,7 +43,7 @@ class Services(containers.DeclarativeContainer):
 
     redirect_html_delay = config.app.redirect_html_delay
 
-    redirect_type = config.app.redirect_type
+    redirect_type = config.app.redirect_type.as_(as_redirect_type)
 
     saml_response_factory = providers.Singleton(
         SamlResponseFactory,
@@ -64,6 +69,7 @@ class Services(containers.DeclarativeContainer):
         SamlIdentityProviderService,
         identity_providers_base_path=config.saml.identity_providers_base_path,
         templates_path=config.saml.xml_templates_path,
+        external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
     )
 
     cibg_userinfo_service = providers.Singleton(
@@ -116,13 +122,14 @@ class Services(containers.DeclarativeContainer):
         IrmaAuthenticationHandler,
         jwe_service_provider=encryption_services.jwe_service_provider,
         response_factory=response_factory,
-        create_irma_session_url=config.app.create_irma_session_url,
+        irma_session_url=config.app.irma_session_url,
         irma_login_redirect_url=config.app.irma_login_redirect_url,
         clients=pyop_services.clients,
         session_jwt_issuer=config.irma.session_jwt_issuer,
         session_jwt_audience=config.irma.session_jwt_audience,
         jwt_sign_priv_key_path=config.irma.session_jwt_sign_priv_key_path,
         jwt_sign_crt_path=config.irma.session_jwt_sign_crt_path,
+        external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
     )
 
     login_handler_factory = providers.Singleton(
@@ -147,6 +154,8 @@ class Services(containers.DeclarativeContainer):
         login_methods=config.app.login_methods.as_(as_list),
         authentication_handler_factory=login_handler_factory,
         external_base_url=config.app.external_base_url,
+        irma_session_url=config.app.irma_session_url,
+        external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
     )
 
     digid_mock_provider = providers.Singleton(

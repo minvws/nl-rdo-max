@@ -1,5 +1,5 @@
 [app]
-app_mode = uzi
+app_mode = none
 environment = development
 # possible services are: cc, cibg_mock
 userinfo_service = cibg_mock
@@ -8,7 +8,7 @@ external_base_url = https://localhost:8006
 
 loglevel = debug
 
-external_user_authentication_sym_key = 0000000000000000000000000000000000000000000000000000000000000000
+user_authentication_sym_key = 0000000000000000000000000000000000000000000000000000000000000000
 
 login_methods = digid, mock_digid
 
@@ -16,6 +16,8 @@ login_methods = digid, mock_digid
 redirect_html_delay = 5
 # possible values: http, html
 redirect_type = html
+
+external_http_requests_timeout_seconds = 15
 
 [jwe]
 # list with comma seperated values

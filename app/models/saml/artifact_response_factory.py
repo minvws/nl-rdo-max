@@ -41,7 +41,6 @@ class ArtifactResponseFactory:
         return root
 
     def from_string(self, xml_response: str):
-        print(xml_response)
         # Remove XML declaration if exists, appears etree doesn't handle it too well.
         artifact_str = xml_response.split('<?xml version="1.0" encoding="UTF-8"?>\n')[
             -1
@@ -56,6 +55,11 @@ class ArtifactResponseFactory:
         if not self._insecure:
             artifact_tree = self.verify_signatures(artifact_tree)
             is_verified = True
+        else:
+            artifact_tree = artifact_tree.find(
+                ".//{http://schemas.xmlsoap.org/soap/envelope/}Body/"
+                "{urn:oasis:names:tc:SAML:2.0:protocol}ArtifactResponse"
+            )
 
         return ArtifactResponse(
             artifact_response_str=xml_response,

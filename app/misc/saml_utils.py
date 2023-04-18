@@ -73,13 +73,6 @@ def has_valid_signatures(
             if node.find(".//dsig:DigestValue", NAMESPACES).text is None:
                 continue
 
-            if len(signature_nodes) == 3 and node == signature_nodes[2]:
-                parent_nodes = get_parents(node)
-                print("advice?")
-                print(is_advice_node(node, advice_nodes))
-                print(node)
-                print(parent_nodes)
-                print(advice_nodes)
             if is_advice_node(node, advice_nodes):
                 continue
 
@@ -115,3 +108,27 @@ def to_soap_envelope(node):
     body.append(node)
 
     return env
+
+
+def find_element_text_if_not_none(root: etree.Element, path) -> Union[str, None]:
+    element = find_element_if_not_none(root, path)
+    return None if element is None else element.text
+
+
+def find_element_if_not_none(root: etree.Element, path) -> Union[etree.Element, None]:
+    if root is not None and root.find(path, NAMESPACES) is not None:
+        return root.find(path, NAMESPACES)
+    return None
+
+
+def status_from_value(element: etree.Element) -> str:
+    return element.attrib["Value"].split(":")[-1]
+
+
+def status_from_element(element: etree.Element) -> str:
+    status = status_from_value(element)
+    if status.lower() != "success":
+        inner_status_code_element = element.find("./samlp:StatusCode", NAMESPACES)
+        if inner_status_code_element is not None:
+            status = status_from_value(inner_status_code_element)
+    return status

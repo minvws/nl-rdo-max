@@ -15,7 +15,10 @@ __pycache__
 ## Configuration and secrets
 secrets
 tests/secrets
+
 *.json
+!tests/resources/test_settings.json
+
 *.conf
 *.crt
 *.key

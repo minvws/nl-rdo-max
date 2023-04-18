@@ -24,22 +24,24 @@ from app.services.response_factory import ResponseFactory
 logger = logging.getLogger(__name__)
 
 
+# pylint: disable=too-many-arguments
 class IrmaAuthenticationHandler(AuthenticationHandler):
     def __init__(
         self,
         jwe_service_provider: JweServiceProvider,
         response_factory: ResponseFactory,
-        create_irma_session_url: str,
+        irma_session_url: str,
         irma_login_redirect_url: str,
         clients: Dict[str, Any],
         session_jwt_issuer: str,
         session_jwt_audience: str,
         jwt_sign_priv_key_path: str,
         jwt_sign_crt_path: str,
+        external_http_requests_timeout_seconds: int,
     ):
         self._jwe_service_provider = jwe_service_provider
         self._response_factory = response_factory
-        self._create_irma_session_url = create_irma_session_url
+        self._irma_session_url = irma_session_url
         self._irma_login_redirect_url = irma_login_redirect_url
         self._clients = clients
         self._session_jwt_issuer = session_jwt_issuer
@@ -48,6 +50,9 @@ class IrmaAuthenticationHandler(AuthenticationHandler):
         jwt_sign_crt = file_content_raise_if_none(jwt_sign_crt_path)
         self._private_sign_jwk_key = JWK.from_pem(jwt_sign_priv_key.encode("utf-8"))
         self._public_sign_jwk_key = JWK.from_pem(jwt_sign_crt.encode("utf-8"))
+        self._external_http_requests_timeout_seconds = (
+            external_http_requests_timeout_seconds
+        )
 
     def authentication_state(
         self, authorize_request: AuthorizeRequest
@@ -83,18 +88,17 @@ class IrmaAuthenticationHandler(AuthenticationHandler):
             )
         jwt_s = jwt.serialize()
         irma_response = requests.post(
-            f"{self._create_irma_session_url}",
+            f"{self._irma_session_url}",
             headers={"Content-Type": "text/plain"},
             data=jwt_s,
-            timeout=60,
+            timeout=self._external_http_requests_timeout_seconds,
         )
         if irma_response.status_code >= 400:
-            logger.error(
-                "Error while fetching IrmaResponse, Irma server returned: %s, %s",
-                irma_response.status_code,
-                irma_response.text,
+            raise UnauthorizedError(
+                log_message="Error while fetching IrmaResponse, Irma server returned: "
+                f"{irma_response.status_code}, {irma_response.text}",
+                error_description="Unable to create IRMA session",
             )
-            raise UnauthorizedError(error_description="Unable to create IRMA session")
         return {"exchange_token": irma_response.json()}
 
     def authorize_response(

@@ -1,6 +1,7 @@
 import json
 from typing import List, Union
 from urllib.parse import urlencode
+import requests
 
 from fastapi import Request, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
@@ -53,6 +54,8 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         login_methods: List[str],
         authentication_handler_factory: AuthenticationHandlerFactory,
         external_base_url: str,
+        irma_session_url: str,
+        external_http_requests_timeout_seconds: int,
     ):
         if mock_digid and environment.startswith("prod"):
             raise ValueError(
@@ -71,9 +74,13 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self._login_methods = login_methods
         self._authentication_handler_factory = authentication_handler_factory
         self._external_base_url = external_base_url
+        self._irma_session_url = irma_session_url
         self._pyop_provider.configuration_information[
             "code_challenge_methods_supported"
         ] = ["S256"]
+        self._external_http_requests_timeout_seconds = (
+            external_http_requests_timeout_seconds
+        )
 
     def well_known(self):
         return JSONResponse(
@@ -138,7 +145,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             self._authentication_cache.get_authentication_request_state(randstate)
         )
         if authentication_request is None:
-            print("wat nu?" + randstate)
             raise UnauthorizedError(
                 error_description="No active login state found for this request."
             )
@@ -237,6 +243,16 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
     def authenticate_with_exchange_token(self, state: str):
         authentication_context = self.get_authentication_request_state(state)
+        exchange_token = authentication_context.authentication_state["exchange_token"]
+        external_session_status = requests.get(
+            f"{self._irma_session_url}/{exchange_token}/status",
+            headers={"Content-Type": "text/plain"},
+            timeout=self._external_http_requests_timeout_seconds,
+        )
+        if external_session_status.status_code != 200:
+            raise UnauthorizedError(error_description="Authentication failed")
+        if external_session_status.json() != "DONE":
+            raise UnauthorizedError(error_description="Authentication cancelled")
 
         userinfo = self._userinfo_service.request_userinfo_for_exchange_token(
             authentication_context
@@ -264,14 +280,15 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         login_methods: List[str],
     ) -> Union[None, Response]:
         if len(login_methods) > 1:
-            redirect_url = request.url.remove_query_params("login_hints")
+            authorize_uri = request.url.remove_query_params("login_hints")
             return templates.TemplateResponse(
                 "login_options.html",
                 {
                     "request": request,
                     "login_methods": login_methods,
                     "ura_name": self._clients[authorize_request.client_id]["name"],
-                    "redirect_uri": f"{self._external_base_url}{redirect_url.path}?{redirect_url.query}",
+                    "authorize_uri": f"{self._external_base_url}{authorize_uri.path}?{authorize_uri.query}",
+                    "redirect_uri": f"{authorize_request.redirect_uri}?error=access_denied&error_description=Authentication%20cancelled",
                 },
             )
         if len(login_methods) != 1:

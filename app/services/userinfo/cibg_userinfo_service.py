@@ -19,7 +19,7 @@ from app.services.userinfo.userinfo_service import UserinfoService
 log = logging.getLogger(__name__)
 
 
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments, too-many-instance-attributes
 class CIBGUserinfoService(UserinfoService):
     def __init__(
         self,
@@ -34,6 +34,7 @@ class CIBGUserinfoService(UserinfoService):
         req_issuer: str,
         jwt_expiration_duration: int,
         jwt_nbf_lag: int,
+        external_http_requests_timeout_seconds: int,
     ):
         self._jwe_service_provider = jwe_service_provider
         self._environment = environment
@@ -56,6 +57,9 @@ class CIBGUserinfoService(UserinfoService):
         self._req_issuer = req_issuer
         self._jwt_expiration_duration = jwt_expiration_duration
         self._jwt_nbf_lag = jwt_nbf_lag
+        self._external_http_requests_timeout_seconds = (
+            external_http_requests_timeout_seconds
+        )
 
     def _request_userinfo(
         self,
@@ -104,11 +108,11 @@ class CIBGUserinfoService(UserinfoService):
                 "Content-Type": "application/json",
             },
             data=data,
-            timeout=60,
+            timeout=self._external_http_requests_timeout_seconds,
         )
         if cibg_exchange_response.status_code >= 400:
             raise UnauthorizedError(
-                error_description="Invalid response from uzi register"
+                error_description="Invalid response from uzi register",
             )
         scheme, jwe_token = get_authorization_scheme_param(
             cibg_exchange_response.headers["Authorization"]

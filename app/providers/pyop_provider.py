@@ -22,8 +22,9 @@ class MaxPyopProvider(PyopProvider):
         *,
         id_token_lifetime=3600,
         extra_scopes=None,
-        trusted_certificates_directory=None
+        trusted_certificates_directory=None,
     ):
+        # static key id for oidc key in jwks uri
         signing_key.kid = "oidc_signing_key"
         super().__init__(
             signing_key,

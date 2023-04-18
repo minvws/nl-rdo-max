@@ -13,6 +13,7 @@ from app.dependency_injection.container import Container
 from app.exceptions.max_exceptions import (
     RedirectBaseException,
 )
+from app.models.enums import RedirectType
 
 log = logging.getLogger(__name__)
 
@@ -55,13 +56,14 @@ def client_and_redirect_uri(
     return redirect_uri, client_id
 
 
+@inject
 def handle_exception_redirect(
     request: Request,
-    clients: Dict[str, Dict],
     error: str,
     error_description: str,
-    redirect_html_delay: int,
-    redirect_type: str,
+    redirect_html_delay: int = Provide[Container.services.redirect_html_delay],
+    redirect_type: RedirectType = Provide[Container.services.redirect_type],
+    clients: Dict[str, Dict] = Provide[Container.pyop_services.clients],
 ) -> Response:
     redirect_uri, client_id = None, None
     try:
@@ -78,6 +80,7 @@ def handle_exception_redirect(
     except Exception as input_handling_exception:  # pylint: disable=broad-except
         if log.isEnabledFor(logging.DEBUG):
             log.exception(input_handling_exception)
+
     redirect_uri_with_error = (
         f"{redirect_uri}?error={error}&error_description={error_description}"
         if redirect_uri is not None
@@ -87,7 +90,7 @@ def handle_exception_redirect(
         redirect_uri is None
         or client_id is None
         or redirect_uri_with_error is None
-        or redirect_type == "html"
+        or redirect_type == RedirectType.HTML
         or redirect_uri not in clients.get(client_id, {}).get("redirect_uris", [])
     ):
         return _base_exception_handler(
@@ -104,9 +107,6 @@ def handle_exception_redirect(
 async def general_exception_handler(
     request: Request,
     exception: Exception,
-    clients: Dict[str, Dict] = Provide[Container.pyop_services.clients],
-    redirect_html_delay: int = Provide[Container.services.redirect_html_delay],
-    redirect_type: str = Provide[Container.services.redirect_type],
 ):
     if isinstance(exception, RedirectBaseException):
         error = exception.error
@@ -119,6 +119,4 @@ async def general_exception_handler(
     else:
         error = "server_error"
         error_description = "Something went wrong"
-    return handle_exception_redirect(
-        request, clients, error, error_description, redirect_html_delay, redirect_type
-    )
+    return handle_exception_redirect(request, error, error_description)

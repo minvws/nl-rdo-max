@@ -7,12 +7,13 @@ from starlette.responses import HTMLResponse
 from jinja2 import Template
 
 from app.misc.utils import load_template
+from app.models.enums import RedirectType
 
 log = logging.getLogger(__package__)
 
 
 class ResponseFactory:
-    def __init__(self, redirect_type: str):
+    def __init__(self, redirect_type: RedirectType):
         self._redirect_template = load_template("jinja2", "redirect.html")
         self._redirect_type = redirect_type
 
@@ -24,7 +25,7 @@ class ResponseFactory:
         media_type: Union[str, None] = None,
         background: Union[BackgroundTask, None] = None,
     ):
-        if self._redirect_type == "html":
+        if self._redirect_type == RedirectType.HTML:
             template = Template(self._redirect_template)
             rendered = template.render({"redirect_url": redirect_url})
 

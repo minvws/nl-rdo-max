@@ -12,7 +12,7 @@ from functools import cached_property
 from logging import Logger
 
 # pylint: disable=c-extension-no-member
-from typing import Text, List, Optional
+from typing import Text, List, Optional, Union
 
 import dateutil.parser
 from Cryptodome.Cipher import AES
@@ -22,9 +22,23 @@ from packaging.version import Version
 
 from .constants import NAMESPACES, SECTOR_CODES, SectorNumber
 from .exceptions import UserNotAuthenticated, ValidationError
-from ...misc.saml_utils import remove_padding
+from ...misc.saml_utils import (
+    remove_padding,
+    find_element_text_if_not_none,
+    find_element_if_not_none,
+    status_from_element,
+)
 
 CAMEL_TO_SNAKE_RE = re.compile(r"(?<!^)(?=[A-Z])")
+
+
+class ArtifactResponseStatus:
+    code: str
+    message: Union[str, None]
+
+    def __init__(self, code: str, message: Union[str, None] = None) -> None:
+        self.code = code
+        self.message = message
 
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
@@ -32,7 +46,7 @@ class ArtifactResponse:
     def __init__(  # pylint: disable=too-many-arguments
         self,
         artifact_response_str,
-        artifact_tree,
+        artifact_tree: etree,
         cluster_priv_key: Optional[str],
         priv_key: str,
         expected_entity_id: str,
@@ -87,27 +101,39 @@ class ArtifactResponse:
 
     @cached_property
     def response(self):
-        return self.root.find(".//samlp:Response", NAMESPACES)
+        return find_element_if_not_none(self.root, "./samlp:Response")
 
     @cached_property
-    def response_status(self):
-        return self.response.find("./samlp:Status", NAMESPACES)
+    def status_message(self) -> Union[None, str]:
+        return self.saml_status.message
 
     @cached_property
-    def saml_status_code(self) -> str:
-        top_level_status_code = self.response_status.find(
-            "./samlp:StatusCode", NAMESPACES
+    def saml_status(self) -> ArtifactResponseStatus:
+        root_status_element = find_element_if_not_none(
+            self.root, "./samlp:Status/samlp:StatusCode"
         )
-
-        if top_level_status_code.attrib["Value"].split(":")[-1].lower() != "success":
-            second_level = top_level_status_code.find("./samlp:StatusCode", NAMESPACES)
-            return second_level.attrib["Value"]
-
-        return top_level_status_code.attrib["Value"]
+        status = status_from_element(root_status_element)
+        if status.lower() != "success":
+            return ArtifactResponseStatus(code=status)
+        message = None
+        response_status_element = find_element_if_not_none(
+            self.response, "./samlp:Status"
+        )
+        response_status_code_element = find_element_if_not_none(
+            response_status_element, "./samlp:StatusCode"
+        )
+        response_status_code_message_element = find_element_if_not_none(
+            response_status_element, "./samlp:StatusMessage"
+        )
+        if response_status_code_element is not None:
+            status = status_from_element(response_status_code_element)
+        if response_status_code_message_element is not None:
+            message = response_status_code_message_element.text
+        return ArtifactResponseStatus(code=status, message=message)
 
     @cached_property
     def status(self) -> str:
-        status = self.saml_status_code.split(":")[-1]
+        status = self.saml_status.code.split(":")[-1]
         return "saml_" + CAMEL_TO_SNAKE_RE.sub("_", status).lower()
 
     @cached_property
@@ -165,30 +191,30 @@ class ArtifactResponse:
 
     @cached_property
     def issuer(self):
-        return self.root.find("./saml:Issuer", NAMESPACES)
+        return find_element_text_if_not_none(self.root, "./saml:Issuer")
 
     @cached_property
     def response_issuer(self):
-        return self.response.find("./saml:Issuer", NAMESPACES)
+        return find_element_text_if_not_none(self.response, "./saml:Issuer")
 
     @cached_property
     def assertion_issuer(self):
-        return self.response_assertion.find("./saml:Issuer", NAMESPACES)
+        return find_element_text_if_not_none(self.response_assertion, "./saml:Issuer")
 
     @cached_property
     def assertion_subject(self):
-        return self.response_assertion.find("./saml:Subject", NAMESPACES)
+        return find_element_if_not_none(self.response_assertion, "./saml:Subject")
 
     @cached_property
     def assertion_subject_confdata(self):
-        return self.assertion_subject.find(
-            ".//saml:SubjectConfirmationData", NAMESPACES
+        return find_element_if_not_none(
+            self.assertion_subject, ".//saml:SubjectConfirmationData"
         )
 
     @cached_property
     def assertion_subject_audrestriction(self):
-        return self.response_assertion.find(
-            "./saml:Conditions//saml:Audience", NAMESPACES
+        return find_element_text_if_not_none(
+            self.response_assertion, "./saml:Conditions//saml:Audience"
         )
 
     def raise_for_status(self) -> str:
@@ -229,28 +255,28 @@ class ArtifactResponse:
     def validate_issuer_texts(self) -> List[ValidationError]:
         expected_entity_id = self._idp_metadata.entity_id
         errors = []
-        if self.issuer.text != expected_entity_id:
+        if self.issuer != expected_entity_id:
             errors.append(
                 ValidationError(
                     f"Invalid issuer in artifact response. Expected {expected_entity_id}, "
-                    f"but was {self.issuer.text}"
+                    f"but was {self.issuer}"
                 )
             )
 
-        if self.response_issuer.text != expected_entity_id:
+        if self.response is not None and self.response_issuer != expected_entity_id:
             errors.append(
                 ValidationError(
                     f"Invalid issuer in artifact response_issuer. Expected {expected_entity_id}, "
-                    f"but was {self.response_issuer.text}"
+                    f"but was {self.response_issuer}"
                 )
             )
 
         if self.status == "saml_success":
-            if self.assertion_issuer.text != expected_entity_id:
+            if self.assertion_issuer != expected_entity_id:
                 errors.append(
                     ValidationError(
                         f"Invalid issuer in artifact assertion_issuer. Expected {expected_entity_id}, "
-                        f"but was {self.assertion_issuer.text}"
+                        f"but was {self.assertion_issuer}"
                     )
                 )
 
@@ -261,7 +287,9 @@ class ArtifactResponse:
 
         expected_response_dest = self._expected_response_destination
 
-        if self._saml_specification_version >= Version("4.4"):
+        if self.response is not None and self._saml_specification_version >= Version(
+            "4.4"
+        ):
             if expected_response_dest != self.response.attrib["Destination"]:
                 errors.append(
                     ValidationError(

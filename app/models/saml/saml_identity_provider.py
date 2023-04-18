@@ -15,7 +15,14 @@ from app.models.saml.saml_request import ArtifactResolveRequest, AuthNRequest
 
 
 class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
-    def __init__(self, name, base_dir, settings, jinja_env) -> None:
+    def __init__(
+        self,
+        name,
+        base_dir,
+        settings,
+        jinja_env,
+        external_http_requests_timeout_seconds,
+    ) -> None:
         self.name = name
         self.base_dir = base_dir
         self.log: logging.Logger = logging.getLogger(__package__)
@@ -54,6 +61,9 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
             ),
             strict=settings.get("strict", True) is True,
             insecure=settings.get("insecure", False) is True,
+        )
+        self._external_http_requests_timeout_seconds = (
+            external_http_requests_timeout_seconds
         )
 
     @cached_property
@@ -123,7 +133,7 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
             data=resolve_artifact_req.get_xml(xml_declaration=True),
             cert=self._client_cert_with_key,
             verify=self._verify_ssl,
-            timeout=30,  # seconds
+            timeout=self._external_http_requests_timeout_seconds,
         )
         try:
             return self._artifact_response_factory.from_string(

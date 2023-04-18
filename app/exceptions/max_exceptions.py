@@ -1,4 +1,5 @@
 import abc
+from typing import Union
 
 from app.exceptions.oidc_exceptions import (
     UNAUTHORIZED_CLIENT,
@@ -10,8 +11,14 @@ from app.exceptions.oidc_exceptions import (
 
 
 class RedirectBaseException(Exception, abc.ABC):
-    def __init__(self, *, error: str, error_description: str):
-        super().__init__(error_description)
+    def __init__(
+        self,
+        *,
+        error: str,
+        error_description: str,
+        log_message: Union[str, None] = None,
+    ):
+        super().__init__(error_description if log_message is None else log_message)
         self.error = error
         self.error_description = error_description
 
@@ -45,16 +52,21 @@ class InvalidRedirectUriException(TemplateBaseException):
 
 
 class ServerErrorException(JsonBaseException):
-    def __init__(self, *, error_description: str):
+    def __init__(self, *, error_description: str, log_message: Union[str, None] = None):
         super().__init__(
             error=SERVER_ERROR,
             error_description=error_description,
+            log_message=log_message,
         )
 
 
 class UnauthorizedError(JsonBaseException):
-    def __init__(self, *, error_description: str):
-        super().__init__(error=ACCESS_DENIED, error_description=error_description)
+    def __init__(self, *, error_description: str, log_message: Union[str, None] = None):
+        super().__init__(
+            error=ACCESS_DENIED,
+            error_description=error_description,
+            log_message=log_message,
+        )
 
 
 class DependentServiceOutage(JsonBaseException):

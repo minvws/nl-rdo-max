@@ -13,4 +13,7 @@ class EncryptionServices(containers.DeclarativeContainer):
         SymEncryptionService, raw_local_sym_key=config.app.user_authentication_sym_key
     )
 
-    jwe_service_provider = providers.Singleton(JweServiceProvider, config=config.jwe)
+    jwe_service_provider = providers.Singleton(
+        JweServiceProvider,
+        config=config.jwe,
+    )

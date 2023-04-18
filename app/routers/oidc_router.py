@@ -1,12 +1,18 @@
+import logging
+
 from dependency_injector.wiring import inject, Provide
 from fastapi import APIRouter, Request, Depends
 
 from app.dependency_injection.config import RouterConfig
+from app.exceptions.max_exceptions import UnauthorizedError
+from app.exceptions.oidc_exception_handlers import handle_exception_redirect
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
 from app.providers.oidc_provider import OIDCProvider
 
 oidc_router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 
 @oidc_router.get("/.well-known/openid-configuration")
@@ -43,11 +49,16 @@ async def accesstoken(
 @inject
 async def _continue(
     state: str,
+    request: Request,
     oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
 ):
-    print("continue")
-    print(state)
-    return oidc_provider.authenticate_with_exchange_token(state)
+    try:
+        return oidc_provider.authenticate_with_exchange_token(state)
+    except UnauthorizedError as unauthorized_error:
+        logger.debug("UnauthorizedError: %s", unauthorized_error)
+        return handle_exception_redirect(
+            request, unauthorized_error.error, unauthorized_error.error_description
+        )
 
 
 @oidc_router.get(RouterConfig.jwks_endpoint)

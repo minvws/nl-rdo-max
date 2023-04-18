@@ -11,3 +11,8 @@ class SomethingWrongReason(str, Enum):
     TOO_BUSY = "too_busy"
     TOO_MANY_REQUEST = "too_many_requests"
     AUTH_BY_PROXY_DISABLED = "auth_by_proxy_disabled"
+
+
+class RedirectType(str, Enum):
+    HTML = "html"
+    HTTP = "http"
