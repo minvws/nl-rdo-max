@@ -127,7 +127,7 @@ pluggy==1.0.0
     # via pytest
 port-for==0.6.3
     # via pytest-redis
-psutil==5.9.4
+psutil==5.9.5
     # via mirakuru
 pycparser==2.21
     # via cffi
