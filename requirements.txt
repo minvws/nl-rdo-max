@@ -5,9 +5,10 @@
 #    pip-compile --extra=dev
 #
 anyio==3.6.2
-    # via starlette
+    # via
+    #   httpcore
+    #   starlette
 astroid==2.15.3
-
     # via pylint
 async-timeout==4.0.2
     # via redis
@@ -22,7 +23,10 @@ bandit==1.7.5
 black==23.3.0
     # via app (setup.py)
 certifi==2022.12.7
-    # via requests
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
 cffi==1.15.1
     # via
     #   cryptography
@@ -56,7 +60,7 @@ dill==0.3.6
     # via pylint
 exceptiongroup==1.1.1
     # via pytest
-fastapi==0.83.0
+fastapi==0.95.1
     # via app (setup.py)
 freezegun==1.2.2
     # via app (setup.py)
@@ -67,10 +71,17 @@ gitdb==4.0.10
 gitpython==3.1.31
     # via bandit
 h11==0.14.0
-    # via uvicorn
+    # via
+    #   httpcore
+    #   uvicorn
+httpcore==0.17.0
+    # via httpx
+httpx==0.24.0
+    # via app (setup.py)
 idna==3.4
     # via
     #   anyio
+    #   httpx
     #   requests
 iniconfig==2.0.0
     # via pytest
@@ -191,7 +202,10 @@ six==1.16.0
 smmap==5.0.0
     # via gitdb
 sniffio==1.3.0
-    # via anyio
+    # via
+    #   anyio
+    #   httpcore
+    #   httpx
 starlette==0.26.1
     # via fastapi
 stevedore==5.0.0

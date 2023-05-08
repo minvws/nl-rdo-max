@@ -104,6 +104,12 @@ class ArtifactResponse:
         return find_element_if_not_none(self.root, "./samlp:Response")
 
     @cached_property
+    def loa_authn(self):
+        return find_element_text_if_not_none(
+            self.response, ".//saml:AuthnContextClassRef"
+        )
+
+    @cached_property
     def status_message(self) -> Union[None, str]:
         return self.saml_status.message
 

@@ -30,6 +30,14 @@ jwe_sign_crt_path = secrets/userinfo/jwe_sign.crt
 #x25519
 jwe_sign_nacl_priv_key = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 
+[cibg]
+cibg_exchange_token_endpoint=http://localhost:8002/get-uzi-by-exchange
+cibg_saml_endpoint=http://localhost:8002/get-uzi
+userinfo_issuer=max
+userinfo_audience=cibg
+jwt_expiration_duration=60
+jwt_nbf_lag=10
+
 [uvicorn]
 # The host to be running on
 host = 0.0.0.0

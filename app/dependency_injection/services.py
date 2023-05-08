@@ -10,15 +10,6 @@ from app.providers.saml_provider import SAMLProvider
 from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
 )
-from app.services.loginhandler.irma_authentication_handler import (
-    IrmaAuthenticationHandler,
-)
-from app.services.loginhandler.mock_saml_authentication_handler import (
-    MockSamlAuthenticationHandler,
-)
-from app.services.loginhandler.saml_authentication_handler import (
-    SamlAuthenticationHandler,
-)
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 from app.services.saml.saml_response_factory import SamlResponseFactory
 from app.services.response_factory import ResponseFactory
@@ -81,10 +72,12 @@ class Services(containers.DeclarativeContainer):
         userinfo_request_signing_crt_path=config.jwe.jwe_sign_crt_path,
         cibg_exchange_token_endpoint=config.cibg.cibg_exchange_token_endpoint,
         cibg_saml_endpoint=config.cibg.cibg_saml_endpoint,
-        jwt_issuer=config.cibg.jwt_issuer,
+        cibg_userinfo_issuer=config.cibg.userinfo_issuer,
+        cibg_userinfo_audience=config.cibg.userinfo_audience,
         req_issuer=config.oidc.issuer,
         jwt_expiration_duration=config.cibg.jwt_expiration_duration.as_int(),
         jwt_nbf_lag=config.cibg.jwt_nbf_lag.as_int(),
+        external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
     )
 
     cc_userinfo_service = providers.Singleton(
@@ -100,43 +93,17 @@ class Services(containers.DeclarativeContainer):
         cibg=cibg_userinfo_service,
     )
 
-    saml_login_handler = providers.Singleton(
-        SamlAuthenticationHandler,
-        rate_limiter=rate_limiter,
-        saml_identity_provider_service=saml_identity_provider_service,
-        authentication_cache=storage.authentication_cache,
-        saml_response_factory=saml_response_factory,
-        userinfo_service=userinfo_service,
-    )
-
-    mock_saml_login_handler = providers.Singleton(
-        MockSamlAuthenticationHandler,
-        rate_limiter=rate_limiter,
-        saml_identity_provider_service=saml_identity_provider_service,
-        authentication_cache=storage.authentication_cache,
-        saml_response_factory=saml_response_factory,
-        userinfo_service=userinfo_service,
-    )
-
-    irma_authentication_handler = providers.Singleton(
-        IrmaAuthenticationHandler,
-        jwe_service_provider=encryption_services.jwe_service_provider,
-        response_factory=response_factory,
-        irma_session_url=config.app.irma_session_url,
-        irma_login_redirect_url=config.app.irma_login_redirect_url,
-        clients=pyop_services.clients,
-        session_jwt_issuer=config.irma.session_jwt_issuer,
-        session_jwt_audience=config.irma.session_jwt_audience,
-        jwt_sign_priv_key_path=config.irma.session_jwt_sign_priv_key_path,
-        jwt_sign_crt_path=config.irma.session_jwt_sign_crt_path,
-        external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
-    )
-
     login_handler_factory = providers.Singleton(
         AuthenticationHandlerFactory,
-        saml_authentication_handler=saml_login_handler,
-        mock_saml_authentication_handler=mock_saml_login_handler,
-        irma_authentication_handler=irma_authentication_handler,
+        rate_limiter=rate_limiter,
+        saml_identity_provider_service=saml_identity_provider_service,
+        authentication_cache=storage.authentication_cache,
+        saml_response_factory=saml_response_factory,
+        userinfo_service=userinfo_service,
+        jwe_service_provider=encryption_services.jwe_service_provider,
+        response_factory=response_factory,
+        clients=pyop_services.clients,
+        config=config,
     )
 
     oidc_provider = providers.Singleton(

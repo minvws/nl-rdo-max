@@ -30,7 +30,8 @@ class CIBGUserinfoService(UserinfoService):
         userinfo_request_signing_crt_path: str,
         cibg_exchange_token_endpoint: str,
         cibg_saml_endpoint: str,
-        jwt_issuer: str,
+        cibg_userinfo_issuer: str,
+        cibg_userinfo_audience: str,
         req_issuer: str,
         jwt_expiration_duration: int,
         jwt_nbf_lag: int,
@@ -53,7 +54,8 @@ class CIBGUserinfoService(UserinfoService):
         self._clients = clients
         self._cibg_exchange_token_endpoint = cibg_exchange_token_endpoint
         self._cibg_saml_endpoint = cibg_saml_endpoint
-        self._jwt_issuer = jwt_issuer
+        self._cibg_userinfo_issuer = cibg_userinfo_issuer
+        self._cibg_userinfo_audience = cibg_userinfo_audience
         self._req_issuer = req_issuer
         self._jwt_expiration_duration = jwt_expiration_duration
         self._jwt_nbf_lag = jwt_nbf_lag
@@ -61,13 +63,51 @@ class CIBGUserinfoService(UserinfoService):
             external_http_requests_timeout_seconds
         )
 
+    def _create_jwt_payload(
+        self,
+        *,
+        ura_pubkey_path: str,
+        external_id: str,
+        client_id: str,
+        auth_type: str,
+        saml_id: Union[str, None] = None,
+        loa_authn: Union[str, None] = None,
+        exchange_token: Union[str, None] = None,
+        req_acme_token: Union[str, None] = None,
+    ):
+        ura_pubkey = file_content_raise_if_none(ura_pubkey_path)
+
+        jwt_payload = {
+            "iss": self._cibg_userinfo_issuer,
+            "aud": self._cibg_userinfo_audience,
+            "nbf": int(time.time()) - self._jwt_nbf_lag,
+            "exp": int(time.time()) + self._jwt_expiration_duration,
+            "ura": external_id,
+            "x5c": strip_cert(ura_pubkey),
+            "auth_type": auth_type,
+            "req_iss": self._req_issuer,
+            "req_aud": client_id,
+        }
+        if loa_authn is not None:
+            jwt_payload["loa_authn"] = loa_authn
+        if req_acme_token is not None:
+            jwt_payload["req_acme_token"] = req_acme_token
+        if saml_id is not None:
+            jwt_payload["saml_id"] = saml_id
+        if exchange_token is not None:
+            jwt_payload["exchange_token"] = exchange_token
+        return jwt_payload
+
     def _request_userinfo(
         self,
         cibg_endpoint: str,
         client_id: str,
         client: Dict[str, Any],
-        claims: Dict[str, Any],
+        auth_type: str,
+        saml_id: Union[str, None] = None,
+        loa_authn: Union[str, None] = None,
         data: Union[str, None] = None,
+        exchange_token: Union[str, None] = None,
     ):
         external_id = "*"
         if "external_id" in client:
@@ -76,7 +116,6 @@ class CIBGUserinfoService(UserinfoService):
                 raise InvalidClientException(
                     error_description="client pubkey_type should be RSA"
                 )
-        ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
         jwt_header = {
             "typ": "JWT",
             "cty": "JWT",
@@ -84,21 +123,19 @@ class CIBGUserinfoService(UserinfoService):
             "enc": "A128CBC-HS256",
             "x5t": self._private_sign_jwk_key.thumbprint(hashes.SHA256()),
         }
-        jwt_payload = {
-            "iss": self._jwt_issuer,
-            "req_iss": self._req_issuer,
-            "req_aud": client_id,
-            "aud": "cibg",
-            "nbf": int(time.time()) - self._jwt_nbf_lag,
-            "exp": int(time.time()) + self._jwt_expiration_duration,
-            "ura": external_id,
-            "x5c": strip_cert(ura_pubkey),
-            "loa_authn": "substantial",
-            "auth_type": "saml",
-        }
+        jwt_payload = self._create_jwt_payload(
+            ura_pubkey_path=client["client_public_key_path"],
+            external_id=external_id,
+            client_id=client_id,
+            auth_type=auth_type,
+            saml_id=saml_id,
+            loa_authn=loa_authn,
+            exchange_token=exchange_token,
+            req_acme_token=None,
+        )
         jwt_token = JWT(
             header=jwt_header,
-            claims={**jwt_payload, **claims},
+            claims=jwt_payload,
         )
         jwt_token.make_signed_token(self._private_sign_jwk_key)
         cibg_exchange_response = requests.post(
@@ -140,7 +177,9 @@ class CIBGUserinfoService(UserinfoService):
             cibg_endpoint=self._cibg_saml_endpoint,
             client_id=client_id,
             client=client,
-            claims={"saml-id": artifact_response.root.attrib["ID"]},
+            auth_type="digid",
+            saml_id=artifact_response.root.attrib["ID"],
+            loa_authn=artifact_response.loa_authn,
             data=artifact_response.to_envelope_string(),
         )
 
@@ -153,12 +192,10 @@ class CIBGUserinfoService(UserinfoService):
             client=self._clients[
                 authentication_context.authorization_request["client_id"]
             ],
-            claims={
-                "auth_type": "exchange_token",
-                "exchange_token": authentication_context.authentication_state[
-                    "exchange_token"
-                ],
-            },
+            auth_type="exchange_token",
+            exchange_token=authentication_context.authentication_state[
+                "exchange_token"
+            ],
         )
 
     def _request_userinfo_for_mock_artifact(

@@ -28,14 +28,15 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           make venv
 
-      - name: Lint with pylint
-        run: make lint
+      - name: Check linting (black)
+        run: make check
 
-      - name: Type check with MyPy
-        run: make type-check
+      - name: Test
+        run: make test
 
-      - name: Audit with bandid
+      - name: Audit
         run: make audit
+
   tests:
     runs-on: ubuntu-20.04
 

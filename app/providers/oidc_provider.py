@@ -154,7 +154,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self, authentication_request: AuthenticationContext, userinfo: str
     ):
         auth_req = authentication_request.authorization_request
-
         pyop_authorize_response = self._pyop_provider.authorize(  # type:ignore
             auth_req, "_"
         )

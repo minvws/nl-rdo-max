@@ -14,9 +14,9 @@ jobs:
           fetch-depth: 0
 
       - name: Diff configfiles
-        run: git diff master~1:max.conf.example max.conf.example > max.conf.diff
+        run: git diff main~1:max.conf.example max.conf.example > max.conf.diff
       - name: Diff configfiles
-        run: git diff master~1:clients.example.json clients.example.json > clients.json.diff
+        run: git diff main~1:clients.example.json clients.example.json > clients.json.diff
       - name: Send mail
         uses: dawidd6/action-send-mail@v3
         with:

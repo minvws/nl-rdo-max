@@ -150,7 +150,7 @@ def fetch_authorize_request(
         "scope": "openid",
         "response_type": "code",
         "redirect_uri": "http://localhost:3000/login",
-        "state": base64.b64encode("staat".encode("utf-8")),
+        "state": base64.b64encode("staat".encode("utf-8")).decode("utf-8"),
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
         "nonce": secrets.token_urlsafe(),
@@ -212,4 +212,4 @@ def post_request(
 ):
     if app is None:
         return requests.post(url, data, json_data, timeout=5, **kwargs)
-    return app.post(url, data, json_data, **kwargs)
+    return app.post(url, data=data, json=json_data, **kwargs)

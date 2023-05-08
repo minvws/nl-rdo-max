@@ -37,7 +37,7 @@ setup-config:
 
 setup: setup-config setup-saml setup-secrets
 
-lint:
+check:
 	. .venv/bin/activate && ${env} pylint app
 	. .venv/bin/activate && ${env} black --check app
 
@@ -56,4 +56,4 @@ type-check:
 coverage:
 	. .venv/bin/activate && ${env} coverage run -m pytest tests && coverage report && coverage html
 
-check-all: lint type-check test audit
+check-all: check type-check test audit

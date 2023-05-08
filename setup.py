@@ -42,7 +42,8 @@ setup(
             "freezegun",
             "types-redis",
             "types-python-dateutil",
-            "types-requests"
+            "types-requests",
+            "httpx"
         ]
     },
 )

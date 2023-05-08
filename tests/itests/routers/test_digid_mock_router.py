@@ -35,7 +35,7 @@ def test_digid_mock(lazy_app, mocker):
     app = lazy_app.value
     digid_post = app.post(
         "/digid-mock?idp_name=c&state=d&authorize_request=e",
-        {"SAMLRequest": "a", "RelayState": "b"},
+        data={"SAMLRequest": "a", "RelayState": "b"},
     )
     assert digid_post.text == "expected"
     assert digid_post.status_code == 234
