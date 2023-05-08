@@ -16,7 +16,7 @@ attrs==23.1.0
     # via
     #   pytest
     #   pytest-docker
-autoflake==2.0.2
+autoflake==2.1.1
     # via app (setup.py)
 bandit==1.7.5
     # via app (setup.py)
