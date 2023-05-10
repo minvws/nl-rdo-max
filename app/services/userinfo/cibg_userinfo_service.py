@@ -138,12 +138,12 @@ class CIBGUserinfoService(UserinfoService):
             claims=jwt_payload,
         )
         jwt_token.make_signed_token(self._private_sign_jwk_key)
+        headers = {"Authorization": f"Bearer {jwt_token.serialize()}"}
+        if data is not None:
+            headers["Content-Type"] = "application/xml"
         cibg_exchange_response = requests.post(
             cibg_endpoint,
-            headers={
-                "Authorization": f"Bearer {jwt_token.serialize()}",
-                "Content-Type": "application/json",
-            },
+            headers=headers,
             data=data,
             timeout=self._external_http_requests_timeout_seconds,
         )
@@ -151,6 +151,7 @@ class CIBGUserinfoService(UserinfoService):
             raise UnauthorizedError(
                 error_description="Invalid response from uzi register",
             )
+
         scheme, jwe_token = get_authorization_scheme_param(
             cibg_exchange_response.headers["Authorization"]
         )
