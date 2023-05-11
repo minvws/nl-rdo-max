@@ -28,6 +28,9 @@ class CIBGUserinfoService(UserinfoService):
         clients: dict,
         userinfo_request_signing_priv_key_path: str,
         userinfo_request_signing_crt_path: str,
+        ssl_client_key_path: str,
+        ssl_client_crt_path: str,
+        ssl_client_verify: bool,
         cibg_exchange_token_endpoint: str,
         cibg_saml_endpoint: str,
         cibg_userinfo_issuer: str,
@@ -45,6 +48,8 @@ class CIBGUserinfoService(UserinfoService):
         userinfo_request_signing_crt = file_content_raise_if_none(
             userinfo_request_signing_crt_path
         )
+        self._ssl_client_cert = (ssl_client_crt_path, ssl_client_key_path)
+        self._ssl_client_verify = ssl_client_verify
         self._private_sign_jwk_key = JWK.from_pem(
             userinfo_request_signing_priv_key.encode("utf-8")
         )
@@ -146,6 +151,8 @@ class CIBGUserinfoService(UserinfoService):
             headers=headers,
             data=data,
             timeout=self._external_http_requests_timeout_seconds,
+            cert=self._ssl_client_cert,
+            verify=self._ssl_client_verify,
         )
         if cibg_exchange_response.status_code >= 400:
             raise UnauthorizedError(
