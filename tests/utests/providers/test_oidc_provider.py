@@ -26,7 +26,7 @@ def create_oidc_provider(
     login_methods: List[str] = "login_method",
     authentication_handler_factory=MagicMock(),
     external_base_url="external_base_url",
-    irma_session_url="local.example",
+    session_url="local.example",
     external_http_requests_timeout_seconds=2,
 ):
     return OIDCProvider(
@@ -43,7 +43,7 @@ def create_oidc_provider(
         login_methods,
         authentication_handler_factory,
         external_base_url,
-        irma_session_url,
+        session_url,
         external_http_requests_timeout_seconds,
     )
 

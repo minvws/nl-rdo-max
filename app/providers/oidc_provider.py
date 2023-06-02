@@ -54,7 +54,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         login_methods: List[str],
         authentication_handler_factory: AuthenticationHandlerFactory,
         external_base_url: str,
-        irma_session_url: str,
+        session_url: str,
         external_http_requests_timeout_seconds: int,
     ):
         if mock_digid and environment.startswith("prod"):
@@ -74,7 +74,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self._login_methods = login_methods
         self._authentication_handler_factory = authentication_handler_factory
         self._external_base_url = external_base_url
-        self._irma_session_url = irma_session_url
+        self._session_url = session_url
         self._pyop_provider.configuration_information[
             "code_challenge_methods_supported"
         ] = ["S256"]
@@ -244,7 +244,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         authentication_context = self.get_authentication_request_state(state)
         exchange_token = authentication_context.authentication_state["exchange_token"]
         external_session_status = requests.get(
-            f"{self._irma_session_url}/{exchange_token}/status",
+            f"{self._session_url}/{exchange_token}/status",
             headers={"Content-Type": "text/plain"},
             timeout=self._external_http_requests_timeout_seconds,
         )
@@ -305,7 +305,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             raise InvalidClientException(
                 error_description=f"Client id {authorize_request.client_id} is not known for this OIDC server"
             )
-
         if authorize_request.redirect_uri not in self._clients[
             authorize_request.client_id
         ].get("redirect_uris", []):

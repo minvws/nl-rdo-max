@@ -121,7 +121,7 @@ class Services(containers.DeclarativeContainer):
         login_methods=config.app.login_methods.as_(as_list),
         authentication_handler_factory=login_handler_factory,
         external_base_url=config.app.external_base_url,
-        irma_session_url=config.app.irma_session_url,
+        session_url=config.app.session_url,
         external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
     )
 

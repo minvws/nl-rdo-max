@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 import logging
 import time
 from typing import Any, Dict
@@ -9,23 +10,21 @@ from jwcrypto.jwt import JWT
 from pyop.message import AuthorizationRequest
 from starlette.responses import Response
 
+from app.services.loginhandler.common_fields import CommonFields
 from app.exceptions.max_exceptions import (
     UnauthorizedError,
 )
 from app.models.authorize_request import AuthorizeRequest
-
-# todo this to constant
 from app.services.loginhandler.authentication_handler import AuthenticationHandler
-from app.services.loginhandler.common_fields import CommonFields
 
 logger = logging.getLogger(__name__)
 
 
 # pylint: disable=too-many-arguments
-class IrmaAuthenticationHandler(CommonFields, AuthenticationHandler):
-    def __init__(self, irma_login_redirect_url: str, **kwargs):
+class UziAuthenticationHandler(CommonFields, AuthenticationHandler):
+    def __init__(self, uzi_login_redirect_url: str, **kwargs):
         super().__init__(**kwargs)
-        self._irma_login_redirect_url = irma_login_redirect_url
+        self._uzi_login_redirect_url = uzi_login_redirect_url
 
     def authentication_state(
         self, authorize_request: AuthorizeRequest
@@ -42,12 +41,11 @@ class IrmaAuthenticationHandler(CommonFields, AuthenticationHandler):
             "nbf": int(time.time()) - 10,
             "exp": int(time.time()) + 60,
             "disclosures": [{"disclose_type": "uziId"}, {"disclose_type": "roles"}],
-            "session_type": "irma",
+            "session_type": "uzi_card",
             "login_title": client["name"],
         }
         jwt = JWT(header=header, claims=claims)
         jwt.make_signed_token(self._private_sign_jwk_key)
-
         disclose = [{"disclose_type": "uziId"}, {"disclose_type": "roles"}]
         if "disclosure_clients" in client:
             disclose.append({"disclose_type": "entityName"})
@@ -60,19 +58,19 @@ class IrmaAuthenticationHandler(CommonFields, AuthenticationHandler):
                 {"disclose_type": "ura", "disclose_value": client["external_id"]}
             )
         jwt_s = jwt.serialize()
-        irma_response = requests.post(
+        uzi_response = requests.post(
             f"{self._session_url}",
             headers={"Content-Type": "text/plain"},
             data=jwt_s,
             timeout=self._external_http_requests_timeout_seconds,
         )
-        if irma_response.status_code >= 400:
+        if uzi_response.status_code >= 400:
             raise UnauthorizedError(
-                log_message="Error while fetching IrmaResponse, Irma server returned: "
-                f"{irma_response.status_code}, {irma_response.text}",
-                error_description="Unable to create IRMA session",
+                log_message="Error while fetching UziResponse, Uzi server returned: "
+                f"{uzi_response.status_code}, {uzi_response.text}",
+                error_description="Unable to create UZI session",
             )
-        return {"exchange_token": irma_response.json()}
+        return {"exchange_token": uzi_response.json()}
 
     def authorize_response(
         self,
@@ -83,5 +81,5 @@ class IrmaAuthenticationHandler(CommonFields, AuthenticationHandler):
         randstate: str,
     ) -> Response:
         return self._response_factory.create_redirect_response(
-            redirect_url=f"{self._irma_login_redirect_url}/{authentication_state['exchange_token']}?state={randstate}"
+            redirect_url=f"{self._uzi_login_redirect_url}/{authentication_state['exchange_token']}?state={randstate}"
         )
