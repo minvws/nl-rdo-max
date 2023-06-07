@@ -1,8 +1,6 @@
 env = env PATH="${bin}:$$PATH"
 create_key_pair =
 
-complete: venv secrets/ssl/private/apache-selfsigned.key secrets/oidc/private/selfsigned.key
-
 venv: .venv/touchfile ## Create virtual environment
 .venv/touchfile:
 	test -d .venv || python3 -m venv .venv
@@ -35,7 +33,7 @@ setup-saml:
 setup-config:
 	scripts/./setup-config.sh
 
-setup: setup-config setup-saml setup-secrets
+setup: venv setup-config setup-saml setup-secrets
 
 check:
 	. .venv/bin/activate && ${env} pylint app
