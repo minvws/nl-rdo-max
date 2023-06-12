@@ -12,7 +12,7 @@ session_url = http://localhost:8001/session
 loglevel = debug
 # comma space seperated list
 # possible values are: digid, digid_mock, irma, uzipas
-login_methods = digid, mock_digid, uzipas, irma
+login_methods = digid_mock, uzipas, irma
 
 # only used with html redirect
 redirect_html_delay = 5
@@ -29,8 +29,8 @@ external_http_requests_timeout_seconds = 15
 services = x25519,rsa
 
 #rsa
-jwe_sign_priv_key_path = secrets/userinfo/jwe_sign.key
-jwe_sign_crt_path = secrets/userinfo/jwe_sign.crt
+jwe_sign_priv_key_path = secrets/nl-rdo-max-private.key
+jwe_sign_crt_path = secrets/nl-rdo-max-private.crt
 
 #x25519
 jwe_sign_nacl_priv_key = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
@@ -38,8 +38,8 @@ jwe_sign_nacl_priv_key = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 [jwt]
 session_jwt_issuer = nl-rdo-max-private
 session_jwt_audience = nl-uzi-login-controller
-session_jwt_sign_priv_key_path = secrets/userinfo/jwe_sign.key
-session_jwt_sign_crt_path = secrets/userinfo/jwe_sign.crt
+session_jwt_sign_priv_key_path = secrets/nl-rdo-max-private.key
+session_jwt_sign_crt_path = secrets/nl-rdo-max-private.crt
 
 # optional section when login method doesn't contain irma
 [irma]
@@ -61,7 +61,7 @@ ssl_client_verify=False
 userinfo_client_key=secrets/cibg/userinfo_client_key.key
 userinfo_client_crt=secrets/cibg/userinfo_client_key.crt
 userinfo_issuer=max
-userinfo_audience=cibg
+userinfo_audience=uzipoc_register
 jwt_expiration_duration=60
 jwt_nbf_lag=10
 
