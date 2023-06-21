@@ -244,7 +244,7 @@ class SPMetadata(SAMLRequest):
     def validate(self) -> list:
         errors = []
 
-        if self.cluster_settings is None:
+        if self.clustered is False:
             if self.root.tag != f"{{{NAMESPACES['md']}}}EntityDescriptor":
                 errors.append("Root is not an EntityDescriptor")
 
