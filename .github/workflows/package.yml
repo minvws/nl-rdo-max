@@ -16,7 +16,10 @@ jobs:
 
       - name: list files
         run: ls -alR
-
+        
+      - name: Add version file
+        run: 'echo "{ \"version\": \"${{ env.RELEASE_VERSION }}\", \"git_ref\": \"$GITHUB_SHA\"}" > public/version.json'
+        
       - name: Create tar
         run: tar -czf max_${{ env.RELEASE_VERSION }}.tar.gz ./app ./static ./jinja2 ./saml
 
