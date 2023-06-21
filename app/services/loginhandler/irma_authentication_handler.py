@@ -41,24 +41,12 @@ class IrmaAuthenticationHandler(CommonFields, AuthenticationHandler):
             "aud": self._session_jwt_audience,
             "nbf": int(time.time()) - 10,
             "exp": int(time.time()) + 60,
-            "disclosures": [{"disclose_type": "uziId"}, {"disclose_type": "roles"}],
             "session_type": "irma",
             "login_title": client["name"],
         }
         jwt = JWT(header=header, claims=claims)
         jwt.make_signed_token(self._private_sign_jwk_key)
 
-        disclose = [{"disclose_type": "uziId"}, {"disclose_type": "roles"}]
-        if "disclosure_clients" in client:
-            disclose.append({"disclose_type": "entityName"})
-            disclose.append({"disclose_type": "ura"})
-        else:
-            disclose.append(
-                {"disclose_type": "entityName", "disclose_value": client["name"]}
-            )
-            disclose.append(
-                {"disclose_type": "ura", "disclose_value": client["external_id"]}
-            )
         jwt_s = jwt.serialize()
         irma_response = requests.post(
             f"{self._session_url}",
