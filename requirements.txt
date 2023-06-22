@@ -132,7 +132,7 @@ platformdirs==3.5.0
     # via
     #   black
     #   pylint
-pluggy==1.0.0
+pluggy==1.2.0
     # via pytest
 port-for==0.6.3
     # via pytest-redis
