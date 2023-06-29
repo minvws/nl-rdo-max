@@ -1,4 +1,5 @@
 import os
+import configparser
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -24,8 +25,18 @@ class MaxPyopProvider(PyopProvider):
         extra_scopes=None,
         trusted_certificates_directory=None,
     ):
-        # static key id for oidc key in jwks uri
         signing_key.kid = "oidc_signing_key"
+
+        # TODO: FIX THIS. It totally reloads the config.
+        config = configparser.ConfigParser()
+        config.read("max.conf")
+        signing_cert = str(config["oidc"]["rsa_private_key"]).replace(".key",".crt")
+        with open(signing_cert,"r", encoding="utf-8") as file:
+            cert_str = file.read()
+            skey = JWK.from_pem(str.encode(cert_str))
+            signing_key.kid = skey.kid
+        # /TODO
+
         super().__init__(
             signing_key,
             configuration_information,
