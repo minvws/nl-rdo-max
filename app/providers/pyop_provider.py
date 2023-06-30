@@ -30,8 +30,8 @@ class MaxPyopProvider(PyopProvider):
         # TODO: FIX THIS. It totally reloads the config.
         config = configparser.ConfigParser()
         config.read("max.conf")
-        signing_cert = str(config["oidc"]["rsa_private_key"]).replace(".key",".crt")
-        with open(signing_cert,"r", encoding="utf-8") as file:
+        signing_cert = str(config["oidc"]["rsa_private_key"]).replace(".key", ".crt")
+        with open(signing_cert, "r", encoding="utf-8") as file:
             cert_str = file.read()
             skey = JWK.from_pem(str.encode(cert_str))
             signing_key.kid = skey.kid
