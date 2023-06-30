@@ -98,7 +98,7 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
             "login_methods": ["a", "b"],
             "ura_name": "name",
             "authorize_uri": "base_url/redirect_path?query",
-            "redirect_uri": "redirect_url?error=access_denied&error_description=Authentication%20cancelled",
+            "redirect_uri": "redirect_url?error=login_required&error_description=Authentication%20cancelled",
         },
     )
     assert actual == template_response

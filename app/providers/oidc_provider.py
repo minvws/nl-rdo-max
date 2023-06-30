@@ -287,7 +287,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                     "login_methods": login_methods,
                     "ura_name": self._clients[authorize_request.client_id]["name"],
                     "authorize_uri": f"{self._external_base_url}{authorize_uri.path}?{authorize_uri.query}",
-                    "redirect_uri": f"{authorize_request.redirect_uri}?error=access_denied&error_description=Authentication%20cancelled",
+                    "redirect_uri": f"{authorize_request.redirect_uri}?error=login_required&error_description=Authentication%20cancelled",
                 },
             )
         if len(login_methods) != 1:
