@@ -85,6 +85,7 @@ key_file = server.key
 [oidc]
 certificates_directory = secrets/jwks-certs
 rsa_private_key = secrets/oidc/selfsigned.key
+rsa_private_key_crt = secrets/oidc/selfsigned.crt
 issuer = https://localhost:8006
 authorize_endpoint = /authorize
 jwks_endpoint = /jwks

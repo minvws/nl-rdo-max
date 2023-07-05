@@ -8,14 +8,23 @@ from pyop.authz_state import AuthorizationState
 from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
 from pyop.userinfo import Userinfo
 
-from app.misc.utils import file_content, as_list, clients_from_json
+from app.misc.utils import (
+    file_content,
+    as_list,
+    clients_from_json,
+    kid_from_certificate,
+)
 from app.providers.pyop_provider import MaxPyopProvider
 from app.providers.saml_provider import SAMLProvider
 
 
-def pyop_rsa_signing_key_callable(signing_key_path: str):
+def pyop_rsa_signing_key_callable(signing_key_path: str, signing_key_crt_path: str):
     signing_key = file_content(signing_key_path)
-    return RSAKey(key=import_rsa_key(signing_key), alg="RS256")
+    signing_key_crt = file_content(signing_key_crt_path)
+    kid = kid_from_certificate(signing_key_crt)
+    key = RSAKey(key=import_rsa_key(signing_key), alg="RS256")
+    key.kid = kid
+    return key
 
 
 def pyop_configuration_information_callable(
@@ -48,7 +57,9 @@ class PyopServices(containers.DeclarativeContainer):
     storage = providers.DependenciesContainer()
 
     pyop_rsa_signing_key = providers.Callable(
-        pyop_rsa_signing_key_callable, signing_key_path=config.oidc.rsa_private_key
+        pyop_rsa_signing_key_callable,
+        signing_key_path=config.oidc.rsa_private_key,
+        signing_key_crt_path=config.oidc.rsa_private_key_crt,
     )
 
     pyop_configuration_information = providers.Callable(

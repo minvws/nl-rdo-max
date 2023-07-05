@@ -6,6 +6,8 @@ from typing import Union, List, Any
 
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 from fastapi.templating import Jinja2Templates
+from Cryptodome.Hash import SHA256
+from Cryptodome.IO import PEM
 
 SOAP_NS = "http://www.w3.org/2003/05/soap-envelope"
 
@@ -75,3 +77,10 @@ def load_template(file_path, filename):
     template_path = os.path.join(file_path, filename)
     with open(template_path, "r", encoding="utf-8") as template_file:
         return template_file.read()
+
+
+def kid_from_certificate(certificate: str) -> str:
+    der = PEM.decode(certificate)
+    sha = SHA256.new()
+    sha.update(der[0])
+    return base64.b64encode(sha.digest()).decode("utf-8")

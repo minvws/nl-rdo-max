@@ -6,7 +6,7 @@ from jwcrypto.jwe import JWE
 from jwcrypto.jwk import JWK
 from jwcrypto.jwt import JWT
 
-from app.misc.utils import file_content_raise_if_none
+from app.misc.utils import file_content_raise_if_none, kid_from_certificate
 from app.services.encryption.jwe_service import JweService
 
 
@@ -16,6 +16,7 @@ class RSAJweService(JweService):
         jwe_sign_crt = file_content_raise_if_none(jwe_sign_crt_path)
         self._private_sign_jwk_key = JWK.from_pem(jwe_sign_priv_key.encode("utf-8"))
         self._public_sign_jwk_key = JWK.from_pem(jwe_sign_crt.encode("utf-8"))
+        self._jwe_sign_crt_kid = kid_from_certificate(jwe_sign_crt)
 
     def get_pub_jwk(self) -> JWK:
         return self._public_sign_jwk_key
@@ -28,11 +29,12 @@ class RSAJweService(JweService):
             "enc": "A128CBC-HS256",
             "x5t": self._private_sign_jwk_key.thumbprint(hashes.SHA256()),
         }
+
         jwt_token = JWT(
             {
                 "alg": "RS256",
                 "x5t": self._private_sign_jwk_key.thumbprint(hashes.SHA256()),
-                "kid": self._public_sign_jwk_key.kid,
+                "kid": self._jwe_sign_crt_kid,
             },
             claims=data,
         )
