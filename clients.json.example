@@ -5,7 +5,7 @@
         "token_endpoint_auth_method": "none",
         "redirect_uris": [
             "http://localhost:3000/login",
-            "http://localhost:8000/uzi-login"
+            "http://localhost:8000/oidc/login"
         ],
         "error_page": "http://localhost:3000/login",
         "response_types": ["code"],
