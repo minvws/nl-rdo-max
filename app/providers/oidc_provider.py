@@ -306,8 +306,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         Validate the authorization request. If client_id or redirect_uri is invalid, we cannot redirect the
         user. Instead, a 400 should be returned.
         """
-        print("redirecttt")
-        print(authorize_request.redirect_uri)
         if authorize_request.client_id not in self._clients:
             raise InvalidClientException(
                 error_description=f"Client id {authorize_request.client_id} is not known for this OIDC server"
