@@ -280,6 +280,11 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
     ) -> Union[None, Response]:
         if len(login_methods) > 1:
             authorize_uri = request.url.remove_query_params("login_hints")
+
+            redirect_uri_append_symbol = "?"
+            if "?" in authorize_request.redirect_uri:
+                redirect_uri_append_symbol = "&"
+
             return templates.TemplateResponse(
                 "login_options.html",
                 {
@@ -287,7 +292,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                     "login_methods": login_methods,
                     "ura_name": self._clients[authorize_request.client_id]["name"],
                     "authorize_uri": f"{self._external_base_url}{authorize_uri.path}?{authorize_uri.query}",
-                    "redirect_uri": f"{authorize_request.redirect_uri}?error=login_required&error_description=Authentication%20cancelled",
+                    "redirect_uri": f"{authorize_request.redirect_uri}{redirect_uri_append_symbol}error=login_required&error_description=Authentication%20cancelled",
                 },
             )
         if len(login_methods) != 1:
@@ -299,7 +304,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
     def _validate_authorize_request(self, authorize_request: AuthorizeRequest):
         """
         Validate the authorization request. If client_id or redirect_uri is invalid, we cannot redirect the
-        user. Instead, return a 400 should be returned.
+        user. Instead, a 400 should be returned.
         """
         if authorize_request.client_id not in self._clients:
             raise InvalidClientException(
