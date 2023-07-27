@@ -1,0 +1,10 @@
+{
+  "900022868": {
+    "json_schema": "https://www.inge6.nl/json_schema_v1.json",
+    "initials": "J.J",
+    "surname_prefix": "van der",
+    "surname": "Jansen",
+    "loa_authn": "http://eidas.europa.eu/LoA/high",
+    "loa_uzi": "http://eidas.europa.eu/LoA/high"
+  }
+}
