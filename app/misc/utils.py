@@ -9,6 +9,8 @@ from fastapi.templating import Jinja2Templates
 from Cryptodome.Hash import SHA256
 from Cryptodome.IO import PEM
 
+from app.models.uzi_attributes import UziAttributes
+
 SOAP_NS = "http://www.w3.org/2003/05/soap-envelope"
 
 templates = Jinja2Templates(directory="jinja2")
@@ -84,3 +86,11 @@ def kid_from_certificate(certificate: str) -> str:
     sha = SHA256.new()
     sha.update(der[0])
     return base64.b64encode(sha.digest()).decode("utf-8")
+
+
+def mocked_bsn_to_uzi_data(bsn: str, filepath: str = '../../tests/resources/uzi_data.json') -> UziAttributes:
+    uzi_data = json_from_file(filepath)
+    return UziAttributes(**uzi_data[bsn])
+
+
+print(mocked_bsn_to_uzi_data('900022868'))
