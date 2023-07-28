@@ -91,10 +91,16 @@ def kid_from_certificate(certificate: str) -> str:
 
 
 def mocked_bsn_to_uzi_data(
-    bsn: str, id_filter: str = None, filepath: str = config.get("app", "mocked_uzi_data_file_path"),
+    bsn: str,
+    relation_id_filter: str = None,
+    filepath: str = config.get("app", "mocked_uzi_data_file_path"),
 ) -> UziAttributes:
     uzi_data = json_from_file(filepath)
     instance = UziAttributes(**uzi_data[bsn])
-    if id_filter:
-        instance.relations = [relation for relation in instance.relations if relation.ura == id_filter]
+    if relation_id_filter:
+        instance.relations = [
+            relation
+            for relation in instance.relations
+            if relation.ura == relation_id_filter
+        ]
     return instance
