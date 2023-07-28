@@ -210,7 +210,6 @@ class CIBGUserinfoService(UserinfoService):
         self, client_id: str, client: Any, artifact_response: ArtifactResponse
     ):
         bsn = artifact_response.get_bsn(False)
-        print(bsn)
         relations = []
         if "disclosure_clients" in client:
             for disclosure_client in client["disclosure_clients"]:
@@ -231,9 +230,10 @@ class CIBGUserinfoService(UserinfoService):
             )
         ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
         uzi_data = mocked_bsn_to_uzi_data(bsn)
+        print(uzi_data)
         return self._jwe_service_provider.get_jwe_service(client["pubkey_type"]).to_jwe(
             {
-                **uzi_data,
+                **dict(uzi_data),
                 "iss": self._req_issuer,
                 "aud": client_id,
                 "uzi_id": bsn,

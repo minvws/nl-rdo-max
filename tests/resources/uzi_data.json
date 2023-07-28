@@ -5,5 +5,12 @@
     "surname": "Jansen",
     "loa_authn": "http://eidas.europa.eu/LoA/high",
     "loa_uzi": "http://eidas.europa.eu/LoA/high"
+  },
+  "900000001": {
+    "initials": "F.F",
+    "surname_prefix": "van der",
+    "surname": "Jansen",
+    "loa_authn": "http://eidas.europa.eu/LoA/high",
+    "loa_uzi": "http://eidas.europa.eu/LoA/high"
   }
 }

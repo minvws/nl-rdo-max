@@ -88,7 +88,7 @@ def kid_from_certificate(certificate: str) -> str:
     return base64.b64encode(sha.digest()).decode("utf-8")
 
 
-def mocked_bsn_to_uzi_data(bsn: str, filepath: str = '../../tests/resources/uzi_data.json') -> UziAttributes:
+def mocked_bsn_to_uzi_data(bsn: str, filepath: str = 'tests/resources/uzi_data.json') -> UziAttributes:
     uzi_data = json_from_file(filepath)
     return UziAttributes(**uzi_data[bsn])
 
