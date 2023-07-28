@@ -9,9 +9,13 @@ from fastapi.templating import Jinja2Templates
 from Cryptodome.Hash import SHA256
 from Cryptodome.IO import PEM
 
+from app.models.uzi_attributes import UziAttributes
+from app.dependency_injection.config import get_config
+
 SOAP_NS = "http://www.w3.org/2003/05/soap-envelope"
 
 templates = Jinja2Templates(directory="jinja2")
+config = get_config()
 
 
 def file_content(filepath: str) -> Union[str, None]:
@@ -84,3 +88,19 @@ def kid_from_certificate(certificate: str) -> str:
     sha = SHA256.new()
     sha.update(der[0])
     return base64.b64encode(sha.digest()).decode("utf-8")
+
+
+def mocked_bsn_to_uzi_data(
+    bsn: str,
+    relation_id_filter: str = None,
+    filepath: str = config.get("app", "mocked_uzi_data_file_path"),
+) -> UziAttributes:
+    uzi_data = json_from_file(filepath)
+    instance = UziAttributes(**uzi_data[bsn])
+    if relation_id_filter:
+        instance.relations = [
+            relation
+            for relation in instance.relations
+            if relation.ura == relation_id_filter
+        ]
+    return instance

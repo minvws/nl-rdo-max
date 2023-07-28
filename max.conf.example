@@ -8,6 +8,8 @@ userinfo_service = cibg
 # External url for max without trailing slash
 external_base_url = https://localhost:8006
 session_url = http://localhost:8001/session
+# Used for DigiD Mock
+mocked_uzi_data_file_path = tests/resources/uzi_data.json
 
 loglevel = debug
 # comma space seperated list
