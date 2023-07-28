@@ -91,6 +91,3 @@ def kid_from_certificate(certificate: str) -> str:
 def mocked_bsn_to_uzi_data(bsn: str, filepath: str = 'tests/resources/uzi_data.json') -> UziAttributes:
     uzi_data = json_from_file(filepath)
     return UziAttributes(**uzi_data[bsn])
-
-
-print(mocked_bsn_to_uzi_data('900022868'))
