@@ -219,7 +219,9 @@ class CIBGUserinfoService(UserinfoService):
         if "disclosure_clients" in client:
             uzi_data = mocked_bsn_to_uzi_data(bsn)
         else:
-            uzi_data = mocked_bsn_to_uzi_data(bsn, relation_id_filter=client["external_id"])
+            uzi_data = mocked_bsn_to_uzi_data(
+                bsn, relation_id_filter=client["external_id"]
+            )
 
         return self._jwe_service_provider.get_jwe_service(client["pubkey_type"]).to_jwe(
             {
