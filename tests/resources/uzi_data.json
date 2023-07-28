@@ -5,6 +5,7 @@
     "surname": "Jansen",
     "loa_authn": "http://eidas.europa.eu/LoA/high",
     "loa_uzi": "http://eidas.europa.eu/LoA/high",
+    "uzi_id": "900022868",
     "relations": [
       {
         "ura": "87654321",
@@ -24,6 +25,7 @@
     "surname": "Jansen",
     "loa_authn": "http://eidas.europa.eu/LoA/high",
     "loa_uzi": "http://eidas.europa.eu/LoA/high",
+    "uzi_id": "900000009",
     "relations": [
       {
         "ura": "87654321",
