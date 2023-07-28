@@ -244,23 +244,3 @@ class CIBGUserinfoService(UserinfoService):
             },
             file_content_raise_if_none(client["client_public_key_path"])
         )
-
-        # return self._jwe_service_provider.get_jwe_service(client["pubkey_type"]).to_jwe(
-        #     {
-        #         # todo create json schema
-        #         "iss": self._req_issuer,
-        #         "aud": client_id,
-        #         "json_schema": "https://www.inge6.nl/json_schema_v1.json",
-        #         "initials": "J.J",
-        #         "surname_prefix": "van der",
-        #         "surname": "Jansen",
-        #         "loa_authn": "http://eidas.europa.eu/LoA/high",
-        #         "loa_uzi": "http://eidas.europa.eu/LoA/high",
-        #         "uzi_id": bsn,
-        #         "relations": relations,
-        #         "nbf": int(time.time()) - self._jwt_nbf_lag,
-        #         "exp": int(time.time()) + self._jwt_expiration_duration,
-        #         "x5c": strip_cert(ura_pubkey),
-        #     },
-        #     file_content_raise_if_none(client["client_public_key_path"]),
-        # )
