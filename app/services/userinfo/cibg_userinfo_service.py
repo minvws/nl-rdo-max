@@ -9,7 +9,11 @@ from jwcrypto.jwk import JWK
 from jwcrypto.jwt import JWT
 
 from app.exceptions.max_exceptions import InvalidClientException, UnauthorizedError
-from app.misc.utils import file_content_raise_if_none, strip_cert, mocked_bsn_to_uzi_data
+from app.misc.utils import (
+    file_content_raise_if_none,
+    strip_cert,
+    mocked_bsn_to_uzi_data,
+)
 from app.models.authentication_context import AuthenticationContext
 from app.models.saml.artifact_response import ArtifactResponse
 from app.models.saml.saml_identity_provider import SamlIdentityProvider
@@ -222,5 +226,5 @@ class CIBGUserinfoService(UserinfoService):
                 "exp": int(time.time()) + self._jwt_expiration_duration,
                 "x5c": strip_cert(ura_pubkey),
             },
-            file_content_raise_if_none(client["client_public_key_path"])
+            file_content_raise_if_none(client["client_public_key_path"]),
         )
