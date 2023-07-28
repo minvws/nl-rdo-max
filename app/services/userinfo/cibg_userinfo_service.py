@@ -215,12 +215,18 @@ class CIBGUserinfoService(UserinfoService):
     ):
         bsn = artifact_response.get_bsn(False)
         ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
-        uzi_data = mocked_bsn_to_uzi_data(bsn)
+
+        if "disclosure_clients" in client:
+            uzi_data = mocked_bsn_to_uzi_data(bsn)
+        else:
+            uzi_data = mocked_bsn_to_uzi_data(bsn, id_filter=client['external_id'])
+
         return self._jwe_service_provider.get_jwe_service(client["pubkey_type"]).to_jwe(
             {
                 **uzi_data.dict(),
                 "iss": self._req_issuer,
                 "aud": client_id,
+                "json_schema": "https://www.inge6.nl/json_schema_v1.json",
                 "uzi_id": bsn,
                 "nbf": int(time.time()) - self._jwt_nbf_lag,
                 "exp": int(time.time()) + self._jwt_expiration_duration,
