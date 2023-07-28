@@ -229,7 +229,6 @@ class CIBGUserinfoService(UserinfoService):
                 "iss": self._req_issuer,
                 "aud": client_id,
                 "json_schema": "https://www.inge6.nl/json_schema_v1.json",
-                "uzi_id": bsn,
                 "nbf": int(time.time()) - self._jwt_nbf_lag,
                 "exp": int(time.time()) + self._jwt_expiration_duration,
                 "x5c": strip_cert(ura_pubkey),

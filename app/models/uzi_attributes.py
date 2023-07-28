@@ -15,4 +15,5 @@ class UziAttributes(BaseModel):
     surname: str
     loa_authn: str
     loa_uzi: str
+    uzi_id: str
     relations: List[Relation]
