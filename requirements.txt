@@ -41,7 +41,7 @@ coverage==7.2.5
     #   coverage-badge
 coverage-badge==1.1.0
     # via app (setup.py)
-cryptography==41.0.1
+cryptography==40.0.2
     # via
     #   jwcrypto
     #   oic
@@ -145,7 +145,7 @@ pycryptodomex==3.17
     #   oic
     #   pyjwkest
     #   pyop
-pydantic==2.0.1
+pydantic==1.10.12
     # via fastapi
 pyflakes==3.0.1
     # via autoflake
@@ -179,7 +179,7 @@ python-multipart==0.0.6
     # via app (setup.py)
 python3-saml==1.15.0
     # via app (setup.py)
-pyyaml==6.0
+pyyaml==6.0.1
     # via bandit
 redis==4.6.0
     # via
@@ -204,7 +204,7 @@ sniffio==1.3.0
     #   anyio
     #   httpcore
     #   httpx
-starlette==0.28.0
+starlette==0.26.1
     # via fastapi
 stevedore==5.0.0
     # via bandit
