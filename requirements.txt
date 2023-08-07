@@ -149,7 +149,7 @@ pydantic==1.10.12
     # via fastapi
 pyflakes==3.0.1
     # via autoflake
-pygments==2.15.0
+pygments==2.16.1
     # via rich
 pyjwkest==1.4.2
     # via oic
