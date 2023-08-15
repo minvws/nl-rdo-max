@@ -64,8 +64,6 @@ userinfo_client_key=secrets/cibg/userinfo_client_key.key
 userinfo_client_crt=secrets/cibg/userinfo_client_key.crt
 userinfo_issuer=max
 userinfo_audience=uzipoc_register
-jwt_expiration_duration=60
-jwt_nbf_lag=10
 
 [uvicorn]
 # The host to be running on
@@ -96,6 +94,8 @@ userinfo_endpoint = /userinfo
 scopes_supported = openid
 clients_file = clients.json
 subject_id_hash_salt = somesalt
+jwt_expiration_duration=60
+jwt_nbf_lag=10
 
 [saml]
 identity_providers_base_path = saml
