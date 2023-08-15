@@ -54,6 +54,14 @@
                             </a>
                         </li>
                     {% endif %}
+                    {% if 'oidc' in login_methods %}
+                        <li>
+                            <a href="{{ authorize_uri }}&login_hint=oidc" class="horizontal-view">
+                                <img src="static/img/oidc.png" alt="oidc logo">
+                                Inloggen met OIDC
+                            </a>
+                        </li>
+                    {% endif %}
 
                 </ul>
 
