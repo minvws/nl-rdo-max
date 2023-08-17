@@ -1,7 +1,6 @@
-import app.misc.utils
 from app.services.userinfo.cc_userinfo_service import CCUserinfoService
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 
 def test_request_userinfo_for_digid_artifact(tmp_path_factory, mocker):
@@ -11,12 +10,10 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
 -----END CERTIFICATE-----"""
 
     tmp_path = tmp_path_factory.mktemp("client_pubkey_path")
-    f = open(tmp_path / "client_pubkey", "w")
-    f.write(example_cert)
-    f.close()
-
-    # TODO Why doesn't this work instead of the patch above?
-    # mocker.patch("app.misc.utils.file_content_raise_if_none", return_value="client_pubkey")
+    mocker.patch(
+        "app.services.userinfo.cc_userinfo_service.file_content_raise_if_none",
+        return_value=example_cert,
+    )
 
     jwe_service_provider_mock = MagicMock()
     jwe_service_mock = MagicMock()
