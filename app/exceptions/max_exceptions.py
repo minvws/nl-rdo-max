@@ -7,6 +7,7 @@ from app.exceptions.oidc_exceptions import (
     ACCESS_DENIED,
     TEMPORARILY_UNAVAILABLE,
     INVALID_REQUEST,
+    LOGIN_REQUIRED
 )
 
 
@@ -64,6 +65,15 @@ class UnauthorizedError(JsonBaseException):
     def __init__(self, *, error_description: str, log_message: Union[str, None] = None):
         super().__init__(
             error=ACCESS_DENIED,
+            error_description=error_description,
+            log_message=log_message,
+        )
+
+
+class LoginCancelledError(JsonBaseException):
+    def __init__(self, *, error_description: str, log_message: Union[str, None] = None):
+        super().__init__(
+            error=LOGIN_REQUIRED,
             error_description=error_description,
             log_message=log_message,
         )

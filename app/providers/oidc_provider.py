@@ -17,6 +17,7 @@ from starlette.datastructures import Headers
 from app.exceptions.max_exceptions import (
     ServerErrorException,
     UnauthorizedError,
+    LoginCancelledError,
     InvalidClientException,
     InvalidRedirectUriException,
 )
@@ -251,7 +252,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         if external_session_status.status_code != 200:
             raise UnauthorizedError(error_description="Authentication failed")
         if external_session_status.json() != "DONE":
-            raise UnauthorizedError(error_description="Authentication cancelled")
+            raise LoginCancelledError(error_description="Authentication cancelled")
 
         userinfo = self._userinfo_service.request_userinfo_for_exchange_token(
             authentication_context

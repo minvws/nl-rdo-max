@@ -70,6 +70,7 @@ def get_fingerprint(signing_cert: bytes) -> bytes:
     return base64.urlsafe_b64encode(sha1_fingerprint.encode())
 
 
+# @TODO : not used anymore, delete?
 def extract_error_uri_from_state(clients: dict, state: str) -> Union[str, None]:
     client_id = json.loads(base64.b64decode(state))["client_id"]
     if client_id in clients:
