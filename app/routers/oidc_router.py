@@ -57,7 +57,10 @@ async def _continue(
     except UnauthorizedError as unauthorized_error:
         logger.debug("UnauthorizedError: %s", unauthorized_error)
         return handle_exception_redirect(
-            request, unauthorized_error.error, unauthorized_error.error_description
+            request,
+            unauthorized_error.error,
+            unauthorized_error.error_description,
+            status_code=403,
         )
 
 

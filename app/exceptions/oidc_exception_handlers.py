@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+import urllib.parse
 from typing import Dict, Mapping, Union, Tuple
 
 from dependency_injector.wiring import inject, Provide
@@ -26,6 +27,7 @@ def _base_exception_handler(
     error_description: str,
     redirect_uri: Union[str, None] = None,
     redirect_html_delay: int = 0,
+    status_code: int = 500,
 ):
     context = {
         "request": request,
@@ -35,9 +37,8 @@ def _base_exception_handler(
     }
     if redirect_uri is not None:
         context["redirect_uri"] = redirect_uri
-
     return templates.TemplateResponse(
-        "exception.html", status_code=500, context=context
+        "exception.html", status_code=status_code, context=context
     )
 
 
@@ -64,6 +65,7 @@ def handle_exception_redirect(
     redirect_html_delay: int = Provide[Container.services.redirect_html_delay],
     redirect_type: RedirectType = Provide[Container.services.redirect_type],
     clients: Dict[str, Dict] = Provide[Container.pyop_services.clients],
+    status_code: int = 500,
 ) -> Response:
     redirect_uri, client_id = None, None
     try:
@@ -82,7 +84,7 @@ def handle_exception_redirect(
             log.exception(input_handling_exception)
 
     redirect_uri_with_error = (
-        f"{redirect_uri}?error={error}&error_description={error_description}"
+        f"{redirect_uri}?error={error}&error_description={urllib.parse.quote(error_description)}"
         if redirect_uri is not None
         else None
     )
@@ -99,6 +101,7 @@ def handle_exception_redirect(
             error_description,
             redirect_uri_with_error,
             redirect_html_delay,
+            status_code,
         )
     return RedirectResponse(redirect_uri_with_error)
 

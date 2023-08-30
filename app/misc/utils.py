@@ -70,13 +70,6 @@ def get_fingerprint(signing_cert: bytes) -> bytes:
     return base64.urlsafe_b64encode(sha1_fingerprint.encode())
 
 
-def extract_error_uri_from_state(clients: dict, state: str) -> Union[str, None]:
-    client_id = json.loads(base64.b64decode(state))["client_id"]
-    if client_id in clients:
-        return clients[client_id]["error_page"]
-    return None
-
-
 def load_template(file_path, filename):
     template_path = os.path.join(file_path, filename)
     with open(template_path, "r", encoding="utf-8") as template_file:

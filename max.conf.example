@@ -45,7 +45,7 @@ session_jwt_sign_crt_path = secrets/nl-rdo-max-private.crt
 
 # optional section when login method doesn't contain irma
 [irma]
-irma_login_redirect_url = http://localhost:8001/login/irma
+irma_login_redirect_url = http://localhost:8001/login/yivi
 irma_server_url = https://irma.uzipoc.nl
 irma_internal_server_url = http://localhost:8088
 irma_prefix = irma-demo.uzipoc-cibg.uzi-2
