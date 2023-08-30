@@ -253,7 +253,9 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             raise UnauthorizedError(error_description="Authentication failed")
         if external_session_status.json() != "DONE":
             # Login aborted by user
-            raise UnauthorizedError(error=LOGIN_REQUIRED, error_description="Authentication cancelled")
+            raise UnauthorizedError(
+                error=LOGIN_REQUIRED, error_description="Authentication cancelled"
+            )
 
         userinfo = self._userinfo_service.request_userinfo_for_exchange_token(
             authentication_context

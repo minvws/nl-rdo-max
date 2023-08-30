@@ -101,7 +101,7 @@ def handle_exception_redirect(
             error_description,
             redirect_uri_with_error,
             redirect_html_delay,
-            status_code
+            status_code,
         )
     return RedirectResponse(redirect_uri_with_error)
 

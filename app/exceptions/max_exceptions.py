@@ -61,7 +61,13 @@ class ServerErrorException(JsonBaseException):
 
 
 class UnauthorizedError(JsonBaseException):
-    def __init__(self, *, error=ACCESS_DENIED, error_description: str, log_message: Union[str, None] = None):
+    def __init__(
+        self,
+        *,
+        error=ACCESS_DENIED,
+        error_description: str,
+        log_message: Union[str, None] = None,
+    ):
         super().__init__(
             error=error,
             error_description=error_description,
