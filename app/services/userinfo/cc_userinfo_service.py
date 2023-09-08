@@ -37,6 +37,8 @@ class CCUserinfoService(UserinfoService):
         client_pubkey = file_content_raise_if_none(client["client_public_key_path"])
 
         bsn = artifact_response.get_bsn(authorization_by_proxy=False)
+        loa_authn = artifact_response.loa_authn
+
         jwe_service = self._jwe_service_provider.get_jwe_service(client["pubkey_type"])
         if self._app_mode == "legacy":
             return jwe_service.box_encrypt(  # type:ignore
@@ -46,6 +48,7 @@ class CCUserinfoService(UserinfoService):
         return self._jwe_service_provider.get_jwe_service(client["pubkey_type"]).to_jwe(
             {
                 "bsn": bsn,
+                "loa_authn": loa_authn,
                 "iss": self._req_issuer,
                 "aud": client_id,
                 "nbf": int(time.time()) - self._jwt_nbf_lag,
