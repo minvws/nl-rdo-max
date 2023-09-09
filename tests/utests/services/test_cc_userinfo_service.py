@@ -31,6 +31,7 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
     }
 
     artifact_response_mock.get_bsn.return_value = "bsn"
+    artifact_response_mock.loa_authn = "http://eidas.europa.eu/LoA/substantial"
     jwe_service_provider_mock.get_jwe_service.return_value = jwe_service_mock
     jwe_service_mock.to_jwe.return_value = "encrypted_jwt"
 
@@ -55,6 +56,7 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
     jwe_service_mock.to_jwe.assert_called_once_with(
         {
             "bsn": "bsn",
+            "loa_authn": "http://eidas.europa.eu/LoA/substantial",
             "iss": "req_issuer",
             "aud": "client_id",
             "nbf": mocker.ANY,
