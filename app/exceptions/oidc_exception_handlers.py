@@ -83,8 +83,12 @@ def handle_exception_redirect(
         if log.isEnabledFor(logging.DEBUG):
             log.exception(input_handling_exception)
 
+    redirect_uri_append_symbol = "?"
+    if "?" in redirect_uri:
+        redirect_uri_append_symbol = "&"
+
     redirect_uri_with_error = (
-        f"{redirect_uri}?error={error}&error_description={urllib.parse.quote(error_description)}"
+        f"{redirect_uri}{redirect_uri_append_symbol}error={error}&error_description={urllib.parse.quote(error_description)}"
         if redirect_uri is not None
         else None
     )
