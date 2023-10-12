@@ -237,7 +237,7 @@ typing-extensions==4.5.0
     #   pylint
     #   rich
     #   starlette
-urllib3==2.0.4
+urllib3==2.0.6
     # via requests
 uvicorn==0.22.0
     # via app (setup.py)
