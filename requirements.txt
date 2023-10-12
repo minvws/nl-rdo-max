@@ -4,7 +4,7 @@
 #
 #    pip-compile --extra=dev
 #
-anyio==3.6.2
+anyio==4.0.0
     # via
     #   httpcore
     #   starlette
