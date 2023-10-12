@@ -1,9 +1,10 @@
 <html>
-   <body onload="document.forms['SAMLForm'].submit()">
-    <form method="POST" id="SAMLForm" action="{{ sso_url }}">
-      <input type="hidden" name="SAMLRequest" value="{{ saml_request }}" />
-      <input type="hidden" name="RelayState" value="{{ relay_state }}" />
-    </form>
-    Redirecting to TVS...
-  </body>
+    <body>
+        <form method="POST" id="submitForm" action="{{ sso_url }}">
+          <input type="hidden" name="SAMLRequest" value="{{ saml_request }}" />
+          <input type="hidden" name="RelayState" value="{{ relay_state }}" />
+          <input type="submit" value="Redirecting to TVS...">
+        </form>
+    <script type="application/javascript" src="static/js/submit.js"></script>
+    </body>
 </html>
