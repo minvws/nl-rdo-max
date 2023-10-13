@@ -170,3 +170,19 @@ Note that all commits should be signed using a gpg key.
 
 Security issues can be reported through a github issue, at security@rdobeheer.nl, or through the
 https://www.ncsc.nl/contact/kwetsbaarheid-melden.
+
+
+## Logging and monitoring
+The Logging/monitoring of data processing are, on the one hand, important measures to detect,
+among other things, unauthorized access to personal data. On the other hand, Logging/monitoring
+constitutes new processing of personal data, with associated privacy risks. Therefore, 
+the question of how logging/monitoring should be set up requires consideration.
+
+With regard to this application, the choice has been made not to log data processing because:
+
+* Processing of personal data within this application takes place encrypted.
+* Users do not have access to personal data processed within this application,
+and they cannot undo the encryption.
+* Logging of data processing within this application is not necessary in light of 
+the obligation of healthcare providers to be able to comply with their obligation
+to record actions related to the electronic patient record.
