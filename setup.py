@@ -12,7 +12,7 @@ requirements = [
     "xmlsec",
     "lxml",
     "pyOpenSSL",
-    "python3-saml==1.15.0",
+    "python3-saml==1.16.0",
     "python-multipart",
     "pynacl"
 ]
