@@ -4,7 +4,7 @@ set -e
 
 copy_example_config () {
   if [[ ! -f $1 ]]; then
-    echo "copying $1.exapmle to $1"
+    echo "copying $1.example to $1"
     cp "$1.example" $1
   fi
 }

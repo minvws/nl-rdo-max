@@ -216,7 +216,7 @@ class CIBGUserinfoService(UserinfoService):
         bsn = artifact_response.get_bsn(False)
         ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
 
-        if "disclosure_clients" in client:
+        if client["external_id"] == "*":
             uzi_data = mocked_bsn_to_uzi_data(bsn)
         else:
             uzi_data = mocked_bsn_to_uzi_data(

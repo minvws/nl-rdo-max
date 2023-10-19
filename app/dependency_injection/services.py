@@ -78,8 +78,8 @@ class Services(containers.DeclarativeContainer):
         cibg_userinfo_issuer=config.cibg.userinfo_issuer,
         cibg_userinfo_audience=config.cibg.userinfo_audience,
         req_issuer=config.oidc.issuer,
-        jwt_expiration_duration=config.cibg.jwt_expiration_duration.as_int(),
-        jwt_nbf_lag=config.cibg.jwt_nbf_lag.as_int(),
+        jwt_expiration_duration=config.oidc.jwt_expiration_duration.as_int(),
+        jwt_nbf_lag=config.oidc.jwt_nbf_lag.as_int(),
         external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
     )
 
@@ -88,6 +88,9 @@ class Services(containers.DeclarativeContainer):
         jwe_service_provider=encryption_services.jwe_service_provider,
         clients=pyop_services.clients,
         app_mode=config.app.app_mode,
+        req_issuer=config.oidc.issuer,
+        jwt_expiration_duration=config.oidc.jwt_expiration_duration.as_int(),
+        jwt_nbf_lag=config.oidc.jwt_nbf_lag.as_int(),
     )
 
     userinfo_service = providers.Selector(
@@ -115,7 +118,6 @@ class Services(containers.DeclarativeContainer):
         authentication_cache=storage.authentication_cache,
         rate_limiter=rate_limiter,
         clients=pyop_services.clients,
-        mock_digid=config.app.mock_digid.as_(as_bool),
         saml_response_factory=saml_response_factory,
         response_factory=response_factory,
         userinfo_service=userinfo_service,

@@ -47,10 +47,13 @@ class UziAuthenticationHandler(CommonFields, AuthenticationHandler):
         jwt = JWT(header=header, claims=claims)
         jwt.make_signed_token(self._private_sign_jwk_key)
         disclose = [{"disclose_type": "uziId"}, {"disclose_type": "roles"}]
-        if "disclosure_clients" in client:
+
+        if client["external_id"] == "*":
+            # Request disclosure of entityName and ura
             disclose.append({"disclose_type": "entityName"})
             disclose.append({"disclose_type": "ura"})
         else:
+            # Request disclosure of entityName and ura with specific values
             disclose.append(
                 {"disclose_type": "entityName", "disclose_value": client["name"]}
             )

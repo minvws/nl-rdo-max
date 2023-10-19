@@ -2,6 +2,7 @@ import base64
 import json
 from unittest.mock import MagicMock
 
+from app.models.acs_context import AcsContext
 from app.models.authentication_context import AuthenticationContext
 from app.models.authentication_request_context import UserinfoContext
 from app.services.encryption.sym_encryption_service import SymEncryptionService
@@ -72,7 +73,9 @@ def test_get_authentication_request_state():
     actual = acache.get_authentication_request_state(randstate)
 
     assert actual == expected
-    cache.get_and_delete_complex_object.assert_called_with("auth_req:" + randstate)
+    cache.get_and_delete_complex_object.assert_called_with(
+        "auth_req:" + randstate, AuthenticationContext
+    )
 
 
 def test_cache_acs_context():
@@ -101,7 +104,9 @@ def test_get_acs_context():
     actual = acache.get_acs_context(code)
 
     assert actual == expected
-    cache.get_and_delete_complex_object.assert_called_with("pyop_auth_req:" + code)
+    cache.get_and_delete_complex_object.assert_called_with(
+        "pyop_auth_req:" + code, AcsContext
+    )
 
 
 def test_cache_userinfo_context():

@@ -1,4 +1,5 @@
 import uuid
+from typing import Dict
 from unittest.mock import MagicMock, patch
 
 from app.storage.redis.redis_cache import RedisCache
@@ -158,36 +159,42 @@ def test_set():
     assert cache.set(A_KEY, A_VALUE) is False
 
 
+class SerializationTestObject:
+    def __init__(self, key: str):
+        self.key = key
+
+    def to_dict(self):
+        return {"key": self.key}
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, str]):
+        return cls(dictionary["key"])
+
+
 def test_set_complex_object(mocker):
     cache = create_redis_cache()
     # noinspection PyShadowingNames
     # pylint:disable=redefined-outer-name
-    value = {"bla": "complex"}
-    serialized = b"pickle_output"
-    pickle_patch = mocker.patch("pickle.dumps")
-    pickle_patch.return_value = serialized
+    value = SerializationTestObject("value")
+    serialized = b'{"key": "value"}'
     with patch.object(RedisCache, "set", side_effect=[True, False]) as set_method:
         actual = cache.set_complex_object(A_KEY, value)
         assert actual is True
         set_method.assert_called_with(A_KEY, serialized)
-        pickle_patch.assert_called_with(value)
         assert cache.set_complex_object(A_KEY, value) is False
 
 
 def test_get_complex_object(mocker):
     cache = create_redis_cache()
-    deserialized = {"bla": "complex"}
+    deserialized = SerializationTestObject("value")
     # noinspection PyShadowingNames
     # pylint:disable=redefined-outer-name
-    value = b"serialized"
-    pickle_patch = mocker.patch("pickle.loads")
-    pickle_patch.return_value = deserialized
+    value = b'{"key": "value"}'
     with patch.object(RedisCache, "get", side_effect=[value, None]) as get_method:
-        actual = cache.get_complex_object(A_KEY)
-        assert actual == deserialized
+        actual = cache.get_complex_object(A_KEY, SerializationTestObject)
+        assert actual.key == deserialized.key
         get_method.assert_called_with(A_KEY)
-        pickle_patch.assert_called_with(value)
-        assert cache.get_complex_object(A_KEY) is None
+        assert cache.get_complex_object(A_KEY, SerializationTestObject) is None
 
 
 def test_gen_token():

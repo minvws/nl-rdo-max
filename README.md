@@ -1,26 +1,73 @@
 # System summary
-Multiple Authentication eXchange (MAX) is build as a bridge between the CoronaCheck app and TVS (Toegang Verlenings
-Service) or DigiD. It allows an end-user to login into digid and provide the app with a token, which can be used to
-retrieve the BSN of that same end-user. This BSN is used in the
-[signing service](https://github.com/minvws/nl-covid19-coronacheck-backend-bizrules-signing-service) to retrieve
-the related vaccination and test data from the existing provider.
+Multiple Authentication eXchange (MAX, formerly inge6) is build as a bridge between a OIDC client and a TVS (Toegang Verlenings
+Service). In this case the TVS could be DigiD or any other authentication method provider that is exposed through the 
+[nl-uzi-login-controller](https://github.com/minvws/nl-uzi-login-controller). To clarify, this means that any authentication
+methods other than DigiD, will pass from MAX through the login controller (DigiD Mock included).
+Functionally this means that MAX allows an end-user to login into DigiD and provides the app with a token, which can be 
+used to retrieve the BSN of that same end-user. This BSN can be used in different ways depending on your use case. For 
+instance, it was used for the CoronaCheckApp 
+[signing service](https://github.com/minvws/nl-covid19-coronacheck-backend-bizrules-signing-service) to retrieve the 
+related vaccination and test data from the existing provider. MAX is also capable of exchanging an encrypted BSN for 
+properties from an external register. This functionality is used in the
+[UZI project](https://github.com/minvws/nl-rdo-uzi-coordination/), where it exchanges the BSN for data from the UZI 
+register.
+
+**Flow:**  
+In the diagram below you can see the flow of the first use case (token based). An overview of the used endpoints can 
+also be found in the `/docs/endpoints.md`.  
 
  ![system overview](docs/images/retrieve-ac-flow.png "MAX retrieve access token")
- *Flow of retrieving an access token. Throughout the first part of the flow (after /authorize), the call is
+ *Throughout the first part of the flow (after /authorize), the call is
  directly linked to some randstate (generated directly after the first call). The latter part of the flow that same
  user is linked using the generated code coupled to that randstate. Using these random state parameters we track the
- user throughout the complete flow, and seperate that user from other users interacting with the system*
- *IdPx is a identity provider
+ user throughout the complete flow, and separate that user from other users interacting with the system*
+ *IdPx is an identity provider
  *RD-BC is the (hidden) IdPx Backend providing the artifacts
 
+**OIDC:**  
+If you are not familiar with OIDC (OpenID Connect), you can find more about it in broad terms on the 
+[OIDC website](https://openid.net/developers/how-connect-works/). More specifically we are using the PKCE flow (RFC 7636)
+, which is visualized in the diagram below. 
+The diagram is taken from [this medium blog post](https://medium.com/swlh/pkce-flow-of-openid-connect-9b10ddbabd66)
+where you can read a more thorough explanation. 
+```text
+                                          +-------------------+
+                                          | Authz Server (MAX)|               
++--------+                                | +---------------+ |
+|        |--(A)- Authorization Request ---->|               | |
+|        |       + t(code_verifier), t_m  | | Authorization | |
+|        |                                | |    Endpoint   | |
+|        |<-(B)---- Authorization Code -----|               | |
+|  OIDC  |                                | +---------------+ |            
+| Client |                                |                   |
+|        |                                | +---------------+ |
+|        |--(C)-- Access Token Request ---->|               | |
+|        |          + code_verifier       | |     Token     | |
+|        |                                | |    Endpoint   | |
+|        |<-(D)------ Access Token ---------|               | |
++--------+                                | +---------------+ |
+                                          +-------------------+
+                                               |         ^
+                                               |         |
+                                               ∀         |
+                                          +-------------------+
+                                          |        TVS        |
+                                          |   e.g. DigiD or   |
+                                          | login-controller  |
+                                          +-------------------+ 
+```
+
+
 # Setup
+If you are looking to set up MAX locally as part of the UZI project, please refer to the instructions in the 
+[nl-rdo-uzi-coordination](https://github.com/minvws/nl-rdo-uzi-coordination) repository. For more in depth set up
+documentation specifically for MAX you can check the `/docs/setup.md`. Otherwise, you can read the documentation below 
+for the basics:  
 
 As MAX is a OIDC <-> SAML bridge, one has to have files for both. Each file is described below. Further, one needs
 to create an `max.conf` to define all settings. An example is found in max.conf.example with the corresponding
 explanations. To make use of all default settings, a single run of `make setup` should be sufficient. Allowing you
 to run the service on all default settings.
-
-For a more detailed view on the setup, please have a look in the `/docs` folder.
 
 ## Setup Identity Provider (IDP) Metadata
 To use DigiD or TVS you first need to download the metadata. During setup this is done in the make setup or make
@@ -31,11 +78,11 @@ curl "https://was-preprod1.digid.nl/saml/idp/metadata" --output saml/digid/metad
 curl "https://pp2.toegang.overheid.nl/kvs/rd/metadata" --output saml/tvs/metadata/idp_metadata.xml
 ```
 
-
 ## JWT keys
-MAX needs two keys to encrypt and sign the JWT containing the BSN details. This is a Ed25519 keypair on MAX' part,
-and a X25519 keypair for the requesting party (inge4). To generate a Ed25519 keypair one can perform the following
-code:
+MAX needs two keys to encrypt and sign the JWT containing the BSN details. This is an Ed25519 keypair on MAX's part,
+and a X25519 keypair for the requesting party. The requesting party would be [inge4](https://github.com/minvws/nl-covid19-coronacheck-credential-issuer)
+in the case of the CoronaCheck app and the [nl-uzi-login-controller](https://github.com/minvws/nl-uzi-login-controller)
+for the UZI project. To generate an Ed25519 keypair one can perform the following code:
 ```python
 import base64
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
@@ -71,73 +118,45 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X
 ```
 
 ## Ubuntu dependencies
+13/07/2023:
+Most likely still needed but can not confirm since I am running MacOS. Please update accordingly.  
 Some Ubuntu dependencies that should be installed:
 `libxmlsec1-dev pkg-config`
 
 # Using the ratelimiter
-To activate an overflow IDP, secundairy IDP when primary is too busy, the following settings should be configured in
-the inge6.conf settings.
+To activate an overflow IDP, secondary IDP when primary is too busy, the following settings should be configured in
+the max.conf settings.
 
 Further redis expects the keys configured in the config to have a valid value. The keys expected to be set are defined
 in the config under the following names:
 - `primary_idp_key`
-- `user_limit_key` (if there is an user limit to be handled by the ratelimiter)
+- `user_limit_key` (if there is a user limit to be handled by the ratelimiter)
 
 Optionally, to enable ratelimit overflow, extra keys are expected to be set. The names of these keys are defined in the
 config under the following config names:
 - `overflow_idp_key`
-- `user_limit_key_overflow_idp` (if there is an user limit on the overflow idp to be handled by the ratelimiter)
+- `user_limit_key_overflow_idp` (if there is a user limit on the overflow idp to be handled by the ratelimiter)
 
 
 # Using the mock environment
-For development purposes we have created a 'mock' to retrieve a JWT Token for arbitrary BSNs, only available when
-`mock_digid` is True in the settings file and the environment config is not `production`. This setting enables two things:
-1. The program flow is altered. By default we do not connect to the actual Identity Provider (IdP), instead an
-'end-user' is allowed to input an arbitrary BSN and retrieve a corresponding token. However, it still allows for
-connecting to the actual IdP if that is requested.
-2. An additional endpoint is available `/consume_bsn`. This endpoint allows external tools and test services to let
-MAX consume a bsn and return a 'code'. This code can then be used in the `accesstoken_endpoint`, the accesstoken
-endpoint defined in the settings file, to retrieve a JWT token that corresponds to the provided bsn.
-
-A code example on the second case:
-```python
-import json
-import urllib.parse
-import requests
-
-from fastapi.responses import JSONResponse
-
-inge6_mock_uri = "development.inge6.uri/"
-redirect_uri = "some.allowlisted.uri"
-
-authorize_params = {
-    'client_id': "test_client",
-    'redirect_uri': redirect_uri,
-    'response_type': "code",
-    'nonce': "n-0S6_WzA2Mj",
-    'state': "af0ifjsldkj",
-    'scope': "openid",
-    'code_challenge': "_1f8tFjAtu6D1Df-GOyDPoMjCJdEvaSWsnqR6SLpzsw", # code_verifier : SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c
-    'code_challenge_method': "S256",
-}
-
-query_params: str = urllib.parse.urlencode(authorize_params)
-bsn: str = '999991772'
-resp: JSONResponse = requests.get(f'{inge6_mock_uri}/consume_bsn/{bsn}?{query_params}')
-if (resp.status_code != 200):
-    print('failed consume_bsn request: ', resp.status_code, resp.reason)
-
-code = json.loads(resp.content.decode())['code'][0]
-code_verifier = 'SoOEDN-mZKNhw7Mc52VXxyiqTvFB3mod36MwPru253c'
-acc_req_body = f'client_id=test_client&redirect_uri={redirect_uri}&code={code}&code_verifier={code_verifier}&grant_type=authorization_code'
-
-accesstoken_resp: JSONResponse = requests.post(f'{inge6_mock_uri}/accesstoken', acc_req_body)
-if (resp.status_code != 200):
-    print('failed accesstoken request: ', resp.status_code, resp.body)
-
-accesstoken = json.loads(accesstoken_resp.content.decode())
+For development purposes we have created a 'mock' to retrieve a JWT Token for arbitrary BSNs. This is only available 
+when `digid_mock` has been added to the `login_methods` in the `max.conf` and the set `environment` does not
+start with 'prod'. Note that in the case of `environment = production` the option will still show up, but under the hood
+it will disable the mock (taken from the `handle_assertion_consumer_service` method in the `SAMLProvider` class):   
+```Python
+if (
+    not self._environment.startswith("prod")
+    and authentication_context.authentication_method == "digid_mock"
+):
+    artifact_response: ArtifactResponse = ArtifactResponseMock(request.SAMLart)
+else:
+    artifact_response = identity_provider.resolve_artifact(request.SAMLart)
 ```
-
+Configuring this adds a DigiD Mock option to the "login method chooser page". When clicking this option a 
+simple page will show with an input element in which you can enter your desired BSN value. You can then simply press "login".
+It will then try to retrieve mock data based on this BSN from the `mock_register.json` in the
+[nl-uzipoc-register-api](https://github.com/minvws/nl-uzipoc-register-api/) repository. When this is successful your login 
+will be complete and allow for the same functionality as any of the other methods.
 
 It is the responsibility of the client to generate a unique code_verifier and code_challenge pair. To make sure that
 the code_verifier is cryptographically secure one should use the following definition (as defined in:
@@ -170,3 +189,19 @@ Note that all commits should be signed using a gpg key.
 
 Security issues can be reported through a github issue, at security@rdobeheer.nl, or through the
 https://www.ncsc.nl/contact/kwetsbaarheid-melden.
+
+
+## Logging and monitoring
+The Logging/monitoring of data processing are, on the one hand, important measures to detect,
+among other things, unauthorized access to personal data. On the other hand, Logging/monitoring
+constitutes new processing of personal data, with associated privacy risks. Therefore, 
+the question of how logging/monitoring should be set up requires consideration.
+
+With regard to this application, the choice has been made not to log data processing because:
+
+* Processing of personal data within this application takes place encrypted.
+* Users do not have access to personal data processed within this application,
+and they cannot undo the encryption.
+* Logging of data processing within this application is not necessary in light of 
+the obligation of healthcare providers to be able to comply with their obligation
+to record actions related to the electronic patient record.

@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Text, Optional, Union
+from typing import Any, Text, Optional, Union, Type
 
 
 class Cache(abc.ABC):
@@ -20,11 +20,11 @@ class Cache(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_complex_object(self, key: str) -> Any:
+    def get_complex_object(self, key: str, clazz: Type) -> Any:
         pass
 
     @abc.abstractmethod
-    def get_and_delete_complex_object(self, key: str) -> Any:
+    def get_and_delete_complex_object(self, key: str, clazz: Type) -> Any:
         pass
 
     @abc.abstractmethod

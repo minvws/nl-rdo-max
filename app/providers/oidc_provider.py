@@ -20,6 +20,7 @@ from app.exceptions.max_exceptions import (
     InvalidClientException,
     InvalidRedirectUriException,
 )
+from app.exceptions.oidc_exceptions import LOGIN_REQUIRED
 from app.misc.rate_limiter import RateLimiter
 from app.models.acs_context import AcsContext
 from app.models.authentication_context import AuthenticationContext
@@ -45,7 +46,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         authentication_cache: AuthenticationCache,
         rate_limiter: RateLimiter,
         clients: dict,
-        mock_digid: bool,
         saml_response_factory: SamlResponseFactory,
         response_factory: ResponseFactory,
         userinfo_service: UserinfoService,
@@ -57,15 +57,10 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         session_url: str,
         external_http_requests_timeout_seconds: int,
     ):
-        if mock_digid and environment.startswith("prod"):
-            raise ValueError(
-                f"Unable to enable mock_digid for environment {environment}"
-            )
         self._pyop_provider = pyop_provider
         self._authentication_cache = authentication_cache
         self._rate_limiter = rate_limiter
         self._clients = clients
-        self._mock_digid = mock_digid
         self._saml_response_factory = saml_response_factory
         self._response_factory = response_factory
         self._userinfo_service = userinfo_service
@@ -251,7 +246,10 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         if external_session_status.status_code != 200:
             raise UnauthorizedError(error_description="Authentication failed")
         if external_session_status.json() != "DONE":
-            raise UnauthorizedError(error_description="Authentication cancelled")
+            # Login aborted by user
+            raise UnauthorizedError(
+                error=LOGIN_REQUIRED, error_description="Authentication cancelled"
+            )
 
         userinfo = self._userinfo_service.request_userinfo_for_exchange_token(
             authentication_context

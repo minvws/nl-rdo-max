@@ -6,8 +6,10 @@ app_mode = none
 # possible services are: cc, cibg
 userinfo_service = cibg
 # External url for max without trailing slash
-external_base_url = https://host.docker.internal:8006
-session_url = http://host.docker.internal:12003/session
+external_base_url = https://localhost:8006
+session_url = http://localhost:8001/session
+# Used for DigiD Mock
+mocked_uzi_data_file_path = tests/resources/uzi_data.json
 
 loglevel = debug
 mocked_uzi_data_file_path = tests/resources/uzi_data.json
@@ -45,21 +47,18 @@ session_jwt_sign_crt_path = secrets/nl-rdo-max-private.crt
 
 # optional section when login method doesn't contain irma
 [irma]
-irma_login_redirect_url = http://host.docker.internal:8001/login/irma
+irma_login_redirect_url = http://localhost:8001/login/yivi
 irma_server_url = https://irma.uzipoc.nl
-irma_internal_server_url = http://host.docker.internal:8088
+irma_internal_server_url = http://localhost:8088
 irma_prefix = irma-demo.uzipoc-cibg.uzi-2
 
 [uzi]
-uzi_login_redirect_url = https://host.docker.internal:8443/login/uzi
-
-[oidc_client]
-oidc_login_redirect_url = http://localhost:12003/login/oidc/start
+uzi_login_redirect_url = https://localhost:8443/login/uzi
 
 # optional section when userinfo service isn't cibg
 [cibg]
-cibg_exchange_token_endpoint=http://host.docker.internal:12004/get-uzi-by-exchange
-cibg_saml_endpoint=http://host.docker.internal:12004/get-uzi
+cibg_exchange_token_endpoint=http://localhost:8002/get-uzi-by-exchange
+cibg_saml_endpoint=http://localhost:8002/get-uzi
 ssl_client_key=
 ssl_client_crt=
 ssl_client_verify=False
@@ -91,7 +90,7 @@ key_file = server.key
 certificates_directory = secrets/jwks-certs
 rsa_private_key = secrets/oidc/selfsigned.key
 rsa_private_key_crt = secrets/oidc/selfsigned.crt
-issuer = https://host.docker.internal:8006
+issuer = https://localhost:8006
 authorize_endpoint = /authorize
 jwks_endpoint = /jwks
 accesstoken_endpoint = /token
@@ -106,11 +105,11 @@ jwt_nbf_lag=10
 identity_providers_base_path = saml
 xml_templates_path = saml/templates/xml
 html_templates_path = saml/templates/html
-base_issuer = host.docker.internal:8007
+base_issuer = localhost:8007
 
 [redis]
 # Connecting to the redis server through parameters:
-host = host.docker.internal
+host = localhost
 port = 6379
 # Enable the RedisDebugger thread
 enable_debugger = False

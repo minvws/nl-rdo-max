@@ -65,14 +65,18 @@ class AuthenticationCache:
         self, rand_state: str
     ) -> Union[AuthenticationContext, None]:
         state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{rand_state}"
-        return self._cache.get_and_delete_complex_object(state_key)
+        return self._cache.get_and_delete_complex_object(
+            state_key, AuthenticationContext
+        )
 
     def cache_acs_context(self, code: str, acs_context: AcsContext) -> None:
         acs_context_key = f"{ACS_CONTEXT_PREFIX}:{code}"
         self._cache.set_complex_object(acs_context_key, acs_context)
 
     def get_acs_context(self, code: str) -> Union[AcsContext, None]:
-        return self._cache.get_and_delete_complex_object(f"{ACS_CONTEXT_PREFIX}:{code}")
+        return self._cache.get_and_delete_complex_object(
+            f"{ACS_CONTEXT_PREFIX}:{code}", AcsContext
+        )
 
     def cache_userinfo_context(
         self, userinfo_key: str, access_token: str, acs_context: AcsContext
