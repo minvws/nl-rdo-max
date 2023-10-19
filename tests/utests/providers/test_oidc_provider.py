@@ -17,7 +17,6 @@ def create_oidc_provider(
     authentication_cache=MagicMock(),
     rate_limiter=MagicMock(),
     clients=None,
-    mock_digid=False,
     saml_response_factory=MagicMock(),
     response_factory=MagicMock(),
     userinfo_service=MagicMock(),
@@ -34,7 +33,6 @@ def create_oidc_provider(
         authentication_cache,
         rate_limiter,
         clients if clients is not None else {},
-        mock_digid,
         saml_response_factory,
         response_factory,
         userinfo_service,
@@ -236,7 +234,6 @@ def test_authorize():
         pyop_provider=pyop_provider,
         rate_limiter=rate_limiter,
         authentication_cache=authentication_cache,
-        mock_digid=True,
         authentication_handler_factory=authentication_handler_factory,
     )
     login_handler_response = oidc_provider._authorize(
@@ -305,7 +302,6 @@ def test_authorize_without_client():
         rate_limiter=rate_limiter,
         authentication_cache=authentication_cache,
         saml_response_factory=saml_response_factory,
-        mock_digid=True,
     )
     with pytest.raises(ServerErrorException):
         oidc_provider._authorize(request, authorize_request, "login_option")

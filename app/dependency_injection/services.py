@@ -118,7 +118,6 @@ class Services(containers.DeclarativeContainer):
         authentication_cache=storage.authentication_cache,
         rate_limiter=rate_limiter,
         clients=pyop_services.clients,
-        mock_digid=config.app.mock_digid.as_(as_bool),
         saml_response_factory=saml_response_factory,
         response_factory=response_factory,
         userinfo_service=userinfo_service,
