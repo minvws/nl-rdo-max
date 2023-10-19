@@ -6,9 +6,8 @@ Required settings:
     - settings.redis.default_cache_namespace, prefix all redis cache keys.
     - settings.redis.object_ttl, time to live for all objects stored in cache
 """
-
-import pickle
-from typing import Any, Text, Optional, Union
+import json
+from typing import Any, Text, Optional, Union, Type
 
 from redis import StrictRedis
 
@@ -21,12 +20,14 @@ def _serialize(value: Any) -> bytes:
     Function that specifies how the data should be serialized into the redis-server.
 
     :param value: Any value that should be storen in a redis database
-    :returns: Serialized value, a pickle dump.
+    :returns: Serialized value, a json dump.
     """
-    return pickle.dumps(value)
+    if hasattr(value, "to_dict") and callable(getattr(value, "to_dict")):
+        return json.dumps(value.to_dict()).encode("utf-8")
+    raise NotImplementedError("to_dict not implemented")
 
 
-def _deserialize(serialized_value: Optional[Any]) -> Any:
+def _deserialize(serialized_value: Optional[Any], clazz: Type) -> Any:
     """
     Specifies the opposite of the serialize function, expects the output of a redis GET command. And
     returns the deserialized version of that output.
@@ -36,7 +37,9 @@ def _deserialize(serialized_value: Optional[Any]) -> Any:
     """
     if not serialized_value:
         return None
-    return pickle.loads(serialized_value)
+    if hasattr(clazz, "from_dict") and callable(getattr(clazz, "from_dict")):
+        return clazz.from_dict(json.loads(serialized_value.decode("utf-8")))
+    raise NotImplementedError("from_dict not implemented")
 
 
 class RedisCache(Cache):
@@ -64,7 +67,7 @@ class RedisCache(Cache):
             self.redis_debugger.debug_get(key_with_namespace, ret_value)
         return ret_value
 
-    def get_and_delete(self, key: str) -> Any:  # todo: Test this method
+    def get_and_delete(self, key: str) -> Any:
         key_with_namespace = self._prepend_with_namespace(key)
         ret_value = self.redis_client.getdel(key_with_namespace)
         if self.enable_debugger:
@@ -101,11 +104,11 @@ class RedisCache(Cache):
     def set_complex_object(self, key: str, value: Any) -> Union[bool, None]:
         return self.set(key, _serialize(value))
 
-    def get_complex_object(self, key: str) -> Any:
-        return _deserialize(self.get(key))
+    def get_complex_object(self, key: str, clazz: Type) -> Any:
+        return _deserialize(self.get(key), clazz)
 
-    def get_and_delete_complex_object(self, key: str) -> Any:
-        return _deserialize(self.get(key))
+    def get_and_delete_complex_object(self, key: str, clazz: Type) -> Any:
+        return _deserialize(self.get_and_delete(key), clazz)
 
     def gen_token(self) -> Text:
         """
