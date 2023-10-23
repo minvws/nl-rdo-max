@@ -84,7 +84,7 @@ def handle_exception_redirect(
             log.exception(input_handling_exception)
 
     redirect_uri_append_symbol = "?"
-    if "?" in redirect_uri:
+    if redirect_uri is not None and "?" in redirect_uri:
         redirect_uri_append_symbol = "&"
 
     redirect_uri_with_error = (

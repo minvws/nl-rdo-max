@@ -2,7 +2,7 @@ import base64
 import json
 import os
 from os import path
-from typing import Union, List, Any
+from typing import Union, List, Any, Optional
 
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 from fastapi.templating import Jinja2Templates
@@ -85,7 +85,7 @@ def kid_from_certificate(certificate: str) -> str:
 
 def mocked_bsn_to_uzi_data(
     bsn: str,
-    relation_id_filter: str = None,
+    relation_id_filter: Optional[str] = None,
     filepath: str = config.get("app", "mocked_uzi_data_file_path"),
 ) -> UziAttributes:
     uzi_data = json_from_file(filepath)

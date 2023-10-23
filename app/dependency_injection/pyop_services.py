@@ -9,18 +9,18 @@ from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
 from pyop.userinfo import Userinfo
 
 from app.misc.utils import (
-    file_content,
     as_list,
     clients_from_json,
     kid_from_certificate,
+    file_content_raise_if_none,
 )
 from app.providers.pyop_provider import MaxPyopProvider
 from app.providers.saml_provider import SAMLProvider
 
 
 def pyop_rsa_signing_key_callable(signing_key_path: str, signing_key_crt_path: str):
-    signing_key = file_content(signing_key_path)
-    signing_key_crt = file_content(signing_key_crt_path)
+    signing_key = file_content_raise_if_none(signing_key_path)
+    signing_key_crt = file_content_raise_if_none(signing_key_crt_path)
     kid = kid_from_certificate(signing_key_crt)
     key = RSAKey(key=import_rsa_key(signing_key), alg="RS256")
     key.kid = kid

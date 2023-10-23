@@ -8,7 +8,9 @@ from app.services.loginhandler.authentication_handler import AuthenticationHandl
 from app.services.loginhandler.mock_saml_authentication_handler import (
     MockSamlAuthenticationHandler,
 )
-from app.services.loginhandler.oidc_authentication_handler import OidcAuthenticationHandler
+from app.services.loginhandler.oidc_authentication_handler import (
+    OidcAuthenticationHandler,
+)
 from app.services.loginhandler.saml_authentication_handler import (
     SamlAuthenticationHandler,
 )
@@ -137,7 +139,9 @@ class AuthenticationHandlerFactory:
                 jwe_service_provider=self._jwe_service_provider,
                 response_factory=self._response_factory,
                 session_url=self._config["app"]["session_url"],
-                oidc_login_redirect_url=self._config["oidc_client"]["oidc_login_redirect_url"],
+                oidc_login_redirect_url=self._config["oidc_client"][
+                    "oidc_login_redirect_url"
+                ],
                 clients=self._clients,
                 session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
                 session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
