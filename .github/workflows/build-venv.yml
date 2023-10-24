@@ -38,5 +38,5 @@ jobs:
       - name: Upload venv tar
         uses: actions/upload-artifact@v1
         with:
-          name: ${{ github.event.repository.name }}_venv_${{ env.RELEASE_VERSION }}
-          path: ${{ github.event.repository.name }}_venv_${{ env.RELEASE_VERSION }}.tar.gz
+          name: max_venv_${{ env.RELEASE_VERSION }}
+          path: max_venv_${{ env.RELEASE_VERSION }}.tar.gz
