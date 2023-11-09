@@ -16,7 +16,7 @@ jobs:
       - name: Diff configfiles
         run: git diff main~1:max.conf.example max.conf.example > max.conf.diff
       - name: Diff configfiles
-        run: git diff main~1:clients.example.json clients.example.json > clients.json.diff
+        run: git diff main~1:clients.json.example clients.json.example > clients.json.diff
       - name: Send mail
         uses: dawidd6/action-send-mail@v3
         with:
