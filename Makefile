@@ -54,4 +54,4 @@ type-check:
 coverage:
 	. .venv/bin/activate && ${env} coverage run -m pytest tests && coverage report && coverage html
 
-check-all: check type-check test audit
+check-all: fix check type-check test audit

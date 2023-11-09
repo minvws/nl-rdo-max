@@ -8,6 +8,9 @@ from app.services.loginhandler.authentication_handler import AuthenticationHandl
 from app.services.loginhandler.mock_saml_authentication_handler import (
     MockSamlAuthenticationHandler,
 )
+from app.services.loginhandler.oidc_authentication_handler import (
+    OidcAuthenticationHandler,
+)
 from app.services.loginhandler.saml_authentication_handler import (
     SamlAuthenticationHandler,
 )
@@ -52,7 +55,8 @@ class AuthenticationHandlerFactory:
             MockSamlAuthenticationHandler, None
         ] = None
         self._irma_authentication_handler: Union[IrmaAuthenticationHandler, None] = None
-        self._uzi_authentication_handler: Union[IrmaAuthenticationHandler, None] = None
+        self._uzi_authentication_handler: Union[UziAuthenticationHandler, None] = None
+        self._oidc_authentication_handler: Union[OidcAuthenticationHandler, None] = None
 
     def create(self, authentication_method) -> AuthenticationHandler:
         if authentication_method == "digid":
@@ -63,6 +67,8 @@ class AuthenticationHandlerFactory:
             return self.create_irma_authentication_handler()
         if authentication_method == "uzipas":
             return self.create_uzi_authentication_handler()
+        if authentication_method == "oidc":
+            return self.create_oidc_authentication_handler()
         raise UnauthorizedError(error_description="unknown authentication method")
 
     def create_saml_authentication_handler(self) -> SamlAuthenticationHandler:
@@ -126,3 +132,25 @@ class AuthenticationHandlerFactory:
                 ),
             )
         return self._uzi_authentication_handler
+
+    def create_oidc_authentication_handler(self) -> OidcAuthenticationHandler:
+        if self._oidc_authentication_handler is None:
+            self._oidc_authentication_handler = OidcAuthenticationHandler(
+                jwe_service_provider=self._jwe_service_provider,
+                response_factory=self._response_factory,
+                session_url=self._config["app"]["session_url"],
+                oidc_login_redirect_url=self._config["oidc_client"][
+                    "oidc_login_redirect_url"
+                ],
+                clients=self._clients,
+                session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
+                session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
+                jwt_sign_priv_key_path=self._config["jwt"][
+                    "session_jwt_sign_priv_key_path"
+                ],
+                jwt_sign_crt_path=self._config["jwt"]["session_jwt_sign_crt_path"],
+                external_http_requests_timeout_seconds=int(
+                    self._config["app"]["external_http_requests_timeout_seconds"]
+                ),
+            )
+        return self._oidc_authentication_handler

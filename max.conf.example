@@ -12,9 +12,10 @@ session_url = http://localhost:8001/session
 mocked_uzi_data_file_path = tests/resources/uzi_data.json
 
 loglevel = debug
+
 # comma space seperated list
 # possible values are: digid, digid_mock, irma, uzipas
-login_methods = digid_mock, uzipas, irma
+login_methods = digid_mock, uzipas, irma, oidc
 
 # only used with html redirect
 redirect_html_delay = 5
@@ -64,6 +65,8 @@ userinfo_client_key=secrets/cibg/userinfo_client_key.key
 userinfo_client_crt=secrets/cibg/userinfo_client_key.crt
 userinfo_issuer=max
 userinfo_audience=uzipoc_register
+jwt_expiration_duration=60
+jwt_nbf_lag=10
 
 [uvicorn]
 # The host to be running on
@@ -137,3 +140,6 @@ overflow_identity_provider_user_limit_key=overflow_identity_provider_user_limit
 
 ipaddress_max_count=10
 ipaddress_max_count_expire_seconds=10
+
+[oidc_client]
+oidc_login_redirect_url = https://localhost:8001/login/oidc
