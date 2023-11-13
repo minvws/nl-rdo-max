@@ -263,12 +263,23 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         return self._response_factory.create_redirect_response(response_url)
 
     def _get_login_methods(self, authorize_request: AuthorizeRequest) -> List[str]:
+        client = self._clients[authorize_request.client_id]
+
+        excluded_login_methods = []
+        if "exclude_login_methods" in client:
+            excluded_login_methods = client["exclude_login_methods"]
+        allowed_login_methods = (
+            client["login_methods"]
+            if "login_methods" in client
+            else self._login_methods
+        )
         login_methods = [
-            x for x in self._login_methods if x in authorize_request.login_hints
+            x for x in allowed_login_methods if x not in excluded_login_methods
         ]
-        if not login_methods:
-            return self._login_methods
-        return login_methods
+        requested_login_methods = [
+            x for x in login_methods if x in authorize_request.login_hints
+        ]
+        return requested_login_methods if requested_login_methods else login_methods
 
     def _provide_login_options_response(
         self,

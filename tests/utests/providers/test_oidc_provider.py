@@ -135,33 +135,80 @@ def test_provide_login_options_response_with_one_login_options(mocker):
 
 
 def test_get_login_methods():
-    oidc_provider = create_oidc_provider(login_methods=["a", "b"])
+    oidc_provider = create_oidc_provider(
+        login_methods=["a", "b"], clients={"client_id": {"exclude_login_methods": []}}
+    )
     authorize_request = MagicMock()
     authorize_request.login_hints = ["a", "b"]
+    authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(authorize_request)
     assert actual == ["a", "b"]
 
 
 def test_get_login_methods_with_invalid_option_provided():
-    oidc_provider = create_oidc_provider(login_methods=["a", "b"])
+    oidc_provider = create_oidc_provider(
+        login_methods=["a", "b"], clients={"client_id": {"exclude_login_methods": []}}
+    )
     authorize_request = MagicMock()
     authorize_request.login_hints = ["a", "c"]
+    authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(authorize_request)
     assert actual == ["a"]
 
 
 def test_get_login_methods_with_none_provided():
-    oidc_provider = create_oidc_provider(login_methods=["a", "b"])
+    oidc_provider = create_oidc_provider(
+        login_methods=["a", "b"], clients={"client_id": {"exclude_login_methods": []}}
+    )
     authorize_request = MagicMock()
     authorize_request.login_hints = []
+    authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(authorize_request)
     assert actual == ["a", "b"]
 
 
 def test_get_login_methods_with_one_provided():
-    oidc_provider = create_oidc_provider(login_methods=["a", "b"])
+    oidc_provider = create_oidc_provider(
+        login_methods=["a", "b"], clients={"client_id": {"exclude_login_methods": []}}
+    )
     authorize_request = MagicMock()
     authorize_request.login_hints = ["b"]
+    authorize_request.client_id = "client_id"
+    actual = oidc_provider._get_login_methods(authorize_request)
+    assert actual == ["b"]
+
+
+def test_get_login_methods_with_excluded_provided_method():
+    oidc_provider = create_oidc_provider(
+        login_methods=["a", "b"],
+        clients={"client_id": {"exclude_login_methods": ["b"]}},
+    )
+    authorize_request = MagicMock()
+    authorize_request.login_hints = ["b"]
+    authorize_request.client_id = "client_id"
+    actual = oidc_provider._get_login_methods(authorize_request)
+    assert actual == ["a"]
+
+
+def test_get_login_methods_with_excluded_default_method():
+    oidc_provider = create_oidc_provider(
+        login_methods=["a", "b"],
+        clients={"client_id": {"exclude_login_methods": ["a"]}},
+    )
+    authorize_request = MagicMock()
+    authorize_request.login_hints = []
+    authorize_request.client_id = "client_id"
+    actual = oidc_provider._get_login_methods(authorize_request)
+    assert actual == ["b"]
+
+
+def test_get_login_methods_with_client_method():
+    oidc_provider = create_oidc_provider(
+        login_methods=["a", "b"], clients={"client_id": {"login_methods": ["b"]}}
+    )
+    authorize_request = MagicMock()
+    authorize_request.login_hints = []
+    authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(authorize_request)
     assert actual == ["b"]
 
