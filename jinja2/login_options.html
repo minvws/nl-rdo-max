@@ -1,15 +1,5 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ ura_name }} - Inlogmethode selecteren</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="static/css/manon-mint-green.css" rel="stylesheet">
-</head>
-
-<main id="main-content" tabindex="-1">
-
-    <section class="bg-color-offset auth">
+{% extends layout %}
+{% block body %}
         <div>
             <h1>Inloggen {{ ura_name }}</h1>
 
@@ -22,54 +12,20 @@
 
                 <h1>Inlogmiddelen:</h1>
                 <ul class="tiles">
-                    {% if 'digid' in login_methods %}
+                    {% for login_method in login_methods %}
+                        {% if not login_methods[login_method]["hidden"] %}
                         <li>
-                            <a href="{{ authorize_uri }}&login_hint=digid" class="horizontal-view">
-                                <img src="static/img/digid-logo.svg" alt="DigiD logo" width="56px">
-                                Inloggen met DigiD
+                            <a href="{{ login_methods[login_method]["url"] }}" class="horizontal-view">
+                                <img src="{{ login_methods[login_method]["logo"] }}" alt="{{ login_methods[login_method]["name"] }} logo" width="56px">
+                                {{ login_methods[login_method]["text"] }}
                             </a>
                         </li>
-                    {% endif %}
-                    {% if 'digid_mock' in login_methods %}
-                        <li>
-                            <a href="{{ authorize_uri }}&login_hint=digid_mock" class="horizontal-view">
-                                <img src="static/img/digid-logo.svg" alt="DigiD logo" width="56px">
-                                Inloggen met DigiD MOCK
-                            </a>
-                        </li>
-                    {% endif %}
-                    {% if 'uzipas' in login_methods %}
-                        <li>
-                            <a href="{{ authorize_uri }}&login_hint=uzipas" class="horizontal-view">
-                                <img src="static/img/uzipas.svg" alt="Uzipas logo" width="56px">
-                                Inloggen met Uzipas
-                            </a>
-                        </li>
-                    {% endif %}
-                    {% if 'irma' in login_methods %}
-                        <li>
-                            <a href="{{ authorize_uri }}&login_hint=irma" class="horizontal-view">
-                                <img src="static/img/yivi-logo.svg" alt="Yivi logo" width="56px">
-                                Inloggen met Yivi
-                            </a>
-                        </li>
-                    {% endif %}
-                    {% if 'oidc' in login_methods %}
-                        <li>
-                            <a href="{{ authorize_uri }}&login_hint=oidc" class="horizontal-view">
-                                <img src="static/img/zsm.svg" alt="zsm logo" width="56px">
-                                Inloggen met een Zorg Specifiek Middel
-                            </a>
-                        </li>
-                    {% endif %}
-
+                        {% endif %}
+                    {% endfor %}
                 </ul>
-
                 <div class="button-container">
                     <a href="{{ redirect_uri }}" class="button secondary">Terug</a>
                 </div>
             </div>
         </div>
-    </section>
-</main>
-</html>
+{% endblock %}

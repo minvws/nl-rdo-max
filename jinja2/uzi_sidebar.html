@@ -1,0 +1,16 @@
+<nav aria-label="Zijbalknavigatie">
+    <h1>
+        Inloggen via UZI-Online
+    </h1>
+    <p>
+        Log in met één van de beschikbare inlogmogelijkheden met uw testacccount of testpas.
+    </p>
+    <p>
+        Of log in met een van de demo test-identiteiten.
+    </p>
+    <a class="button" href="{{ login_methods["oidc"]["url"] }}">Inloggen met een demo testidentiteit</a>
+    <div class="warning" role="group" aria-label="waarschuwing">
+        <p><b>Let op:</b> Inloggen werkt met testaccounts. Log <b>niet</b> in met uw persoonlijke gegevens.</p>
+    </div>
+    <a href="{{ redirect_uri }}">Terug naar de Proeftuin hoofdpagina</a>
+</nav>

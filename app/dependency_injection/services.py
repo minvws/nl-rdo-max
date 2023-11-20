@@ -2,7 +2,7 @@
 from dependency_injector import containers, providers
 
 from app.misc.rate_limiter import RateLimiter
-from app.misc.utils import as_bool, as_list
+from app.misc.utils import as_bool, json_from_file
 from app.models.enums import RedirectType
 from app.providers.digid_mock_provider import DigidMockProvider
 from app.providers.oidc_provider import OIDCProvider
@@ -123,11 +123,12 @@ class Services(containers.DeclarativeContainer):
         userinfo_service=userinfo_service,
         app_mode=config.app.app_mode,
         environment=config.app.environment,
-        login_methods=config.app.login_methods.as_(as_list),
+        login_methods=config.app.login_methods.as_(json_from_file),
         authentication_handler_factory=login_handler_factory,
         external_base_url=config.app.external_base_url,
         session_url=config.app.session_url,
         external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
+        sidebar_template=config.app.sidebar_template,
     )
 
     digid_mock_provider = providers.Singleton(

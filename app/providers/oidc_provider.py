@@ -1,8 +1,9 @@
 import json
-from typing import List, Union
-from urllib.parse import urlencode
-import requests
+from typing import List, Union, Dict
+from urllib import parse
+from urllib.parse import urlencode, urlunparse
 
+import requests
 from fastapi import Request, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -29,9 +30,8 @@ from app.models.token_request import TokenRequest
 from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
 )
-from app.services.saml.saml_response_factory import SamlResponseFactory
 from app.services.response_factory import ResponseFactory
-
+from app.services.saml.saml_response_factory import SamlResponseFactory
 from app.services.userinfo.userinfo_service import UserinfoService
 from app.storage.authentication_cache import AuthenticationCache
 
@@ -51,11 +51,12 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         userinfo_service: UserinfoService,
         app_mode: str,
         environment: str,
-        login_methods: List[str],
+        login_methods: List[Dict[str, str]],
         authentication_handler_factory: AuthenticationHandlerFactory,
         external_base_url: str,
         session_url: str,
         external_http_requests_timeout_seconds: int,
+        sidebar_template: str,
     ):
         self._pyop_provider = pyop_provider
         self._authentication_cache = authentication_cache
@@ -76,6 +77,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self._external_http_requests_timeout_seconds = (
             external_http_requests_timeout_seconds
         )
+        self._sidebar_template = sidebar_template
 
     def well_known(self):
         return JSONResponse(
@@ -93,11 +95,11 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self._validate_authorize_request(authorize_request)
         login_options = self._get_login_methods(authorize_request)
         login_options_response = self._provide_login_options_response(
-            request, authorize_request, login_options
+            request, login_options
         )
         if login_options_response:
             return login_options_response
-        return self._authorize(request, authorize_request, login_options[0])
+        return self._authorize(request, authorize_request, login_options[0]["name"])
 
     def _authorize(
         self, request: Request, authorize_request: AuthorizeRequest, login_option: str
@@ -262,46 +264,77 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         )
         return self._response_factory.create_redirect_response(response_url)
 
-    def _get_login_methods(self, authorize_request: AuthorizeRequest) -> List[str]:
+    def _get_login_methods(
+        self, authorize_request: AuthorizeRequest
+    ) -> List[Dict[str, str]]:
         client = self._clients[authorize_request.client_id]
 
-        excluded_login_methods = []
+        login_methods = self._login_methods
+
+        if "login_methods" in client:
+            login_methods = [
+                x for x in login_methods if x["name"] in client["login_methods"]
+            ]
+
         if "exclude_login_methods" in client:
-            excluded_login_methods = client["exclude_login_methods"]
-        allowed_login_methods = (
-            client["login_methods"]
-            if "login_methods" in client
-            else self._login_methods
-        )
-        login_methods = [
-            x for x in allowed_login_methods if x not in excluded_login_methods
-        ]
+            login_methods = [
+                x
+                for x in login_methods
+                if x["name"] not in client["exclude_login_methods"]
+            ]
+
         requested_login_methods = [
-            x for x in login_methods if x in authorize_request.login_hints
+            x for x in login_methods if x["name"] in authorize_request.login_hints
         ]
+
         return requested_login_methods if requested_login_methods else login_methods
 
     def _provide_login_options_response(
         self,
         request: Request,
-        authorize_request: AuthorizeRequest,
-        login_methods: List[str],
+        login_methods: List[Dict[str, str]],
     ) -> Union[None, Response]:
         if len(login_methods) > 1:
-            authorize_uri = request.url.remove_query_params("login_hints")
+            parsed_url = parse.urlparse(str(request.url))
+            query_params = parse.parse_qs(parsed_url.query)
 
-            redirect_uri_append_symbol = "?"
-            if "?" in authorize_request.redirect_uri:
-                redirect_uri_append_symbol = "&"
+            for login_method in login_methods:
+                query_params["login_hint"] = [login_method["name"]]
+                query_params["login_hint"] = [login_method["name"]]
+                updated_query = urlencode(query_params, doseq=True)
+                updated_url = urlunparse(
+                    (
+                        parsed_url.scheme,
+                        parsed_url.netloc,
+                        parsed_url.path,
+                        parsed_url.params,
+                        updated_query,
+                        parsed_url.fragment,
+                    )
+                )
+                login_method["url"] = updated_url
+
+            login_method_by_name = {x["name"]: x for x in login_methods}
+
+            redirect_url_parts = parse.urlparse(request.query_params["redirect_url"])
+            query = dict(parse.parse_qsl(redirect_url_parts.query))
+            query.update(
+                {
+                    "error": "login_required",
+                    "error_description": "Authentication cancelled",
+                }
+            )
 
             return templates.TemplateResponse(
                 "login_options.html",
                 {
                     "request": request,
-                    "login_methods": login_methods,
-                    "ura_name": self._clients[authorize_request.client_id]["name"],
-                    "authorize_uri": f"{self._external_base_url}{authorize_uri.path}?{authorize_uri.query}",
-                    "redirect_uri": f"{authorize_request.redirect_uri}{redirect_uri_append_symbol}error=login_required&error_description=Authentication%20cancelled",
+                    "layout": "layout.html",
+                    "login_methods": login_method_by_name,
+                    "sidebar": self._sidebar_template,
+                    "redirect_uri": redirect_url_parts._replace(
+                        query=parse.urlencode(query)
+                    ).geturl(),
                 },
             )
         if len(login_methods) != 1:

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from unittest.mock import MagicMock, patch
 
@@ -22,7 +22,7 @@ def create_oidc_provider(
     userinfo_service=MagicMock(),
     app_mode="am",
     environment="test",
-    login_methods: List[str] = "login_method",
+    login_methods: List[Dict[str, str]] = [{"name": "login_option"}],
     authentication_handler_factory=MagicMock(),
     external_base_url="external_base_url",
     session_url="local.example",
@@ -43,6 +43,7 @@ def create_oidc_provider(
         external_base_url,
         session_url,
         external_http_requests_timeout_seconds,
+        "sidebar.html",
     )
 
 
@@ -69,34 +70,37 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
         clients={"client_id": {"name": "name"}}, external_base_url="base_url"
     )
     request = MagicMock()
-    authorize_request = MagicMock()
     template_response = MagicMock()
     request_url = MagicMock()
-    redirect_url = "redirect_url"
-    login_methods = ["a", "b"]
+    login_methods = [{"name": "a"}, {"name": "b"}]
 
-    request.url.remove_query_params.return_value = request_url
-    request_url.path = "/redirect_path"
-    request_url.query = "query"
-    authorize_request.client_id = "client_id"
-    authorize_request.redirect_uri = redirect_url
+    request.url = (
+        "http://localhost:8000/redirect_path?redirect_uri=redirect_url&key=value"
+    )
+    request.query_params = {"redirect_url": "redirect_url?key=value"}
 
     templates_mock = mocker.patch("app.providers.oidc_provider.templates")
     templates_mock.TemplateResponse.return_value = template_response
 
-    actual = oidc_provider._provide_login_options_response(
-        request, authorize_request, login_methods
-    )
+    actual = oidc_provider._provide_login_options_response(request, login_methods)
 
-    request.url.remove_query_params.assert_called_with("login_hints")
     templates_mock.TemplateResponse.assert_called_with(
         "login_options.html",
         {
             "request": request,
-            "login_methods": ["a", "b"],
-            "ura_name": "name",
-            "authorize_uri": "base_url/redirect_path?query",
-            "redirect_uri": "redirect_url?error=login_required&error_description=Authentication%20cancelled",
+            "login_methods": {
+                "a": {
+                    "name": "a",
+                    "url": "http://localhost:8000/redirect_path?redirect_uri=redirect_url&key=value&login_hint=a",
+                },
+                "b": {
+                    "name": "b",
+                    "url": "http://localhost:8000/redirect_path?redirect_uri=redirect_url&key=value&login_hint=b",
+                },
+            },
+            "layout": "layout.html",
+            "redirect_uri": "redirect_url?key=value&error=login_required&error_description=Authentication+cancelled",
+            "sidebar": "sidebar.html",
         },
     )
     assert actual == template_response
@@ -113,9 +117,7 @@ def test_provide_login_options_response_with_zero_login_options(mocker):
     templates_mock = mocker.patch("app.providers.oidc_provider.templates")
 
     with pytest.raises(UnauthorizedError):
-        oidc_provider._provide_login_options_response(
-            request, authorize_request, login_methods
-        )
+        oidc_provider._provide_login_options_response(request, login_methods)
     templates_mock.TemplateResponse.assert_not_called()
 
 
@@ -123,12 +125,10 @@ def test_provide_login_options_response_with_one_login_options(mocker):
     oidc_provider = create_oidc_provider()
     request = MagicMock()
     authorize_request = MagicMock()
-    login_methods = ["a"]
+    login_methods = [{"name": "a"}]
     templates_mock = mocker.patch("app.providers.oidc_provider.templates")
 
-    actual = oidc_provider._provide_login_options_response(
-        request, authorize_request, login_methods
-    )
+    actual = oidc_provider._provide_login_options_response(request, login_methods)
 
     templates_mock.TemplateResponse.assert_not_called()
     assert actual is None
@@ -136,81 +136,86 @@ def test_provide_login_options_response_with_one_login_options(mocker):
 
 def test_get_login_methods():
     oidc_provider = create_oidc_provider(
-        login_methods=["a", "b"], clients={"client_id": {"exclude_login_methods": []}}
+        login_methods=[{"name": "a"}, {"name": "b"}],
+        clients={"client_id": {"exclude_login_methods": []}},
     )
     authorize_request = MagicMock()
     authorize_request.login_hints = ["a", "b"]
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(authorize_request)
-    assert actual == ["a", "b"]
+    assert actual == [{"name": "a"}, {"name": "b"}]
 
 
 def test_get_login_methods_with_invalid_option_provided():
     oidc_provider = create_oidc_provider(
-        login_methods=["a", "b"], clients={"client_id": {"exclude_login_methods": []}}
+        login_methods=[{"name": "a"}, {"name": "b"}],
+        clients={"client_id": {"exclude_login_methods": []}},
     )
     authorize_request = MagicMock()
     authorize_request.login_hints = ["a", "c"]
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(authorize_request)
-    assert actual == ["a"]
+    assert actual == [{"name": "a"}]
 
 
 def test_get_login_methods_with_none_provided():
     oidc_provider = create_oidc_provider(
-        login_methods=["a", "b"], clients={"client_id": {"exclude_login_methods": []}}
+        login_methods=[{"name": "a"}, {"name": "b"}],
+        clients={"client_id": {"exclude_login_methods": []}},
     )
     authorize_request = MagicMock()
     authorize_request.login_hints = []
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(authorize_request)
-    assert actual == ["a", "b"]
+    assert actual == [{"name": "a"}, {"name": "b"}]
 
 
 def test_get_login_methods_with_one_provided():
     oidc_provider = create_oidc_provider(
-        login_methods=["a", "b"], clients={"client_id": {"exclude_login_methods": []}}
+        login_methods=[{"name": "a"}, {"name": "b"}],
+        clients={"client_id": {"exclude_login_methods": []}},
     )
     authorize_request = MagicMock()
     authorize_request.login_hints = ["b"]
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(authorize_request)
-    assert actual == ["b"]
+    assert actual == [{"name": "b"}]
 
 
 def test_get_login_methods_with_excluded_provided_method():
     oidc_provider = create_oidc_provider(
-        login_methods=["a", "b"],
+        login_methods=[{"name": "a"}, {"name": "b"}],
         clients={"client_id": {"exclude_login_methods": ["b"]}},
     )
     authorize_request = MagicMock()
     authorize_request.login_hints = ["b"]
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(authorize_request)
-    assert actual == ["a"]
+    assert actual == [{"name": "a"}]
 
 
 def test_get_login_methods_with_excluded_default_method():
     oidc_provider = create_oidc_provider(
-        login_methods=["a", "b"],
+        login_methods=[{"name": "a"}, {"name": "b"}],
         clients={"client_id": {"exclude_login_methods": ["a"]}},
     )
     authorize_request = MagicMock()
     authorize_request.login_hints = []
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(authorize_request)
-    assert actual == ["b"]
+    assert actual == [{"name": "b"}]
 
 
 def test_get_login_methods_with_client_method():
     oidc_provider = create_oidc_provider(
-        login_methods=["a", "b"], clients={"client_id": {"login_methods": ["b"]}}
+        login_methods=[{"name": "a"}, {"name": "b"}],
+        clients={"client_id": {"login_methods": ["b"]}},
     )
     authorize_request = MagicMock()
     authorize_request.login_hints = []
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(authorize_request)
-    assert actual == ["b"]
+    assert actual == [{"name": "b"}]
 
 
 def test_present_login_options_or_authorize():
@@ -228,7 +233,7 @@ def test_present_login_options_or_authorize():
     ) as provide_login_options_response_method, patch.object(
         OIDCProvider, "_authorize"
     ) as authorize_method:
-        get_login_methods_method.return_value = ["login_method"]
+        get_login_methods_method.return_value = [{"name": "a"}, {"name": "b"}]
         provide_login_options_response_method.return_value = None
         authorize_method.return_value = ret_value
         login_options_or_authorize = oidc_provider.present_login_options_or_authorize(
@@ -238,9 +243,9 @@ def test_present_login_options_or_authorize():
         validate_authorize_request_method.assert_called_with(authorize_request)
         get_login_methods_method.assert_called_with(authorize_request)
         provide_login_options_response_method.assert_called_with(
-            request, authorize_request, ["login_method"]
+            request, [{"name": "a"}, {"name": "b"}]
         )
-        authorize_method.assert_called_with(request, authorize_request, "login_method")
+        authorize_method.assert_called_with(request, authorize_request, "a")
 
         assert login_options_or_authorize == ret_value
 

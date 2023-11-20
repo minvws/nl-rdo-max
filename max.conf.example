@@ -14,8 +14,8 @@ mocked_uzi_data_file_path = tests/resources/uzi_data.json
 loglevel = debug
 
 # comma space seperated list
-# possible values are: digid, digid_mock, irma, uzipas
-login_methods = digid_mock, uzipas, irma, oidc
+
+login_methods = login_methods.json
 
 # only used with html redirect
 redirect_html_delay = 5

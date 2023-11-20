@@ -33,8 +33,7 @@ def file_content_raise_if_none(filepath: str) -> str:
 
 
 def json_from_file(filepath: str) -> Any:
-    with open(filepath, "r", encoding="utf-8") as json_file:
-        return json.loads(json_file.read())
+    return json.loads(file_content_raise_if_none(filepath))
 
 
 def as_list(input_str: str) -> List[str]:

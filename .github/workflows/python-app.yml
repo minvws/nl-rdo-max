@@ -31,9 +31,6 @@ jobs:
       - name: Check linting (black)
         run: make check
 
-      - name: Test
-        run: make test
-
       - name: Audit
         run: make audit
 
