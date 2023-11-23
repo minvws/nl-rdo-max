@@ -83,6 +83,7 @@ class Services(containers.DeclarativeContainer):
         jwt_expiration_duration=config.oidc.jwt_expiration_duration.as_int(),
         jwt_nbf_lag=config.oidc.jwt_nbf_lag.as_int(),
         external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
+        external_base_url=config.app.external_base_url,
     )
 
     cc_userinfo_service = providers.Singleton(

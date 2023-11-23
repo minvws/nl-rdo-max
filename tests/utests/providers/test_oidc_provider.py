@@ -75,9 +75,9 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
     login_methods = [{"name": "a"}, {"name": "b"}]
 
     request.url = (
-        "http://localhost:8000/redirect_path?redirect_uri=redirect_url&key=value"
+        "http://localhost:8000/redirect_path?redirect_uri=redirect_uri&key=value"
     )
-    request.query_params = {"redirect_url": "redirect_url?key=value"}
+    request.query_params = {"redirect_uri": "redirect_uri?key=value"}
 
     templates_mock = mocker.patch("app.providers.oidc_provider.templates")
     templates_mock.TemplateResponse.return_value = template_response
@@ -91,15 +91,15 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
             "login_methods": {
                 "a": {
                     "name": "a",
-                    "url": "http://localhost:8000/redirect_path?redirect_uri=redirect_url&key=value&login_hint=a",
+                    "url": "http://localhost:8000/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=a",
                 },
                 "b": {
                     "name": "b",
-                    "url": "http://localhost:8000/redirect_path?redirect_uri=redirect_url&key=value&login_hint=b",
+                    "url": "http://localhost:8000/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=b",
                 },
             },
             "layout": "layout.html",
-            "redirect_uri": "redirect_url?key=value&error=login_required&error_description=Authentication+cancelled",
+            "redirect_uri": "redirect_uri?key=value&error=login_required&error_description=Authentication+cancelled",
             "sidebar": "sidebar.html",
         },
     )

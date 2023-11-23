@@ -331,7 +331,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
             login_method_by_name = {x["name"]: x for x in login_methods}
 
-            redirect_url_parts = parse.urlparse(request.query_params["redirect_url"])
+            redirect_url_parts = parse.urlparse(request.query_params["redirect_uri"])
             query = dict(parse.parse_qsl(redirect_url_parts.query))
             query.update(
                 {
@@ -340,18 +340,18 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                 }
             )
 
-            return templates.TemplateResponse(
-                "login_options.html",
-                {
-                    "request": request,
-                    "layout": "layout.html",
-                    "login_methods": login_method_by_name,
-                    "sidebar": self._sidebar_template,
-                    "redirect_uri": redirect_url_parts._replace(
-                        query=parse.urlencode(query)
-                    ).geturl(),
-                },
-            )
+            template_context = {
+                "request": request,
+                "layout": "layout.html",
+                "login_methods": login_method_by_name,
+                "redirect_uri": redirect_url_parts._replace(
+                    query=parse.urlencode(query)
+                ).geturl(),
+            }
+            if self._sidebar_template:
+                template_context["sidebar"] = self._sidebar_template
+
+            return templates.TemplateResponse("login_options.html", template_context)
         if len(login_methods) != 1:
             raise UnauthorizedError(
                 error_description="No valid login_methods available"
