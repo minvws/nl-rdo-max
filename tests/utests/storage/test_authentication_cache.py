@@ -19,10 +19,9 @@ def create_authentication_cache(
     return AuthenticationCache(cache, sym_encryption_service, app_mode)
 
 
-def test_create_authentication_request_state():
+def test_create_randstate():
     pyop_authentication_request = MagicMock(spec=AuthorizationRequest)
     authorize_request = MagicMock()
-    authentication_state = MagicMock()
     cache = MagicMock()
 
     pyop_authentication_request.__getitem__.side_effect = {
@@ -42,23 +41,51 @@ def test_create_authentication_request_state():
 
     acache = create_authentication_cache(cache)
 
-    actual = acache.create_authentication_request_state(
+    actual = acache.create_randstate(
         pyop_authentication_request,
         authorize_request,
+    )
+
+    assert actual == expected
+
+
+def test_create_authentication_request_state():
+    pyop_authentication_request = MagicMock(spec=AuthorizationRequest)
+    authorize_request = MagicMock()
+    authentication_state = MagicMock()
+    cache = MagicMock()
+
+    pyop_authentication_request.__getitem__.side_effect = {
+        "redirect_uri": "redirect_uri"
+    }
+
+    authorize_request.login_hints = ["login_hint"]
+    authorize_request.authorization_by_proxy = False
+    authorize_request.client_id = "client_id"
+
+    cache.gen_token.return_value = "bla"
+
+    acache = create_authentication_cache(cache)
+
+    acache.cache_authentication_request_state(
+        pyop_authentication_request,
+        authorize_request,
+        "randstate",
         authentication_state,
         "login_option",
+        "session_id",
     )
 
     cache.set_complex_object.assert_called_with(
-        "auth_req:" + expected,
+        "auth_req:randstate",
         AuthenticationContext(
             authorization_request=pyop_authentication_request,
             authorization_by_proxy=authorize_request.authorization_by_proxy,
             authentication_method="login_option",
             authentication_state=authentication_state,
+            session_id="session_id",
         ),
     )
-    assert actual == expected
 
 
 def test_get_authentication_request_state():

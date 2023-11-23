@@ -35,6 +35,10 @@ class SAMLRequest:
     def signing_key_path(self):
         return self.keypair_sign[1]
 
+    @property
+    def session_id(self):
+        return self._id_hash
+
     def get_xml(self, xml_declaration: bool = False) -> bytes:
         if xml_declaration:
             return etree.tostring(self.root, xml_declaration=True, encoding="UTF-8")

@@ -88,7 +88,7 @@
                         <saml2:Assertion xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion"
                                          ID="_cd38d3195d85cd2ad45de517ffe5082d" IssueInstant="2023-03-28T07:40:17.314Z"
                                          Version="2.0">
-                            <saml2:Issuer>urn:nl-eid-gdi:1.0:AD:00000004166909913000:entities:9002</saml2:Issuer>
+                            <saml2:Issuer>urn:nl-eid-gdi:1.0:AD:0 0000004166909913000:entities:9002</saml2:Issuer>
                             <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
                                 <ds:SignedInfo>
                                     <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>

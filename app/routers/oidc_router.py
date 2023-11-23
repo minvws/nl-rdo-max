@@ -2,6 +2,7 @@ import logging
 
 from dependency_injector.wiring import inject, Provide
 from fastapi import APIRouter, Request, Depends
+from starlette.responses import JSONResponse
 
 from app.dependency_injection.config import RouterConfig
 from app.exceptions.max_exceptions import UnauthorizedError
@@ -81,3 +82,11 @@ def userinfo(
     oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
 ):
     return oidc_provider.userinfo(request)
+
+
+@oidc_router.get("/json-schema.json")
+@inject
+def json_schema(
+    schema_content: str = Depends(Provide["services.json_schema"]),
+):
+    return JSONResponse(content=schema_content)

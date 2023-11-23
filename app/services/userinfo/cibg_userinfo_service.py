@@ -43,6 +43,7 @@ class CIBGUserinfoService(UserinfoService):
         jwt_expiration_duration: int,
         jwt_nbf_lag: int,
         external_http_requests_timeout_seconds: int,
+        external_base_url: str,
     ):
         self._jwe_service_provider = jwe_service_provider
         self._environment = environment
@@ -71,6 +72,7 @@ class CIBGUserinfoService(UserinfoService):
         self._external_http_requests_timeout_seconds = (
             external_http_requests_timeout_seconds
         )
+        self._external_base_url = external_base_url
 
     def _create_jwt_payload(
         self,
@@ -79,6 +81,7 @@ class CIBGUserinfoService(UserinfoService):
         external_id: str,
         client_id: str,
         auth_type: str,
+        json_schema: str,
         saml_id: Union[str, None] = None,
         loa_authn: Union[str, None] = None,
         exchange_token: Union[str, None] = None,
@@ -87,6 +90,7 @@ class CIBGUserinfoService(UserinfoService):
         ura_pubkey = file_content_raise_if_none(ura_pubkey_path)
 
         jwt_payload = {
+            "json_schema": json_schema,
             "iss": self._cibg_userinfo_issuer,
             "aud": self._cibg_userinfo_audience,
             "nbf": int(time.time()) - self._jwt_nbf_lag,
@@ -113,6 +117,7 @@ class CIBGUserinfoService(UserinfoService):
         client_id: str,
         client: Dict[str, Any],
         auth_type: str,
+        json_schema: str,
         saml_id: Union[str, None] = None,
         loa_authn: Union[str, None] = None,
         data: Union[str, None] = None,
@@ -133,6 +138,7 @@ class CIBGUserinfoService(UserinfoService):
             "x5t": self._private_sign_jwk_key.thumbprint(hashes.SHA256()),
         }
         jwt_payload = self._create_jwt_payload(
+            json_schema=json_schema,
             ura_pubkey_path=client["client_public_key_path"],
             external_id=external_id,
             client_id=client_id,
@@ -190,6 +196,7 @@ class CIBGUserinfoService(UserinfoService):
             client_id=client_id,
             client=client,
             auth_type="digid",
+            json_schema=self._external_base_url + "/json_schema.json",
             saml_id=artifact_response.root.attrib["ID"],
             loa_authn=artifact_response.loa_authn,
             data=artifact_response.to_envelope_string(),
@@ -205,9 +212,11 @@ class CIBGUserinfoService(UserinfoService):
                 authentication_context.authorization_request["client_id"]
             ],
             auth_type="exchange_token",
+            json_schema=self._external_base_url + "/json_schema.json",
             exchange_token=authentication_context.authentication_state[
                 "exchange_token"
             ],
+            saml_id=authentication_context.session_id,
         )
 
     def _request_userinfo_for_mock_artifact(
@@ -228,7 +237,7 @@ class CIBGUserinfoService(UserinfoService):
                 **uzi_data.dict(),
                 "iss": self._req_issuer,
                 "aud": client_id,
-                "json_schema": "https://www.inge6.nl/json_schema_v1.json",
+                "json_schema": self._external_base_url + "/json_schema.json",
                 "nbf": int(time.time()) - self._jwt_nbf_lag,
                 "exp": int(time.time()) + self._jwt_expiration_duration,
                 "x5c": strip_cert(ura_pubkey),

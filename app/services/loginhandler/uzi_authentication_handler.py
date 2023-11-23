@@ -8,8 +8,8 @@ from cryptography.hazmat.primitives import hashes
 from fastapi import Request
 from jwcrypto.jwt import JWT
 from pyop.message import AuthorizationRequest
-from starlette.responses import Response
 
+from app.models.authorize_response import AuthorizeResponse
 from app.services.loginhandler.common_fields import CommonFields
 from app.exceptions.max_exceptions import (
     UnauthorizedError,
@@ -82,7 +82,9 @@ class UziAuthenticationHandler(CommonFields, AuthenticationHandler):
         pyop_authentication_request: AuthorizationRequest,
         authentication_state: Dict[str, Any],
         randstate: str,
-    ) -> Response:
-        return self._response_factory.create_redirect_response(
-            redirect_url=f"{self._uzi_login_redirect_url}/{authentication_state['exchange_token']}?state={randstate}"
+    ) -> AuthorizeResponse:
+        return AuthorizeResponse(
+            response=self._response_factory.create_redirect_response(
+                redirect_url=f"{self._uzi_login_redirect_url}/{authentication_state['exchange_token']}?state={randstate}"
+            )
         )

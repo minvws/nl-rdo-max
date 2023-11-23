@@ -1,4 +1,5 @@
 import json
+import secrets
 from typing import List, Union, Dict
 from urllib import parse
 from urllib.parse import urlencode, urlunparse
@@ -122,20 +123,34 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
         authentication_state = login_handler.authentication_state(authorize_request)
 
-        randstate = self._authentication_cache.create_authentication_request_state(
-            pyop_authentication_request,
-            authorize_request,
-            authentication_state,
-            login_option,
+        randstate = self._authentication_cache.create_randstate(
+            pyop_authentication_request, authorize_request
         )
 
-        return login_handler.authorize_response(
+        authorize_response = login_handler.authorize_response(
             request,
             authorize_request,
             pyop_authentication_request,
             authentication_state,
             randstate,
         )
+
+        session_id = (
+            authorize_response.session_id
+            if authorize_response.session_id
+            else secrets.token_urlsafe(32)
+        )
+
+        self._authentication_cache.cache_authentication_request_state(
+            pyop_authentication_request,
+            authorize_request,
+            randstate,
+            authentication_state,
+            login_option,
+            session_id,
+        )
+
+        return authorize_response.response
 
     def get_authentication_request_state(self, randstate: str) -> AuthenticationContext:
         authentication_request = (

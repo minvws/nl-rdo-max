@@ -3,9 +3,9 @@ from typing import Any, Dict
 
 from fastapi import Request
 from pyop.message import AuthorizationRequest
-from starlette.responses import Response
 
 from app.models.authorize_request import AuthorizeRequest
+from app.models.authorize_response import AuthorizeResponse
 
 
 class AuthenticationHandler(abc.ABC):
@@ -23,5 +23,5 @@ class AuthenticationHandler(abc.ABC):
         pyop_authentication_request: AuthorizationRequest,
         authentication_state: Dict[str, Any],
         randstate: str,
-    ) -> Response:
+    ) -> AuthorizeResponse:
         pass

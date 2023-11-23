@@ -14,6 +14,7 @@ from app.exceptions.max_exceptions import (
     UnexpectedAuthnBinding,
 )
 from app.misc.utils import load_template
+from app.models.authorize_response import AuthorizeResponse
 from app.models.saml.exceptions import ScopingAttributesNotAllowed
 
 log = logging.getLogger(__package__)
@@ -35,7 +36,7 @@ class SamlResponseFactory:
 
     def create_saml_response(
         self, saml_identity_provider, authorize_request, randstate
-    ):
+    ) -> AuthorizeResponse:
         if saml_identity_provider.authn_binding.endswith("POST"):
             return self._create_saml_authn_submit_response(
                 saml_identity_provider, authorize_request, randstate
@@ -58,7 +59,7 @@ class SamlResponseFactory:
         headers: Union[dict, None] = None,
         media_type: Union[str, None] = None,
         background: Union[BackgroundTask, None] = None,
-    ):
+    ) -> AuthorizeResponse:
         try:
             authn_request = saml_identity_provider.create_authn_request(
                 authorize_request.authorization_by_proxy
@@ -74,17 +75,20 @@ class SamlResponseFactory:
             }
         )
         # pylint: disable=duplicate-code
-        return HTMLResponse(
-            content=rendered,
-            status_code=status_code,
-            headers=headers,
-            media_type=media_type,
-            background=background,
+        return AuthorizeResponse(
+            response=HTMLResponse(
+                content=rendered,
+                status_code=status_code,
+                headers=headers,
+                media_type=media_type,
+                background=background,
+            ),
+            session_id=authn_request.session_id,
         )
 
     def _create_saml_authn_redirect_response(
         self, saml_identity_provider, authorize_request, randstate
-    ):
+    ) -> AuthorizeResponse:
         request = {
             "https": "on",
             "http_host": (
@@ -104,12 +108,15 @@ class SamlResponseFactory:
         auth = OneLogin_Saml2_Auth(
             request, custom_base_path=saml_identity_provider.base_dir
         )
-        return RedirectResponse(
-            auth.login(
-                return_to=randstate,
-                force_authn=False,
-                set_nameid_policy=False,
-            )
+        return AuthorizeResponse(
+            response=RedirectResponse(
+                auth.login(
+                    return_to=randstate,
+                    force_authn=False,
+                    set_nameid_policy=False,
+                )
+            ),
+            session_id=auth.get_last_request_id(),
         )
 
     def create_saml_mock_response(

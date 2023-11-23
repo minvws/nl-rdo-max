@@ -2,10 +2,10 @@ from typing import Any, Dict
 
 from fastapi import Request
 from pyop.message import AuthorizationRequest
-from starlette.responses import Response
 
 from app.misc.rate_limiter import RateLimiter
 from app.models.authorize_request import AuthorizeRequest
+from app.models.authorize_response import AuthorizeResponse
 from app.services.loginhandler.authentication_handler import AuthenticationHandler
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 from app.services.saml.saml_response_factory import SamlResponseFactory
@@ -47,7 +47,7 @@ class SamlAuthenticationHandler(AuthenticationHandler):
         pyop_authentication_request: AuthorizationRequest,
         authentication_state: Dict[str, Any],
         randstate: str,
-    ) -> Response:
+    ) -> AuthorizeResponse:
         id_provider = self._saml_identity_provider_service.get_identity_provider(
             authentication_state["identity_provider_name"]
         )

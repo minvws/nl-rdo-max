@@ -7,12 +7,12 @@ from cryptography.hazmat.primitives import hashes
 from fastapi import Request
 from jwcrypto.jwt import JWT
 from pyop.message import AuthorizationRequest
-from starlette.responses import Response
 
 from app.exceptions.max_exceptions import (
     UnauthorizedError,
 )
 from app.models.authorize_request import AuthorizeRequest
+from app.models.authorize_response import AuthorizeResponse
 
 # todo this to constant
 from app.services.loginhandler.authentication_handler import AuthenticationHandler
@@ -69,7 +69,9 @@ class IrmaAuthenticationHandler(CommonFields, AuthenticationHandler):
         pyop_authentication_request: AuthorizationRequest,
         authentication_state: Dict[str, Any],
         randstate: str,
-    ) -> Response:
-        return self._response_factory.create_redirect_response(
-            redirect_url=f"{self._irma_login_redirect_url}/{authentication_state['exchange_token']}?state={randstate}"
+    ) -> AuthorizeResponse:
+        return AuthorizeResponse(
+            response=self._response_factory.create_redirect_response(
+                redirect_url=f"{self._irma_login_redirect_url}/{authentication_state['exchange_token']}?state={randstate}"
+            )
         )

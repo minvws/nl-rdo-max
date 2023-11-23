@@ -30,14 +30,12 @@ class AuthenticationCache:
         )
         self._app_mode = app_mode
 
-    def create_authentication_request_state(
+    def create_randstate(
         self,
         authorization_request: AuthorizationRequest,
         authorize_request: AuthorizeRequest,
-        authentication_state: Dict[str, Any],
-        login_option: str,
     ) -> str:
-        rand_state = base64.urlsafe_b64encode(
+        return base64.urlsafe_b64encode(
             json.dumps(
                 {
                     "state": self._cache.gen_token(),
@@ -46,25 +44,35 @@ class AuthenticationCache:
                 }
             ).encode("utf-8")
         ).decode("utf-8")
+
+    def cache_authentication_request_state(
+        self,
+        authorization_request: AuthorizationRequest,
+        authorize_request: AuthorizeRequest,
+        randstate: str,
+        authentication_state: Dict[str, Any],
+        login_option: str,
+        session_id: str,
+    ) -> None:
         authentication_context = AuthenticationContext(
             authorization_request=authorization_request,
             authorization_by_proxy=authorize_request.authorization_by_proxy,
             authentication_method=login_option,
             authentication_state=authentication_state,
+            session_id=session_id,
         )
-        self.cache_authentication_context(rand_state, authentication_context)
-        return rand_state
+        self.cache_authentication_context(randstate, authentication_context)
 
     def cache_authentication_context(
-        self, rand_state: str, authentication_context: AuthenticationContext
+        self, randstate: str, authentication_context: AuthenticationContext
     ):
-        state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{rand_state}"
+        state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{randstate}"
         self._cache.set_complex_object(state_key, authentication_context)
 
     def get_authentication_request_state(
-        self, rand_state: str
+        self, randstate: str
     ) -> Union[AuthenticationContext, None]:
-        state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{rand_state}"
+        state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{randstate}"
         return self._cache.get_and_delete_complex_object(
             state_key, AuthenticationContext
         )

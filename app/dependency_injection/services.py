@@ -36,6 +36,8 @@ class Services(containers.DeclarativeContainer):
 
     redirect_type = config.app.redirect_type.as_(as_redirect_type)
 
+    json_schema = providers.Callable(json_from_file, config.app.json_schema_path)
+
     saml_response_factory = providers.Singleton(
         SamlResponseFactory,
         html_templates_path=config.saml.html_templates_path,

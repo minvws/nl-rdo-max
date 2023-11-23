@@ -9,6 +9,7 @@ class AuthenticationContext(BaseModel):
     authorization_by_proxy: bool
     authentication_method: str
     authentication_state: Dict[str, Any]
+    session_id: str
 
     class Config:
         arbitrary_types_allowed = True
@@ -19,6 +20,7 @@ class AuthenticationContext(BaseModel):
             "authorization_by_proxy": self.authorization_by_proxy,
             "authentication_method": self.authentication_method,
             "authentication_state": self.authentication_state,
+            "session_id": self.session_id,
         }
 
     @classmethod
@@ -31,4 +33,5 @@ class AuthenticationContext(BaseModel):
             authorization_by_proxy=dictionary["authorization_by_proxy"],
             authentication_method=dictionary["authentication_method"],
             authentication_state=dictionary["authentication_state"],
+            session_id=dictionary["session_id"],
         )

@@ -282,6 +282,11 @@ def test_authorize():
 
     authentication_cache.create_authentication_request_state.return_value = "rand"
 
+    authentication_cache.create_randstate.return_value = "randstate"
+
+    authorize_response.session_id = "session_id"
+    authorize_response.response = "actual_response"
+
     oidc_provider = create_oidc_provider(
         pyop_provider=pyop_provider,
         rate_limiter=rate_limiter,
@@ -291,7 +296,7 @@ def test_authorize():
     login_handler_response = oidc_provider._authorize(
         request, authorize_request, "login_hint"
     )
-    assert login_handler_response == authorize_response
+    assert login_handler_response == "actual_response"
 
     rate_limiter.validate_outage.assert_called()
 
@@ -307,11 +312,17 @@ def test_authorize():
 
     login_handler.authentication_state.assert_called_with(authorize_request)
 
-    authentication_cache.create_authentication_request_state.assert_called_with(
+    authentication_cache.create_randstate.assert_called_with(
+        pyop_authentication_request, authorize_request
+    )
+
+    authentication_cache.cache_authentication_request_state.assert_called_with(
         pyop_authentication_request,
         authorize_request,
+        "randstate",
         authentication_state,
         "login_hint",
+        "session_id",
     )
 
     login_handler.authorize_response.assert_called_with(
@@ -319,7 +330,7 @@ def test_authorize():
         authorize_request,
         pyop_authentication_request,
         authentication_state,
-        "rand",
+        "randstate",
     )
 
 

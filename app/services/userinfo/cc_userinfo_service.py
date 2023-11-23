@@ -48,6 +48,7 @@ class CCUserinfoService(UserinfoService):
         return self._jwe_service_provider.get_jwe_service(client["pubkey_type"]).to_jwe(
             {
                 "bsn": bsn,
+                "session_id": authentication_context.session_id,
                 "loa_authn": loa_authn,
                 "iss": self._req_issuer,
                 "aud": client_id,

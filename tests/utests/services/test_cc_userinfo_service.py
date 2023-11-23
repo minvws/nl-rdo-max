@@ -22,6 +22,7 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
     saml_identity_provider_mock = MagicMock()
 
     authentication_context_mock.authorization_request = {"client_id": "client_id"}
+    authentication_context_mock.session_id = "session_id"
 
     clients = {
         "client_id": {
@@ -56,6 +57,7 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
     jwe_service_mock.to_jwe.assert_called_once_with(
         {
             "bsn": "bsn",
+            "session_id": "session_id",
             "loa_authn": "http://eidas.europa.eu/LoA/substantial",
             "iss": "req_issuer",
             "aud": "client_id",
