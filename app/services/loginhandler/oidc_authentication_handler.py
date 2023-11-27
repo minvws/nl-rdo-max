@@ -79,8 +79,10 @@ class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
         authentication_state: Dict[str, Any],
         randstate: str,
     ) -> AuthorizeResponse:
+        scope = "".join(pyop_authentication_request.get("scope"))
+        exchange_token = authentication_state['exchange_token']
         return AuthorizeResponse(
             response=self._response_factory.create_redirect_response(
-                redirect_url=f"{self._oidc_login_redirect_url}/{authentication_state['exchange_token']}?state={randstate}"
+                redirect_url=f"{self._oidc_login_redirect_url}/zsm?exchange_token={exchange_token}&state={randstate}&scope={scope}"
             )
         )
