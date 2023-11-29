@@ -323,7 +323,7 @@ def test_authorize():
         authorize_request,
         "randstate",
         authentication_state,
-        "login_hint",
+        login_option["name"],
         "session_id",
     )
 
