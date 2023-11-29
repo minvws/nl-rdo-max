@@ -1,7 +1,7 @@
 # pylint: disable=duplicate-code
 import logging
 import time
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import requests
 from cryptography.hazmat.primitives import hashes
@@ -22,10 +22,13 @@ logger = logging.getLogger(__name__)
 
 # pylint: disable=too-many-arguments
 class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
-    def __init__(self, oidc_login_redirect_url: str, oidc_provider_name: str, **kwargs):
+    def __init__(
+        self,
+        oidc_login_redirect_url: str,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self._oidc_login_redirect_url = oidc_login_redirect_url
-        self._oidc_provider_name = oidc_provider_name
 
     def authentication_state(
         self, authorize_request: AuthorizeRequest
@@ -81,8 +84,9 @@ class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
         randstate: str,
     ) -> AuthorizeResponse:
         exchange_token = authentication_state["exchange_token"]
+        provider_name = pyop_authentication_request.get("login_hint")
         return AuthorizeResponse(
             response=self._response_factory.create_redirect_response(
-                redirect_url=f"{self._oidc_login_redirect_url}/{self._oidc_provider_name}?exchange_token={exchange_token}&state={randstate}"
+                redirect_url=f"{self._oidc_login_redirect_url}/{provider_name}?exchange_token={exchange_token}&state={randstate}"
             )
         )
