@@ -1,4 +1,4 @@
-from typing import Dict, Any, Union, List
+from typing import Dict, Any, Union
 
 from app.exceptions.max_exceptions import UnauthorizedError
 from app.misc.rate_limiter import RateLimiter

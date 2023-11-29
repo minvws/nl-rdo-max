@@ -1,7 +1,7 @@
 # pylint: disable=duplicate-code
 import logging
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import requests
 from cryptography.hazmat.primitives import hashes
