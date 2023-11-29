@@ -52,7 +52,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         userinfo_service: UserinfoService,
         app_mode: str,
         environment: str,
-        login_methods: List[Dict[str, str]],  # TODO: make this dict
+        login_methods: List[Dict[str, str]],
         authentication_handler_factory: AuthenticationHandlerFactory,
         external_base_url: str,
         session_url: str,
