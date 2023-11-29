@@ -21,6 +21,7 @@
     "name": "zsm",
     "logo": "static/img/zsm.svg",
     "text": "Inloggen met OpenID Connect",
-    "type": "oidc"
+    "type": "oidc",
+    "hidden": "true"
   }
 ]
