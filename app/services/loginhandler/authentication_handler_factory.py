@@ -63,7 +63,7 @@ class AuthenticationHandlerFactory:
             return self.create_saml_authentication_handler()
         if authentication_method == "digid_mock":
             return self.create_mock_saml_authentication_handler()
-        if authentication_method == "irma":
+        if authentication_method == "yivi":
             return self.create_irma_authentication_handler()
         if authentication_method == "uzipas":
             return self.create_uzi_authentication_handler()
