@@ -58,17 +58,19 @@ class AuthenticationHandlerFactory:
         self._uzi_authentication_handler: Union[UziAuthenticationHandler, None] = None
         self._oidc_authentication_handler: Union[OidcAuthenticationHandler, None] = None
 
-    def create(self, authentication_method) -> AuthenticationHandler:
-        if authentication_method == "digid":
+    def create(self, authentication_method: Dict[str, str]) -> AuthenticationHandler:
+        if authentication_method["type"] == "digid":
             return self.create_saml_authentication_handler()
-        if authentication_method == "digid_mock":
+        if authentication_method["type"] == "specific-digid-mock":
             return self.create_mock_saml_authentication_handler()
-        if authentication_method == "yivi":
+        if authentication_method["type"] == "specific-yivi":
             return self.create_irma_authentication_handler()
-        if authentication_method == "uzipas":
+        if authentication_method["type"] == "specific-uzipas":
             return self.create_uzi_authentication_handler()
-        if authentication_method == "oidc":
-            return self.create_oidc_authentication_handler()
+        if authentication_method["type"] == "oidc":
+            return self.create_oidc_authentication_handler(
+                authentication_method["name"]
+            )
         raise UnauthorizedError(error_description="unknown authentication method")
 
     def create_saml_authentication_handler(self) -> SamlAuthenticationHandler:
@@ -133,7 +135,9 @@ class AuthenticationHandlerFactory:
             )
         return self._uzi_authentication_handler
 
-    def create_oidc_authentication_handler(self) -> OidcAuthenticationHandler:
+    def create_oidc_authentication_handler(
+        self, oidc_provider_name: str
+    ) -> OidcAuthenticationHandler:
         if self._oidc_authentication_handler is None:
             self._oidc_authentication_handler = OidcAuthenticationHandler(
                 jwe_service_provider=self._jwe_service_provider,
@@ -142,6 +146,7 @@ class AuthenticationHandlerFactory:
                 oidc_login_redirect_url=self._config["oidc_client"][
                     "oidc_login_redirect_url"
                 ],
+                oidc_provider_name=oidc_provider_name,
                 clients=self._clients,
                 session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
                 session_jwt_audience=self._config["jwt"]["session_jwt_audience"],

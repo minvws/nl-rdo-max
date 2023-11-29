@@ -28,7 +28,6 @@ from app.models.acs_context import AcsContext
 from app.models.authentication_context import AuthenticationContext
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
-from app.models.login_method import LoginMethod
 from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
 )
@@ -53,7 +52,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         userinfo_service: UserinfoService,
         app_mode: str,
         environment: str,
-        login_methods: List[LoginMethod],
+        login_methods: List[Dict[str, str]],  # TODO: make this dict
         authentication_handler_factory: AuthenticationHandlerFactory,
         external_base_url: str,
         session_url: str,
@@ -101,10 +100,13 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         )
         if login_options_response:
             return login_options_response
-        return self._authorize(request, authorize_request, login_options[0]["name"])
+        return self._authorize(request, authorize_request, login_options[0])
 
     def _authorize(
-        self, request: Request, authorize_request: AuthorizeRequest, login_option: str
+        self,
+        request: Request,
+        authorize_request: AuthorizeRequest,
+        login_option: Dict[str, str],
     ) -> Response:
         self._rate_limiter.validate_outage()
         pyop_authentication_request = (
@@ -147,7 +149,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             authorize_request,
             randstate,
             authentication_state,
-            login_option,
+            login_option["name"],
             session_id,
         )
 
@@ -330,7 +332,8 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                 )
                 login_method["url"] = updated_url
 
-            login_method_by_name = {x["name"]: x for x in login_methods}
+            login_method_by_name = {x["name"]: x for x in login_methods}  # here
+            print(login_method_by_name)
 
             redirect_url_parts = parse.urlparse(request.query_params["redirect_uri"])
             query = dict(parse.parse_qsl(redirect_url_parts.query))

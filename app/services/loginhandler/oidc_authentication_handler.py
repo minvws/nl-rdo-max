@@ -22,9 +22,10 @@ logger = logging.getLogger(__name__)
 
 # pylint: disable=too-many-arguments
 class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
-    def __init__(self, oidc_login_redirect_url: str, **kwargs):
+    def __init__(self, oidc_login_redirect_url: str, oidc_provider_name: str, **kwargs):
         super().__init__(**kwargs)
         self._oidc_login_redirect_url = oidc_login_redirect_url
+        self._oidc_provider_name = oidc_provider_name
 
     def authentication_state(
         self, authorize_request: AuthorizeRequest
@@ -82,6 +83,6 @@ class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
         exchange_token = authentication_state["exchange_token"]
         return AuthorizeResponse(
             response=self._response_factory.create_redirect_response(
-                redirect_url=f"{self._oidc_login_redirect_url}/zsm?exchange_token={exchange_token}&state={randstate}"
+                redirect_url=f"{self._oidc_login_redirect_url}/{self._oidc_provider_name}?exchange_token={exchange_token}&state={randstate}"
             )
         )
