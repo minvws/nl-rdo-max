@@ -59,14 +59,15 @@ class AuthenticationHandlerFactory:
         self._oidc_authentication_handler: Union[OidcAuthenticationHandler, None] = None
 
     def create(self, authentication_method: Dict[str, str]) -> AuthenticationHandler:
-        if authentication_method["type"] == "digid":
-            return self.create_saml_authentication_handler()
-        if authentication_method["type"] == "specific-digid-mock":
-            return self.create_mock_saml_authentication_handler()
-        if authentication_method["type"] == "specific-yivi":
-            return self.create_irma_authentication_handler()
-        if authentication_method["type"] == "specific-uzipas":
-            return self.create_uzi_authentication_handler()
+        if authentication_method["type"] == "specific":
+            if authentication_method["name"] == "digid":
+                return self.create_saml_authentication_handler()
+            if authentication_method["name"] == "digid_mock":
+                return self.create_mock_saml_authentication_handler()
+            if authentication_method["name"] == "yivi":
+                return self.create_irma_authentication_handler()
+            if authentication_method["name"] == "uzipas":
+                return self.create_uzi_authentication_handler()
         if authentication_method["type"] == "oidc":
             return self.create_oidc_authentication_handler(
                 authentication_method["name"]
