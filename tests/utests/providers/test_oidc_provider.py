@@ -245,7 +245,7 @@ def test_present_login_options_or_authorize():
         provide_login_options_response_method.assert_called_with(
             request, [{"name": "a"}, {"name": "b"}]
         )
-        authorize_method.assert_called_with(request, authorize_request, "a")
+        authorize_method.assert_called_with(request, authorize_request, {"name": "a"})
 
         assert login_options_or_authorize == ret_value
 
