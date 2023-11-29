@@ -23,5 +23,12 @@
     "text": "Inloggen met OpenID Connect",
     "type": "oidc",
     "hidden": "true"
+  },
+   {
+    "name": "identities",
+    "logo": "",
+    "text": "",
+    "type": "oidc",
+    "hidden": "true"
   }
 ]
