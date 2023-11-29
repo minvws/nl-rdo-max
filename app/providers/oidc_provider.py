@@ -28,6 +28,7 @@ from app.models.acs_context import AcsContext
 from app.models.authentication_context import AuthenticationContext
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
+from app.models.login_method import LoginMethod
 from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
 )
@@ -52,7 +53,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         userinfo_service: UserinfoService,
         app_mode: str,
         environment: str,
-        login_methods: List[Dict[str, str]],
+        login_methods: List[LoginMethod],
         authentication_handler_factory: AuthenticationHandlerFactory,
         external_base_url: str,
         session_url: str,
