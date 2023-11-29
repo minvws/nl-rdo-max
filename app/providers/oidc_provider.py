@@ -332,8 +332,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                 )
                 login_method["url"] = updated_url
 
-            login_method_by_name = {x["name"]: x for x in login_methods}  # here
-            print(login_method_by_name)
+            login_method_by_name = {x["name"]: x for x in login_methods}
 
             redirect_url_parts = parse.urlparse(request.query_params["redirect_uri"])
             query = dict(parse.parse_qsl(redirect_url_parts.query))
