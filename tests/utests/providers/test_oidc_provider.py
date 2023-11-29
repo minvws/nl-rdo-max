@@ -264,6 +264,8 @@ def test_authorize():
     login_handler.authorize_response.return_value = authorize_response
     login_handler.authentication_state.return_value = authentication_state
 
+    login_option = {"name": "a", "type": "a"}
+
     authorize_request = AuthorizeRequest(
         client_id="str",
         redirect_uri="str",
@@ -294,7 +296,7 @@ def test_authorize():
         authentication_handler_factory=authentication_handler_factory,
     )
     login_handler_response = oidc_provider._authorize(
-        request, authorize_request, "login_hint"
+        request, authorize_request, login_option
     )
     assert login_handler_response == "actual_response"
 
@@ -308,7 +310,7 @@ def test_authorize():
 
     rate_limiter.ip_limit_test.assert_called_with(request.client.host)
 
-    authentication_handler_factory.create.assert_called_with("login_hint")
+    authentication_handler_factory.create.assert_called_with(login_option)
 
     login_handler.authentication_state.assert_called_with(authorize_request)
 
