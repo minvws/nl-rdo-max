@@ -47,7 +47,7 @@ class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
             "exp": int(time.time()) + 60,
             "session_type": "oidc",
             "login_title": client["name"],
-            "oidc_provider_name": oidc_provider_name
+            "oidc_provider_name": oidc_provider_name,
         }
         jwt = JWT(header=header, claims=claims)
         jwt.make_signed_token(self._private_sign_jwk_key)
