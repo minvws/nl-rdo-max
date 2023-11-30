@@ -34,6 +34,7 @@ class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
         self, authorize_request: AuthorizeRequest
     ) -> Dict[str, Any]:
         client = self._clients[authorize_request.client_id]
+        oidc_provider_name = authorize_request.login_hint
         header = {
             "alg": "RS256",
             "x5t": self._private_sign_jwk_key.thumbprint(hashes.SHA256()),
@@ -46,6 +47,7 @@ class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
             "exp": int(time.time()) + 60,
             "session_type": "oidc",
             "login_title": client["name"],
+            "oidc_provider_name": oidc_provider_name
         }
         jwt = JWT(header=header, claims=claims)
         jwt.make_signed_token(self._private_sign_jwk_key)
@@ -84,9 +86,9 @@ class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
         randstate: str,
     ) -> AuthorizeResponse:
         exchange_token = authentication_state["exchange_token"]
-        provider_name = pyop_authentication_request.get("login_hint")
+        print(pyop_authentication_request)
         return AuthorizeResponse(
             response=self._response_factory.create_redirect_response(
-                redirect_url=f"{self._oidc_login_redirect_url}/{provider_name}?exchange_token={exchange_token}&state={randstate}"
+                redirect_url=f"{self._oidc_login_redirect_url}/{exchange_token}?state={randstate}"
             )
         )
