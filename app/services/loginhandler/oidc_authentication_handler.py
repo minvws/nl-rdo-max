@@ -86,7 +86,6 @@ class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
         randstate: str,
     ) -> AuthorizeResponse:
         exchange_token = authentication_state["exchange_token"]
-        print(pyop_authentication_request)
         return AuthorizeResponse(
             response=self._response_factory.create_redirect_response(
                 redirect_url=f"{self._oidc_login_redirect_url}/{exchange_token}?state={randstate}"
