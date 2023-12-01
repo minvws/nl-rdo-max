@@ -100,10 +100,13 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         )
         if login_options_response:
             return login_options_response
-        return self._authorize(request, authorize_request, login_options[0]["name"])
+        return self._authorize(request, authorize_request, login_options[0])
 
     def _authorize(
-        self, request: Request, authorize_request: AuthorizeRequest, login_option: str
+        self,
+        request: Request,
+        authorize_request: AuthorizeRequest,
+        login_option: Dict[str, str],
     ) -> Response:
         self._rate_limiter.validate_outage()
         pyop_authentication_request = (
@@ -146,7 +149,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             authorize_request,
             randstate,
             authentication_state,
-            login_option,
+            login_option["name"],
             session_id,
         )
 

@@ -2,22 +2,33 @@
   {
     "name": "digid_mock",
     "logo": "static/img/digid-logo.svg",
-    "text": "Inloggen met DigiD mock"
+    "text": "Inloggen met DigiD mock",
+    "type": "specific"
   },
   {
     "name": "uzipas",
     "logo": "static/img/uzipas.svg",
-    "text": "Inloggen met uzipas"
+    "text": "Inloggen met uzipas",
+    "type": "specific"
   },
   {
     "name": "yivi",
     "logo": "static/img/yivi-logo.svg",
-    "text": "Inloggen met Yivi"
+    "text": "Inloggen met Yivi",
+    "type": "specific"
   },
   {
-    "name": "oidc",
+    "name": "zsm",
     "logo": "static/img/zsm.svg",
     "text": "Inloggen met OpenID Connect",
-    "hidden": true
+    "type": "oidc",
+    "hidden": "true"
+  },
+   {
+    "name": "identities",
+    "logo": "",
+    "text": "",
+    "type": "oidc",
+    "hidden": "true"
   }
 ]

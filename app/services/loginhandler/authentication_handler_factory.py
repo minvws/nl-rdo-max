@@ -58,16 +58,17 @@ class AuthenticationHandlerFactory:
         self._uzi_authentication_handler: Union[UziAuthenticationHandler, None] = None
         self._oidc_authentication_handler: Union[OidcAuthenticationHandler, None] = None
 
-    def create(self, authentication_method) -> AuthenticationHandler:
-        if authentication_method == "digid":
-            return self.create_saml_authentication_handler()
-        if authentication_method == "digid_mock":
-            return self.create_mock_saml_authentication_handler()
-        if authentication_method == "irma":
-            return self.create_irma_authentication_handler()
-        if authentication_method == "uzipas":
-            return self.create_uzi_authentication_handler()
-        if authentication_method == "oidc":
+    def create(self, authentication_method: Dict[str, str]) -> AuthenticationHandler:
+        if authentication_method["type"] == "specific":
+            if authentication_method["name"] == "digid":
+                return self.create_saml_authentication_handler()
+            if authentication_method["name"] == "digid_mock":
+                return self.create_mock_saml_authentication_handler()
+            if authentication_method["name"] == "yivi":
+                return self.create_irma_authentication_handler()
+            if authentication_method["name"] == "uzipas":
+                return self.create_uzi_authentication_handler()
+        if authentication_method["type"] == "oidc":
             return self.create_oidc_authentication_handler()
         raise UnauthorizedError(error_description="unknown authentication method")
 

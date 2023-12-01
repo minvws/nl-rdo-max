@@ -140,4 +140,4 @@ ipaddress_max_count=10
 ipaddress_max_count_expire_seconds=10
 
 [oidc_client]
-oidc_login_redirect_url = https://localhost:8001/login/oidc
+oidc_login_redirect_url = http://localhost:8001/login/oidc/start

@@ -22,7 +22,11 @@ logger = logging.getLogger(__name__)
 
 # pylint: disable=too-many-arguments
 class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
-    def __init__(self, oidc_login_redirect_url: str, **kwargs):
+    def __init__(
+        self,
+        oidc_login_redirect_url: str,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self._oidc_login_redirect_url = oidc_login_redirect_url
 
@@ -30,6 +34,7 @@ class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
         self, authorize_request: AuthorizeRequest
     ) -> Dict[str, Any]:
         client = self._clients[authorize_request.client_id]
+        oidc_provider_name = authorize_request.login_hint
         header = {
             "alg": "RS256",
             "x5t": self._private_sign_jwk_key.thumbprint(hashes.SHA256()),
@@ -42,6 +47,7 @@ class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
             "exp": int(time.time()) + 60,
             "session_type": "oidc",
             "login_title": client["name"],
+            "oidc_provider_name": oidc_provider_name,
         }
         jwt = JWT(header=header, claims=claims)
         jwt.make_signed_token(self._private_sign_jwk_key)
@@ -79,8 +85,9 @@ class OidcAuthenticationHandler(CommonFields, AuthenticationHandler):
         authentication_state: Dict[str, Any],
         randstate: str,
     ) -> AuthorizeResponse:
+        exchange_token = authentication_state["exchange_token"]
         return AuthorizeResponse(
             response=self._response_factory.create_redirect_response(
-                redirect_url=f"{self._oidc_login_redirect_url}/{authentication_state['exchange_token']}?state={randstate}"
+                redirect_url=f"{self._oidc_login_redirect_url}/{exchange_token}?state={randstate}"
             )
         )
