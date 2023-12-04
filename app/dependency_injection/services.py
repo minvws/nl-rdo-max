@@ -126,7 +126,7 @@ class Services(containers.DeclarativeContainer):
         userinfo_service=userinfo_service,
         app_mode=config.app.app_mode,
         environment=config.app.environment,
-        login_methods=config.app.login_methods.as_(json_from_file),
+        login_methods=config.app.login_methods_path.as_(json_from_file),
         authentication_handler_factory=login_handler_factory,
         external_base_url=config.app.external_base_url,
         session_url=config.app.session_url,

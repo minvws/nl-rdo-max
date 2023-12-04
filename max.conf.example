@@ -15,7 +15,7 @@ loglevel = debug
 
 # comma space seperated list
 
-login_methods = login_methods.json
+login_methods_path = login_methods.json
 sidebar_template = uzi_sidebar.html
 
 # only used with html redirect
