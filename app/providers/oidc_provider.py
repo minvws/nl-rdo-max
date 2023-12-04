@@ -314,16 +314,17 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
     ) -> Union[None, Response]:
         if len(login_methods) > 1:
             parsed_url = parse.urlparse(str(request.url))
+            base_url = parse.urlparse(self._external_base_url)
+
             query_params = parse.parse_qs(parsed_url.query)
 
             for login_method in login_methods:
                 query_params["login_hint"] = [login_method["name"]]
-                query_params["login_hint"] = [login_method["name"]]
                 updated_query = urlencode(query_params, doseq=True)
                 updated_url = urlunparse(
                     (
-                        parsed_url.scheme,
-                        parsed_url.netloc,
+                        base_url.scheme,
+                        base_url.netloc,
                         parsed_url.path,
                         parsed_url.params,
                         updated_query,
@@ -342,7 +343,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                     "error_description": "Authentication cancelled",
                 }
             )
-
             template_context = {
                 "request": request,
                 "layout": "layout.html",

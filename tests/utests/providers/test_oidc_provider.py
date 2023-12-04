@@ -67,7 +67,7 @@ def test_jwks():
 
 def test_provide_login_options_response_with_multiple_login_options(mocker):
     oidc_provider = create_oidc_provider(
-        clients={"client_id": {"name": "name"}}, external_base_url="base_url"
+        clients={"client_id": {"name": "name"}}, external_base_url="http://base_url"
     )
     request = MagicMock()
     template_response = MagicMock()
@@ -91,11 +91,11 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
             "login_methods": {
                 "a": {
                     "name": "a",
-                    "url": "http://localhost:8000/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=a",
+                    "url": "http://base_url/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=a",
                 },
                 "b": {
                     "name": "b",
-                    "url": "http://localhost:8000/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=b",
+                    "url": "http://base_url/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=b",
                 },
             },
             "layout": "layout.html",
