@@ -71,9 +71,7 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
     )
     request = MagicMock()
     template_response = MagicMock()
-    request_url = MagicMock()
     login_methods = [{"name": "a"}, {"name": "b"}]
-    client = {"name": "name"}
 
     request.url = (
         "http://localhost:8000/redirect_path?redirect_uri=redirect_uri&key=value"
@@ -83,7 +81,9 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
     templates_mock = mocker.patch("app.providers.oidc_provider.templates")
     templates_mock.TemplateResponse.return_value = template_response
 
-    actual = oidc_provider._provide_login_options_response(client, request, login_methods)
+    actual = oidc_provider._provide_login_options_response(
+        "name", request, login_methods
+    )
 
     templates_mock.TemplateResponse.assert_called_with(
         "login_options.html",
@@ -113,26 +113,25 @@ def test_provide_login_options_response_with_zero_login_options(mocker):
     request = MagicMock()
     authorize_request = MagicMock()
     login_methods = []
-    client = {"name": "name"}
 
     authorize_request.client_id = "client_id"
 
     templates_mock = mocker.patch("app.providers.oidc_provider.templates")
 
     with pytest.raises(UnauthorizedError):
-        oidc_provider._provide_login_options_response(client, request, login_methods)
+        oidc_provider._provide_login_options_response("name", request, login_methods)
     templates_mock.TemplateResponse.assert_not_called()
 
 
 def test_provide_login_options_response_with_one_login_options(mocker):
     oidc_provider = create_oidc_provider()
     request = MagicMock()
-    authorize_request = MagicMock()
     login_methods = [{"name": "a"}]
-    client = {"name": "name"}
     templates_mock = mocker.patch("app.providers.oidc_provider.templates")
 
-    actual = oidc_provider._provide_login_options_response(client, request, login_methods)
+    actual = oidc_provider._provide_login_options_response(
+        "name", request, login_methods
+    )
 
     templates_mock.TemplateResponse.assert_not_called()
     assert actual is None
@@ -256,9 +255,7 @@ def test_present_login_options_or_authorize():
         validate_authorize_request_method.assert_called_with(authorize_request)
         get_login_methods_method.assert_called_with(client, authorize_request)
         provide_login_options_response_method.assert_called_with(
-            client,
-            request,
-            [{"name": "a"}, {"name": "b"}]
+            "name", request, [{"name": "a"}, {"name": "b"}]
         )
         authorize_method.assert_called_with(request, authorize_request, {"name": "a"})
 
