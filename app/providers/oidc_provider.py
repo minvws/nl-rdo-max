@@ -284,7 +284,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         return self._response_factory.create_redirect_response(response_url)
 
     def _get_login_methods(
-        self, client, authorize_request: AuthorizeRequest
+        self, client: dict, authorize_request: AuthorizeRequest
     ) -> List[Dict[str, str]]:
         login_methods = self._login_methods
 
