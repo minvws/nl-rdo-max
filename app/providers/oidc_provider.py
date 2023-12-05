@@ -94,9 +94,10 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self, request: Request, authorize_request: AuthorizeRequest
     ):
         self._validate_authorize_request(authorize_request)
-        login_options = self._get_login_methods(authorize_request)
+        client = self._clients[authorize_request.client_id]
+        login_options = self._get_login_methods(client, authorize_request)
         login_options_response = self._provide_login_options_response(
-            request, login_options
+            client["name"], request, login_options
         )
         if login_options_response:
             return login_options_response
@@ -283,10 +284,8 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         return self._response_factory.create_redirect_response(response_url)
 
     def _get_login_methods(
-        self, authorize_request: AuthorizeRequest
+        self, client: dict, authorize_request: AuthorizeRequest
     ) -> List[Dict[str, str]]:
-        client = self._clients[authorize_request.client_id]
-
         login_methods = self._login_methods
 
         if "login_methods" in client:
@@ -309,6 +308,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
     def _provide_login_options_response(
         self,
+        client_name: str,
         request: Request,
         login_methods: List[Dict[str, str]],
     ) -> Union[None, Response]:
@@ -346,6 +346,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             template_context = {
                 "request": request,
                 "layout": "layout.html",
+                "ura_name": client_name,
                 "login_methods": login_method_by_name,
                 "redirect_uri": redirect_url_parts._replace(
                     query=parse.urlencode(query)
