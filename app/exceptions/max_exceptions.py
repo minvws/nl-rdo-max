@@ -8,7 +8,6 @@ from app.exceptions.oidc_exceptions import (
     TEMPORARILY_UNAVAILABLE,
     INVALID_REQUEST,
 )
-from fastapi.exceptions import HTTPException
 
 
 class RedirectBaseException(Exception, abc.ABC):
