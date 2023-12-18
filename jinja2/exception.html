@@ -13,7 +13,8 @@
 <main id="main-content" tabindex="-1">
     <section class="bg-color-offset auth">
         <div>
-            <h1>{{ exception_title }}</h1>
+            <h1>Error code: <span>{{ status_code }}</span></h1>
+            <h2>{{ exception_title }}</h2>
             {{ exception_message }}
         </div>
         {% if redirect_uri %}

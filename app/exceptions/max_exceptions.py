@@ -8,6 +8,7 @@ from app.exceptions.oidc_exceptions import (
     TEMPORARILY_UNAVAILABLE,
     INVALID_REQUEST,
 )
+from fastapi.exceptions import HTTPException
 
 
 class RedirectBaseException(Exception, abc.ABC):
@@ -17,10 +18,12 @@ class RedirectBaseException(Exception, abc.ABC):
         error: str,
         error_description: str,
         log_message: Union[str, None] = None,
+        status_code: int = 500,
     ):
         super().__init__(error_description if log_message is None else log_message)
         self.error = error
         self.error_description = error_description
+        self.status_code = status_code
 
 
 class JsonBaseException(RedirectBaseException, abc.ABC):
@@ -40,6 +43,7 @@ class InvalidClientException(TemplateBaseException):
         super().__init__(
             error=UNAUTHORIZED_CLIENT,
             error_description=error_description,
+            status_code=401,
         )
 
 
@@ -48,6 +52,7 @@ class InvalidRedirectUriException(TemplateBaseException):
         super().__init__(
             error=UNAUTHORIZED_CLIENT,
             error_description="Invalid redirect uri",
+            status_code=400,
         )
 
 

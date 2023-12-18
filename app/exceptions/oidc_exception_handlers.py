@@ -34,6 +34,7 @@ def _base_exception_handler(
         "exception_title": error,
         "exception_message": error_description,
         "redirect_delay": redirect_html_delay,
+        "status_code": status_code,
     }
     if redirect_uri is not None:
         context["redirect_uri"] = redirect_uri
@@ -115,9 +116,11 @@ async def general_exception_handler(
     request: Request,
     exception: Exception,
 ):
+    status_code = 500
     if isinstance(exception, RedirectBaseException):
         error = exception.error
         error_description = exception.error_description
+        status_code = exception.status_code
     elif isinstance(exception, RequestValidationError):
         error = "Invalid request"
         error_description = (
@@ -126,4 +129,6 @@ async def general_exception_handler(
     else:
         error = "server_error"
         error_description = "Something went wrong"
-    return handle_exception_redirect(request, error, error_description)
+    return handle_exception_redirect(
+        request, error, error_description, status_code=status_code
+    )
