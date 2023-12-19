@@ -42,7 +42,7 @@ class InvalidClientException(TemplateBaseException):
         super().__init__(
             error=UNAUTHORIZED_CLIENT,
             error_description=error_description,
-            status_code=401,
+            status_code=400,
         )
 
 
