@@ -2,7 +2,7 @@ import logging
 from functools import cached_property
 from typing import Union
 
-from pydantic import BaseModel, validator, ConfigDict
+from pydantic import BaseModel, validator
 
 from app import constants
 from app.models.response_type import ResponseType
@@ -11,8 +11,6 @@ log = logging.getLogger(__package__)
 
 
 class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
-    model_config = ConfigDict(use_enum_values=True)
-
     client_id: str
     redirect_uri: str
     response_type: str
