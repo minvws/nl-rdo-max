@@ -118,3 +118,12 @@ class UnexpectedAuthnBinding(JsonBaseException):
             error=SERVER_ERROR,
             error_description=error_description,
         )
+
+
+class InvalidResponseType(JsonBaseException):
+    def __init__(self) -> None:
+        super().__init__(
+            error=INVALID_REQUEST,
+            error_description="Invalid response type",
+            status_code=400,
+        )

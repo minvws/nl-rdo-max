@@ -2,7 +2,7 @@ import logging
 from functools import cached_property
 from typing import Union
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, ConfigDict
 
 from app import constants
 from app.models.response_type import ResponseType
@@ -11,9 +11,11 @@ log = logging.getLogger(__package__)
 
 
 class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
+    model_config = ConfigDict(use_enum_values=True)
+
     client_id: str
     redirect_uri: str
-    response_type: ResponseType
+    response_type: str
     nonce: str
     scope: str
     state: str
@@ -51,3 +53,14 @@ class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
     @cached_property
     def authorization_by_proxy(self):
         return constants.SCOPE_AUTHORIZATION_BY_PROXY in self.splitted_scopes
+
+    @validator("response_type")
+    def validate_response_type(cls, response_type: str):
+        response_types = ResponseType.list()
+        if response_type not in response_types:
+            log.warning(
+                "response_code %s is not defined in defined response types %s",
+                response_type,
+                response_types,
+            )
+        return response_type
