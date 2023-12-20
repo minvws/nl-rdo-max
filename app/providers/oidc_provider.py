@@ -21,6 +21,7 @@ from app.exceptions.max_exceptions import (
     UnauthorizedError,
     InvalidClientException,
     InvalidRedirectUriException,
+    InvalidResponseType,
 )
 from app.exceptions.oidc_exceptions import LOGIN_REQUIRED
 from app.misc.rate_limiter import RateLimiter
@@ -371,7 +372,12 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             raise InvalidClientException(
                 error_description=f"Client id {authorize_request.client_id} is not known for this OIDC server"
             )
+
         if authorize_request.redirect_uri not in self._clients[
             authorize_request.client_id
         ].get("redirect_uris", []):
             raise InvalidRedirectUriException()
+        if authorize_request.response_type not in self._clients[
+            authorize_request.client_id
+        ].get("response_types", []):
+            raise InvalidResponseType()
