@@ -17,6 +17,7 @@ clean_venv: ## Remove virtual environment
 
 run:
 	docker-compose up -d
+	npm run build
 	. .venv/bin/activate && ${env} python -m app.main
 
 pip-sync: ## synchronizes the .venv with the state of requirements.txt
@@ -33,7 +34,10 @@ setup-saml:
 setup-config:
 	scripts/./setup-config.sh
 
-setup: venv setup-config setup-saml setup-secrets
+setup-npm:
+	scripts/./setup-npm.sh
+
+setup: venv setup-config setup-saml setup-secrets setup-npm
 
 check:
 	. .venv/bin/activate && ${env} pylint app

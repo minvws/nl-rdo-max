@@ -1,16 +1,26 @@
-<nav aria-label="Zijbalknavigatie">
-    <h1>
-        Inloggen via UZI-Online
-    </h1>
-    <p>
-        Log in met één van de beschikbare inlogmogelijkheden met uw testacccount of testpas.
-    </p>
-    <p>
-        Of log in met een van de demo test-identiteiten.
-    </p>
-    <a class="button" href="{{ login_methods["identities"]["url"] }}">Inloggen met een demo testidentiteit</a>
-    <div class="warning" role="group" aria-label="waarschuwing">
-        <p><b>Let op:</b> Inloggen werkt met testaccounts. Log <b>niet</b> in met uw persoonlijke gegevens.</p>
+<nav class="sidemenu-max" aria-label="Zijbalknavigatie">
+    <div class="space-between">
+        <div class="gaps">
+            <h3>Inloggen met UZI-Online</h3>
+
+            <p>
+                De inlogpagina van UZI-Online. Op dit moment bevat deze pagina uitsluitend test inlogmiddelen. Om te demonstreren dat het inloggen werkt kan worden ingelogd met een testidentiteit.
+            </p>
+
+            <a class="button ghost" href="{{ login_methods["identities"]["url"] }}">Inloggen met een demo testidentiteit</a>
+
+            <p>
+                De inlogmiddelen zijn alleen met testaccounts (of testpas) te gebruiken. Deze worden niet actief verstrekt. Lees meer over de <a href="https://proeftuin.uzi-online.rdobeheer.nl/test-identities">testidentiteiten en inlogmiddelen op de proeftuin</a>.
+            </p>
+        </div>
+        <div class="sticky-bottom">
+            <ul>
+                <li>
+                    <a href="{{ redirect_uri }}" class="navigate-back">
+                        Terug naar {{ ura_name }}
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
-    <a href="{{ redirect_uri }}">Terug naar de Proeftuin hoofdpagina</a>
 </nav>

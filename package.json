@@ -1,0 +1,16 @@
+{
+  "name": "nl-rdo-max-private",
+  "description": "Multiple Authentication eXchange",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@minvws/nl-rdo-rijksoverheid-ui-theme": "^0.0.18"
+  },
+  "devDependencies": {
+    "sass": "^1.69.5",
+    "vite": "^5.0.3"
+  }
+}

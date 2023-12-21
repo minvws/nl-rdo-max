@@ -5,7 +5,6 @@ from os import path
 from typing import Union, List, Any, Optional
 
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
-from fastapi.templating import Jinja2Templates
 from Cryptodome.Hash import SHA256
 from Cryptodome.IO import PEM
 
@@ -14,7 +13,6 @@ from app.dependency_injection.config import get_config
 
 SOAP_NS = "http://www.w3.org/2003/05/soap-envelope"
 
-templates = Jinja2Templates(directory="jinja2")
 config = get_config()
 
 

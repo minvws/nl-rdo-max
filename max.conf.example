@@ -141,3 +141,7 @@ ipaddress_max_count_expire_seconds=10
 
 [oidc_client]
 oidc_login_redirect_url = http://localhost:8001/login/oidc/start
+
+[templates]
+jinja_path = jinja2
+vite_manifest_path = static/assets/manifest.json

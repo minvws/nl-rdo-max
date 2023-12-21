@@ -5,22 +5,21 @@ import urllib.parse
 from typing import Dict, Mapping, Union, Tuple
 
 from dependency_injector.wiring import inject, Provide
-from fastapi import Request
+from fastapi import Request, Depends
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import RedirectResponse, Response
-from fastapi.templating import Jinja2Templates
 
 from app.dependency_injection.container import Container
 from app.exceptions.max_exceptions import (
     RedirectBaseException,
 )
+from app.services.template_service import TemplateService
 from app.models.enums import RedirectType
 
 log = logging.getLogger(__name__)
 
-templates = Jinja2Templates(directory="jinja2")
 
-
+@inject
 def _base_exception_handler(
     request: Request,
     error: str,
@@ -28,6 +27,7 @@ def _base_exception_handler(
     redirect_uri: Union[str, None] = None,
     redirect_html_delay: int = 0,
     status_code: int = 500,
+    template_service: TemplateService = Depends(Provide["services.template_service"]),
 ):
     context = {
         "request": request,
@@ -38,7 +38,7 @@ def _base_exception_handler(
     }
     if redirect_uri is not None:
         context["redirect_uri"] = redirect_uri
-    return templates.TemplateResponse(
+    return template_service.templates.TemplateResponse(
         "exception.html", status_code=status_code, context=context
     )
 

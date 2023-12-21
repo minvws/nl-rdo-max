@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <title>Max: {{ exception_title }}</title>
-    <link href="static/css/manon-mint-green.css" rel="stylesheet">
+    <link href="{{ vite_asset('resources/css/app.scss') }}" rel="stylesheet">
     <meta charset="UTF-8">
     {% if redirect_uri and redirect_delay %}
     <meta http-equiv="refresh" content="{{ redirect_delay }};url={{ redirect_uri }}" />
@@ -11,7 +11,7 @@
 </head>
 
 <main id="main-content" tabindex="-1">
-    <section class="bg-color-offset auth">
+    <section class="bg-color-offset layout-authentication">
         <div>
             <h1>Error code: <span>{{ status_code }}</span></h1>
             <h2>{{ exception_title }}</h2>

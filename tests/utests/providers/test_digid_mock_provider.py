@@ -4,10 +4,18 @@ from app.providers.digid_mock_provider import DigidMockProvider
 
 
 def test_digid_mock(mocker):
+    # Create a mock for Response
     response_mock = MagicMock()
+
+    # Create a mock for JinjaTemplateService and its TemplateResponse method
+    mock_jinja_service = MagicMock()
+    mock_jinja_service.templates.TemplateResponse = MagicMock()
+    mock_jinja_service.templates.TemplateResponse.return_value = response_mock
+
+    # Instantiate DigidMockProvider with the mocked JinjaTemplateService
+    provider = DigidMockProvider(mock_jinja_service)
+
     request_mock = MagicMock()
-    template_mock = mocker.patch("app.providers.digid_mock_provider.templates")
-    template_mock.TemplateResponse.return_value = response_mock
 
     digid_mock_request = MagicMock()
     digid_mock_request.state = "s"
@@ -16,11 +24,11 @@ def test_digid_mock(mocker):
     digid_mock_request.RelayState = "rs"
     mocker.patch("uuid.uuid4", return_value="1234")
 
-    actual_response = DigidMockProvider.digid_mock(request_mock, digid_mock_request)
+    actual_response = provider.digid_mock(request_mock, digid_mock_request)
 
     assert actual_response == response_mock
 
-    template_mock.TemplateResponse.assert_called_with(
+    mock_jinja_service.templates.TemplateResponse.assert_called_with(
         "digid_mock.html",
         {
             "request": request_mock,
@@ -38,7 +46,10 @@ def test_digid_mock_catch():
     digid_mock_catch_request.bsn = "s"
     digid_mock_catch_request.RelayState = "ar"
 
-    actual_response = DigidMockProvider.digid_mock_catch(digid_mock_catch_request)
+    mock_jinja_service = MagicMock()
+    provider = DigidMockProvider(mock_jinja_service)
+
+    actual_response = provider.digid_mock_catch(digid_mock_catch_request)
 
     assert actual_response.status_code == 303
     assert (

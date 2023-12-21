@@ -3,6 +3,8 @@ from dependency_injector import containers, providers
 
 from app.misc.rate_limiter import RateLimiter
 from app.misc.utils import as_bool, json_from_file
+from app.services.template_service import TemplateService
+from app.services.vite_manifest_service import ViteManifestService
 from app.models.enums import RedirectType
 from app.providers.digid_mock_provider import DigidMockProvider
 from app.providers.oidc_provider import OIDCProvider
@@ -38,11 +40,25 @@ class Services(containers.DeclarativeContainer):
 
     json_schema = providers.Callable(json_from_file, config.app.json_schema_path)
 
+    vite_manifest_service = providers.Singleton(
+        ViteManifestService,
+        manifest=providers.Callable(
+            json_from_file, config.templates.vite_manifest_path
+        ),
+    )
+
+    template_service = providers.Singleton(
+        TemplateService,
+        jinja_template_directory=config.templates.jinja_path,
+        vite_manifest_service=vite_manifest_service,
+    )
+
     saml_response_factory = providers.Singleton(
         SamlResponseFactory,
         html_templates_path=config.saml.html_templates_path,
         saml_base_issuer=config.saml.base_issuer,
         oidc_authorize_endpoint=config.oidc.authorize_endpoint,
+        vite_manifest_service=vite_manifest_service,
     )
 
     response_factory = providers.Singleton(ResponseFactory, redirect_type=redirect_type)
@@ -132,13 +148,12 @@ class Services(containers.DeclarativeContainer):
         session_url=config.app.session_url,
         external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
         sidebar_template=config.app.sidebar_template,
+        template_service=template_service,
     )
 
     digid_mock_provider = providers.Singleton(
         DigidMockProvider,
-        saml_response_factory=saml_response_factory,
-        saml_identity_provider_service=saml_identity_provider_service,
-        environment=config.app.environment.as_(str.lower),
+        template_service=template_service,
     )
 
     saml_provider = providers.Singleton(

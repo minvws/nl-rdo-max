@@ -1,31 +1,26 @@
 {% extends layout %}
 {% block body %}
-        <div>
-            <h1>Inloggen {{ ura_name }}</h1>
+    <section class="bg-color-offset">
+        <div class="layout-authentication">
+            <p class="condensed">Inloggen bij '{{ ura_name }}'</p>
+            <h2>Hoe wilt u inloggen?</h2>
 
-            <div class="explanation" role="group" aria-label="toelichting">
-                <span>Toelichting:</span>
-                <p>Kies hier met behulp van welke dienst u wilt inloggen bij "{{ ura_name }}"</p>
-            </div>
+            <ul class="tiles">
+                {% for login_method in login_methods %}
+                    {% if not login_methods[login_method]["hidden"] %}
+                    <li>
+                        <a href="{{ login_methods[login_method]["url"] }}" class="horizontal-view">
+                            <img src="{{ login_methods[login_method]["logo"] }}" alt="{{ login_methods[login_method]["name"] }} logo" width="56px">
+                            {{ login_methods[login_method]["text"] }} <i class="icon icon-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
 
-            <div class="tile options-overview">
-
-                <h1>Inlogmiddelen:</h1>
-                <ul class="tiles">
-                    {% for login_method in login_methods %}
-                        {% if not login_methods[login_method]["hidden"] %}
-                        <li>
-                            <a href="{{ login_methods[login_method]["url"] }}" class="horizontal-view">
-                                <img src="{{ login_methods[login_method]["logo"] }}" alt="{{ login_methods[login_method]["name"] }} logo" width="56px">
-                                {{ login_methods[login_method]["text"] }}
-                            </a>
-                        </li>
-                        {% endif %}
-                    {% endfor %}
-                </ul>
-                <div class="button-container">
-                    <a href="{{ redirect_uri }}" class="button secondary">Terug</a>
-                </div>
+            <div class="button-container">
+                <a href="{{ redirect_uri }}" class="button ghost">Terug</a>
             </div>
         </div>
+    </section>
 {% endblock %}

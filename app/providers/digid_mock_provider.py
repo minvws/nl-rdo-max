@@ -8,22 +8,24 @@ import uuid
 
 from fastapi import Request
 from fastapi.responses import RedirectResponse, Response
-from fastapi.templating import Jinja2Templates
 
+from app.services.template_service import TemplateService
 from app.models.digid_mock_requests import DigiDMockRequest, DigiDMockCatchRequest
-
-templates = Jinja2Templates(directory="jinja2")
 
 
 class DigidMockProvider:
-    @staticmethod
-    def digid_mock(request: Request, digid_mock_request: DigiDMockRequest) -> Response:
+    def __init__(self, template_service: TemplateService):
+        self._template_renderer = template_service.templates
+
+    def digid_mock(
+        self, request: Request, digid_mock_request: DigiDMockRequest
+    ) -> Response:
         state = digid_mock_request.state
         authorize_request = digid_mock_request.authorize_request
         idp_name = digid_mock_request.idp_name
         relay_state = digid_mock_request.RelayState
         artifact = str(uuid.uuid4())
-        return templates.TemplateResponse(
+        return self._template_renderer.TemplateResponse(
             "digid_mock.html",
             {
                 "request": request,
@@ -35,8 +37,7 @@ class DigidMockProvider:
             },
         )
 
-    @staticmethod
-    def digid_mock_catch(request: DigiDMockCatchRequest) -> RedirectResponse:
+    def digid_mock_catch(self, request: DigiDMockCatchRequest) -> RedirectResponse:
         bsn = request.bsn
         relay_state = request.RelayState
 

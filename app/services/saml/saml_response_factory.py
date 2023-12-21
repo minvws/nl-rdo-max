@@ -16,6 +16,7 @@ from app.exceptions.max_exceptions import (
 from app.misc.utils import load_template
 from app.models.authorize_response import AuthorizeResponse
 from app.models.saml.exceptions import ScopingAttributesNotAllowed
+from app.services.vite_manifest_service import ViteManifestService
 
 log = logging.getLogger(__package__)
 
@@ -26,6 +27,7 @@ class SamlResponseFactory:
         html_templates_path: str,
         saml_base_issuer: str,
         oidc_authorize_endpoint: str,
+        vite_manifest_service: ViteManifestService,
     ):
         self._saml_base_issuer = saml_base_issuer
         self._oidc_authorize_endpoint = oidc_authorize_endpoint
@@ -33,6 +35,7 @@ class SamlResponseFactory:
         self._authn_request_template = load_template(
             html_templates_path, "authn_request.html"
         )
+        self._vite_manifest_service = vite_manifest_service
 
     def create_saml_response(
         self, saml_identity_provider, authorize_request, randstate
@@ -72,6 +75,7 @@ class SamlResponseFactory:
                 "sso_url": authn_request.sso_url,
                 "saml_request": authn_request.get_base64_string().decode(),
                 "relay_state": randstate,
+                "vite_asset": self._vite_manifest_service.get_asset_url,
             }
         )
         # pylint: disable=duplicate-code
@@ -139,6 +143,7 @@ class SamlResponseFactory:
                 "sso_url": sso_url,
                 "saml_request": authn_request.get_base64_string().decode(),
                 "relay_state": randstate,
+                "vite_asset": self._vite_manifest_service.get_asset_url,
             }
         )
         return HTMLResponse(content=rendered, status_code=200)

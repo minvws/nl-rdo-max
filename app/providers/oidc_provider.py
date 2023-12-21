@@ -8,7 +8,6 @@ import requests
 from fastapi import Request, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from fastapi.templating import Jinja2Templates
 from jwcrypto.jwt import JWT
 from pyop.provider import (  # type: ignore[attr-defined]
     Provider as PyopProvider,
@@ -29,6 +28,7 @@ from app.models.acs_context import AcsContext
 from app.models.authentication_context import AuthenticationContext
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
+from app.services.template_service import TemplateService
 from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
 )
@@ -36,8 +36,6 @@ from app.services.response_factory import ResponseFactory
 from app.services.saml.saml_response_factory import SamlResponseFactory
 from app.services.userinfo.userinfo_service import UserinfoService
 from app.storage.authentication_cache import AuthenticationCache
-
-templates = Jinja2Templates(directory="jinja2")
 
 
 # pylint:disable=too-many-arguments
@@ -59,6 +57,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         session_url: str,
         external_http_requests_timeout_seconds: int,
         sidebar_template: str,
+        template_service: TemplateService,
     ):
         self._pyop_provider = pyop_provider
         self._authentication_cache = authentication_cache
@@ -80,6 +79,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             external_http_requests_timeout_seconds
         )
         self._sidebar_template = sidebar_template
+        self._template_renderer = template_service.templates
 
     def well_known(self):
         return JSONResponse(
@@ -356,7 +356,9 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             if self._sidebar_template:
                 template_context["sidebar"] = self._sidebar_template
 
-            return templates.TemplateResponse("login_options.html", template_context)
+            return self._template_renderer.TemplateResponse(
+                "login_options.html", template_context
+            )
         if len(login_methods) != 1:
             raise UnauthorizedError(
                 error_description="No valid login_methods available"

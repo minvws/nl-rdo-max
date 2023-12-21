@@ -7,7 +7,6 @@ from fastapi.exceptions import HTTPException
 
 from app.exceptions.max_exceptions import ServerErrorException, UnauthorizedError
 from app.models.authorize_request import AuthorizeRequest
-from app.models.login_digid_request import LoginDigiDRequest
 from app.models.response_type import ResponseType
 from app.providers.oidc_provider import OIDCProvider
 
@@ -27,6 +26,7 @@ def create_oidc_provider(
     external_base_url="external_base_url",
     session_url="local.example",
     external_http_requests_timeout_seconds=2,
+    template_service=MagicMock(),
 ):
     return OIDCProvider(
         pyop_provider,
@@ -44,6 +44,7 @@ def create_oidc_provider(
         session_url,
         external_http_requests_timeout_seconds,
         "sidebar.html",
+        template_service,
     )
 
 
@@ -66,11 +67,18 @@ def test_jwks():
 
 
 def test_provide_login_options_response_with_multiple_login_options(mocker):
+    template_response = MagicMock()
+
+    templates_mock = MagicMock()
+    templates_mock.templates.TemplateResponse = MagicMock()
+    templates_mock.templates.TemplateResponse.return_value = template_response
+
     oidc_provider = create_oidc_provider(
-        clients={"client_id": {"name": "name"}}, external_base_url="http://base_url"
+        clients={"client_id": {"name": "name"}},
+        external_base_url="http://base_url",
+        template_service=templates_mock,
     )
     request = MagicMock()
-    template_response = MagicMock()
     login_methods = [{"name": "a"}, {"name": "b"}]
 
     request.url = (
@@ -78,14 +86,11 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
     )
     request.query_params = {"redirect_uri": "redirect_uri?key=value"}
 
-    templates_mock = mocker.patch("app.providers.oidc_provider.templates")
-    templates_mock.TemplateResponse.return_value = template_response
-
     actual = oidc_provider._provide_login_options_response(
         "name", request, login_methods
     )
 
-    templates_mock.TemplateResponse.assert_called_with(
+    templates_mock.templates.TemplateResponse.assert_called_with(
         "login_options.html",
         {
             "request": request,
@@ -109,31 +114,36 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
 
 
 def test_provide_login_options_response_with_zero_login_options(mocker):
-    oidc_provider = create_oidc_provider()
+    templates_mock = MagicMock()
+    templates_mock.templates.TemplateResponse = MagicMock()
+
+    oidc_provider = create_oidc_provider(
+        template_service=templates_mock,
+    )
     request = MagicMock()
     authorize_request = MagicMock()
     login_methods = []
 
     authorize_request.client_id = "client_id"
 
-    templates_mock = mocker.patch("app.providers.oidc_provider.templates")
-
     with pytest.raises(UnauthorizedError):
         oidc_provider._provide_login_options_response("name", request, login_methods)
-    templates_mock.TemplateResponse.assert_not_called()
+    templates_mock.templates.TemplateResponse.assert_not_called()
 
 
 def test_provide_login_options_response_with_one_login_options(mocker):
+    templates_mock = MagicMock()
+    templates_mock.templates.TemplateResponse = MagicMock()
+
     oidc_provider = create_oidc_provider()
     request = MagicMock()
     login_methods = [{"name": "a"}]
-    templates_mock = mocker.patch("app.providers.oidc_provider.templates")
 
     actual = oidc_provider._provide_login_options_response(
         "name", request, login_methods
     )
 
-    templates_mock.TemplateResponse.assert_not_called()
+    templates_mock.templates.TemplateResponse.assert_not_called()
     assert actual is None
 
 
