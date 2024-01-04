@@ -326,7 +326,7 @@ def test_authorize():
 
     pyop_provider.parse_authentication_request.assert_called_with(
         "client_id=str&redirect_uri=str&response_type=code&nonce=str&scope=str&state=str"
-        + "&code_challenge=str&code_challenge_method=str&login_hint=a",
+        + "&code_challenge=str&code_challenge_method=str",
         request.headers,
     )
 
@@ -347,6 +347,7 @@ def test_authorize():
         authentication_state,
         login_option["name"],
         "session_id",
+        req_acme_token=None,
     )
 
     login_handler.authorize_response.assert_called_with(
@@ -396,7 +397,7 @@ def test_authorize_without_client():
     rate_limiter.validate_outage.assert_called()
     pyop_provider.parse_authentication_request.assert_called_with(
         "client_id=str&redirect_uri=str&response_type=code&nonce=str&scope=str&state=str"
-        + "&code_challenge=str&code_challenge_method=str&login_hint=a%2Cb",
+        + "&code_challenge=str&code_challenge_method=str",
         request.headers,
     )
 
@@ -438,4 +439,34 @@ def test_token():
     pyop_provider.handle_token_request.assert_called_with("qs", headers)
     authentication_cache.cache_userinfo_context.assert_called_with(
         token_response["access_token"], token_response["access_token"], acs_context
+    )
+
+
+def test_create_pyop_authentication_request():
+    pyop_provider = MagicMock()
+    request = MagicMock()
+    authorize_request = AuthorizeRequest(
+        client_id="client_id",
+        redirect_uri="redirect_uri",
+        response_type="response_type",
+        nonce="nonce",
+        scope="scope",
+        state="state",
+        code_challenge="code_challenge",
+        code_challenge_method="bla",
+        login_hint="bla",
+        claims="bla",
+    )
+    oidc_provider = create_oidc_provider(pyop_provider=pyop_provider)
+
+    pyop_provider.parse_authentication_request.return_value = "expected_return_value"
+
+    actual = oidc_provider._create_pyop_authentication_request(
+        request, authorize_request
+    )
+
+    assert actual == "expected_return_value"
+    pyop_provider.parse_authentication_request.assert_called_with(
+        "client_id=client_id&redirect_uri=redirect_uri&response_type=response_type&nonce=nonce&scope=scope&state=state&code_challenge=code_challenge&code_challenge_method=bla",
+        request.headers,
     )

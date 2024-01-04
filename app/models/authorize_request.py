@@ -1,5 +1,7 @@
+import json
 import logging
 from functools import cached_property
+from json import JSONDecodeError
 from typing import Union
 
 from pydantic import BaseModel, validator
@@ -20,6 +22,7 @@ class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
     code_challenge: str
     code_challenge_method: str
     login_hint: Union[str, None] = None
+    claims: Union[str, None] = None
 
     @staticmethod
     def get_allowed_scopes():
@@ -34,6 +37,16 @@ class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
         if self.login_hint is None:
             return []
         return self.login_hint.split(",")
+
+    @property
+    def acme_token(self):
+        if self.claims is None:
+            return None
+        try:
+            return json.loads(self.claims).get("acme_token", None)
+        except (TypeError, JSONDecodeError):
+            log.debug("Unable to load claims: %s", self.claims)
+            return None
 
     @validator("scope")
     def validate_scopes(cls, scopes):  # pylint: disable=no-self-argument

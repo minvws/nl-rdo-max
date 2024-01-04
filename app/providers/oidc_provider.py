@@ -9,6 +9,7 @@ from fastapi import Request, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from jwcrypto.jwt import JWT
+from pyop.message import AuthorizationRequest
 from pyop.provider import (  # type: ignore[attr-defined]
     Provider as PyopProvider,
     extract_bearer_token_from_http_request,
@@ -104,6 +105,25 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             return login_options_response
         return self._authorize(request, authorize_request, login_options[0])
 
+    def _create_pyop_authentication_request(
+        self, request: Request, authorize_request: AuthorizeRequest
+    ) -> AuthorizationRequest:
+        return self._pyop_provider.parse_authentication_request(
+            urlencode(
+                {
+                    "client_id": authorize_request.client_id,
+                    "redirect_uri": authorize_request.redirect_uri,
+                    "response_type": authorize_request.response_type,
+                    "nonce": authorize_request.nonce,
+                    "scope": authorize_request.scope,
+                    "state": authorize_request.state,
+                    "code_challenge": authorize_request.code_challenge,
+                    "code_challenge_method": authorize_request.code_challenge_method,
+                }
+            ),
+            request.headers,
+        )
+
     def _authorize(
         self,
         request: Request,
@@ -111,10 +131,9 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         login_option: Dict[str, str],
     ) -> Response:
         self._rate_limiter.validate_outage()
-        pyop_authentication_request = (
-            self._pyop_provider.parse_authentication_request(  # type:ignore
-                urlencode(authorize_request.dict()), request.headers
-            )
+
+        pyop_authentication_request = self._create_pyop_authentication_request(
+            request, authorize_request
         )
 
         if request.client is None or request.client.host is None:
@@ -153,6 +172,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             authentication_state,
             login_option["name"],
             session_id,
+            req_acme_token=authorize_request.acme_token,
         )
 
         return authorize_response.response
