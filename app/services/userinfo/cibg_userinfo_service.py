@@ -228,7 +228,7 @@ class CIBGUserinfoService(UserinfoService):
     def _request_userinfo_for_mock_artifact(
         self,
         client_id: str,
-        client: Any,
+        client: Dict[str, Any],
         artifact_response: ArtifactResponse,
         req_acme_token: Optional[str],
     ):
