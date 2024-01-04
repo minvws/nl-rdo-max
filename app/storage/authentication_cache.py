@@ -1,6 +1,6 @@
 import base64
 import json
-from typing import Any, Union, Dict, Optional
+from typing import Any, Union, Dict, Optional, List
 
 from pyop.message import AuthorizationRequest
 
@@ -53,7 +53,7 @@ class AuthenticationCache:
         authentication_state: Dict[str, Any],
         login_option: str,
         session_id: str,
-        req_acme_token: Optional[str],
+        req_acme_tokens: Optional[List[str]],
     ) -> None:
         authentication_context = AuthenticationContext(
             authorization_request=authorization_request,
@@ -61,7 +61,7 @@ class AuthenticationCache:
             authentication_method=login_option,
             authentication_state=authentication_state,
             session_id=session_id,
-            req_acme_token=req_acme_token,
+            req_acme_tokens=req_acme_tokens,
         )
         self.cache_authentication_context(randstate, authentication_context)
 

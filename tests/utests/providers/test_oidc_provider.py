@@ -347,7 +347,7 @@ def test_authorize():
         authentication_state,
         login_option["name"],
         "session_id",
-        req_acme_token=None,
+        req_acme_tokens=None,
     )
 
     login_handler.authorize_response.assert_called_with(

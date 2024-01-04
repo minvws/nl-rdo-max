@@ -172,8 +172,9 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             authentication_state,
             login_option["name"],
             session_id,
-            req_acme_token=authorize_request.acme_token,
+            req_acme_tokens=authorize_request.acme_tokens,
         )
+        print(authorize_request.acme_tokens)
 
         return authorize_response.response
 

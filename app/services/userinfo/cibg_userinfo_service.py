@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Dict, Union, Any, Optional
+from typing import Dict, Any, Optional, List
 
 import requests
 from cryptography.hazmat.primitives import hashes
@@ -82,10 +82,10 @@ class CIBGUserinfoService(UserinfoService):
         client_id: str,
         auth_type: str,
         json_schema: str,
-        saml_id: Union[str, None] = None,
-        loa_authn: Union[str, None] = None,
-        exchange_token: Union[str, None] = None,
-        req_acme_token: Union[str, None] = None,
+        saml_id: Optional[str] = None,
+        loa_authn: Optional[str] = None,
+        exchange_token: Optional[str] = None,
+        req_acme_tokens: Optional[List[str]] = None,
     ):
         ura_pubkey = file_content_raise_if_none(ura_pubkey_path)
 
@@ -103,8 +103,8 @@ class CIBGUserinfoService(UserinfoService):
         }
         if loa_authn is not None:
             jwt_payload["loa_authn"] = loa_authn
-        if req_acme_token is not None:
-            jwt_payload["req_acme_token"] = req_acme_token
+        if req_acme_tokens is not None:
+            jwt_payload["req_acme_tokens"] = req_acme_tokens
         if saml_id is not None:
             jwt_payload["saml_id"] = saml_id
         if exchange_token is not None:
@@ -118,11 +118,11 @@ class CIBGUserinfoService(UserinfoService):
         client: Dict[str, Any],
         auth_type: str,
         json_schema: str,
-        saml_id: Union[str, None] = None,
-        loa_authn: Union[str, None] = None,
-        data: Union[str, None] = None,
-        exchange_token: Union[str, None] = None,
-        req_acme_token: Union[str, None] = None,
+        saml_id: Optional[str] = None,
+        loa_authn: Optional[str] = None,
+        data: Optional[str] = None,
+        exchange_token: Optional[str] = None,
+        req_acme_tokens: Optional[List[str]] = None,
     ):
         external_id = "*"
         if "external_id" in client:
@@ -147,7 +147,7 @@ class CIBGUserinfoService(UserinfoService):
             saml_id=saml_id,
             loa_authn=loa_authn,
             exchange_token=exchange_token,
-            req_acme_token=req_acme_token,
+            req_acme_tokens=req_acme_tokens,
         )
         jwt_token = JWT(
             header=jwt_header,
@@ -193,7 +193,7 @@ class CIBGUserinfoService(UserinfoService):
                 client_id=client_id,
                 client=client,
                 artifact_response=artifact_response,
-                req_acme_token=authentication_context.req_acme_token,
+                req_acme_tokens=authentication_context.req_acme_tokens,
             )
         return self._request_userinfo(
             cibg_endpoint=self._cibg_saml_endpoint,
@@ -204,7 +204,7 @@ class CIBGUserinfoService(UserinfoService):
             saml_id=artifact_response.root.attrib["ID"],
             loa_authn=artifact_response.loa_authn,
             data=artifact_response.to_envelope_string(),
-            req_acme_token=authentication_context.req_acme_token,
+            req_acme_tokens=authentication_context.req_acme_tokens,
         )
 
     def request_userinfo_for_exchange_token(
@@ -222,7 +222,7 @@ class CIBGUserinfoService(UserinfoService):
                 "exchange_token"
             ],
             saml_id=authentication_context.session_id,
-            req_acme_token=authentication_context.req_acme_token,
+            req_acme_tokens=authentication_context.req_acme_tokens,
         )
 
     def _request_userinfo_for_mock_artifact(
@@ -230,7 +230,7 @@ class CIBGUserinfoService(UserinfoService):
         client_id: str,
         client: Dict[str, Any],
         artifact_response: ArtifactResponse,
-        req_acme_token: Optional[str],
+        req_acme_tokens: Optional[List[str]],
     ):
         bsn = artifact_response.get_bsn(False)
         ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
@@ -242,16 +242,18 @@ class CIBGUserinfoService(UserinfoService):
                 bsn, relation_id_filter=client["external_id"]
             )
 
+        data = {
+            **uzi_data.dict(),
+            "iss": self._req_issuer,
+            "aud": client_id,
+            "json_schema": self._external_base_url + "/json_schema.json",
+            "nbf": int(time.time()) - self._jwt_nbf_lag,
+            "exp": int(time.time()) + self._jwt_expiration_duration,
+            "x5c": strip_cert(ura_pubkey),
+        }
+        if req_acme_tokens:
+            data["acme_tokens"] = req_acme_tokens
         return self._jwe_service_provider.get_jwe_service(client["pubkey_type"]).to_jwe(
-            {
-                **uzi_data.dict(),
-                "iss": self._req_issuer,
-                "aud": client_id,
-                "json_schema": self._external_base_url + "/json_schema.json",
-                "nbf": int(time.time()) - self._jwt_nbf_lag,
-                "exp": int(time.time()) + self._jwt_expiration_duration,
-                "x5c": strip_cert(ura_pubkey),
-                "acme_token": req_acme_token,
-            },
+            data,
             file_content_raise_if_none(client["client_public_key_path"]),
         )

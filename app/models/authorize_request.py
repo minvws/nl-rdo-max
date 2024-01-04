@@ -2,7 +2,7 @@ import json
 import logging
 from functools import cached_property
 from json import JSONDecodeError
-from typing import Union
+from typing import Union, List, Optional
 
 from pydantic import BaseModel, validator
 
@@ -39,13 +39,13 @@ class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
         return self.login_hint.split(",")
 
     @property
-    def acme_token(self):
+    def acme_tokens(self) -> Optional[List[str]]:
         if self.claims is None:
             return None
         try:
-            return json.loads(self.claims).get("acme_token", None)
+            return json.loads(self.claims).get("acme_tokens", None)
         except (TypeError, JSONDecodeError):
-            log.debug("Unable to load claims: %s", self.claims)
+            log.debug("Unable to load acme_tokens: %s", self.claims)
             return None
 
     @validator("scope")
