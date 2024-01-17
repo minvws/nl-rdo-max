@@ -137,6 +137,9 @@ class RedisCache(Cache):
         key = self._prepend_with_namespace(key)
         self.redis_client.delete(key)
 
+    def ping(self):
+        return self.redis_client.ping()
+
     def _prepend_with_namespace(self, key: str) -> str:
         namespace_key = f"{self.key_prefix}:{key}"
         if self.enable_debugger and not self.redis_client.exists(namespace_key) > 0:

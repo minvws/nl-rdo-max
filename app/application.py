@@ -14,6 +14,7 @@ from app.exceptions.oidc_exception_handlers import general_exception_handler
 from app.routers.digid_mock_router import digid_mock_router
 from app.routers.oidc_router import oidc_router
 from app.routers.saml_router import saml_router
+from app.routers.misc_router import misc_router
 
 
 _exception_handlers: List[Tuple[Union[int, Type[Exception]], Callable]] = [
@@ -68,6 +69,7 @@ def create_fastapi_app(
         "app.routers.saml_router",
         "app.routers.oidc_router",
         "app.routers.digid_mock_router",
+        "app.routers.misc_router",
         "app.exceptions.oidc_exception_handlers",
     ]
     container.config.from_dict(dict(_config))
@@ -78,6 +80,7 @@ def create_fastapi_app(
     )
     fastapi.include_router(saml_router)
     fastapi.include_router(oidc_router)
+    fastapi.include_router(misc_router)
     if not is_production:
         fastapi.include_router(digid_mock_router)
     fastapi.mount("/static", StaticFiles(directory="static"), name="static")
