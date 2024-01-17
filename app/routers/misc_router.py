@@ -40,5 +40,5 @@ async def health(
     }
 
     return JSONResponse(
-        content=jsonable_encoder(response), status_code=200 if healthy else 500
+        content=jsonable_encoder(response), status_code=200 if healthy else 503
     )
