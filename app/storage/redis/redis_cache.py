@@ -138,6 +138,9 @@ class RedisCache(Cache):
         self.redis_client.delete(key)
 
     def ping(self):
+        """
+        Pings the redis
+        """
         return self.redis_client.ping()
 
     def _prepend_with_namespace(self, key: str) -> str:
