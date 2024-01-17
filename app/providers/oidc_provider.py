@@ -59,6 +59,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         external_http_requests_timeout_seconds: int,
         sidebar_template: str,
         template_service: TemplateService,
+        allow_wildcard_redirect_uri: bool,
     ):
         self._pyop_provider = pyop_provider
         self._authentication_cache = authentication_cache
@@ -81,6 +82,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         )
         self._sidebar_template = sidebar_template
         self._template_renderer = template_service.templates
+        self._allow_wildcard_redirect_uri = allow_wildcard_redirect_uri
 
     def well_known(self):
         return JSONResponse(
@@ -395,11 +397,18 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                 error_description=f"Client id {authorize_request.client_id} is not known for this OIDC server"
             )
 
-        if authorize_request.redirect_uri not in self._clients[
-            authorize_request.client_id
-        ].get("redirect_uris", []):
+        client = self._clients[authorize_request.client_id]
+        if not self._redirect_uri_is_valid(client, authorize_request.redirect_uri):
             raise InvalidRedirectUriException()
-        if authorize_request.response_type not in self._clients[
-            authorize_request.client_id
-        ].get("response_types", []):
+
+        if authorize_request.response_type not in client.get("response_types", []):
             raise InvalidResponseType()
+
+    def _redirect_uri_is_valid(self, client: dict, redirect_uri: str) -> bool:
+        redirect_uris = client.get("redirect_uris", [])
+
+        return redirect_uri in redirect_uris or (
+            self._allow_wildcard_redirect_uri
+            and "*" in redirect_uris
+            and not self._environment.startswith("prod")
+        )

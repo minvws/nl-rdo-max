@@ -5,7 +5,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.exceptions import HTTPException
 
-from app.exceptions.max_exceptions import ServerErrorException, UnauthorizedError
+from app.exceptions.max_exceptions import (
+    ServerErrorException,
+    UnauthorizedError,
+    InvalidRedirectUriException,
+    InvalidClientException,
+    InvalidResponseType,
+)
 from app.models.authorize_request import AuthorizeRequest
 from app.models.response_type import ResponseType
 from app.providers.oidc_provider import OIDCProvider
@@ -27,6 +33,7 @@ def create_oidc_provider(
     session_url="local.example",
     external_http_requests_timeout_seconds=2,
     template_service=MagicMock(),
+    wildcard_allowed=False,
 ):
     return OIDCProvider(
         pyop_provider,
@@ -45,6 +52,7 @@ def create_oidc_provider(
         external_http_requests_timeout_seconds,
         "sidebar.html",
         template_service,
+        wildcard_allowed,
     )
 
 
@@ -270,6 +278,112 @@ def test_present_login_options_or_authorize():
         authorize_method.assert_called_with(request, authorize_request, {"name": "a"})
 
         assert login_options_or_authorize == ret_value
+
+
+def test_invalid_client_exception():
+    oidc_provider = create_oidc_provider(clients={"client_id": {"name": "name"}})
+    authorize_request = MagicMock()
+    authorize_request.client_id = "other_client_id"
+
+    with pytest.raises(InvalidClientException):
+        oidc_provider._validate_authorize_request(authorize_request)
+
+
+@pytest.mark.parametrize(
+    "wildcard_allowed, environment, allowed_redirect_uri, test_redirect_uri, is_valid",
+    [
+        (False, "development", "https://redirect_uri", "https://redirect_uri", True),
+        (False, "development", "http://redirect_uri", "http://redirect_uri", True),
+        (False, "development", "https://redirect_uri", "http://redirect_uri", False),
+        (
+            False,
+            "development",
+            "https://redirect_uri",
+            "https://redirect_uri?query=param",
+            False,
+        ),
+        (
+            False,
+            "development",
+            "https://redirect_uri?query=param",
+            "https://redirect_uri?query=param",
+            True,
+        ),
+        (True, "development", "*", "http://redirect_uri_example_a", True),
+        (True, "development", "*", "https://redirect_uri_example_b", True),
+        (False, "development", "*", "http://redirect_uri_example_a", False),
+        (False, "development", "*", "https://redirect_uri_example_b", False),
+        (True, "develop", "*", "http://redirect_uri_example_a", True),
+        (True, "some-other-environment", "*", "http://redirect_uri_example_a", True),
+        (False, "production", "https://redirect_uri", "https://redirect_uri", True),
+        (False, "production", "http://redirect_uri", "http://redirect_uri", True),
+        (False, "production", "https://redirect_uri", "http://redirect_uri", False),
+        (True, "prod", "*", "http://redirect_uri_example_a", False),
+        (True, "production", "*", "http://redirect_uri_example_a", False),
+        (True, "production", "*", "https://redirect_uri_example_b", False),
+        (False, "production", "*", "http://redirect_uri_example_a", False),
+        (False, "production", "*", "https://redirect_uri_example_b", False),
+    ],
+)
+def test_redirect_uris(
+    wildcard_allowed, environment, allowed_redirect_uri, test_redirect_uri, is_valid
+):
+    oidc_provider = create_oidc_provider(
+        environment=environment,
+        wildcard_allowed=wildcard_allowed,
+        clients={
+            "client_id": {
+                "name": "name",
+                "redirect_uris": [allowed_redirect_uri],
+                "response_types": [ResponseType.CODE],
+            }
+        },
+    )
+
+    authorize_request = MagicMock()
+    authorize_request.client_id = "client_id"
+    authorize_request.redirect_uri = test_redirect_uri
+    authorize_request.response_type = ResponseType.CODE
+
+    if not is_valid:
+        with pytest.raises(InvalidRedirectUriException):
+            oidc_provider._validate_authorize_request(authorize_request)
+
+    else:
+        oidc_provider._validate_authorize_request(authorize_request)
+
+
+@pytest.mark.parametrize(
+    "allowed_response_types, test_response_type, is_valid",
+    [
+        (["code"], "code", True),
+        (["code"], "", False),
+        (["code"], "something-different", False),
+        ([], "", False),
+    ],
+)
+def test_response_types(allowed_response_types, test_response_type, is_valid):
+    oidc_provider = create_oidc_provider(
+        clients={
+            "client_id": {
+                "name": "name",
+                "redirect_uris": ["https://redirect_uri"],
+                "response_types": allowed_response_types,
+            }
+        },
+    )
+
+    authorize_request = MagicMock()
+    authorize_request.client_id = "client_id"
+    authorize_request.redirect_uri = "https://redirect_uri"
+    authorize_request.response_type = test_response_type
+
+    if not is_valid:
+        with pytest.raises(InvalidResponseType):
+            oidc_provider._validate_authorize_request(authorize_request)
+
+    else:
+        oidc_provider._validate_authorize_request(authorize_request)
 
 
 def test_authorize():

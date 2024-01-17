@@ -149,6 +149,9 @@ class Services(containers.DeclarativeContainer):
         external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
         sidebar_template=config.app.sidebar_template,
         template_service=template_service,
+        allow_wildcard_redirect_uri=config.oidc.allow_wildcard_redirect_uri.as_(
+            as_bool
+        ),
     )
 
     digid_mock_provider = providers.Singleton(

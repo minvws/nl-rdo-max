@@ -72,7 +72,7 @@ def create_fastapi_app(
     ]
     container.config.from_dict(dict(_config))
     is_uvicorn_app = _config.getboolean("app", "uvicorn", fallback=False)
-    is_production = _config.get("app", "environment").startswith("production")
+    is_production = _config.get("app", "environment").startswith("prod")
     fastapi = (
         FastAPI(docs_url="/ui", redoc_url="/docs") if is_uvicorn_app else FastAPI()
     )
