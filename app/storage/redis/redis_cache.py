@@ -139,7 +139,7 @@ class RedisCache(Cache):
 
     def ping(self):
         """
-        Pings the redis
+        Pings the Redis Server
         """
         return self.redis_client.ping()
 
