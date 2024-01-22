@@ -2,6 +2,8 @@ import logging
 import time
 from typing import Dict, Any, Optional, List
 
+from uuid import uuid4
+
 import requests
 from cryptography.hazmat.primitives import hashes
 from fastapi.security.utils import get_authorization_scheme_param
@@ -246,6 +248,7 @@ class CIBGUserinfoService(UserinfoService):
             **uzi_data.dict(),
             "iss": self._req_issuer,
             "aud": client_id,
+            "sub": str(uuid4()),
             "json_schema": self._external_base_url + "/json_schema.json",
             "nbf": int(time.time()) - self._jwt_nbf_lag,
             "exp": int(time.time()) + self._jwt_expiration_duration,
