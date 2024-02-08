@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>{{ ura_name }} - Inlogmethode selecteren</title>
+    <title>{{ page_title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="{{ vite_asset('resources/css/app.scss') }}" rel="stylesheet">
 </head>
@@ -11,14 +11,9 @@
     {% include sidebar %}
 {% endif %}
 <div class="page-content">
-    <header class="page-header">
-        <a href="#main-content" class="button skip-to-content">Ga direct naar inhoud</a>
-        <div>
-            <div class="logo">
-                <img src="static/img/uzi-online-logo.png" alt="Logo UZI-Online">
-            </div>
-        </div>
-    </header>
+    {% if header is defined %}
+        {% include header %}
+    {% endif %}
     <main id="main-content">
         {% block body %}{% endblock %}
     </main>

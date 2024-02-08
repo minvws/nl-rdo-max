@@ -16,7 +16,6 @@ loglevel = debug
 # comma space seperated list
 
 login_methods_file_path = login_methods.json
-sidebar_template = uzi_sidebar.html
 
 # only used with html redirect
 redirect_html_delay = 5
@@ -146,3 +145,10 @@ oidc_login_redirect_url = http://localhost:8001/login/oidc/start
 [templates]
 jinja_path = jinja2
 vite_manifest_path = static/assets/manifest.json
+
+# Default header and sidebar
+header_template =
+;header_template = uzi_header.html
+sidebar_template =
+login_options_sidebar_template =
+;login_options_sidebar_template = uzi_login_options_sidebar.html

@@ -94,6 +94,12 @@ nav.sidemenu-max {
     }
 }
 
+.page-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
 #main-content {
     display: flex;
     flex-grow: 1;

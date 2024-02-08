@@ -77,14 +77,14 @@ def test_jwks():
 def test_provide_login_options_response_with_multiple_login_options(mocker):
     template_response = MagicMock()
 
-    templates_mock = MagicMock()
-    templates_mock.templates.TemplateResponse = MagicMock()
-    templates_mock.templates.TemplateResponse.return_value = template_response
+    template_service = MagicMock()
+    template_service.render_layout = MagicMock()
+    template_service.render_layout.return_value = template_response
 
     oidc_provider = create_oidc_provider(
         clients={"client_id": {"name": "name"}},
         external_base_url="http://base_url",
-        template_service=templates_mock,
+        template_service=template_service,
     )
     request = MagicMock()
     login_methods = [{"name": "a"}, {"name": "b"}]
@@ -98,10 +98,11 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
         "name", request, login_methods
     )
 
-    templates_mock.templates.TemplateResponse.assert_called_with(
-        "login_options.html",
-        {
-            "request": request,
+    template_service.render_layout.assert_called_with(
+        request=request,
+        template_name="login_options.html",
+        page_title="name - Inlogmethode selecteren",
+        page_context={
             "ura_name": "name",
             "login_methods": {
                 "a": {
@@ -113,10 +114,9 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
                     "url": "http://base_url/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=b",
                 },
             },
-            "layout": "layout.html",
             "redirect_uri": "redirect_uri?key=value&error=login_required&error_description=Authentication+cancelled",
-            "sidebar": "sidebar.html",
         },
+        sidebar_template="sidebar.html",
     )
     assert actual == template_response
 
