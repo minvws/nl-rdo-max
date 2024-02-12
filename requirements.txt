@@ -72,7 +72,7 @@ h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.17.0
+httpcore==1.0.2
     # via httpx
 httpx==0.24.1
     # via app (setup.py)
