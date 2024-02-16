@@ -252,7 +252,7 @@ class SPMetadata(SAMLRequest):
                 errors.append("Only one SPSSO Descriptor allowed")
         else:
             if self.root.tag != f"{{{NAMESPACES['md']}}}EntitiesDescriptor":
-                errors.append("Root is not an EntityDescriptor")
+                errors.append("Root is not an EntitiesDescriptor")
 
         if not self._has_correct_bindings():
             errors.append("Incorrect bindings for SPSSO services")
