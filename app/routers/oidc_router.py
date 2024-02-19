@@ -7,6 +7,7 @@ from starlette.responses import JSONResponse
 from app.dependency_injection.config import RouterConfig
 from app.exceptions.max_exceptions import UnauthorizedError
 from app.exceptions.oidc_exception_handlers import handle_exception_redirect
+from app.exceptions.oidc_exceptions import EXCEPTION_MAPPING
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
 from app.providers.oidc_provider import OIDCProvider
@@ -56,12 +57,20 @@ async def _continue(
     try:
         return oidc_provider.authenticate_with_exchange_token(state)
     except UnauthorizedError as unauthorized_error:
+        params = request.query_params
+        error = params.get("error") if "error" in params else unauthorized_error.error
+        error_description = (
+            params.get("error_description")
+            if "error_description" in params
+            else unauthorized_error.error_description
+        )
+        status_code = EXCEPTION_MAPPING[error]["code"]
         logger.debug("UnauthorizedError: %s", unauthorized_error)
         return handle_exception_redirect(
             request,
-            unauthorized_error.error,
-            unauthorized_error.error_description,
-            status_code=403,
+            error,
+            error_description,
+            status_code=status_code,
         )
 
 
