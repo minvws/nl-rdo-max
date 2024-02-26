@@ -10,7 +10,7 @@
     "@minvws/nl-rdo-rijksoverheid-ui-theme": "^0.0.18"
   },
   "devDependencies": {
-    "sass": "^1.70.0",
+    "sass": "^1.71.1",
     "vite": "^5.1.1"
   }
 }
