@@ -18,11 +18,32 @@ REGISTRATION_NOT_SUPPORTED = "registration_not_supported"
 
 
 EXCEPTION_MAPPING = {
-    "invalid_request": {"code": 400},
-    "unauthorized_client": {"code": 403},
-    "access_denied": {"code": 403},
-    "unsupported_response_type": {"code": 400},
-    "invalid_scope": {"code": 400},
-    "server_error": {"code": 500},
-    "temporarily_unavailable": {"code": 503},
+    "invalid_request": {
+        "code": 400,
+        "error_description": "Misvormd of slecht verzoek"
+    },
+    "unauthorized_client": {
+        "code": 403,
+        "error_description": "Klant is niet bevoegd een verzoek uit te voeren",
+    },
+    "access_denied": {
+        "code": 403,
+        "error_description": "Klant heeft geen toegang om bronnen aan te vragen",
+    },
+    "unsupported_response_type": {
+        "code": 400,
+        "error_description": "Response type wordt niet ondersteund",
+    },
+    "invalid_scope": {
+        "code": 400,
+        "error_description": "Client Scope wordt niet ondersteund",
+    },
+    "server_error": {
+        "code": 500,
+        "error_description": "Er is iets misgegaan. Probeer het later opnieuw",
+    },
+    "temporarily_unavailable": {
+        "code": 503,
+        "error_description": "De service is tijdelijk niet beschikbaar. Probeer het later opnieuw",
+    },
 }
