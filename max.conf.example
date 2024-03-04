@@ -97,6 +97,7 @@ subject_id_hash_salt = somesalt
 jwt_expiration_duration=60
 jwt_nbf_lag=10
 allow_wildcard_redirect_uri = False
+oidc_error_map=resources/lang/nl.oidc_error_map.json
 
 [saml]
 identity_providers_base_path = saml

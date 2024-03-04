@@ -1,5 +1,11 @@
 from dataclasses import dataclass
 from typing import Protocol, Optional, Dict, Any
+from configparser import ConfigParser
+
+from app.misc.utils import json_from_file
+
+config = ConfigParser()
+config.read("max.conf")
 
 INVALID_REQUEST = "invalid_request"
 UNAUTHORIZED_CLIENT = "unauthorized_client"
@@ -18,35 +24,6 @@ INVALID_REQUEST_OBJECT = "invalid_request_object"
 REQUEST_NOT_SUPPORTED = "request_not_supported"
 REQUEST_URI_NOT_SUPPORTED = "request_uri_not_supported"
 REGISTRATION_NOT_SUPPORTED = "registration_not_supported"
-
-
-_error_details_map: Dict[str, Any] = {
-    "invalid_request": {"code": 400, "error_description": "Misvormd of slecht verzoek"},
-    "unauthorized_client": {
-        "code": 403,
-        "error_description": "Klant is niet bevoegd een verzoek uit te voeren",
-    },
-    "access_denied": {
-        "code": 403,
-        "error_description": "Klant heeft geen toegang om bronnen aan te vragen",
-    },
-    "unsupported_response_type": {
-        "code": 400,
-        "error_description": "Response type wordt niet ondersteund",
-    },
-    "invalid_scope": {
-        "code": 400,
-        "error_description": "Client Scope wordt niet ondersteund",
-    },
-    "server_error": {
-        "code": 500,
-        "error_description": "Er is iets misgegaan. Probeer het later opnieuw",
-    },
-    "temporarily_unavailable": {
-        "code": 503,
-        "error_description": "De service is tijdelijk niet beschikbaar. Probeer het later opnieuw",
-    },
-}
 
 
 class OIDCErrorDetails(Protocol):
@@ -83,4 +60,6 @@ class OIDCErrorMapper:
         return self.server_error.error_description
 
 
-OICD_ERROR_MAPPER = OIDCErrorMapper(**_error_details_map)
+OICD_ERROR_MAPPER = OIDCErrorMapper(
+    **json_from_file(config.get("oidc", "oidc_error_map"))
+)
