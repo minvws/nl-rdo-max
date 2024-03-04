@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Protocol, Optional, Dict, Any
+from typing import Protocol, Optional
 from configparser import ConfigParser
 
 from app.misc.utils import json_from_file
