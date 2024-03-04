@@ -20,7 +20,7 @@ REQUEST_URI_NOT_SUPPORTED = "request_uri_not_supported"
 REGISTRATION_NOT_SUPPORTED = "registration_not_supported"
 
 
-_exception_map: Dict[str, Any] = {
+_error_details_map: Dict[str, Any] = {
     "invalid_request": {"code": 400, "error_description": "Misvormd of slecht verzoek"},
     "unauthorized_client": {
         "code": 403,
@@ -83,4 +83,4 @@ class OIDCErrorMapper:
         return self.server_error.error_description
 
 
-OICD_ERROR_MAPPER = OIDCErrorMapper(**_exception_map)
+OICD_ERROR_MAPPER = OIDCErrorMapper(**_error_details_map)
