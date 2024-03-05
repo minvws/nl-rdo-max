@@ -65,6 +65,12 @@ class OIDCErrorDetails(Protocol):
 
 @dataclass
 class OIDCErrorMapper:
+    """
+    Mapper class for OIDC errors
+
+    Note: Make sure you check the language map in resources/lang/nl.oidc_error_map.json and
+    _error_map dict before you make changes
+    """
     invalid_request: OIDCErrorDetails
     unauthorized_client: OIDCErrorDetails
     access_denied: OIDCErrorDetails
