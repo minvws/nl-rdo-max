@@ -57,7 +57,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         external_base_url: str,
         session_url: str,
         external_http_requests_timeout_seconds: int,
-        sidebar_template: str,
+        login_options_sidebar_template: str,
         template_service: TemplateService,
         allow_wildcard_redirect_uri: bool,
     ):
@@ -80,8 +80,8 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self._external_http_requests_timeout_seconds = (
             external_http_requests_timeout_seconds
         )
-        self._sidebar_template = sidebar_template
-        self._template_renderer = template_service.templates
+        self._login_options_sidebar_template = login_options_sidebar_template
+        self._template_service = template_service
         self._allow_wildcard_redirect_uri = allow_wildcard_redirect_uri
 
     def well_known(self):
@@ -366,21 +366,22 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                     "error_description": "Authentication cancelled",
                 }
             )
-            template_context = {
-                "request": request,
-                "layout": "layout.html",
+            page_context = {
                 "ura_name": client_name,
                 "login_methods": login_method_by_name,
                 "redirect_uri": redirect_url_parts._replace(
                     query=parse.urlencode(query)
                 ).geturl(),
             }
-            if self._sidebar_template:
-                template_context["sidebar"] = self._sidebar_template
 
-            return self._template_renderer.TemplateResponse(
-                "login_options.html", template_context
+            return self._template_service.render_layout(
+                request=request,
+                template_name="login_options.html",
+                page_title=f"{client_name} - Inlogmethode selecteren",
+                page_context=page_context,
+                sidebar_template=self._login_options_sidebar_template,
             )
+
         if len(login_methods) != 1:
             raise UnauthorizedError(
                 error_description="No valid login_methods available"

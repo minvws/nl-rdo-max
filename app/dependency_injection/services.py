@@ -51,6 +51,8 @@ class Services(containers.DeclarativeContainer):
         TemplateService,
         jinja_template_directory=config.templates.jinja_path,
         vite_manifest_service=vite_manifest_service,
+        header_template=config.templates.header_template,
+        sidebar_template=config.templates.sidebar_template,
     )
 
     saml_response_factory = providers.Singleton(
@@ -147,7 +149,7 @@ class Services(containers.DeclarativeContainer):
         external_base_url=config.app.external_base_url,
         session_url=config.app.session_url,
         external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
-        sidebar_template=config.app.sidebar_template,
+        login_options_sidebar_template=config.templates.login_options_sidebar_template,
         template_service=template_service,
         allow_wildcard_redirect_uri=config.oidc.allow_wildcard_redirect_uri.as_(
             as_bool

@@ -15,3 +15,14 @@ INVALID_REQUEST_OBJECT = "invalid_request_object"
 REQUEST_NOT_SUPPORTED = "request_not_supported"
 REQUEST_URI_NOT_SUPPORTED = "request_uri_not_supported"
 REGISTRATION_NOT_SUPPORTED = "registration_not_supported"
+
+
+EXCEPTION_MAPPING = {
+    "invalid_request": {"code": 400},
+    "unauthorized_client": {"code": 403},
+    "access_denied": {"code": 403},
+    "unsupported_response_type": {"code": 400},
+    "invalid_scope": {"code": 400},
+    "server_error": {"code": 500},
+    "temporarily_unavailable": {"code": 503},
+}

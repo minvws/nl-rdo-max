@@ -41,7 +41,7 @@ coverage==7.3.4
     #   coverage-badge
 coverage-badge==1.1.0
     # via app (setup.py)
-cryptography==41.0.4
+cryptography==42.0.4
     # via
     #   jwcrypto
     #   oic
@@ -68,13 +68,13 @@ future==0.18.3
     # via pyjwkest
 gitdb==4.0.10
     # via gitpython
-gitpython==3.1.40
+gitpython==3.1.41
     # via bandit
 h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.17.0
+httpcore==1.0.2
     # via httpx
 httpx==0.24.1
     # via app (setup.py)
@@ -89,9 +89,9 @@ isodate==0.6.1
     # via python3-saml
 isort==5.12.0
     # via pylint
-jinja2==3.1.2
+jinja2==3.1.3
     # via app (setup.py)
-jwcrypto==1.4.2
+jwcrypto==1.5.3
     # via app (setup.py)
 lazy-object-proxy==1.9.0
     # via astroid
@@ -142,7 +142,7 @@ psutil==5.9.5
     # via mirakuru
 pycparser==2.21
     # via cffi
-pycryptodomex==3.19.0
+pycryptodomex==3.20.0
     # via
     #   oic
     #   pyjwkest
@@ -177,7 +177,7 @@ pytest-redis==3.0.1
     # via app (setup.py)
 python-dateutil==2.8.2
     # via freezegun
-python-multipart==0.0.6
+python-multipart==0.0.7
     # via app (setup.py)
 python3-saml==1.16.0
     # via app (setup.py)
