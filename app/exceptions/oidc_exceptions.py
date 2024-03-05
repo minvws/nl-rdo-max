@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Protocol, Optional
+from typing import Protocol, Optional, Dict, Any
 from configparser import ConfigParser
 
 from app.misc.utils import json_from_file
@@ -24,6 +24,38 @@ INVALID_REQUEST_OBJECT = "invalid_request_object"
 REQUEST_NOT_SUPPORTED = "request_not_supported"
 REQUEST_URI_NOT_SUPPORTED = "request_uri_not_supported"
 REGISTRATION_NOT_SUPPORTED = "registration_not_supported"
+
+
+lang_map = json_from_file(config.get("app", "oidc_error_map"))
+language = config.get("app", "language")
+
+_error_map: Dict[str, Any] = {
+    "invalid_request": {"code": 400, "error_description": "Invalid request"},
+    "unauthorized_client": {
+        "code": 403,
+        "error_description": "You are not authorized for this request",
+    },
+    "access_denied": {
+        "code": 403,
+        "error_description": "You need to be logged in for this request",
+    },
+    "unsupported_response_type": {
+        "code": 400,
+        "error_description": "The response type is not supported",
+    },
+    "invalid_scope": {
+        "code": 400,
+        "error_description": "The scope is not supported",
+    },
+    "server_error": {
+        "code": 500,
+        "error_description": "Something went wrong, try again later",
+    },
+    "temporarily_unavailable": {
+        "code": 503,
+        "error_description": "The services are temporarily unavailable, try again later",
+    },
+}
 
 
 class OIDCErrorDetails(Protocol):
@@ -55,11 +87,13 @@ class OIDCErrorMapper:
 
     def get_error_description(self, error_type: Optional[str]) -> str:
         if error_type is not None:
-            return self[error_type]["error_description"]
+            return (
+                self[error_type]["error_description"]
+                if language == "en"
+                else lang_map[self[error_type]["error_description"]]
+            )
 
         return self.server_error.error_description
 
 
-OICD_ERROR_MAPPER = OIDCErrorMapper(
-    **json_from_file(config.get("oidc", "oidc_error_map"))
-)
+OICD_ERROR_MAPPER = OIDCErrorMapper(**_error_map)

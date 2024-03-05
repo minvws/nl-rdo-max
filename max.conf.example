@@ -26,6 +26,10 @@ user_authentication_sym_key = 00000000000000000000000000000000000000000000000000
 
 external_http_requests_timeout_seconds = 15
 
+# possible values are en, nl
+language = nl
+oidc_error_map=resources/lang/nl.oidc_error_map.json
+
 [jwe]
 # list with comma seperated values
 # possible values are x25519, rsa
@@ -97,7 +101,6 @@ subject_id_hash_salt = somesalt
 jwt_expiration_duration=60
 jwt_nbf_lag=10
 allow_wildcard_redirect_uri = False
-oidc_error_map=resources/lang/nl.oidc_error_map.json
 
 [saml]
 identity_providers_base_path = saml

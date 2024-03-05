@@ -1,30 +1,9 @@
 {
-    "invalid_request": {
-      "code": 400,
-      "error_description": "Misvormd of slecht verzoek"
-    },
-    "unauthorized_client": {
-        "code": 403,
-        "error_description": "Klant is niet bevoegd een verzoek uit te voeren"
-    },
-    "access_denied": {
-        "code": 403,
-        "error_description": "Klant heeft geen toegang om bronnen aan te vragen"
-    },
-    "unsupported_response_type": {
-        "code": 400,
-        "error_description": "Response type wordt niet ondersteund"
-    },
-    "invalid_scope": {
-        "code": 400,
-        "error_description": "Client Scope wordt niet ondersteund"
-    },
-    "server_error": {
-        "code": 500,
-        "error_description": "Er is iets misgegaan. Probeer het later opnieuw"
-    },
-    "temporarily_unavailable": {
-        "code": 503,
-        "error_description": "De service is tijdelijk niet beschikbaar. Probeer het later opnieuw"
-    }
+  "Invalid request": "Ongeldig verzoek",
+  "You need to be logged in for this request": "U moet ingelogd zijn voor deze aanvraag",
+  "You are not authorized for this request": "U bent niet geauthoriseerd voor deze aanvraag",
+  "The response type is not supported": "Response type wordt niet ondersteund",
+  "The scope is not supported": "De 'scope' wordt niet ondersteund",
+  "Something went wrong, try again later": "Er is iets misgegaan, probeer het later opnieuw",
+  "The services are temporarily unavailable, try again later": "De services zijn tijdelijk niet beschikbaar, probeer het later opnieuw"
 }
