@@ -42,7 +42,7 @@ jobs:
         run: cd /var/www/html; make venv
 
       - name: Fix python3 symlink - back to default location
-        run: cd .venv/bin && rm python3 && ln -s /usr/bin/python3 python3
+        run: cd /var/www/html/.venv/bin && rm python3 && ln -s /usr/bin/python3 python3
 
       - name: Create archive
         run: cd /var/www/html; tar -czf /home/runner/work/nl-rdo-max-private/nl-rdo-max-private/max_venv_${{ env.RELEASE_VERSION }}_python${{ matrix.python_version }}.tar.gz .venv
