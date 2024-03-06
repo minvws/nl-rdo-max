@@ -47,4 +47,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: max_venv_${{ env.RELEASE_VERSION }}
-          path: max_venv_${{ env.RELEASE_VERSION }}.tar.gz
+          path: max_venv_${{ env.RELEASE_VERSION }}_python${{ matrix.python_version }}.tar.gz
