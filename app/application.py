@@ -71,6 +71,7 @@ def create_fastapi_app(
         "app.routers.digid_mock_router",
         "app.routers.misc_router",
         "app.exceptions.oidc_exception_handlers",
+        "app.exceptions.oidc_exceptions",
     ]
     container.config.from_dict(dict(_config))
     is_uvicorn_app = _config.getboolean("app", "uvicorn", fallback=False)

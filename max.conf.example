@@ -26,6 +26,10 @@ user_authentication_sym_key = 00000000000000000000000000000000000000000000000000
 
 external_http_requests_timeout_seconds = 15
 
+# possible values are en, nl
+language = nl
+oidc_error_map_path = resources/lang/nl.json
+
 [jwe]
 # list with comma seperated values
 # possible values are x25519, rsa
