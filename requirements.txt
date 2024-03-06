@@ -57,9 +57,7 @@ deprecated==1.2.14
 dill==0.3.7
     # via pylint
 exceptiongroup==1.1.3
-    # via
-    #   anyio
-    #   pytest
+    # via pytest
 fastapi==0.95.1
     # via app (setup.py)
 freezegun==1.2.2
@@ -147,7 +145,7 @@ pycryptodomex==3.20.0
     #   oic
     #   pyjwkest
     #   pyop
-pydantic==1.10.14
+pydantic==2.4.2
     # via fastapi
 pyflakes==3.0.1
     # via autoflake
@@ -227,6 +225,8 @@ types-redis==4.6.0.7
     # via app (setup.py)
 types-requests==2.31.0.8
     # via app (setup.py)
+types-urllib3==1.26.25.14
+    # via types-requests
 typing-extensions==4.8.0
     # via
     #   astroid
@@ -239,9 +239,7 @@ typing-extensions==4.8.0
     #   starlette
     #   uvicorn
 urllib3==2.0.7
-    # via
-    #   requests
-    #   types-requests
+    # via requests
 uvicorn==0.23.2
     # via app (setup.py)
 wrapt==1.15.0
