@@ -1,11 +1,13 @@
+import logging
+
 from dataclasses import dataclass
 from typing import Protocol, Optional, Dict, Any
-from configparser import ConfigParser
+from dependency_injector.wiring import inject, Provide
 
 from app.misc.utils import json_from_file
 
-config = ConfigParser()
-config.read("max.conf")
+logger = logging.getLogger(__name__)
+
 
 INVALID_REQUEST = "invalid_request"
 UNAUTHORIZED_CLIENT = "unauthorized_client"
@@ -24,10 +26,6 @@ INVALID_REQUEST_OBJECT = "invalid_request_object"
 REQUEST_NOT_SUPPORTED = "request_not_supported"
 REQUEST_URI_NOT_SUPPORTED = "request_uri_not_supported"
 REGISTRATION_NOT_SUPPORTED = "registration_not_supported"
-
-
-lang_map = json_from_file(config.get("app", "oidc_error_map"))
-language = config.get("app", "language")
 
 _error_map: Dict[str, Any] = {
     "invalid_request": {"code": 400, "error_description": "Invalid request"},
@@ -92,15 +90,26 @@ class OIDCErrorMapper:
 
         return self.server_error.code
 
-    def get_error_description(self, error_type: Optional[str]) -> str:
+    @inject
+    def get_error_description(
+        self,
+        error_type: Optional[str],
+        _language: str = Provide["services.config.app.language"],
+        _oidc_error_language_map_path: str = Provide[
+            "services.config.app.oidc_error_map_path"
+        ],
+    ) -> str:
         if error_type is not None:
-            return (
-                self[error_type]["error_description"]
-                if language == "en"
-                else lang_map[self[error_type]["error_description"]]
-            )
+            if _language == "nl":
+                try:
+                    lang_map = json_from_file(_oidc_error_language_map_path)
+                    return lang_map[self[error_type]["error_description"]]
+                except ValueError as exception:
+                    logger.error("Unable to read language map file: %s", exception)
+
+            return self[error_type]["error_description"]
 
         return self.server_error.error_description
 
 
-OICD_ERROR_MAPPER = OIDCErrorMapper(**_error_map)
+OIDC_ERROR_MAPPER = OIDCErrorMapper(**_error_map)

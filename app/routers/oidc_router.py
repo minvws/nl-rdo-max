@@ -7,7 +7,7 @@ from starlette.responses import JSONResponse
 from app.dependency_injection.config import RouterConfig
 from app.exceptions.max_exceptions import UnauthorizedError
 from app.exceptions.oidc_exception_handlers import handle_exception_redirect
-from app.exceptions.oidc_exceptions import OICD_ERROR_MAPPER
+from app.exceptions.oidc_exceptions import OIDC_ERROR_MAPPER
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
 from app.providers.oidc_provider import OIDCProvider
@@ -61,8 +61,8 @@ async def _continue(
         params = request.query_params
         error = params.get("error", unauthorized_error.error)
 
-        status_code = OICD_ERROR_MAPPER.get_error_code(error)
-        error_description = OICD_ERROR_MAPPER.get_error_description(error)
+        status_code = OIDC_ERROR_MAPPER.get_error_code(error)
+        error_description = OIDC_ERROR_MAPPER.get_error_description(error)
 
         logger.debug("UnauthorizedError: %s", unauthorized_error)
         return handle_exception_redirect(
