@@ -52,11 +52,12 @@ async def accesstoken(
 @inject
 async def _continue(
     state: str,
+    exchange_token: str,
     request: Request,
     oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
 ):
     try:
-        return oidc_provider.authenticate_with_exchange_token(state)
+        return oidc_provider.authenticate_with_exchange_token(state, exchange_token)
     except UnauthorizedError as unauthorized_error:
         params = request.query_params
         error = params.get("error", unauthorized_error.error)
