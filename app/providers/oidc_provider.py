@@ -279,9 +279,14 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             content=userinfo_context.userinfo,
         )
 
-    def authenticate_with_exchange_token(self, state: str):
+    def authenticate_with_exchange_token(
+        self, state: str, incoming_exchange_token: str
+    ):
         authentication_context = self.get_authentication_request_state(state)
         exchange_token = authentication_context.authentication_state["exchange_token"]
+        if exchange_token != incoming_exchange_token:
+            raise UnauthorizedError(error_description="Authentication Failed")
+
         external_session_status = requests.get(
             f"{self._session_url}/{exchange_token}/status",
             headers={"Content-Type": "text/plain"},
