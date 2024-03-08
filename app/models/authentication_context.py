@@ -10,6 +10,7 @@ class AuthenticationContext(BaseModel):
     authentication_method: str
     authentication_state: Dict[str, Any]
     session_id: str
+    sub: str
     req_acme_tokens: Optional[List[str]]
 
     class Config:
@@ -22,6 +23,7 @@ class AuthenticationContext(BaseModel):
             "authentication_method": self.authentication_method,
             "authentication_state": self.authentication_state,
             "session_id": self.session_id,
+            "sub": self.sub,
             "req_acme_tokens": self.req_acme_tokens,
         }
 
@@ -36,5 +38,6 @@ class AuthenticationContext(BaseModel):
             authentication_method=dictionary["authentication_method"],
             authentication_state=dictionary["authentication_state"],
             session_id=dictionary["session_id"],
+            sub=dictionary["sub"],
             req_acme_tokens=dictionary["req_acme_tokens"],
         )

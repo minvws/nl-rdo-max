@@ -84,6 +84,7 @@ class CIBGUserinfoService(UserinfoService):
         client_id: str,
         auth_type: str,
         json_schema: str,
+        sub: Optional[str] = None,
         saml_id: Optional[str] = None,
         loa_authn: Optional[str] = None,
         exchange_token: Optional[str] = None,
@@ -111,6 +112,9 @@ class CIBGUserinfoService(UserinfoService):
             jwt_payload["saml_id"] = saml_id
         if exchange_token is not None:
             jwt_payload["exchange_token"] = exchange_token
+        if sub is not None:
+            jwt_payload["req_sub"] = sub
+
         return jwt_payload
 
     def _request_userinfo(
@@ -120,6 +124,7 @@ class CIBGUserinfoService(UserinfoService):
         client: Dict[str, Any],
         auth_type: str,
         json_schema: str,
+        sub: Optional[str] = None,
         saml_id: Optional[str] = None,
         loa_authn: Optional[str] = None,
         data: Optional[str] = None,
@@ -150,6 +155,7 @@ class CIBGUserinfoService(UserinfoService):
             loa_authn=loa_authn,
             exchange_token=exchange_token,
             req_acme_tokens=req_acme_tokens,
+            sub=sub,
         )
         jwt_token = JWT(
             header=jwt_header,
@@ -225,6 +231,7 @@ class CIBGUserinfoService(UserinfoService):
             ],
             saml_id=authentication_context.session_id,
             req_acme_tokens=authentication_context.req_acme_tokens,
+            sub=authentication_context.sub,
         )
 
     def _request_userinfo_for_mock_artifact(

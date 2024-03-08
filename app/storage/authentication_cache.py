@@ -53,6 +53,7 @@ class AuthenticationCache:
         authentication_state: Dict[str, Any],
         login_option: str,
         session_id: str,
+        sub: str,
         req_acme_tokens: Optional[List[str]],
     ) -> None:
         authentication_context = AuthenticationContext(
@@ -61,6 +62,7 @@ class AuthenticationCache:
             authentication_method=login_option,
             authentication_state=authentication_state,
             session_id=session_id,
+            sub=sub,
             req_acme_tokens=req_acme_tokens,
         )
         self.cache_authentication_context(randstate, authentication_context)
@@ -73,7 +75,7 @@ class AuthenticationCache:
 
     def get_authentication_request_state(
         self, randstate: str
-    ) -> Union[AuthenticationContext, None]:
+    ) -> Optional[AuthenticationContext]:
         state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{randstate}"
         return self._cache.get_and_delete_complex_object(
             state_key, AuthenticationContext
@@ -97,6 +99,7 @@ class AuthenticationCache:
                     client_id=acs_context.client_id,
                     authentication_method=acs_context.authentication_method,
                     access_token=access_token,
+                    sub=acs_context.sub,
                     userinfo=acs_context.userinfo,
                 )
                 .json()

@@ -1,5 +1,6 @@
 import json
 import secrets
+import uuid
 from typing import List, Union, Dict
 from urllib import parse
 from urllib.parse import urlencode, urlunparse
@@ -167,6 +168,8 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             else secrets.token_urlsafe(32)
         )
 
+        sub = str(uuid.uuid4())
+
         self._authentication_cache.cache_authentication_request_state(
             pyop_authentication_request,
             authorize_request,
@@ -174,6 +177,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             authentication_state,
             login_option["name"],
             session_id,
+            sub=sub,
             req_acme_tokens=authorize_request.acme_tokens,
         )
 
@@ -202,6 +206,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             authentication_method=authentication_request.authentication_method,
             authentication_state=authentication_request.authentication_state,
             userinfo=userinfo,
+            sub=authentication_request.sub,
         )
         self._authentication_cache.cache_acs_context(
             pyop_authorize_response["code"], acs_context
@@ -269,8 +274,16 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             )
             if not userinfo_context:
                 raise UnauthorizedError(error_description="not authorized")
+
         if not introspection["active"] or not userinfo_context:
             raise UnauthorizedError(error_description="not authorized")
+
+        if userinfo_context.sub is None:
+            raise UnauthorizedError(
+                error_description="not authorized",
+                log_message="sub missing in userinfo context",
+            )
+
         return Response(
             headers={
                 "Content-Type": "application/jwt",
