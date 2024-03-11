@@ -20,7 +20,7 @@ bandit==1.7.5
     # via app (setup.py)
 black==23.12.1
     # via app (setup.py)
-certifi==2023.7.22
+certifi==2024.2.2
     # via
     #   httpcore
     #   httpx
