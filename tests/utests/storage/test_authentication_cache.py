@@ -75,6 +75,7 @@ def test_create_authentication_request_state():
         "login_option",
         "session_id",
         req_acme_tokens=None,
+        sub="123456",
     )
 
     cache.set_complex_object.assert_called_with(
@@ -85,6 +86,7 @@ def test_create_authentication_request_state():
             authentication_method="login_option",
             authentication_state=authentication_state,
             session_id="session_id",
+            sub="123456",
         ),
     )
 
@@ -147,6 +149,7 @@ def test_cache_userinfo_context():
     sym_encryption_service.symm_encrypt.return_value = "encrypted"
     userinfo_key = "userinfo_key"
     access_token = "access_token"
+    sub = "123456"
 
     acache = create_authentication_cache(cache, sym_encryption_service)
     acache.cache_userinfo_context(userinfo_key, access_token, acs_context)
@@ -158,6 +161,7 @@ def test_cache_userinfo_context():
             "authentication_method": "authentication_method",
             "access_token": "access_token",
             "userinfo": "userinfo",
+            "sub": "123456",
         }
     )
     sym_encryption_service.symm_encrypt.assert_called_with(expected.encode("utf-8"))
@@ -175,6 +179,7 @@ def test_get_userinfo_context():
             "authentication_method": "authentication_method",
             "access_token": "access_token",
             "userinfo": "userinfo",
+            "sub": "123456",
         }
     )
 
