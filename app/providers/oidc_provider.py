@@ -168,7 +168,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             else secrets.token_urlsafe(32)
         )
 
-        sub = str(uuid.uuid4())
+        sub = authorize_response.sub if authorize_response.sub else str(uuid.uuid4())
 
         self._authentication_cache.cache_authentication_request_state(
             pyop_authentication_request,
