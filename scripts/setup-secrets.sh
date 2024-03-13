@@ -30,14 +30,14 @@ mkdir -p ./$SECRETS_DIR/jwks-certs
 mkdir -p ./tests/resources/secrets
 
 ###
- # Create ca for local selfsigned certificates
+# Create ca for local selfsigned certificates
 ###
 if [[ ! -f $SECRETS_DIR/cacert.crt ]]; then
   openssl genrsa -out $SECRETS_DIR/cacert.key 4096
-	openssl req -x509 -new -nodes -sha256 -days 1024 \
+  openssl req -x509 -new -nodes -sha256 -days 1024 \
 	  -key $SECRETS_DIR/cacert.key \
 	  -out $SECRETS_DIR/cacert.crt \
-	  -subj "/CN=US/CN=inge-6-uzipoc-ca"
+	  -subj "/C=US/CN=inge-6-uzipoc-ca"
 fi
 
 ###
