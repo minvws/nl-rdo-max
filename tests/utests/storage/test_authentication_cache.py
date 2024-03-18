@@ -75,7 +75,6 @@ def test_create_authentication_request_state():
         "login_option",
         "session_id",
         req_acme_tokens=None,
-        sub="123456",
     )
 
     cache.set_complex_object.assert_called_with(
@@ -86,7 +85,6 @@ def test_create_authentication_request_state():
             authentication_method="login_option",
             authentication_state=authentication_state,
             session_id="session_id",
-            sub="123456",
         ),
     )
 

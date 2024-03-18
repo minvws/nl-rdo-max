@@ -50,6 +50,7 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
         authentication_context=authentication_context_mock,
         artifact_response=artifact_response_mock,
         saml_identity_provider=saml_identity_provider_mock,
+        subject_identifier="123456",
     )
 
     assert actual_result == expected_result
@@ -60,6 +61,7 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
             "session_id": "session_id",
             "loa_authn": "http://eidas.europa.eu/LoA/substantial",
             "iss": "req_issuer",
+            "sub": "123456",
             "aud": "client_id",
             "nbf": mocker.ANY,
             "exp": mocker.ANY,

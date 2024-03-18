@@ -31,7 +31,7 @@ class CCUserinfoService(UserinfoService):
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
         saml_identity_provider: SamlIdentityProvider,
-        subject_identifier: str
+        subject_identifier: str,
     ) -> str:
         client_id = authentication_context.authorization_request["client_id"]
         client = self._clients[client_id]

@@ -74,11 +74,12 @@ class SAMLProvider:
             authentication_context.authorization_request
         )
         userinfo = self._userinfo_service.request_userinfo_for_digid_artifact(
-            authentication_context, artifact_response, identity_provider, subject_identifier
+            authentication_context,
+            artifact_response,
+            identity_provider,
+            subject_identifier,
         )
-        return self._oidc_provider.authenticate(
-            authentication_context, userinfo
-        )
+        return self._oidc_provider.authenticate(authentication_context, userinfo)
 
     def metadata(self, id_provider_name: str):
         """

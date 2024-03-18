@@ -2,8 +2,6 @@ import logging
 import time
 from typing import Dict, Any, Optional, List
 
-from uuid import uuid4
-
 import requests
 from cryptography.hazmat.primitives import hashes
 from fastapi.security.utils import get_authorization_scheme_param

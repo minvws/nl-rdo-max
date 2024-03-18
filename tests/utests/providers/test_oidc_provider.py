@@ -424,7 +424,6 @@ def test_authorize():
 
     authorize_response.session_id = "session_id"
     authorize_response.response = "actual_response"
-    authorize_response.sub = "123456"
 
     oidc_provider = create_oidc_provider(
         pyop_provider=pyop_provider,
@@ -462,7 +461,6 @@ def test_authorize():
         authentication_state,
         login_option["name"],
         "session_id",
-        sub="123456",
         req_acme_tokens=None,
     )
 
