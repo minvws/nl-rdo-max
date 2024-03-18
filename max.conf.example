@@ -28,7 +28,7 @@ external_http_requests_timeout_seconds = 15
 
 # possible values are en, nl
 language = nl
-oidc_error_map_path = resources/lang/nl.json
+oidc_error_map_path = lang/nl.json
 
 [jwe]
 # list with comma seperated values
