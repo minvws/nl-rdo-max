@@ -437,6 +437,10 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
     def authorize_and_get_subject_identifier(
         self, authorization_request: AuthorizationRequest
     ) -> str:
+        """
+        Perform an authorization and return subject identifier.Due to pyop limitation,
+        currently this is the only known way to retrieve subject claim with authrization code
+        """
         pyop_authorization_response = self._pyop_provider.authorize(
             authorization_request, "_"
         )
