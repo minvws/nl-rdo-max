@@ -198,7 +198,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         subject = self._pyop_provider.get_subject_identifier_from_authz_state(
             pyop_authorize_response["code"]
         )
-        print("code\n", subject)
 
         acs_context = AcsContext(
             client_id=authentication_request.authorization_request["client_id"],
