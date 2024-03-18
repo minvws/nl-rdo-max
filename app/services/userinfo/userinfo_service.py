@@ -12,6 +12,7 @@ class UserinfoService(abc.ABC):
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
         saml_identity_provider: SamlIdentityProvider,
+        subject_identifier: str,
     ) -> str:
         pass
 

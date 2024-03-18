@@ -311,11 +311,8 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                 error=LOGIN_REQUIRED, error_description="Authentication cancelled"
             )
 
-        pyop_response = self._pyop_provider.authorize(
-            authentication_context.authorization_request, "_"
-        )
-        subject = self._pyop_provider.get_subject_identifier_from_authz_state(
-            pyop_response["code"]
+        subject = self.authorize_and_get_subject_identifier(
+            authentication_context.authorization_request
         )
 
         userinfo = self._userinfo_service.request_userinfo_for_exchange_token(
@@ -435,4 +432,14 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             self._allow_wildcard_redirect_uri
             and "*" in redirect_uris
             and not self._environment.startswith("prod")
+        )
+
+    def authorize_and_get_subject_identifier(
+        self, authorization_request: AuthorizationRequest
+    ) -> str:
+        pyop_authorization_response = self._pyop_provider.authorize(
+            authorization_request, "_"
+        )
+        return self._pyop_provider.get_subject_identifier_from_authz_state(
+            pyop_authorization_response["code"]
         )

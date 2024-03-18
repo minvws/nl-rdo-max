@@ -190,6 +190,7 @@ class CIBGUserinfoService(UserinfoService):
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
         saml_identity_provider: SamlIdentityProvider,
+        subject_identifier: str,
     ) -> str:
         client_id = authentication_context.authorization_request["client_id"]
         client = self._clients[client_id]
@@ -202,6 +203,7 @@ class CIBGUserinfoService(UserinfoService):
                 client=client,
                 artifact_response=artifact_response,
                 req_acme_tokens=authentication_context.req_acme_tokens,
+                subject_identifier=subject_identifier,
             )
         return self._request_userinfo(
             cibg_endpoint=self._cibg_saml_endpoint,
@@ -213,6 +215,7 @@ class CIBGUserinfoService(UserinfoService):
             loa_authn=artifact_response.loa_authn,
             data=artifact_response.to_envelope_string(),
             req_acme_tokens=authentication_context.req_acme_tokens,
+            sub=subject_identifier,
         )
 
     def request_userinfo_for_exchange_token(
@@ -240,6 +243,7 @@ class CIBGUserinfoService(UserinfoService):
         client: Dict[str, Any],
         artifact_response: ArtifactResponse,
         req_acme_tokens: Optional[List[str]],
+        subject_identifier: str,
     ):
         bsn = artifact_response.get_bsn(False)
         ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
@@ -255,7 +259,7 @@ class CIBGUserinfoService(UserinfoService):
             **uzi_data.dict(),
             "iss": self._req_issuer,
             "aud": client_id,
-            "sub": str(uuid4()),
+            "sub": subject_identifier,
             "json_schema": self._external_base_url + "/json_schema.json",
             "nbf": int(time.time()) - self._jwt_nbf_lag,
             "exp": int(time.time()) + self._jwt_expiration_duration,
