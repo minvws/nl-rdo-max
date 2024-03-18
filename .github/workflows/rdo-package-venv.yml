@@ -1,4 +1,4 @@
-name: Rebuild python virtual env
+name: Build RDO Python virtual env
 
 on:
   push:
