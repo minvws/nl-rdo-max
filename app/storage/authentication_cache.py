@@ -53,7 +53,6 @@ class AuthenticationCache:
         authentication_state: Dict[str, Any],
         login_option: str,
         session_id: str,
-        sub: str,
         req_acme_tokens: Optional[List[str]],
     ) -> None:
         authentication_context = AuthenticationContext(
@@ -62,7 +61,6 @@ class AuthenticationCache:
             authentication_method=login_option,
             authentication_state=authentication_state,
             session_id=session_id,
-            sub=sub,
             req_acme_tokens=req_acme_tokens,
         )
         self.cache_authentication_context(randstate, authentication_context)

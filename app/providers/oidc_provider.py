@@ -1,6 +1,5 @@
 import json
 import secrets
-import uuid
 from typing import List, Union, Dict
 from urllib import parse
 from urllib.parse import urlencode, urlunparse
@@ -11,10 +10,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from jwcrypto.jwt import JWT
 from pyop.message import AuthorizationRequest
-from pyop.provider import (  # type: ignore[attr-defined]
-    Provider as PyopProvider,
-    extract_bearer_token_from_http_request,
-)
+from pyop.provider import extract_bearer_token_from_http_request
 from starlette.datastructures import Headers
 
 from app.exceptions.max_exceptions import (
@@ -24,6 +20,7 @@ from app.exceptions.max_exceptions import (
     InvalidRedirectUriException,
     InvalidResponseType,
 )
+from app.providers.pyop_provider import MaxPyopProvider
 from app.exceptions.oidc_exceptions import LOGIN_REQUIRED
 from app.misc.rate_limiter import RateLimiter
 from app.models.acs_context import AcsContext
@@ -44,7 +41,7 @@ from app.storage.authentication_cache import AuthenticationCache
 class OIDCProvider:  # pylint:disable=too-many-instance-attributes
     def __init__(
         self,
-        pyop_provider: PyopProvider,
+        pyop_provider: MaxPyopProvider,
         authentication_cache: AuthenticationCache,
         rate_limiter: RateLimiter,
         clients: dict,
@@ -168,8 +165,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             else secrets.token_urlsafe(32)
         )
 
-        sub = authorize_response.sub if authorize_response.sub else str(uuid.uuid4())
-
         self._authentication_cache.cache_authentication_request_state(
             pyop_authentication_request,
             authorize_request,
@@ -177,7 +172,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             authentication_state,
             login_option["name"],
             session_id,
-            sub=sub,
             req_acme_tokens=authorize_request.acme_tokens,
         )
 
@@ -201,12 +195,17 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             auth_req, "_"
         )
 
+        subject = self._pyop_provider.get_subject_identifier_from_authz_state(
+            pyop_authorize_response["code"]
+        )
+        print("code\n", subject)
+
         acs_context = AcsContext(
             client_id=authentication_request.authorization_request["client_id"],
             authentication_method=authentication_request.authentication_method,
             authentication_state=authentication_request.authentication_state,
             userinfo=userinfo,
-            sub=authentication_request.sub,
+            sub=subject,
         )
         self._authentication_cache.cache_acs_context(
             pyop_authorize_response["code"], acs_context
@@ -313,8 +312,15 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                 error=LOGIN_REQUIRED, error_description="Authentication cancelled"
             )
 
+        pyop_response = self._pyop_provider.authorize(
+            authentication_context.authorization_request, "_"
+        )
+        subject = self._pyop_provider.get_subject_identifier_from_authz_state(
+            pyop_response["code"]
+        )
+
         userinfo = self._userinfo_service.request_userinfo_for_exchange_token(
-            authentication_context
+            authentication_context, subject
         )
         return self.authenticate(authentication_context, userinfo)
 

@@ -216,7 +216,7 @@ class CIBGUserinfoService(UserinfoService):
         )
 
     def request_userinfo_for_exchange_token(
-        self, authentication_context: AuthenticationContext
+        self, authentication_context: AuthenticationContext, subject_identifier: str
     ) -> str:
         return self._request_userinfo(
             cibg_endpoint=self._cibg_exchange_token_endpoint,
@@ -231,7 +231,7 @@ class CIBGUserinfoService(UserinfoService):
             ],
             saml_id=authentication_context.session_id,
             req_acme_tokens=authentication_context.req_acme_tokens,
-            sub=authentication_context.sub,
+            sub=subject_identifier,
         )
 
     def _request_userinfo_for_mock_artifact(

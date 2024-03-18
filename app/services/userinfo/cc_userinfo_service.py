@@ -60,6 +60,6 @@ class CCUserinfoService(UserinfoService):
         )
 
     def request_userinfo_for_exchange_token(
-        self, authentication_context: AuthenticationContext
+        self, authentication_context: AuthenticationContext, subject_identifier: str
     ) -> str:
         raise NotImplementedError()
