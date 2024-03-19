@@ -134,8 +134,8 @@ def submit_default_html_form(app: TestClient, html, base_uri):
     for inp in doc.forms[0].inputs:
         data[inp.name] = inp.value
     if doc.forms[0].method == "POST":
-        return post_request(app, base_uri + doc.forms[0].action, data=data)
-    return get_request(app, base_uri + doc.forms[0].action, data)
+        return post_request(app, base_uri + "/" + doc.forms[0].action, data=data)
+    return get_request(app, base_uri + "/" + doc.forms[0].action, data)
 
 
 def fetch_authorize_request(

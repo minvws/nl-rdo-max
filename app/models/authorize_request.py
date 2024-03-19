@@ -1,6 +1,5 @@
 import json
 import logging
-from functools import cached_property
 from json import JSONDecodeError
 from typing import Union, List, Optional
 
@@ -12,7 +11,7 @@ from app.models.response_type import ResponseType
 log = logging.getLogger(__package__)
 
 
-class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
+class AuthorizeRequest(BaseModel):
     client_id: str
     redirect_uri: str
     response_type: str
@@ -61,7 +60,7 @@ class AuthorizeRequest(BaseModel, keep_untouched=(cached_property,)):
 
         return scopes
 
-    @cached_property
+    @property
     def authorization_by_proxy(self):
         return constants.SCOPE_AUTHORIZATION_BY_PROXY in self.splitted_scopes
 
