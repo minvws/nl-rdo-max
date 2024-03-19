@@ -349,11 +349,12 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             for login_method in login_methods:
                 query_params["login_hint"] = [login_method["name"]]
                 updated_query = urlencode(query_params, doseq=True)
+                combined_path = base_url.path + parsed_url.path
                 updated_url = urlunparse(
                     (
                         base_url.scheme,
                         base_url.netloc,
-                        parsed_url.path,
+                        combined_path,
                         parsed_url.params,
                         updated_query,
                         parsed_url.fragment,

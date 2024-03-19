@@ -8,6 +8,6 @@ function bsn_input_listener() {
     relayState = submitButton.getAttribute("relaystate")
     bsn = document.getElementById("bsn_inp").value
     samlArt = submitButton.getAttribute("samlart")
-    href = '/digid-mock-catch?bsn=' + bsn + '&SAMLart=' + samlArt + '&RelayState=' + relayState
+    href = 'digid-mock-catch?bsn=' + bsn + '&SAMLart=' + samlArt + '&RelayState=' + relayState
     submitButton.href = href
 }
