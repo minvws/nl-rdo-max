@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://localhost:8006/json-schema.json",
+  "title": "userinfo",
+  "description": "JSON Schema for the userinfo endpoint",
+  "type": "object",
+  "properties": {
+    "bsn": {
+      "type": "string",
+      "description": "The Subject Identifier of the End-User."
+    },
+    "session_id": {
+      "type": "string",
+      "description": "The id of the session created at the Issuer."
+    },
+    "loa_authn": {
+      "type": "string",
+      "description": "The level of assurance of the authentication performed at the Issuer."
+    },
+    "iss": {
+      "type": "string",
+      "description": "The identifier of the Issuer of the userinfo."
+    },
+    "aud": {
+      "type": "string",
+      "description": "The audience(s) that the userinfo is intended for."
+    },
+    "nbf": {
+      "type": "integer",
+      "description": "The time before which the userinfo MUST NOT be accepted for processing."
+    },
+    "exp": {
+      "type": "integer",
+      "description": "The time on or after which the userinfo MUST NOT be accepted for processing."
+    },
+    "x5c": {
+      "type": "string",
+      "description": "The client pubkey used for authentication."
+    }
+  },
+  "required": [
+    "bsn",
+    "session_id",
+    "loa_authn",
+    "iss",
+    "aud",
+    "nbf",
+    "exp",
+    "x5c"
+  ]
+}
