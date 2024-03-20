@@ -70,9 +70,14 @@ class SAMLProvider:
                 f"{artifact_response.saml_status.code}, {artifact_response.saml_status.message}",
                 error_description=error_description,
             )
-        subject_identifier = self._oidc_provider.authorize_and_get_subject_identifier(
+
+        authorization_response = self._oidc_provider.py_op_authorize(
             authentication_context.authorization_request
         )
+        subject_identifier = self._oidc_provider.get_subject_identifier(
+            authorization_response["code"]
+        )
+
         userinfo = self._userinfo_service.request_userinfo_for_digid_artifact(
             authentication_context,
             artifact_response,

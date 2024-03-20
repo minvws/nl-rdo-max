@@ -311,13 +311,14 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                 error=LOGIN_REQUIRED, error_description="Authentication cancelled"
             )
 
-        subject = self.authorize_and_get_subject_identifier(
-            authentication_context.authorization_request
+        authorization_response = self._pyop_provider.authorize(
+            authentication_context.authorization_request, "_"
         )
-
+        subject = self.get_subject_identifier(authorization_response["code"])
         userinfo = self._userinfo_service.request_userinfo_for_exchange_token(
             authentication_context, subject
         )
+
         return self.authenticate(authentication_context, userinfo)
 
     def authenticate(self, authentication_context, userinfo):
@@ -435,16 +436,18 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             and not self._environment.startswith("prod")
         )
 
-    def authorize_and_get_subject_identifier(
-        self, authorization_request: AuthorizationRequest
-    ) -> str:
+    def get_subject_identifier(self, authorization_code: str) -> str:
         """
-        Perform an authorization and return subject identifier. Due to pyop limitation,
-        currently this is the only known way to retrieve subject claim with authrization code
+        Wrapper method to use Pyop service and sub with authorization code
         """
-        pyop_authorization_response = self._pyop_provider.authorize(
-            authorization_request, "_"
-        )
         return self._pyop_provider.get_subject_identifier_from_authz_state(
-            pyop_authorization_response["code"]
+            authorization_code
         )
+
+    def py_op_authorize(
+        self, authorization_request: AuthorizationRequest
+    ) -> Dict[str, str]:
+        """
+        Wrapper method to expose pyop authorization method.
+        """
+        return self._pyop_provider.authorize(authorization_request, "_")
