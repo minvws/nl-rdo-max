@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 @misc_router.get("/"PlainTextResponse)
 async def root() -> PlainTextResponse:
-    return PlainTextResponse('Welcome to MAX!')
+    return PlainTextResponse('Welcome to MAX! The Multiple Authentication eXchange.')
 
 @misc_router.get(RouterConfig.health_endpoint)
 @inject
