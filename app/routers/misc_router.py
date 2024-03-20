@@ -5,7 +5,7 @@ from redis.exceptions import RedisError
 
 from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
-from starlette.responses import JSONResponse,PlainTextResponse
+from starlette.responses import JSONResponse, PlainTextResponse
 
 from app.dependency_injection.storage import RedisCache
 from app.dependency_injection.config import RouterConfig
@@ -14,9 +14,11 @@ misc_router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
+
 @misc_router.get("/")
 async def root() -> PlainTextResponse:
-    return PlainTextResponse('Welcome to MAX! The Multiple Authentication eXchange.')
+    return PlainTextResponse("Welcome to MAX! The Multiple Authentication eXchange.")
+
 
 @misc_router.get(RouterConfig.health_endpoint)
 @inject
