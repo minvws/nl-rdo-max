@@ -129,7 +129,7 @@ class SamlResponseFactory:
         base64_authn_request = base64.urlsafe_b64encode(
             json.dumps(authorize_request.dict()).encode()
         ).decode()
-        sso_url = "/digid-mock?" + parse.urlencode(
+        sso_url = "digid-mock?" + parse.urlencode(
             {
                 "state": randstate,
                 "idp_name": saml_identity_provider.name,

@@ -22,7 +22,7 @@ tests/secrets
 !tests/manifest.json
 !package.json
 !package-lock.json
-!resources/lang/nl.json
+!lang/*.json
 
 *.conf
 *.crt

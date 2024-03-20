@@ -53,5 +53,5 @@ def test_digid_mock_catch():
 
     assert actual_response.status_code == 303
     assert (
-        actual_response.headers["location"] == "/acs?SAMLart=s&RelayState=ar&mocking=1"
+        actual_response.headers["location"] == "acs?SAMLart=s&RelayState=ar&mocking=1"
     )

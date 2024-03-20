@@ -41,5 +41,5 @@ class DigidMockProvider:
         bsn = request.bsn
         relay_state = request.RelayState
 
-        response_uri = "/acs" + f"?SAMLart={bsn}&RelayState={relay_state}&mocking=1"
+        response_uri = "acs" + f"?SAMLart={bsn}&RelayState={relay_state}&mocking=1"
         return RedirectResponse(response_uri, status_code=303)
