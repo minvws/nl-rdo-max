@@ -14,7 +14,7 @@ misc_router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
-@misc_router.get("/"PlainTextResponse)
+@misc_router.get("/")
 async def root() -> PlainTextResponse:
     return PlainTextResponse('Welcome to MAX! The Multiple Authentication eXchange.')
 
