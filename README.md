@@ -1,5 +1,5 @@
 # System summary
-Multiple Authentication eXchange (MAX, formerly inge6) is build as a bridge between a OIDC client and a TVS (Toegang Verlenings
+Multiple Authentication eXchange (MAX, formerly inge6) is build as a bridge between an OIDC client and a TVS (Toegang Verlenings
 Service). In this case the TVS could be DigiD or any other authentication method provider that is exposed through the 
 [nl-uzi-login-controller](https://github.com/minvws/nl-uzi-login-controller). To clarify, this means that any authentication
 methods other than DigiD, will pass from MAX through the login controller (DigiD Mock included).
