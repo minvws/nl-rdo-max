@@ -188,23 +188,26 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         return authentication_request
 
     def handle_external_authentication(
-        self, authentication_request: AuthenticationContext, userinfo: str
+        self,
+        authentication_request: AuthenticationContext,
+        userinfo: str,
+        authorization_response: Dict[str, str],
     ):
         auth_req = authentication_request.authorization_request
         pyop_authorize_response = self._pyop_provider.authorize(  # type:ignore
             auth_req, "_"
         )
-
-        subject = self._pyop_provider.get_subject_identifier_from_authz_state(
-            pyop_authorize_response["code"]
-        )
+        # NOTE AUTHORIZATION RESPONSE HERE FROM PREVIEWS METHOD
+        # subject = self._pyop_provider.get_subject_identifier_from_authz_state(
+        #     pyop_authorize_response["code"]
+        # )
 
         acs_context = AcsContext(
             client_id=authentication_request.authorization_request["client_id"],
             authentication_method=authentication_request.authentication_method,
             authentication_state=authentication_request.authentication_state,
             userinfo=userinfo,
-            sub=subject,
+            # sub=subject,
         )
         self._authentication_cache.cache_acs_context(
             pyop_authorize_response["code"], acs_context
@@ -276,12 +279,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         if not introspection["active"] or not userinfo_context:
             raise UnauthorizedError(error_description="not authorized")
 
-        if userinfo_context.sub is None:
-            raise UnauthorizedError(
-                error_description="not authorized",
-                log_message="sub missing in userinfo context",
-            )
-
         return Response(
             headers={
                 "Content-Type": "application/jwt",
@@ -319,11 +316,18 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             authentication_context, subject
         )
 
-        return self.authenticate(authentication_context, userinfo)
+        return self.authenticate(
+            authentication_context, userinfo, authorization_response
+        )
 
-    def authenticate(self, authentication_context, userinfo):
+    def authenticate(
+        self,
+        authentication_context: AuthenticationContext,
+        userinfo: str,
+        authorization_response: Dict[str, str],
+    ):
         response_url = self.handle_external_authentication(
-            authentication_context, userinfo
+            authentication_context, userinfo, authorization_response
         )
         return self._response_factory.create_redirect_response(response_url)
 

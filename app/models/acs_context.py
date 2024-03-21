@@ -8,7 +8,7 @@ class AcsContext(BaseModel):
     authentication_method: str
     authentication_state: Dict[str, Any]
     userinfo: str
-    sub: str
+    # sub: str
 
     def to_dict(self):
         return {
@@ -16,7 +16,7 @@ class AcsContext(BaseModel):
             "authentication_method": self.authentication_method,
             "authentication_state": self.authentication_state,
             "userinfo": self.userinfo,
-            "sub": self.sub,
+            # "sub": self.sub,
         }
 
     @classmethod
@@ -26,5 +26,5 @@ class AcsContext(BaseModel):
             authentication_method=dictonary["authentication_method"],
             authentication_state=dictonary["authentication_state"],
             userinfo=dictonary["userinfo"],
-            sub=dictonary["sub"],
+            # sub=dictonary["sub"],
         )

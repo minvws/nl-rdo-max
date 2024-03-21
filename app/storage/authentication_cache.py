@@ -91,18 +91,16 @@ class AuthenticationCache:
     def cache_userinfo_context(
         self, userinfo_key: str, access_token: str, acs_context: AcsContext
     ):
-        userinfo_context_serialized = (
-            self._authentication_context_encryption_service.symm_encrypt(
-                UserinfoContext(
-                    client_id=acs_context.client_id,
-                    authentication_method=acs_context.authentication_method,
-                    access_token=access_token,
-                    sub=acs_context.sub,
-                    userinfo=acs_context.userinfo,
-                )
-                .json()
-                .encode("utf-8")
+        userinfo_context_serialized = self._authentication_context_encryption_service.symm_encrypt(
+            UserinfoContext(
+                client_id=acs_context.client_id,
+                authentication_method=acs_context.authentication_method,
+                access_token=access_token,
+                # sub=acs_context.sub,
+                userinfo=acs_context.userinfo,
             )
+            .json()
+            .encode("utf-8")
         )
         return self._cache.set(
             f"{ID_TOKEN_PREFIX}:{userinfo_key}",

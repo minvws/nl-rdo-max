@@ -84,7 +84,9 @@ class SAMLProvider:
             identity_provider,
             subject_identifier,
         )
-        return self._oidc_provider.authenticate(authentication_context, userinfo)
+        return self._oidc_provider.authenticate(
+            authentication_context, userinfo, authorization_response
+        )
 
     def metadata(self, id_provider_name: str):
         """
