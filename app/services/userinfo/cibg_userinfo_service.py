@@ -101,7 +101,7 @@ class CIBGUserinfoService(UserinfoService):
             "auth_type": auth_type,
             "req_iss": self._req_issuer,
             "req_aud": client_id,
-            "requ_sub": sub
+            "requ_sub": sub,
         }
         if loa_authn is not None:
             jwt_payload["loa_authn"] = loa_authn

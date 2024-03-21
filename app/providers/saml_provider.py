@@ -71,11 +71,11 @@ class SAMLProvider:
                 error_description=error_description,
             )
 
-        authorization_response = self._oidc_provider.py_op_authorize(
+        pyop_authorization_response = self._oidc_provider.py_op_authorize(
             authentication_context.authorization_request
         )
         subject_identifier = self._oidc_provider.get_subject_identifier(
-            authorization_response["code"]
+            pyop_authorization_response["code"]
         )
 
         userinfo = self._userinfo_service.request_userinfo_for_digid_artifact(
@@ -85,7 +85,7 @@ class SAMLProvider:
             subject_identifier,
         )
         return self._oidc_provider.authenticate(
-            authentication_context, userinfo, authorization_response
+            authentication_context, userinfo, pyop_authorization_response
         )
 
     def metadata(self, id_provider_name: str):

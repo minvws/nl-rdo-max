@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from app.models.acs_context import AcsContext
 from app.models.authentication_context import AuthenticationContext
-from app.models.authentication_request_context import UserinfoContext
+from app.models.userinfo_context import UserinfoContext
 from app.services.encryption.sym_encryption_service import SymEncryptionService
 from app.storage.authentication_cache import AuthenticationCache
 from app.storage.cache import Cache
