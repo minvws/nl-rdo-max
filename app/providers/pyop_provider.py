@@ -5,6 +5,7 @@ from cryptography.x509 import load_pem_x509_certificate
 from jwcrypto.jwt import JWK
 from jwkest.jwk import RSAKey
 from pyop.provider import Provider as PyopProvider
+from pyop.authz_state import AuthorizationState
 
 from app.misc.utils import kid_from_certificate
 
@@ -15,7 +16,7 @@ class MaxPyopProvider(PyopProvider):
         self,
         signing_key: RSAKey,
         configuration_information,
-        authz_state,
+        authz_state: AuthorizationState,
         clients,
         userinfo,
         *,
@@ -57,3 +58,10 @@ class MaxPyopProvider(PyopProvider):
     @property
     def jwks(self):
         return self._jwks_certs
+
+    def get_subject_identifier_from_authz_state(self, authorization_code: str) -> str:
+        """
+        A wrapper method that gets the subject identifier from the puop authorization state
+        See Pypp do_code_exchange private method for mode details
+        """
+        return self.authz_state.get_subject_identifier_for_code(authorization_code)

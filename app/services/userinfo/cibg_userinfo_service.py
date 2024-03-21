@@ -82,6 +82,7 @@ class CIBGUserinfoService(UserinfoService):
         client_id: str,
         auth_type: str,
         json_schema: str,
+        sub: str,
         saml_id: Optional[str] = None,
         loa_authn: Optional[str] = None,
         exchange_token: Optional[str] = None,
@@ -100,6 +101,7 @@ class CIBGUserinfoService(UserinfoService):
             "auth_type": auth_type,
             "req_iss": self._req_issuer,
             "req_aud": client_id,
+            "req_sub": sub,
         }
         if loa_authn is not None:
             jwt_payload["loa_authn"] = loa_authn
@@ -109,6 +111,7 @@ class CIBGUserinfoService(UserinfoService):
             jwt_payload["saml_id"] = saml_id
         if exchange_token is not None:
             jwt_payload["exchange_token"] = exchange_token
+
         return jwt_payload
 
     def _request_userinfo(
@@ -118,6 +121,7 @@ class CIBGUserinfoService(UserinfoService):
         client: Dict[str, Any],
         auth_type: str,
         json_schema: str,
+        sub: str,
         saml_id: Optional[str] = None,
         loa_authn: Optional[str] = None,
         data: Optional[str] = None,
@@ -148,6 +152,7 @@ class CIBGUserinfoService(UserinfoService):
             loa_authn=loa_authn,
             exchange_token=exchange_token,
             req_acme_tokens=req_acme_tokens,
+            sub=sub,
         )
         jwt_token = JWT(
             header=jwt_header,
@@ -182,6 +187,7 @@ class CIBGUserinfoService(UserinfoService):
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
         saml_identity_provider: SamlIdentityProvider,
+        subject_identifier: str,
     ) -> str:
         client_id = authentication_context.authorization_request["client_id"]
         client = self._clients[client_id]
@@ -194,6 +200,7 @@ class CIBGUserinfoService(UserinfoService):
                 client=client,
                 artifact_response=artifact_response,
                 req_acme_tokens=authentication_context.req_acme_tokens,
+                subject_identifier=subject_identifier,
             )
         return self._request_userinfo(
             cibg_endpoint=self._cibg_saml_endpoint,
@@ -205,10 +212,11 @@ class CIBGUserinfoService(UserinfoService):
             loa_authn=artifact_response.loa_authn,
             data=artifact_response.to_envelope_string(),
             req_acme_tokens=authentication_context.req_acme_tokens,
+            sub=subject_identifier,
         )
 
     def request_userinfo_for_exchange_token(
-        self, authentication_context: AuthenticationContext
+        self, authentication_context: AuthenticationContext, subject_identifier: str
     ) -> str:
         return self._request_userinfo(
             cibg_endpoint=self._cibg_exchange_token_endpoint,
@@ -223,6 +231,7 @@ class CIBGUserinfoService(UserinfoService):
             ],
             saml_id=authentication_context.session_id,
             req_acme_tokens=authentication_context.req_acme_tokens,
+            sub=subject_identifier,
         )
 
     def _request_userinfo_for_mock_artifact(
@@ -231,6 +240,7 @@ class CIBGUserinfoService(UserinfoService):
         client: Dict[str, Any],
         artifact_response: ArtifactResponse,
         req_acme_tokens: Optional[List[str]],
+        subject_identifier: str,
     ):
         bsn = artifact_response.get_bsn(False)
         ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
@@ -246,6 +256,7 @@ class CIBGUserinfoService(UserinfoService):
             **uzi_data.dict(),
             "iss": self._req_issuer,
             "aud": client_id,
+            "sub": subject_identifier,
             "json_schema": self._external_base_url + "/json_schema.json",
             "nbf": int(time.time()) - self._jwt_nbf_lag,
             "exp": int(time.time()) + self._jwt_expiration_duration,

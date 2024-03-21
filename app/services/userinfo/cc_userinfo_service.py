@@ -31,6 +31,7 @@ class CCUserinfoService(UserinfoService):
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
         saml_identity_provider: SamlIdentityProvider,
+        subject_identifier: str,
     ) -> str:
         client_id = authentication_context.authorization_request["client_id"]
         client = self._clients[client_id]
@@ -52,6 +53,7 @@ class CCUserinfoService(UserinfoService):
                 "loa_authn": loa_authn,
                 "iss": self._req_issuer,
                 "aud": client_id,
+                "sub": subject_identifier,
                 "nbf": int(time.time()) - self._jwt_nbf_lag,
                 "exp": int(time.time()) + self._jwt_expiration_duration,
                 "x5c": strip_cert(client_pubkey),
@@ -60,6 +62,6 @@ class CCUserinfoService(UserinfoService):
         )
 
     def request_userinfo_for_exchange_token(
-        self, authentication_context: AuthenticationContext
+        self, authentication_context: AuthenticationContext, subject_identifier: str
     ) -> str:
         raise NotImplementedError()

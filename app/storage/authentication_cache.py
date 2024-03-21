@@ -11,7 +11,7 @@ from app.constants import (
 )
 from app.models.acs_context import AcsContext
 from app.models.authentication_context import AuthenticationContext
-from app.models.authentication_request_context import UserinfoContext
+from app.models.userinfo_context import UserinfoContext
 from app.models.authorize_request import AuthorizeRequest
 from app.services.encryption.sym_encryption_service import SymEncryptionService
 from app.storage.cache import Cache
@@ -73,7 +73,7 @@ class AuthenticationCache:
 
     def get_authentication_request_state(
         self, randstate: str
-    ) -> Union[AuthenticationContext, None]:
+    ) -> Optional[AuthenticationContext]:
         state_key = f"{AUTHENTICATION_REQUEST_PREFIX}:{randstate}"
         return self._cache.get_and_delete_complex_object(
             state_key, AuthenticationContext

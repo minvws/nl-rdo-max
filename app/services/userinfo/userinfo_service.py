@@ -12,11 +12,12 @@ class UserinfoService(abc.ABC):
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
         saml_identity_provider: SamlIdentityProvider,
+        subject_identifier: str,
     ) -> str:
         pass
 
     @abc.abstractmethod
     def request_userinfo_for_exchange_token(
-        self, authentication_context: AuthenticationContext
+        self, authentication_context: AuthenticationContext, subject_identifier: str
     ) -> str:
         pass
