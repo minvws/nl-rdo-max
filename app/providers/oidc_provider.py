@@ -10,7 +10,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from jwcrypto.jwt import JWT
 from pyop.message import AuthorizationRequest
-from pyop.provider import extract_bearer_token_from_http_request
+from pyop.provider import AuthorizationResponse, extract_bearer_token_from_http_request
 from starlette.datastructures import Headers
 
 from app.exceptions.max_exceptions import (
@@ -191,23 +191,15 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self,
         authentication_request: AuthenticationContext,
         userinfo: str,
-        authorization_response: Dict[str, str],
+        pyop_authorize_response: AuthorizationResponse,
     ):
         auth_req = authentication_request.authorization_request
-        pyop_authorize_response = self._pyop_provider.authorize(  # type:ignore
-            auth_req, "_"
-        )
-        # NOTE AUTHORIZATION RESPONSE HERE FROM PREVIEWS METHOD
-        # subject = self._pyop_provider.get_subject_identifier_from_authz_state(
-        #     pyop_authorize_response["code"]
-        # )
 
         acs_context = AcsContext(
             client_id=authentication_request.authorization_request["client_id"],
             authentication_method=authentication_request.authentication_method,
             authentication_state=authentication_request.authentication_state,
             userinfo=userinfo,
-            # sub=subject,
         )
         self._authentication_cache.cache_acs_context(
             pyop_authorize_response["code"], acs_context
@@ -308,26 +300,26 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                 error=LOGIN_REQUIRED, error_description="Authentication cancelled"
             )
 
-        authorization_response = self._pyop_provider.authorize(
+        pyop_authorization_response = self._pyop_provider.authorize(
             authentication_context.authorization_request, "_"
         )
-        subject = self.get_subject_identifier(authorization_response["code"])
+        subject = self.get_subject_identifier(pyop_authorization_response["code"])
         userinfo = self._userinfo_service.request_userinfo_for_exchange_token(
             authentication_context, subject
         )
 
         return self.authenticate(
-            authentication_context, userinfo, authorization_response
+            authentication_context, userinfo, pyop_authorization_response
         )
 
     def authenticate(
         self,
         authentication_context: AuthenticationContext,
         userinfo: str,
-        authorization_response: Dict[str, str],
+        pyop_authorization_response: AuthorizationResponse,
     ):
         response_url = self.handle_external_authentication(
-            authentication_context, userinfo, authorization_response
+            authentication_context, userinfo, pyop_authorization_response
         )
         return self._response_factory.create_redirect_response(response_url)
 
@@ -450,7 +442,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
     def py_op_authorize(
         self, authorization_request: AuthorizationRequest
-    ) -> Dict[str, str]:
+    ) -> AuthorizationResponse:
         """
         Wrapper method to expose pyop authorization method.
         """
