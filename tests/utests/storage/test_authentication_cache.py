@@ -144,7 +144,6 @@ def test_cache_userinfo_context():
     acs_context.client_id = "client_id"
     acs_context.authentication_method = "authentication_method"
     acs_context.userinfo = "userinfo"
-    acs_context.sub = "123456"
     sym_encryption_service.symm_encrypt.return_value = "encrypted"
     userinfo_key = "userinfo_key"
     access_token = "access_token"
@@ -158,7 +157,6 @@ def test_cache_userinfo_context():
             "client_id": "client_id",
             "authentication_method": "authentication_method",
             "access_token": "access_token",
-            "sub": "123456",
             "userinfo": "userinfo",
         }
     )
