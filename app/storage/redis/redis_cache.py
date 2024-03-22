@@ -6,6 +6,7 @@ Required settings:
     - settings.redis.default_cache_namespace, prefix all redis cache keys.
     - settings.redis.object_ttl, time to live for all objects stored in cache
 """
+
 import json
 from typing import Any, Text, Optional, Union, Type
 

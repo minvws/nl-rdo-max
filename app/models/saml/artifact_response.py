@@ -4,6 +4,7 @@ todo: check class for tests and comments like required settings
 Required settings:
     - settings.saml.response_expires_in, number of seconds a generated artifact response is considered valid
 """
+
 import base64
 import logging
 import re
