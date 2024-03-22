@@ -49,7 +49,7 @@ def clients_from_json(filepath: str) -> str:
 
 def read_cert(cert_path: str) -> str:
     with open(cert_path, "r", encoding="utf-8") as cert_file:
-        cert_data = strip_cert(cert_file.read())
+        cert_data = cert_file.read()
     return cert_data
 
 

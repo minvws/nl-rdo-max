@@ -15,7 +15,7 @@
         </ds:SignedInfo>
         <ds:SignatureValue></ds:SignatureValue>
         <ds:KeyInfo>
-            <ds:KeyName />
+            <ds:KeyName>{{sign_keyname}}</ds:KeyName>
             <ds:X509Data>
                 <ds:X509Certificate>{{sign_cert}}</ds:X509Certificate>
             </ds:X509Data>
@@ -24,7 +24,7 @@
     {% if clustered %}
     <samlp:Extensions>
         <saml:Attribute Name="urn:nl-eid-gdi:1.0:IntendedAudience">
-            <saml:AttributeValue>{{intended_audience}}</saml:AttributeValue> 
+            <saml:AttributeValue>{{intended_audience}}</saml:AttributeValue>
         </saml:Attribute>
         <saml:Attribute Name="urn:nl-eid-gdi:1.0:ServiceUUID">
             <saml:AttributeValue>{{service_uuid}}</saml:AttributeValue>

@@ -8,8 +8,8 @@ from typing import Optional, Any, Tuple, Union
 import xmlsec
 from lxml import etree
 
-from app.misc.saml_utils import to_soap_envelope
-from app.misc.utils import read_cert
+from app.misc.saml_utils import compute_keyname, to_soap_envelope
+from app.misc.utils import read_cert, strip_cert
 
 
 def get_issue_instant():
@@ -26,6 +26,10 @@ class SAMLRequest:
         """
         self._id_hash = "_" + secrets.token_hex(41)  # total length 42.
         self.keypair_sign = keypair_sign
+
+        sign_cert = read_cert(self.signing_cert_path)
+        self.sign_keyname = compute_keyname(sign_cert)
+        self.sign_cert = strip_cert(sign_cert)
 
     @property
     def signing_cert_path(self):
@@ -149,7 +153,8 @@ class AuthNRequest(SAMLRequest):
             "destination": self.sso_url,
             "issuer_id": self.issuer_id,
             "issue_instant": get_issue_instant(),
-            "sign_cert": read_cert(self.signing_cert_path),
+            "sign_keyname": self.sign_keyname,
+            "sign_cert": self.sign_cert,
             "force_authn": "true",
             "clustered": False,
             "scoping_list": self.scoping_list,
@@ -212,7 +217,8 @@ class ArtifactResolveRequest(SAMLRequest):
                 "destination": self.sso_url,
                 "issuer_id": self.issuer_id,
                 "issue_instant": get_issue_instant(),
-                "sign_cert": read_cert(self.signing_cert_path),
+                "sign_keyname": self.sign_keyname,
+                "sign_cert": self.sign_cert,
                 "artifact": self.artifact,
             }
         )
