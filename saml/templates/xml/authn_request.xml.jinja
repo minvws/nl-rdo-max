@@ -21,6 +21,13 @@
             </ds:X509Data>
         </ds:KeyInfo>
     </ds:Signature>
+    {% if requested_authn_context %}
+    <samlp:RequestedAuthnContext Comparison="{{requested_authn_context.comparison}}">
+        {% for class_ref in requested_authn_context.class_ref_list %}
+        <saml:AuthnContextClassRef>{{class_ref}}</saml:AuthnContextClassRef>
+        {% endfor %}
+    </samlp:RequestedAuthnContext>
+    {% endif %}
     {% if clustered %}
     <samlp:Extensions>
         <saml:Attribute Name="urn:nl-eid-gdi:1.0:IntendedAudience">

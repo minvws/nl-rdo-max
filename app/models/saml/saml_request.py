@@ -148,6 +148,14 @@ class AuthNRequest(SAMLRequest):
         ]
 
     def get_context(self):
+        if self.sp_metadata.requested_authn_context:
+            requested_authn_context = {
+                "class_ref_list": self.sp_metadata.requested_authn_context,
+                "comparison": self.sp_metadata.requested_authn_context_comparison,
+            }
+        else:
+            requested_authn_context = None
+
         context = {
             "ID": self._id_hash,
             "destination": self.sso_url,
@@ -156,6 +164,7 @@ class AuthNRequest(SAMLRequest):
             "sign_keyname": self.sign_keyname,
             "sign_cert": self.sign_cert,
             "force_authn": "true",
+            "requested_authn_context": requested_authn_context,
             "clustered": False,
             "scoping_list": self.scoping_list,
             "request_ids": self.request_ids if self.request_ids is not None else [],

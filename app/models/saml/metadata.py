@@ -85,6 +85,16 @@ class SPMetadata(SAMLRequest):
         return self.settings.get("security", {}).get("defaultScopes", [])
 
     @property
+    def requested_authn_context(self):
+        return self.settings.get("security", {}).get("requestedAuthnContext", [])
+
+    @property
+    def requested_authn_context_comparison(self):
+        return self.settings.get("security", {}).get(
+            "requestedAuthnContextComparison", "exact"
+        )
+
+    @property
     def root(self):
         return self._root
 
