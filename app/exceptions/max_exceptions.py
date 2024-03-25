@@ -129,10 +129,10 @@ class InvalidResponseType(JsonBaseException):
         )
 
 
-class InvalidCodeChallengeException(JsonBaseException):
+class InvalidCodeChallengeMethodException(JsonBaseException):
     def __init__(self) -> None:
         super().__init__(
             error=INVALID_REQUEST,
-            error_description="Invalid code challenge method",
+            error_description="Invalid code challenge method, code challenge method supported: S256",
             status_code=400,
         )

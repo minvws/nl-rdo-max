@@ -8,7 +8,7 @@ from pydantic import BaseModel, validator
 from app import constants
 from app.models.response_type import ResponseType
 
-from app.exceptions.max_exceptions import InvalidCodeChallengeException
+from app.exceptions.max_exceptions import InvalidCodeChallengeMethodException
 
 log = logging.getLogger(__package__)
 
@@ -67,7 +67,7 @@ class AuthorizeRequest(BaseModel):
         cls, code_challenge_method: str
     ):  # pylint: disable=no-self-argument
         if code_challenge_method != "S256":
-            raise InvalidCodeChallengeException()
+            raise InvalidCodeChallengeMethodException()
 
         return code_challenge_method
 
