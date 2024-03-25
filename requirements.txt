@@ -76,7 +76,7 @@ httpcore==1.0.2
     # via httpx
 httpx==0.24.1
     # via app (setup.py)
-idna==3.4
+idna==3.6
     # via
     #   anyio
     #   httpx
