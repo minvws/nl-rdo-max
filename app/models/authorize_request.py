@@ -69,6 +69,8 @@ class AuthorizeRequest(BaseModel):
         if code_challenge_method != "S256":
             raise InvalidCodeChallengeException()
 
+        return code_challenge_method
+
     @property
     def authorization_by_proxy(self):
         return constants.SCOPE_AUTHORIZATION_BY_PROXY in self.splitted_scopes
