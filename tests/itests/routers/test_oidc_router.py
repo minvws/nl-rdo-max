@@ -46,12 +46,12 @@ def test_authorize(lazy_app, oidc_provider_mocked):
         scope="s",
         state="s",
         code_challenge="cc",
-        code_challenge_method="ccc",
+        code_challenge_method="S256",
     )
     mocked_provider.present_login_options_or_authorize.return_value = fake_response
     app = lazy_app.value
     actual_response = app.get(
-        "/authorize?client_id=ci&redirect_uri=ru&response_type=code&nonce=n&scope=s&state=s&code_challenge=cc&code_challenge_method=ccc"
+        "/authorize?client_id=ci&redirect_uri=ru&response_type=code&nonce=n&scope=s&state=s&code_challenge=cc&code_challenge_method=S256"
     )
     assert actual_response.text == "expected"
     assert actual_response.status_code == 234
