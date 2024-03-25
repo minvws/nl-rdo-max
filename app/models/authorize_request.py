@@ -8,6 +8,8 @@ from pydantic import BaseModel, validator
 from app import constants
 from app.models.response_type import ResponseType
 
+from app.exceptions.max_exceptions import InvalidCodeChallengeException
+
 log = logging.getLogger(__package__)
 
 
@@ -59,6 +61,11 @@ class AuthorizeRequest(BaseModel):
                 )
 
         return scopes
+
+    @validator("code_challenge_method")
+    def validate_code_challenge_method(cls, code_challenge_method: str):
+        if code_challenge_method != "S256":
+            raise InvalidCodeChallengeException()
 
     @property
     def authorization_by_proxy(self):

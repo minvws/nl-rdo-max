@@ -127,3 +127,12 @@ class InvalidResponseType(JsonBaseException):
             error_description="Invalid response type",
             status_code=400,
         )
+
+
+class InvalidCodeChallengeException(JsonBaseException):
+    def __init__(self) -> None:
+        super().__init__(
+            error=INVALID_REQUEST,
+            error_description="Invalid code challenge method",
+            status_code=400,
+        )
