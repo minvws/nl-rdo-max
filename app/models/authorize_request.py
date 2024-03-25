@@ -63,7 +63,9 @@ class AuthorizeRequest(BaseModel):
         return scopes
 
     @validator("code_challenge_method")
-    def validate_code_challenge_method(cls, code_challenge_method: str):
+    def validate_code_challenge_method(
+        cls, code_challenge_method: str
+    ):  # pylint: disable=no-self-argument
         if code_challenge_method != "S256":
             raise InvalidCodeChallengeException()
 
