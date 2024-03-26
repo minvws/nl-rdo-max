@@ -1,6 +1,6 @@
 import json
 import secrets
-from typing import List, Union, Dict, Optional
+from typing import List, Union, Dict
 from urllib import parse
 from urllib.parse import urlencode, urlunparse
 
@@ -280,11 +280,8 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         )
 
     def authenticate_with_exchange_token(
-        self, state: str, incoming_exchange_token: Optional[str]
+        self, state: str, incoming_exchange_token: str
     ):
-        if incoming_exchange_token is None:
-            raise UnauthorizedError(error_description="Authorization Failed")
-
         authentication_context = self.get_authentication_request_state(state)
         exchange_token = authentication_context.authentication_state["exchange_token"]
         if exchange_token != incoming_exchange_token:
