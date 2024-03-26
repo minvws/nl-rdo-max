@@ -134,5 +134,5 @@ class InvalidCodeChallengeMethodException(JsonBaseException):
         super().__init__(
             error=INVALID_REQUEST,
             error_description="Invalid code challenge method, code challenge method supported: S256",
-            status_code=400,
+            status_code=406,
         )
