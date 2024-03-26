@@ -410,7 +410,7 @@ def test_authorize():
         scope="str",
         state="str",
         code_challenge="str",
-        code_challenge_method="str",
+        code_challenge_method="S256",
         login_hint="a",
     )
 
@@ -440,7 +440,7 @@ def test_authorize():
 
     pyop_provider.parse_authentication_request.assert_called_with(
         "client_id=str&redirect_uri=str&response_type=code&nonce=str&scope=str&state=str"
-        + "&code_challenge=str&code_challenge_method=str",
+        + "&code_challenge=str&code_challenge_method=S256",
         request.headers,
     )
 
@@ -491,7 +491,7 @@ def test_authorize_without_client():
         scope="str",
         state="str",
         code_challenge="str",
-        code_challenge_method="str",
+        code_challenge_method="S256",
         login_hint="a,b",
     )
 
@@ -511,7 +511,7 @@ def test_authorize_without_client():
     rate_limiter.validate_outage.assert_called()
     pyop_provider.parse_authentication_request.assert_called_with(
         "client_id=str&redirect_uri=str&response_type=code&nonce=str&scope=str&state=str"
-        + "&code_challenge=str&code_challenge_method=str",
+        + "&code_challenge=str&code_challenge_method=S256",
         request.headers,
     )
 
@@ -567,7 +567,7 @@ def test_create_pyop_authentication_request():
         scope="scope",
         state="state",
         code_challenge="code_challenge",
-        code_challenge_method="bla",
+        code_challenge_method="S256",
         login_hint="bla",
         claims="bla",
     )
@@ -581,6 +581,6 @@ def test_create_pyop_authentication_request():
 
     assert actual == "expected_return_value"
     pyop_provider.parse_authentication_request.assert_called_with(
-        "client_id=client_id&redirect_uri=redirect_uri&response_type=response_type&nonce=nonce&scope=scope&state=state&code_challenge=code_challenge&code_challenge_method=bla",
+        "client_id=client_id&redirect_uri=redirect_uri&response_type=response_type&nonce=nonce&scope=scope&state=state&code_challenge=code_challenge&code_challenge_method=S256",
         request.headers,
     )
