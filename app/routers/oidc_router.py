@@ -1,4 +1,6 @@
 import logging
+from typing import Optional
+
 
 from dependency_injector.wiring import inject, Provide
 from fastapi import APIRouter, Request, Depends
@@ -51,25 +53,29 @@ async def accesstoken(
 @oidc_router.get("/continue")
 @inject
 async def _continue(
-    state: str,
-    exchange_token: str,
     request: Request,
+    state: str,
+    exchange_token: Optional[str] = None,
+    error: Optional[str] = None,
+    error_description: Optional[str] = None,
     oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
 ):
     try:
         return oidc_provider.authenticate_with_exchange_token(state, exchange_token)
     except UnauthorizedError as unauthorized_error:
-        params = request.query_params
-        error = params.get("error", unauthorized_error.error)
-
+        handled_error = error if error is not None else unauthorized_error.error
         status_code = OIDC_ERROR_MAPPER.get_error_code(error)
-        error_description = OIDC_ERROR_MAPPER.get_error_description(error)
+        handled_error_description = (
+            error_description
+            if error_description is not None
+            else OIDC_ERROR_MAPPER.get_error_description(error)
+        )
 
         logger.debug("UnauthorizedError: %s", unauthorized_error)
         return handle_exception_redirect(
             request,
-            error,
-            error_description,
+            handled_error,
+            handled_error_description,
             status_code=status_code,
         )
 
