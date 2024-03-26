@@ -60,24 +60,24 @@ async def _continue(
     error_description: Optional[str] = None,
     oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
 ):
-    try:
-        return oidc_provider.authenticate_with_exchange_token(state, exchange_token)
-    except UnauthorizedError as unauthorized_error:
-        handled_error = error if error is not None else unauthorized_error.error
-        status_code = OIDC_ERROR_MAPPER.get_error_code(error)
-        handled_error_description = (
-            error_description
-            if error_description is not None
-            else OIDC_ERROR_MAPPER.get_error_description(error)
-        )
+    if not error:
+        try:
+            return oidc_provider.authenticate_with_exchange_token(state, exchange_token)
+        except UnauthorizedError as unauthorized_error:
+            logger.debug("UnauthorizedError: %s", unauthorized_error)
+            return handle_exception_redirect(
+                request=request,
+                error=error if error is not None else unauthorized_error.error,
+                error_description=error_description if error_description else OIDC_ERROR_MAPPER.get_error_description(error),
+                status_code=OIDC_ERROR_MAPPER.get_error_code(error),
+            )
 
-        logger.debug("UnauthorizedError: %s", unauthorized_error)
-        return handle_exception_redirect(
-            request,
-            handled_error,
-            handled_error_description,
-            status_code=status_code,
-        )
+    return handle_exception_redirect(
+        request=request,
+        error=error,
+        error_description=OIDC_ERROR_MAPPER.get_error_description(error),
+        status_code=OIDC_ERROR_MAPPER.get_error_code(error)
+    )
 
 
 @oidc_router.get(RouterConfig.jwks_endpoint)
