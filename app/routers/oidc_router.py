@@ -68,7 +68,11 @@ async def _continue(
             return handle_exception_redirect(
                 request=request,
                 error=error if error is not None else unauthorized_error.error,
-                error_description=error_description if error_description else OIDC_ERROR_MAPPER.get_error_description(error),
+                error_description=(
+                    error_description
+                    if error_description
+                    else OIDC_ERROR_MAPPER.get_error_description(error)
+                ),
                 status_code=OIDC_ERROR_MAPPER.get_error_code(error),
             )
 
@@ -76,7 +80,7 @@ async def _continue(
         request=request,
         error=error,
         error_description=OIDC_ERROR_MAPPER.get_error_description(error),
-        status_code=OIDC_ERROR_MAPPER.get_error_code(error)
+        status_code=OIDC_ERROR_MAPPER.get_error_code(error),
     )
 
 
