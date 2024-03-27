@@ -49,8 +49,8 @@ async def accesstoken(
             TokenRequest.from_body_query_string((await request.body()).decode("utf-8")),
             request.headers,
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as exception:
+        raise HTTPException(status_code=400, detail=str(exception)) from exception
 
 
 @oidc_router.get("/continue")
@@ -90,7 +90,11 @@ async def _continue(
     return handle_exception_redirect(
         request=request,
         error=error,
-        error_description=error_description if error_description else OIDC_ERROR_MAPPER.get_error_description(error),
+        error_description=(
+            error_description
+            if error_description
+            else OIDC_ERROR_MAPPER.get_error_description(error)
+        ),
         status_code=OIDC_ERROR_MAPPER.get_error_code(error),
     )
 
