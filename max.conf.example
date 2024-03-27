@@ -25,6 +25,7 @@ redirect_type = html
 user_authentication_sym_key = 0000000000000000000000000000000000000000000000000000000000000000
 
 external_http_requests_timeout_seconds = 15
+version_file_path = static/version.json
 
 # possible values are en, nl
 language = nl
@@ -156,3 +157,9 @@ header_template =
 sidebar_template =
 login_options_sidebar_template =
 ;login_options_sidebar_template = uzi_login_options_sidebar.html
+
+[swagger]
+enabled = True
+swagger_ui_endpoint = /ui
+redoc_endpoint = /docs
+openapi_endpoint = /openapi.json
