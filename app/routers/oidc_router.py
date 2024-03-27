@@ -1,13 +1,15 @@
 import logging
+from typing import Optional
+
 
 from dependency_injector.wiring import inject, Provide
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, HTTPException
 from starlette.responses import JSONResponse
 
 from app.dependency_injection.config import RouterConfig
 from app.exceptions.max_exceptions import UnauthorizedError
 from app.exceptions.oidc_exception_handlers import handle_exception_redirect
-from app.exceptions.oidc_exceptions import OIDC_ERROR_MAPPER
+from app.exceptions.oidc_exceptions import OIDC_ERROR_MAPPER, INVALID_REQUEST
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
 from app.providers.oidc_provider import OIDCProvider
@@ -42,36 +44,59 @@ async def accesstoken(
     request: Request,
     oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
 ):
-    return oidc_provider.token(
-        TokenRequest.from_body_query_string((await request.body()).decode("utf-8")),
-        request.headers,
-    )
+    try:
+        return oidc_provider.token(
+            TokenRequest.from_body_query_string((await request.body()).decode("utf-8")),
+            request.headers,
+        )
+    except ValueError as exception:
+        raise HTTPException(status_code=400, detail=str(exception)) from exception
 
 
 @oidc_router.get("/continue")
 @inject
 async def _continue(
-    state: str,
-    exchange_token: str,
     request: Request,
+    state: str,
+    exchange_token: Optional[str] = None,
+    error: Optional[str] = None,
+    error_description: Optional[str] = None,
     oidc_provider: OIDCProvider = Depends(Provide["services.oidc_provider"]),
 ):
-    try:
-        return oidc_provider.authenticate_with_exchange_token(state, exchange_token)
-    except UnauthorizedError as unauthorized_error:
-        params = request.query_params
-        error = params.get("error", unauthorized_error.error)
 
-        status_code = OIDC_ERROR_MAPPER.get_error_code(error)
-        error_description = OIDC_ERROR_MAPPER.get_error_description(error)
+    if not error:
+        try:
+            if not exchange_token:
+                return handle_exception_redirect(
+                    request=request,
+                    error=INVALID_REQUEST,
+                    error_description=OIDC_ERROR_MAPPER.get_error_description(
+                        INVALID_REQUEST
+                    ),
+                    status_code=OIDC_ERROR_MAPPER.get_error_code(INVALID_REQUEST),
+                )
 
-        logger.debug("UnauthorizedError: %s", unauthorized_error)
-        return handle_exception_redirect(
-            request,
-            error,
-            error_description,
-            status_code=status_code,
-        )
+            return oidc_provider.authenticate_with_exchange_token(state, exchange_token)
+
+        except UnauthorizedError as unauthorized_error:
+            logger.debug("UnauthorizedError: %s", unauthorized_error)
+            return handle_exception_redirect(
+                request=request,
+                error=unauthorized_error.error,
+                error_description=unauthorized_error.error_description,
+                status_code=OIDC_ERROR_MAPPER.get_error_code(unauthorized_error.error),
+            )
+
+    return handle_exception_redirect(
+        request=request,
+        error=error,
+        error_description=(
+            error_description
+            if error_description
+            else OIDC_ERROR_MAPPER.get_error_description(error)
+        ),
+        status_code=OIDC_ERROR_MAPPER.get_error_code(error),
+    )
 
 
 @oidc_router.get(RouterConfig.jwks_endpoint)

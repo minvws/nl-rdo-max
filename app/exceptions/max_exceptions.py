@@ -70,12 +70,14 @@ class UnauthorizedError(JsonBaseException):
         *,
         error=ACCESS_DENIED,
         error_description: str,
+        status_code: int = 401,
         log_message: Union[str, None] = None,
     ):
         super().__init__(
             error=error,
             error_description=error_description,
             log_message=log_message,
+            status_code=status_code,
         )
 
 
