@@ -51,6 +51,8 @@ class MaxPyopProvider(PyopProvider):
                             crt = JWK.from_pem(str.encode(cert_str))
                             kid = kid_from_certificate(cert_str)
                             crt.kid = kid
+                            if "alg" not in crt:
+                                crt.alg = "RS256"
 
                             self._jwks_certs["keys"].append(crt)
                             self._keys[kid] = cert_obj.public_key()
