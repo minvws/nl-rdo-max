@@ -13,15 +13,15 @@
 <main id="main-content" tabindex="-1">
     <section class="bg-color-offset layout-authentication">
         <div>
-            <h1>Error code: <span>{{ status_code }}</span></h1>
+            <h1>{{ error_code }} <span>{{ status_code }}</span></h1>
             <h2>{{ exception_title }}</h2>
             {{ exception_message }}
         </div>
         {% if redirect_uri %}
             <div>
-                <a href="{{ redirect_uri }}">Continue</a>
+                <a href="{{ redirect_uri }}">{{ continue }}</a>
                 {% if redirect_delay %}
-                <p>You will automatically be redirected in {{ redirect_delay }} seconds</p>
+                <p>{{ redirect_message | evaluate }}</p>
                 {% endif %}
             </div>
         {% endif %}

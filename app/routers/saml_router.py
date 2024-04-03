@@ -2,10 +2,7 @@ import logging
 
 from dependency_injector.wiring import inject, Provide
 from fastapi import APIRouter, Depends
-from starlette.requests import Request
 
-from app.exceptions.max_exceptions import UnauthorizedError
-from app.exceptions.oidc_exception_handlers import handle_exception_redirect
 from app.models.saml.assertion_consumer_service_request import (
     AssertionConsumerServiceRequest,
 )
@@ -19,21 +16,14 @@ logger = logging.getLogger(__name__)
 @saml_router.get("/acs")
 @inject
 def assertion_consumer_service(
-    request: Request,
     assertion_consumer_service_request: AssertionConsumerServiceRequest = Depends(
         AssertionConsumerServiceRequest.from_request
     ),
     saml_provider: SAMLProvider = Depends(Provide["services.saml_provider"]),
 ):
-    try:
-        return saml_provider.handle_assertion_consumer_service(
-            assertion_consumer_service_request
-        )
-    except UnauthorizedError as unauthorized_error:
-        logger.debug("UnauthorizedError: %s", unauthorized_error)
-        return handle_exception_redirect(
-            request, unauthorized_error.error, unauthorized_error.error_description
-        )
+    return saml_provider.handle_assertion_consumer_service(
+        assertion_consumer_service_request
+    )
 
 
 @saml_router.get("/metadata/{id_provider}")

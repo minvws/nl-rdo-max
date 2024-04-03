@@ -47,6 +47,11 @@ class Services(containers.DeclarativeContainer):
         ),
     )
 
+    language_map = providers.Callable(json_from_file, config.app.language_path)
+    include_log_message_in_error_response = (
+        config.app.include_log_message_in_error_response.as_(as_bool)
+    )
+
     template_service = providers.Singleton(
         TemplateService,
         jinja_template_directory=config.templates.jinja_path,
