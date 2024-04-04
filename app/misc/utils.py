@@ -106,5 +106,5 @@ def get_version_from_file(file_path: Optional[str] = None) -> str:
     return _version_dict["version"] if "version" in _version_dict else _default_version
 
 
-def translate(error: str, language_map: Dict[str, str]) -> str:
-    return language_map.get(error) if error in language_map else error
+def translate(language_key: str, language_map: Dict[str, str]) -> str:
+    return language_map.get(language_key, language_key)

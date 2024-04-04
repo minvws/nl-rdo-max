@@ -153,8 +153,8 @@ def handle_exception_redirect(
     ],
 ) -> Response:
     error_description = translate(error_description, language_map)
-    error_details = translate(log_message, language_map)
     if include_log_message_in_error_response and log_message is not None:
+        error_details = translate(log_message, language_map)
         error_description = f"{error_description} ({error_details})"
     if request.headers.get("Accept") == "application/json":
         return handle_json_exception(error, error_description, status_code)
