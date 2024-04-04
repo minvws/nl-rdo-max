@@ -205,3 +205,8 @@ and they cannot undo the encryption.
 * Logging of data processing within this application is not necessary in light of 
 the obligation of healthcare providers to be able to comply with their obligation
 to record actions related to the electronic patient record.
+
+### Docker containers
+Docker containers and their configurations are meant to be used for development purposes only. And not meant to be used in a production setup. 
+
+
