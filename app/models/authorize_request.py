@@ -62,7 +62,7 @@ class AuthorizeRequest(BaseModel):
 
         return scopes
 
-    @validator("code_challenge_method")
+    @field_validator("code_challenge_method")
     def validate_code_challenge_method(
         cls, code_challenge_method: str
     ):  # pylint: disable=no-self-argument
