@@ -1,7 +1,7 @@
 import html
 
 from fastapi import Form
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 
 class DigiDMockRequest(BaseModel):
@@ -21,7 +21,7 @@ class DigiDMockRequest(BaseModel):
         SAMLRequest: str = Form(...),
         RelayState: str = Form(...),
     ) -> "DigiDMockRequest":
-        return DigiDMockRequest.parse_obj(
+        return DigiDMockRequest.model_validate(
             {
                 "SAMLRequest": SAMLRequest,
                 "RelayState": RelayState,
@@ -32,7 +32,7 @@ class DigiDMockRequest(BaseModel):
         )
 
     @staticmethod
-    @validator("state", "RelayState", "SAMLRequest")
+    @field_validator("state", "RelayState", "SAMLRequest")
     def convert_to_escaped_html(text):  # pylint: disable=no-self-argument
         return html.escape(text)
 
@@ -43,6 +43,6 @@ class DigiDMockCatchRequest(BaseModel):
     RelayState: str
 
     @staticmethod
-    @validator("bsn", "SAMLart", "RelayState")
+    @field_validator("bsn", "SAMLart", "RelayState")
     def convert_to_escaped_html(text):  # pylint: disable=no-self-argument
         return html.escape(text)

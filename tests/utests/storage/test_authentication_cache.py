@@ -52,7 +52,9 @@ def test_create_randstate():
 def test_create_authentication_request_state():
     pyop_authentication_request = MagicMock(spec=AuthorizationRequest)
     authorize_request = MagicMock()
-    authentication_state = MagicMock()
+    authentication_state = {
+        "state": "state"
+    }
     cache = MagicMock()
 
     pyop_authentication_request.__getitem__.side_effect = {
@@ -85,6 +87,7 @@ def test_create_authentication_request_state():
             authentication_method="login_option",
             authentication_state=authentication_state,
             session_id="session_id",
+            req_acme_tokens=None
         ),
     )
 
@@ -152,15 +155,16 @@ def test_cache_userinfo_context():
     acache.cache_userinfo_context(userinfo_key, access_token, acs_context)
 
     cache.set.assert_called_with("access_token:" + "userinfo_key", "encrypted")
-    expected = json.dumps(
-        {
+    expected = UserinfoContext(
+        **{
             "client_id": "client_id",
             "authentication_method": "authentication_method",
             "access_token": "access_token",
             "userinfo": "userinfo",
         }
     )
-    sym_encryption_service.symm_encrypt.assert_called_with(expected.encode("utf-8"))
+
+    sym_encryption_service.symm_encrypt.assert_called_with(expected.model_dump_json().encode("utf-8"))
 
 
 def test_get_userinfo_context():
@@ -180,7 +184,7 @@ def test_get_userinfo_context():
     )
 
     cache.get.return_value = encrypted
-    sym_encryption_service.symm_decrypt.return_value = userinfo_context.json().encode(
+    sym_encryption_service.symm_decrypt.return_value = userinfo_context.model_dump_json().encode(
         "utf-8"
     )
 

@@ -99,7 +99,7 @@ class AuthenticationCache:
                     access_token=access_token,
                     userinfo=acs_context.userinfo,
                 )
-                .json()
+                .model_dump_json()
                 .encode("utf-8")
             )
         )
