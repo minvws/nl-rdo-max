@@ -8,13 +8,15 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 import app.dependency_injection.container
-from app.dependency_injection.config import get_config
+from app.dependency_injection.config import get_config, get_swagger_config
 from app.dependency_injection.container import Container
 from app.exceptions.oidc_exception_handlers import general_exception_handler
+from app.misc.utils import get_version_from_file
 from app.routers.digid_mock_router import digid_mock_router
 from app.routers.oidc_router import oidc_router
 from app.routers.saml_router import saml_router
 from app.routers.misc_router import misc_router
+from app.routers.docs_router import DocsRouter
 
 
 _exception_handlers: List[Tuple[Union[int, Type[Exception]], Callable]] = [
@@ -57,6 +59,10 @@ def create_fastapi_app(
     container = container if container is not None else Container()
     _config: ConfigParser = config if config is not None else get_config()
     loglevel = logging.getLevelName(_config.get("app", "loglevel").upper())
+    swagger_config = get_swagger_config(_config)
+
+    _version_file_path = _config.get("app", "version_file_path", fallback=None)
+    version = get_version_from_file(_version_file_path)
 
     if isinstance(loglevel, str):
         raise ValueError(f"Invalid loglevel {loglevel.upper()}")
@@ -70,18 +76,29 @@ def create_fastapi_app(
         "app.routers.oidc_router",
         "app.routers.digid_mock_router",
         "app.routers.misc_router",
+        "app.routers.docs_router",
         "app.exceptions.oidc_exception_handlers",
         "app.exceptions.oidc_exceptions",
     ]
     container.config.from_dict(dict(_config))
-    is_uvicorn_app = _config.getboolean("app", "uvicorn", fallback=False)
     is_production = _config.get("app", "environment").startswith("prod")
-    fastapi = (
-        FastAPI(docs_url="/ui", redoc_url="/docs") if is_uvicorn_app else FastAPI()
+
+    openapi_url = None
+    if swagger_config.enabled and swagger_config.openapi_endpoint:
+        openapi_url = swagger_config.openapi_endpoint
+
+    fastapi = FastAPI(
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=openapi_url,
+        version=version,
     )
     fastapi.include_router(saml_router)
     fastapi.include_router(oidc_router)
     fastapi.include_router(misc_router)
+    if swagger_config.enabled:
+        docs_router = DocsRouter(swagger_config)
+        fastapi.include_router(docs_router.get_docs_router())
     if not is_production:
         fastapi.include_router(digid_mock_router)
     fastapi.mount("/static", StaticFiles(directory="static"), name="static")

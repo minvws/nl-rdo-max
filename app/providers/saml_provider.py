@@ -60,11 +60,6 @@ class SAMLProvider:
                 error_description = artifact_response.saml_status.message
             else:
                 error_description = TEMPORARILY_UNAVAILABLE
-                log.warning(
-                    "Invalid saml response received with status: %s, %s",
-                    artifact_response.saml_status.code,
-                    artifact_response.saml_status.message,
-                )
             raise UnauthorizedError(
                 log_message="Invalid saml response received with status: "
                 f"{artifact_response.saml_status.code}, {artifact_response.saml_status.message}",

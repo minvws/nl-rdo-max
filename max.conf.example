@@ -25,10 +25,13 @@ redirect_type = html
 user_authentication_sym_key = 0000000000000000000000000000000000000000000000000000000000000000
 
 external_http_requests_timeout_seconds = 15
+version_file_path = static/version.json
 
 # possible values are en, nl
 language = nl
-oidc_error_map_path = lang/nl.json
+language_path = lang/nl.json
+
+include_log_message_in_error_response = True
 
 [jwe]
 # list with comma seperated values
@@ -156,3 +159,9 @@ header_template =
 sidebar_template =
 login_options_sidebar_template =
 ;login_options_sidebar_template = uzi_login_options_sidebar.html
+
+[swagger]
+enabled = True
+swagger_ui_endpoint = /ui
+redoc_endpoint = /docs
+openapi_endpoint = /openapi.json

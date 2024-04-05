@@ -1,6 +1,8 @@
 import configparser
 from typing import Any
 
+from app.models.swagger_config import SwaggerConfig
+
 _PATH = "max.conf"
 _CONFIG = None
 
@@ -27,7 +29,7 @@ def get_config_value(section: str, name: str, default: Any = None) -> Any:
     """
     config = get_config()
     if section in config and name in config[section]:
-        return get_config()[section][name]
+        return config[section][name]
     return default
 
 
@@ -43,4 +45,13 @@ class RouterConfig:
     health_endpoint = get_config_value("misc", "health_endpoint", "/health_endpoint")
     userinfo_endpoint = get_config_value(
         "oidc", "userinfo_endpoint", "/userinfo_endpoint"
+    )
+
+
+def get_swagger_config(config: configparser.ConfigParser) -> SwaggerConfig:
+    return SwaggerConfig(
+        enabled=config.getboolean("swagger", "enabled", fallback=False),
+        swagger_ui_endpoint=config.get("swagger", "swagger_ui_endpoint", fallback=None),
+        redoc_endpoint=config.get("swagger", "redoc_endpoint", fallback=None),
+        openapi_endpoint=config.get("swagger", "openapi_endpoint", fallback=None),
     )

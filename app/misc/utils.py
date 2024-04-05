@@ -2,7 +2,7 @@ import base64
 import json
 import os
 from os import path
-from typing import Union, List, Any, Optional
+from typing import Union, List, Any, Optional, Dict
 
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 from Cryptodome.Hash import SHA256
@@ -94,3 +94,17 @@ def mocked_bsn_to_uzi_data(
             if relation.ura == relation_id_filter
         ]
     return instance
+
+
+def get_version_from_file(file_path: Optional[str] = None) -> str:
+    _default_version = "v0.0.0"
+
+    if file_path is None:
+        return _default_version
+
+    _version_dict = json_from_file(file_path)
+    return _version_dict["version"] if "version" in _version_dict else _default_version
+
+
+def translate(language_key: str, language_map: Dict[str, str]) -> str:
+    return language_map.get(language_key, language_key)

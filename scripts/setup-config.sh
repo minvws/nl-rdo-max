@@ -14,6 +14,7 @@ copy_example_config "clients.json"
 copy_example_config "tests/clients.json"
 copy_example_config "saml/tvs/settings.json"
 copy_example_config "login_methods.json"
+copy_example_config "static/version.json"
 
 if [[ ! -f "json_schema.json" ]]; then
   echo "copying json_schema.uzi.example to json_schema.json"
