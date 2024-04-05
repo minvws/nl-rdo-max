@@ -36,7 +36,7 @@ jobs:
         run: npm run build
 
       - name: Create tar
-        run: tar -czf max_${{ env.RELEASE_VERSION }}.tar.gz ./app ./static ./jinja2 ./saml ./lang
+        run: tar --exclude='*.example' -czf max_${{ env.RELEASE_VERSION }}.tar.gz ./app ./static ./jinja2 ./saml ./lang
 
       - name: Upload release tar
         uses: actions/upload-artifact@v4
