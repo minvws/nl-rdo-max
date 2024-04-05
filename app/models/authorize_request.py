@@ -3,7 +3,7 @@ import logging
 from json import JSONDecodeError
 from typing import Union, List, Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 from app import constants
 from app.models.response_type import ResponseType
@@ -49,7 +49,7 @@ class AuthorizeRequest(BaseModel):
             log.debug("Unable to load acme_tokens: %s", self.claims)
             return None
 
-    @validator("scope")
+    @field_validator("scope")
     def validate_scopes(cls, scopes):  # pylint: disable=no-self-argument
         splitted_scopes = scopes.split()
         for scope in splitted_scopes:
@@ -62,7 +62,7 @@ class AuthorizeRequest(BaseModel):
 
         return scopes
 
-    @validator("code_challenge_method")
+    @field_validator("code_challenge_method")
     def validate_code_challenge_method(
         cls, code_challenge_method: str
     ):  # pylint: disable=no-self-argument
@@ -75,7 +75,7 @@ class AuthorizeRequest(BaseModel):
     def authorization_by_proxy(self):
         return constants.SCOPE_AUTHORIZATION_BY_PROXY in self.splitted_scopes
 
-    @validator("response_type")
+    @field_validator("response_type")
     def validate_response_type(
         cls, response_type: str
     ):  # pylint: disable=no-self-argument

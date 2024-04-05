@@ -4,7 +4,7 @@ import json
 import logging
 
 import nacl.hash
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class AssertionConsumerServiceRequest(BaseModel):
         return nacl.hash.sha256(self.SAMLart.encode()).decode()
 
     @staticmethod
-    @validator("SAMLart", "RelayState")
+    @field_validator("SAMLart", "RelayState")
     def convert_to_escaped_html(text):  # pylint: disable=no-self-argument
         return html.escape(text)
 
