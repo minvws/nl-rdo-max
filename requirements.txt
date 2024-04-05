@@ -4,11 +4,13 @@
 #
 #    pip-compile --extra=dev
 #
+annotated-types==0.6.0
+    # via pydantic
 anyio==4.3.0
     # via
     #   httpcore
     #   starlette
-astroid==3.1.0
+astroid==2.15.8
     # via pylint
 async-timeout==4.0.2
     # via redis
@@ -41,7 +43,7 @@ coverage==7.3.4
     #   coverage-badge
 coverage-badge==1.1.0
     # via app (setup.py)
-cryptography==42.0.4
+cryptography==41.0.7
     # via
     #   jwcrypto
     #   oic
@@ -52,13 +54,13 @@ defusedxml==0.7.1
     # via oic
 dependency-injector==4.41.0
     # via app (setup.py)
-deprecated==1.2.14
-    # via jwcrypto
 dill==0.3.8
     # via pylint
 exceptiongroup==1.1.3
-    # via pytest
-fastapi==0.110.0
+    # via
+    #   anyio
+    #   pytest
+fastapi==0.110.1
     # via app (setup.py)
 freezegun==1.2.2
     # via app (setup.py)
@@ -72,7 +74,7 @@ h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==1.0.2
+httpcore==0.17.3
     # via httpx
 httpx==0.24.1
     # via app (setup.py)
@@ -147,6 +149,8 @@ pycryptodomex==3.20.0
     #   pyop
 pydantic==2.6.4
     # via fastapi
+pydantic-core==2.16.3
+    # via pydantic
 pyflakes==3.2.0
     # via autoflake
 pygments==2.16.1
@@ -225,27 +229,30 @@ types-redis==4.6.0.7
     # via app (setup.py)
 types-requests==2.31.0.8
     # via app (setup.py)
-types-urllib3==1.26.25.14
-    # via types-requests
 typing-extensions==4.8.0
     # via
+    #   annotated-types
+    #   anyio
     #   astroid
     #   black
+    #   fastapi
+    #   jwcrypto
     #   mypy
     #   oic
     #   pydantic
+    #   pydantic-core
     #   pylint
     #   rich
     #   starlette
     #   uvicorn
 urllib3==2.0.7
-    # via requests
+    # via
+    #   requests
+    #   types-requests
 uvicorn==0.23.2
     # via app (setup.py)
 wrapt==1.15.0
-    # via
-    #   astroid
-    #   deprecated
+    # via astroid
 xmlsec==1.3.13
     # via
     #   app (setup.py)
