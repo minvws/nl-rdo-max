@@ -35,7 +35,6 @@ setup-config:
 	scripts/./setup-config.sh
 
 setup-npm:
-	cp static/version.json.example static/version.json
 	scripts/./setup-npm.sh
 
 setup: venv setup-config setup-saml setup-secrets setup-npm
