@@ -6,6 +6,7 @@ from typing import Type, Union, Callable, Tuple, List
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import RequestValidationError
 
 import app.dependency_injection.container
 from app.dependency_injection.config import get_config, get_swagger_config
@@ -21,6 +22,7 @@ from app.routers.docs_router import DocsRouter
 
 _exception_handlers: List[Tuple[Union[int, Type[Exception]], Callable]] = [
     (Exception, general_exception_handler),
+    (RequestValidationError, general_exception_handler),
 ]
 
 

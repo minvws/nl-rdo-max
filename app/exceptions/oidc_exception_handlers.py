@@ -10,6 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import RedirectResponse, Response
 from starlette.responses import JSONResponse
 
+
 from app.dependency_injection.container import Container
 from app.exceptions.max_exceptions import (
     OIDCBaseException,
@@ -165,6 +166,7 @@ def handle_exception_redirect(
 async def general_exception_handler(
     request: Request,
     exception: Exception,
+    language_map: Dict[str, str] = Provide[Container.services.language_map],
 ):
     log_message = None
     if isinstance(exception, OIDCBaseException):
@@ -173,10 +175,23 @@ async def general_exception_handler(
         log_message = exception.log_message
         status_code = exception.status_code
     elif isinstance(exception, RequestValidationError):
-        error = "Invalid request"
-        error_description = (
-            f"some required arguments are missing: {json.dumps(exception.errors())}"
-        )
+        errors = exception.errors()
+        error_description = translate("The following errors occurred:", language_map)
+        missing_params = []
+        for error in errors:
+            missing_params.append(
+                " "
+                + translate(error["type"], language_map)
+                + " "
+                + error["loc"][1]
+                + " in "
+                + error["loc"][0]
+            )
+
+        error = translate("Invalid request", language_map)
+        error_description += ",".join(missing_params)
+        status_code = 400
+
     else:
         error = "server_error"
         error_description = "Something went wrong"
