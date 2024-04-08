@@ -11,5 +11,7 @@
   "Unable to decrypt userinfo JWE": "Kan userinfo JWE niet ontsleutelen",
   "You will automatically be redirected in {{ redirect_delay }} seconds": "U wordt automatisch doorgestuurd na {{ redirect_delay }} seconden",
   "Error code: ": "Foutcode: ",
-  "Continue": "Doorgaan"
+  "Continue": "Doorgaan",
+  "missing": "het ontbreken van",
+  "The following errors occurred:": "De volgende fouten zijn voorgekomen:"
 }
