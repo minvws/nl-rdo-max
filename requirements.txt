@@ -140,7 +140,7 @@ port-for==0.7.2
     # via pytest-redis
 psutil==5.9.5
     # via mirakuru
-pycparser==2.21
+pycparser==2.22
     # via cffi
 pycryptodomex==3.20.0
     # via
