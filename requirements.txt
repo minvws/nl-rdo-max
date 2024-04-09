@@ -173,7 +173,7 @@ pytest==7.4.2
     #   pytest-redis
 pytest-docker==2.0.0
     # via app (setup.py)
-pytest-mock==3.12.0
+pytest-mock==3.14.0
     # via app (setup.py)
 pytest-redis==3.0.1
     # via app (setup.py)
