@@ -68,7 +68,7 @@ future==0.18.3
     # via pyjwkest
 gitdb==4.0.10
     # via gitpython
-gitpython==3.1.41
+gitpython==3.1.43
     # via bandit
 h11==0.14.0
     # via
