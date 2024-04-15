@@ -62,7 +62,7 @@ exceptiongroup==1.1.3
     #   pytest
 fastapi==0.110.1
     # via app (setup.py)
-freezegun==1.2.2
+freezegun==1.4.0
     # via app (setup.py)
 future==0.18.3
     # via pyjwkest
