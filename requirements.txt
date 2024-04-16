@@ -177,7 +177,7 @@ pytest-mock==3.14.0
     # via app (setup.py)
 pytest-redis==3.0.1
     # via app (setup.py)
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via freezegun
 python-multipart==0.0.9
     # via app (setup.py)
