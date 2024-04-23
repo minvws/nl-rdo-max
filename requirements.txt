@@ -175,7 +175,7 @@ pytest-docker==2.0.0
     # via app (setup.py)
 pytest-mock==3.14.0
     # via app (setup.py)
-pytest-redis==3.0.1
+pytest-redis==3.0.2
     # via app (setup.py)
 python-dateutil==2.9.0.post0
     # via freezegun
