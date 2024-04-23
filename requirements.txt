@@ -130,7 +130,7 @@ pathspec==0.12.1
     # via black
 pbr==5.11.1
     # via stevedore
-platformdirs==3.5.0
+platformdirs==4.2.0
     # via
     #   black
     #   pylint
