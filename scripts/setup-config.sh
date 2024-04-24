@@ -11,7 +11,6 @@ copy_example_config () {
 
 copy_example_config "max.conf"
 copy_example_config "clients.json"
-copy_example_config "tests/clients.json"
 copy_example_config "saml/tvs/settings.json"
 copy_example_config "login_methods.json"
 copy_example_config "static/version.json"

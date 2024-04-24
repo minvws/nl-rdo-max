@@ -1,10 +1,15 @@
+import time
 from typing import List, Dict
 
 from unittest.mock import MagicMock, patch
 
 import pytest
+from cryptography.hazmat.primitives import hashes
 from fastapi.exceptions import HTTPException
+from configparser import ConfigParser
+from jwcrypto.jwt import JWT
 
+from app.constants import CLIENT_ASSERTION_TYPE
 from app.exceptions.max_exceptions import (
     ServerErrorException,
     UnauthorizedError,
@@ -12,6 +17,7 @@ from app.exceptions.max_exceptions import (
     InvalidClientException,
     InvalidResponseType,
 )
+from app.misc.utils import load_jwk
 from app.models.authorize_request import AuthorizeRequest
 from app.models.response_type import ResponseType
 from app.providers.oidc_provider import OIDCProvider
@@ -34,6 +40,7 @@ def create_oidc_provider(
     external_http_requests_timeout_seconds=2,
     template_service=MagicMock(),
     wildcard_allowed=False,
+    token_authentication_validator=MagicMock(),
 ):
     return OIDCProvider(
         pyop_provider,
@@ -53,6 +60,7 @@ def create_oidc_provider(
         "sidebar.html",
         template_service,
         wildcard_allowed,
+        token_authentication_validator,
     )
 
 
@@ -520,9 +528,13 @@ def test_token_with_expired_authentication():
     authentication_cache = MagicMock()
     authentication_cache.get_acs_context.return_value = None
     token_request = MagicMock()
+    token_request.client_id = "client_id"
     headers = MagicMock()
     token_request.code = "c"
-    oidc_provider = create_oidc_provider(authentication_cache=authentication_cache)
+    oidc_provider = create_oidc_provider(
+        authentication_cache=authentication_cache,
+        clients={"client_id": {"name": "name"}},
+    )
     with pytest.raises(HTTPException):
         oidc_provider.token(token_request, headers)
     authentication_cache.get_acs_context.assert_called_with("c")
@@ -531,7 +543,6 @@ def test_token_with_expired_authentication():
 def test_token():
     pyop_provider = MagicMock()
     authentication_cache = MagicMock()
-    artifact_resolving_service = MagicMock()
     userinfo_service = MagicMock()
     token_request = MagicMock()
     headers = MagicMock()
@@ -540,6 +551,7 @@ def test_token():
     token_response = MagicMock()
     token_request.code = "c"
     token_request.query_string = "qs"
+    token_request.client_id = "client_id"
     authentication_cache.get_acs_context.return_value = acs_context
     pyop_provider.handle_token_request.return_value = token_response
     userinfo_service.request_userinfo_for_artifact.return_value = userinfo
@@ -547,12 +559,80 @@ def test_token():
         pyop_provider=pyop_provider,
         userinfo_service=userinfo_service,
         authentication_cache=authentication_cache,
+        clients={"client_id": {"name": "name"}},
     )
     assert token_response == oidc_provider.token(token_request, headers)
     authentication_cache.get_acs_context.assert_called_with("c")
     pyop_provider.handle_token_request.assert_called_with("qs", headers)
     authentication_cache.cache_userinfo_context.assert_called_with(
         token_response["access_token"], token_response["access_token"], acs_context
+    )
+
+
+def test_token_with_client_authentication_method():
+    config = ConfigParser()
+    config.read("tests/max.test.conf")
+
+    pyop_provider = MagicMock()
+    authentication_cache = MagicMock()
+    userinfo_service = MagicMock()
+    acs_context = MagicMock()
+    userinfo = MagicMock()
+    token_response = MagicMock()
+    token_authentication_validator = MagicMock()
+    authentication_cache.get_acs_context.return_value = acs_context
+    pyop_provider.handle_token_request.return_value = token_response
+    userinfo_service.request_userinfo_for_artifact.return_value = userinfo
+    clients = {
+        "client_id": {
+            "name": "name",
+            "client_assertion_method": "private_key_jwt",
+            "client_public_key_path": "secrets/clients/test_client/test_client.crt",
+            "client_private_key_path": "secrets/clients/test_client/test_client.key",
+            "client_authentication_method": "private_key_jwt",
+        }
+    }
+
+    oidc_provider = create_oidc_provider(
+        pyop_provider=pyop_provider,
+        userinfo_service=userinfo_service,
+        authentication_cache=authentication_cache,
+        clients=clients,
+        token_authentication_validator=token_authentication_validator,
+    )
+
+    client_id = "client_id"
+    client = clients[client_id]
+    client_private_key = load_jwk(client["client_private_key_path"])
+    client_assertion_jwt = JWT(
+        header={"alg": "RS256", "x5t": client_private_key.thumbprint(hashes.SHA256())},
+        claims={
+            "iss": "37692967-0a74-4e91-85ec-a4250e7ad5e8",
+            "sub": "37692967-0a74-4e91-85ec-a4250e7ad5e8",
+            "aud": "example.com",
+            "exp": int(time.time()),
+        },
+    )
+    client_assertion_jwt.make_signed_token(client_private_key)
+    token_request = MagicMock()
+    token_request.code = "c"
+    token_request.query_string = "qs"
+    token_request.client_id = client_id
+    token_request.client_assertion = client_assertion_jwt.serialize()
+    token_request.client_assertion_type = CLIENT_ASSERTION_TYPE
+    headers = MagicMock()
+
+    assert token_response == oidc_provider.token(token_request, headers)
+    authentication_cache.get_acs_context.assert_called_with("c")
+    pyop_provider.handle_token_request.assert_called_with("qs", headers)
+    authentication_cache.cache_userinfo_context.assert_called_with(
+        token_response["access_token"], token_response["access_token"], acs_context
+    )
+    token_authentication_validator.validate_client_authentication.assert_called_with(
+        client_id=token_request.client_id,
+        client=client,
+        client_assertion_jwt=token_request.client_assertion,
+        client_assertion_type=token_request.client_assertion_type,
     )
 
 

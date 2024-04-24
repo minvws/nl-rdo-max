@@ -7,6 +7,7 @@ from app.exceptions.oidc_exceptions import (
     ACCESS_DENIED,
     TEMPORARILY_UNAVAILABLE,
     INVALID_REQUEST,
+    INVALID_CLIENT,
 )
 
 
@@ -126,7 +127,7 @@ class InvalidRequestException(OIDCBaseException):
         self,
         *,
         error_description: str,
-        log_message: Optional[str],
+        log_message: Optional[str] = None,
         error: str = INVALID_REQUEST,
     ) -> None:
         super().__init__(
@@ -152,4 +153,13 @@ class InvalidCodeChallengeMethodException(OIDCBaseException):
             error=INVALID_REQUEST,
             error_description="Invalid code challenge method, code challenge method supported: S256",
             status_code=406,
+        )
+
+
+class InvalidClientAssertionException(OIDCBaseException):
+    def __init__(self) -> None:
+        super().__init__(
+            error=INVALID_CLIENT,
+            error_description="Client assertion failed, invalid JWT",
+            status_code=401,
         )

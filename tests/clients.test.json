@@ -11,6 +11,8 @@
         "response_types": ["code"],
         "pubkey_type": "RSA",
         "client_public_key_path": "secrets/clients/test_client/test_client.crt",
-        "exclude_login_methods": ["yivi"]
+        "client_private_key_path": "secrets/clients/test_client/test_client.key",
+        "exclude_login_methods": ["yivi"],
+        "client_authentication_method": "private_key_jwt"
     }
 }
