@@ -89,6 +89,8 @@ base_dir = secrets/ssl
 cert_file = server.crt
 key_file = server.key
 
+reload_includes = *.conf
+
 [oidc]
 certificates_directory = secrets/jwks-certs
 rsa_private_key = secrets/oidc/selfsigned.key
