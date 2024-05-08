@@ -22,13 +22,13 @@
     "logo": "static/img/zsm.svg",
     "text": "Inloggen met OpenID Connect",
     "type": "oidc",
-    "hidden": "true"
+    "hidden": true
   },
    {
     "name": "identities",
     "logo": "",
     "text": "",
     "type": "oidc",
-    "hidden": "true"
+    "hidden": true
   }
 ]

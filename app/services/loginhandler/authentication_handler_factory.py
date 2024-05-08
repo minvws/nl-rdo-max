@@ -58,7 +58,9 @@ class AuthenticationHandlerFactory:
         self._uzi_authentication_handler: Union[UziAuthenticationHandler, None] = None
         self._oidc_authentication_handler: Union[OidcAuthenticationHandler, None] = None
 
-    def create(self, authentication_method: Dict[str, str]) -> AuthenticationHandler:
+    def create(
+        self, authentication_method: Dict[str, Union[str, bool]]
+    ) -> AuthenticationHandler:
         if authentication_method["type"] == "specific":
             if authentication_method["name"] == "digid":
                 return self.create_saml_authentication_handler()

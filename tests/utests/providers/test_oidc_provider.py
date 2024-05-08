@@ -89,17 +89,21 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
     template_service.render_layout = MagicMock()
     template_service.render_layout.return_value = template_response
 
+    client = {"name": "name"}
     oidc_provider = create_oidc_provider(
-        clients={"client_id": {"name": "name"}},
+        clients={"client_id": client},
+        login_methods=[{"name": "a"}, {"name": "b"}],
         external_base_url="http://base_url",
         template_service=template_service,
     )
-    request = MagicMock()
-    login_methods = [{"name": "a"}, {"name": "b"}]
 
+    request = MagicMock()
+    request.client_id = "client_id"
     request.url = (
         "http://localhost:8000/redirect_path?redirect_uri=redirect_uri&key=value"
     )
+
+    login_methods = oidc_provider._get_login_methods({"name": "name"}, request)
     request.query_params = {"redirect_uri": "redirect_uri?key=value"}
 
     actual = oidc_provider._provide_login_options_response(
@@ -115,10 +119,14 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
             "login_methods": {
                 "a": {
                     "name": "a",
+                    "text": "",
+                    "logo": "",
                     "url": "http://base_url/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=a",
                 },
                 "b": {
                     "name": "b",
+                    "text": "",
+                    "logo": "",
                     "url": "http://base_url/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=b",
                 },
             },
@@ -173,7 +181,7 @@ def test_get_login_methods():
     client = {"name": "name"}
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "a"}, {"name": "b"}]
+    assert actual == [{"name": "a", "hidden": False}, {"name": "b", "hidden": False}]
 
 
 def test_get_login_methods_with_invalid_option_provided():
@@ -186,7 +194,7 @@ def test_get_login_methods_with_invalid_option_provided():
     authorize_request.login_hints = ["a", "c"]
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "a"}]
+    assert actual == [{"name": "a", "hidden": False}]
 
 
 def test_get_login_methods_with_none_provided():
@@ -199,7 +207,7 @@ def test_get_login_methods_with_none_provided():
     authorize_request.login_hints = []
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "a"}, {"name": "b"}]
+    assert actual == [{"name": "a", "hidden": False}, {"name": "b", "hidden": False}]
 
 
 def test_get_login_methods_with_one_provided():
@@ -212,7 +220,7 @@ def test_get_login_methods_with_one_provided():
     authorize_request.login_hints = ["b"]
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "b"}]
+    assert actual == [{"name": "b", "hidden": False}]
 
 
 def test_get_login_methods_with_excluded_provided_method():
@@ -225,7 +233,7 @@ def test_get_login_methods_with_excluded_provided_method():
     authorize_request.login_hints = ["b"]
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "a"}]
+    assert actual == [{"name": "a", "hidden": False}]
 
 
 def test_get_login_methods_with_excluded_default_method():
@@ -238,7 +246,7 @@ def test_get_login_methods_with_excluded_default_method():
     authorize_request.login_hints = []
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "b"}]
+    assert actual == [{"name": "b", "hidden": False}]
 
 
 def test_get_login_methods_with_client_method():
@@ -251,7 +259,7 @@ def test_get_login_methods_with_client_method():
     authorize_request.login_hints = []
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "b"}]
+    assert actual == [{"name": "b", "hidden": False}]
 
 
 def test_present_login_options_or_authorize():

@@ -3,7 +3,7 @@ import logging
 import secrets
 from typing import List, Union, Dict, Any
 from urllib import parse
-from urllib.parse import urlencode, urlunparse
+from urllib.parse import urlencode, urlunparse, ParseResult
 
 import requests
 from fastapi import Request, HTTPException, Response
@@ -55,7 +55,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         userinfo_service: UserinfoService,
         app_mode: str,
         environment: str,
-        login_methods: List[Dict[str, str]],
+        login_methods: List[Dict[str, Union[str, bool]]],
         authentication_handler_factory: AuthenticationHandlerFactory,
         external_base_url: str,
         session_url: str,
@@ -135,7 +135,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self,
         request: Request,
         authorize_request: AuthorizeRequest,
-        login_option: Dict[str, str],
+        login_option: Dict[str, Union[str, bool]],
     ) -> Response:
         self._rate_limiter.validate_outage()
 
@@ -177,7 +177,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             authorize_request,
             randstate,
             authentication_state,
-            login_option["name"],
+            str(login_option["name"]),
             session_id,
             req_acme_tokens=authorize_request.acme_tokens,
         )
@@ -343,8 +343,10 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
     def _get_login_methods(
         self, client: dict, authorize_request: AuthorizeRequest
-    ) -> List[Dict[str, str]]:
+    ) -> List[Dict[str, Union[str, bool]]]:
         login_methods = self._login_methods
+        for login_method in login_methods:
+            login_method["hidden"] = "hidden" in login_method and login_method["hidden"]
 
         if "login_methods" in client:
             login_methods = [
@@ -368,31 +370,12 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self,
         client_name: str,
         request: Request,
-        login_methods: List[Dict[str, str]],
+        login_methods: List[Dict[str, Union[str, bool]]],
     ) -> Union[None, Response]:
         if len(login_methods) > 1:
-            parsed_url = parse.urlparse(str(request.url))
-            base_url = parse.urlparse(self._external_base_url)
-
-            query_params = parse.parse_qs(parsed_url.query)
-
-            for login_method in login_methods:
-                query_params["login_hint"] = [login_method["name"]]
-                updated_query = urlencode(query_params, doseq=True)
-                combined_path = base_url.path + parsed_url.path
-                updated_url = urlunparse(
-                    (
-                        base_url.scheme,
-                        base_url.netloc,
-                        combined_path,
-                        parsed_url.params,
-                        updated_query,
-                        parsed_url.fragment,
-                    )
-                )
-                login_method["url"] = updated_url
-
-            login_method_by_name = {x["name"]: x for x in login_methods}
+            login_methods_by_name = self._get_visible_login_methods_by_name(
+                request_url=str(request.url), login_methods=login_methods
+            )
 
             redirect_url_parts = parse.urlparse(request.query_params["redirect_uri"])
             query = dict(parse.parse_qsl(redirect_url_parts.query))
@@ -404,7 +387,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             )
             page_context = {
                 "ura_name": client_name,
-                "login_methods": login_method_by_name,
+                "login_methods": login_methods_by_name,
                 "redirect_uri": redirect_url_parts._replace(
                     query=parse.urlencode(query)
                 ).geturl(),
@@ -465,3 +448,50 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         Wrapper method to expose pyop authorization method.
         """
         return self._pyop_provider.authorize(authorization_request, "_")
+
+    def _get_url_for_login_method(
+        self,
+        parsed_url: ParseResult,
+        base_url: ParseResult,
+        query_params: Dict[str, List[str]],
+        login_method_name: str,
+    ) -> str:
+        query_params["login_hint"] = [login_method_name]
+        updated_query = urlencode(query_params, doseq=True)
+        combined_path = base_url.path + parsed_url.path
+        updated_url = urlunparse(
+            (
+                base_url.scheme,
+                base_url.netloc,
+                combined_path,
+                parsed_url.params,
+                updated_query,
+                parsed_url.fragment,
+            )
+        )
+        return updated_url
+
+    def _get_visible_login_methods_by_name(
+        self, request_url: str, login_methods: List[Dict[str, Union[str, bool]]]
+    ) -> Dict[str, Dict[str, str]]:
+        base_url = parse.urlparse(self._external_base_url)
+
+        parsed_url = parse.urlparse(request_url)
+        query_params = parse.parse_qs(parsed_url.query)
+
+        login_methods_dict = {}
+        for login_method in login_methods:
+            if login_method["hidden"]:
+                continue
+
+            login_method_name = str(login_method["name"])
+            login_methods_dict[login_method_name] = {
+                "name": login_method_name,
+                "text": str(login_method.get("text", "")),
+                "url": self._get_url_for_login_method(
+                    parsed_url, base_url, query_params, login_method_name
+                ),
+                "logo": str(login_method.get("logo", "")),
+            }
+
+        return login_methods_dict
