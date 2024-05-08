@@ -5,7 +5,7 @@ def test_openid_configuration(lazy_app, config, app_mode_default, client):
     openid_configuration = app.get(".well-known/openid-configuration").json()
     assert openid_configuration == {
         "version": "3.0",
-        "token_endpoint_auth_methods_supported": ["none"],
+        "token_endpoint_auth_methods_supported": ["none", "private_key_jwt"],
         "claims_parameter_supported": True,
         "request_parameter_supported": False,
         "request_uri_parameter_supported": True,
