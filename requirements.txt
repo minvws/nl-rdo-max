@@ -18,7 +18,7 @@ autoflake==2.2.0
     # via app (setup.py)
 bandit==1.7.5
     # via app (setup.py)
-black==24.3.0
+black==24.4.2
     # via app (setup.py)
 certifi==2024.2.2
     # via
