@@ -212,7 +212,7 @@ starlette==0.37.2
     # via fastapi
 stevedore==5.1.0
     # via bandit
-tomlkit==0.12.1
+tomlkit==0.12.4
     # via pylint
 types-cffi==1.16.0.20240331
     # via types-pyopenssl
