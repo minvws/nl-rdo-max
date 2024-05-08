@@ -11,7 +11,8 @@
         "response_types": ["code"],
         "pubkey_type": "RSA",
         "client_public_key_path": "secrets/clients/test_client/test_client.crt",
-        "exclude_login_methods": ["yivi"]
+        "exclude_login_methods": ["yivi"],
+        "client_assertion_method": "none"
     },
     "c512596d-43e0-430a-8926-6e5a53cb9ebc": {
         "name": "Test Client",
@@ -25,6 +26,7 @@
         "pubkey_type": "RSA",
         "client_public_key_path": "secrets/clients/dusi/client.cert",
         "login_methods": ["digid_mock"],
+        "client_assertion_method": "none"
     },
     "006fbf34-a80b-4c81-b6e9-593600675fb1": {
         "name": "uzip oidc client POC",
@@ -38,6 +40,7 @@
         "error_page": "http://localhost:8000/login",
         "response_types": ["code"],
         "pubkey_type": "RSA",
-        "client_public_key_path": "secrets/clients/test_client/test_client.crt"
+        "client_public_key_path": "secrets/clients/test_client/test_client.crt",
+        "client_assertion_method": "none"
     }
 }

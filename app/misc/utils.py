@@ -7,6 +7,7 @@ from typing import Union, List, Any, Optional, Dict
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 from Cryptodome.Hash import SHA256
 from Cryptodome.IO import PEM
+from jwcrypto.jwk import JWK
 
 from app.models.uzi_attributes import UziAttributes
 from app.dependency_injection.config import get_config
@@ -42,9 +43,14 @@ def as_bool(input_str: Union[str, None]) -> bool:
     return input_str is not None and input_str.lower() == "true"
 
 
-def clients_from_json(filepath: str) -> str:
+def clients_from_json(filepath: str) -> Dict[str, Any]:
     with open(filepath, "r", encoding="utf-8") as file:
-        return json.load(file)
+        clients: Dict[str, Any] = json.load(file)
+
+    for client in clients.values():
+        client["public_key"] = load_jwk(client["client_public_key_path"])
+
+    return clients
 
 
 def read_cert(cert_path: str) -> str:
@@ -71,6 +77,11 @@ def load_template(file_path, filename):
     template_path = os.path.join(file_path, filename)
     with open(template_path, "r", encoding="utf-8") as template_file:
         return template_file.read()
+
+
+def load_jwk(filepath: str) -> JWK:
+    with open(filepath, encoding="utf-8") as file:
+        return JWK.from_pem(file.read().encode("utf-8"))
 
 
 def kid_from_certificate(certificate: str) -> str:

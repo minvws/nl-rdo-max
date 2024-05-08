@@ -23,6 +23,7 @@ tests/secrets
 !package.json
 !package-lock.json
 !lang/*.json
+!tests/clients.test.json
 
 *.conf
 *.crt

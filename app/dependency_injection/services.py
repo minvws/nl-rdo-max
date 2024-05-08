@@ -19,6 +19,7 @@ from app.services.userinfo.cc_userinfo_service import CCUserinfoService
 from app.services.userinfo.cibg_userinfo_service import (
     CIBGUserinfoService,
 )
+from app.validators.token_authentication_validator import TokenAuthenticationValidator
 
 
 def as_redirect_type(value):
@@ -50,6 +51,11 @@ class Services(containers.DeclarativeContainer):
     language_map = providers.Callable(json_from_file, config.app.language_path)
     include_log_message_in_error_response = (
         config.app.include_log_message_in_error_response.as_(as_bool)
+    )
+
+    token_authentication_validator = providers.Singleton(
+        TokenAuthenticationValidator,
+        oidc_configuration_info=pyop_services.pyop_configuration_information,
     )
 
     template_service = providers.Singleton(
@@ -159,6 +165,7 @@ class Services(containers.DeclarativeContainer):
         allow_wildcard_redirect_uri=config.oidc.allow_wildcard_redirect_uri.as_(
             as_bool
         ),
+        token_authentication_validator=token_authentication_validator,
     )
 
     digid_mock_provider = providers.Singleton(

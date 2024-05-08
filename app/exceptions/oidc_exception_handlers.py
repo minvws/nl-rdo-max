@@ -181,11 +181,11 @@ async def general_exception_handler(
         for error in errors:
             missing_params.append(
                 " "
-                + translate(error["type"], language_map)
+                + translate(error["type"], language_map)  # type: ignore
                 + " "
-                + error["loc"][1]
+                + error["loc"][1]  # type: ignore
                 + " in "
-                + error["loc"][0]
+                + error["loc"][0]  # type: ignore
             )
 
         error = translate("Invalid request", language_map)

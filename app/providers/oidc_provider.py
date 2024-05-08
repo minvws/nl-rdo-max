@@ -1,6 +1,7 @@
 import json
+import logging
 import secrets
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Any
 from urllib import parse
 from urllib.parse import urlencode, urlunparse
 
@@ -35,6 +36,10 @@ from app.services.response_factory import ResponseFactory
 from app.services.saml.saml_response_factory import SamlResponseFactory
 from app.services.userinfo.userinfo_service import UserinfoService
 from app.storage.authentication_cache import AuthenticationCache
+from app.validators.token_authentication_validator import TokenAuthenticationValidator
+
+
+logger = logging.getLogger(__name__)
 
 
 # pylint:disable=too-many-arguments
@@ -44,7 +49,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         pyop_provider: MaxPyopProvider,
         authentication_cache: AuthenticationCache,
         rate_limiter: RateLimiter,
-        clients: dict,
+        clients: Dict[str, Dict[str, Any]],
         saml_response_factory: SamlResponseFactory,
         response_factory: ResponseFactory,
         userinfo_service: UserinfoService,
@@ -58,6 +63,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         login_options_sidebar_template: str,
         template_service: TemplateService,
         allow_wildcard_redirect_uri: bool,
+        token_authentication_validator: TokenAuthenticationValidator,
     ):
         self._pyop_provider = pyop_provider
         self._authentication_cache = authentication_cache
@@ -81,6 +87,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self._login_options_sidebar_template = login_options_sidebar_template
         self._template_service = template_service
         self._allow_wildcard_redirect_uri = allow_wildcard_redirect_uri
+        self._token_authentication_validator = token_authentication_validator
 
     def well_known(self):
         return JSONResponse(
@@ -210,6 +217,17 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         return response_url
 
     def token(self, token_request: TokenRequest, headers: Headers) -> Response:
+        client = self._clients.get(token_request.client_id)
+        if client is None:
+            raise InvalidClientException(error_description="unknown client")
+
+        self._token_authentication_validator.validate_client_authentication(
+            client_id=token_request.client_id,
+            client=client,
+            client_assertion_jwt=token_request.client_assertion,
+            client_assertion_type=token_request.client_assertion_type,
+        )
+
         acs_context = self._authentication_cache.get_acs_context(token_request.code)
         if acs_context is None:
             raise HTTPException(

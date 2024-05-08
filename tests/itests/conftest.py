@@ -89,6 +89,7 @@ def client():
         "response_types": ["code"],
         "pubkey_type": "RSA",
         "client_public_key_path": "secrets/clients/test_client/test_client.crt",
+        "client_authentication_method": "none",
     }
 
 
