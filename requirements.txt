@@ -56,7 +56,7 @@ dill==0.3.8
     # via pylint
 fastapi==0.110.1
     # via app (setup.py)
-freezegun==1.4.0
+freezegun==1.5.1
     # via app (setup.py)
 future==0.18.3
     # via pyjwkest
