@@ -40,6 +40,32 @@ Make sure to install the following dependencies:
 sudo apt-get update && sudo apt-get install libxmlsec1-dev
 ```
 
+## npm
+
+To build the frontend you need to install npm. Please check the npm documentation if you have not installed npm yet.
+You can find the documentation here: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
+
+Because we are using GitHub as a npm repository, you need to set your GitHub token in your users `.npmrc` file before you can run npm install.
+You can find the documentation here: https://docs.github.com/en/packages/using-github-packages-with-your-projects-ecosystem/configuring-npm-for-use-with-github-packages
+
+In short, you need a GitHub token with the `read:packages` scope and add it to your `.npmrc` file.
+You can create your token here: https://github.com/settings/tokens/new?scopes=read:packages&description=GitHub+Packages+token
+
+After that you have created your token, you can add it to your `.npmrc` file.
+You can run:
+
+```
+make setup-npm
+```
+
+Or you can add it manually, find your `.npmrc` file in your home directory. If it does not exist, you can create it.
+Add the following line to your `.npmrc` file:
+
+```
+// npm.pkg.github.com/:_authToken=YOUR_TOKEN_HERE
+```
+
+
 # Running the service
 Make sure you followed the steps for the regular Setup, then run:
 ```bash

@@ -1,0 +1,114 @@
+$ro-font-path: "@minvws/nl-rdo-rijksoverheid-ui-theme/fonts";
+$ro-img-path: "@minvws/nl-rdo-rijksoverheid-ui-theme/img";
+
+@import "@minvws/nl-rdo-rijksoverheid-ui-theme/scss/main";
+@import "@minvws/manon/header-content-wrapper";
+
+:root {
+    --navigation-link-icon: var(--icon-chevron-right);
+
+    --sidemenu-nav-width: 25rem;
+    --sidemenu-nav-padding-top: 6rem;
+    --sidemenu-nav-padding-right: 2rem;
+    --sidemenu-nav-padding-bottom: 6rem;
+    --sidemenu-nav-padding-left: 2rem;
+
+    --tile-background-color: #ffffff;
+    --tile-border-radius: 0.5rem;
+    --tile-border-color: #98abbd;
+
+    --layout-authentication-background-color: initial;
+    --text-dark: #000000;
+
+    --header-min-height: 4rem;
+    --header-border-width: 0 0 1px 0;
+    --header-border-color: #cccccc;
+    --header-navigation-background-color: #ffffff;
+
+    /* Content wrapper */
+    --header-content-wrapper-align-items: center;
+    --header-content-wrapper-padding-right: 3%;
+    --header-content-wrapper-padding-left: 3%;
+    --header-content-wrapper-flex-direction: row;
+    --header-content-wrapper-width: 80rem;
+}
+
+// Align Terug naar de Proeftuin hoofdpagina to the bottom
+.sticky-bottom {
+    position: -webkit-sticky;
+    position: sticky;
+    bottom: 2rem;
+}
+
+nav.sidemenu-max {
+    --navigation-link-icon: initial;
+
+    p > a {
+        padding-left: 0;
+    }
+
+    .navigate-back {
+        --navigation-link-icon: var(--icon-chevron-left);
+    }
+
+    a.button {
+        text-decoration: none;
+
+        &::before {
+            --navigation-link-icon: initial;
+        }
+    }
+
+    ul {
+        padding: 0;
+    }
+
+    .gaps {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+}
+
+.space-between {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    height: 100%;
+}
+
+.bg-color-offset {
+    background-color: #f0f0f0;
+}
+
+.tiles {
+    --list-base-gap: 1rem;
+
+    width: 100%;
+
+    i.icon,
+    i.icon::before {
+        color: #000000;
+        font-size: var(--navigation-link-icon-font-size);
+    }
+}
+
+.page-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+#main-content {
+    display: flex;
+    flex-grow: 1;
+}
+
+.logo {
+    height: var(--header-min-height);
+
+    img {
+        max-height: 3rem;
+    }
+}

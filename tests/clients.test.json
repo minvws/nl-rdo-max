@@ -1,0 +1,18 @@
+{
+    "37692967-0a74-4e91-85ec-a4250e7ad5e8": {
+        "name": "Test Client",
+        "external_id": "87654321",
+        "token_endpoint_auth_method": "none",
+        "redirect_uris": [
+            "http://localhost:3000/login",
+            "http://localhost:8000/uzi-login",
+            "http://localhost:8000/oidc/login"
+        ],
+        "response_types": ["code"],
+        "pubkey_type": "RSA",
+        "client_public_key_path": "secrets/clients/test_client/test_client.crt",
+        "client_private_key_path": "secrets/clients/test_client/test_client.key",
+        "exclude_login_methods": ["yivi"],
+        "client_authentication_method": "private_key_jwt"
+    }
+}

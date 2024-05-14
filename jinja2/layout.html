@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ page_title }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="{{ vite_asset('resources/css/app.scss') }}" rel="stylesheet">
+</head>
+<body class="{{ "sidemenu" if sidebar is defined }}">
+{% if sidebar is defined %}
+    {% include sidebar %}
+{% endif %}
+<div class="page-content">
+    {% if header is defined %}
+        {% include header %}
+    {% endif %}
+    <main id="main-content">
+        {% block body %}{% endblock %}
+    </main>
+</div>
+</body>
+</html>

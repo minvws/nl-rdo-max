@@ -1,0 +1,62 @@
+{
+  "900022868": {
+    "initials": "J.J.",
+    "surname_prefix": "van der",
+    "surname": "Jansen",
+    "loa_authn": "http://eidas.europa.eu/LoA/high",
+    "loa_uzi": "http://eidas.europa.eu/LoA/high",
+    "uzi_id": "900022868",
+    "relations": [
+      {
+        "ura": "87654321",
+        "entity_name": "Zorgaanbieder",
+        "roles": [
+          "01.041",
+          "30.000",
+          "01.010",
+          "01.011"
+        ]
+      }
+    ]
+  },
+  "900000001": {
+    "initials": "F.F.",
+    "surname_prefix": "van der",
+    "surname": "Jansen",
+    "loa_authn": "http://eidas.europa.eu/LoA/high",
+    "loa_uzi": "http://eidas.europa.eu/LoA/high",
+    "uzi_id": "900000009",
+    "relations": [
+      {
+        "ura": "87654321",
+        "entity_name": "Zorgaanbieder",
+        "roles": [
+          "01.041",
+          "30.000",
+          "01.010",
+          "01.011"
+        ]
+      }
+    ]
+  },
+  "999991772": {
+    "initials": "B.B.",
+    "surname_prefix": "van der",
+    "surname": "Jansen",
+    "loa_authn": "http://eidas.europa.eu/LoA/high",
+    "loa_uzi": "http://eidas.europa.eu/LoA/high",
+    "uzi_id": "900000009",
+    "relations": [
+      {
+        "ura": "87654321",
+        "entity_name": "Zorgaanbieder",
+        "roles": [
+          "01.041",
+          "30.000",
+          "01.010",
+          "01.011"
+        ]
+      }
+    ]
+  }
+}

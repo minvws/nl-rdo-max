@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <title>Max: {{ exception_title }}</title>
+    <link href="{{ vite_asset('resources/css/app.scss') }}" rel="stylesheet">
+    <meta charset="UTF-8">
+    {% if redirect_uri and redirect_delay %}
+    <meta http-equiv="refresh" content="{{ redirect_delay }};url={{ redirect_uri }}" />
+    {% endif %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<main id="main-content" tabindex="-1">
+    <section class="bg-color-offset layout-authentication">
+        <div>
+            <h1>{{ error_code }} <span>{{ status_code }}</span></h1>
+            <h2>{{ exception_title }}</h2>
+            {{ exception_message }}
+        </div>
+        {% if redirect_uri %}
+            <div>
+                <a href="{{ redirect_uri }}">{{ continue }}</a>
+                {% if redirect_delay %}
+                <p>{{ redirect_message | evaluate }}</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+</main>
+</html>

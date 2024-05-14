@@ -8,9 +8,7 @@ class EncryptedMessage(bytes):
 
     @classmethod
     def _from_parts(cls, nonce: bytes, ciphertext: bytes, combined: bytes) -> None: ...
-
     @property
     def nonce(self) -> bytes: ...
-
     @property
     def ciphertext(self) -> bytes: ...

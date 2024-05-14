@@ -14,40 +14,58 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: '3.8'
+          cache: 'pip' # caching pip dependencies
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install libxmlsec1-dev pkg-config
           python -m pip install --upgrade pip setuptools wheel
           make venv
-      - name: Lint with pylint
-        run: make lint
-      - name: Type check with MyPy
-        run: make type-check
-      - name: Audit with bandid
+
+      - name: Check linting (black)
+        run: make check
+
+      - name: Audit
         run: make audit
+
   tests:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          python-version: 3.8
+          node-version: 20
+          registry-url: "https://npm.pkg.github.com"
+          cache: "npm"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+          cache: 'pip' # caching pip dependencies
+
       - name: Install dependencies
         run: |
-          sudo add-apt-repository ppa:redislabs/redis
+          curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
+          
           sudo apt-get update
           sudo apt-get install libxmlsec1-dev pkg-config redis-server
           python -m pip install --upgrade pip setuptools wheel
           make venv
+
       - name: Setup settings and secrets
         run: make setup
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Test with unittest
         run: make test
+

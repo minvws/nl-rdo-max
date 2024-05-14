@@ -1,0 +1,17 @@
+{
+  "resources/css/app.scss": {
+    "file": "static/assets/layout-ZiacpCkP.css",
+    "isEntry": true,
+    "src": "resources/css/app.scss"
+  },
+  "resources/js/submit.js": {
+    "file": "static/assets/submit-oppVYYRo.js",
+    "isEntry": true,
+    "src": "resources/js/submit.js"
+  },
+  "resources/js/digid_mock.js": {
+    "file": "static/assets/digid_mock-abcdEFGH.js",
+    "isEntry": true,
+    "src": "resources/js/digid_mock.js"
+  }
+}

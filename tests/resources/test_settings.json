@@ -1,0 +1,82 @@
+{
+    "saml_specification_version": 4.5,
+    "verify_ssl": false,
+    "sp": {
+        "cert_path": "tests/resources/secrets/sp.crt",
+        "key_path": "tests/resources/secrets/sp.key",
+        "entityId": "entity_id",
+        "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+        "assertionConsumerService": {
+            "url": "http://localhost:8006/acs",
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+        },
+        "attributeConsumingService": {
+            "serviceName": "Test",
+            "serviceDescription": "Test inlogservice",
+            "requestedAttributes": [
+                {
+                    "name": "urn:nl-eid-gdi:1.0:ServiceUUID",
+                    "isRequired": true,
+                    "nameFormat": "",
+                    "friendlyName": "",
+                    "attributeValue": [ "00000000-0000-0000-0000-000000000000" ]
+                }
+            ]
+        }
+    },
+    "idp": {
+        "entityId": "https://login.idp.invalid/saml/idp/metadata",
+        "metadata_path": "tests/resources/idp_metadata.xml",
+        "singleSignOnService": {
+            "url": "https://login.idp.invalid/saml/idp/request_authentication",
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+        },
+        "x509cert": "<onelogin_connector_cert>"
+    },
+    "cluster_settings": {
+        "tls_keypath": "tests/resources/secrets/tls.crt",
+        "connections":{
+            "cibg": {
+                "userinfo_endpoint": "http://localhost:8006/getuzi",
+                "cert_path": "tests/resources/secrets/cluster.crt",
+                "entity_id": "00000000-0000-0000-0000-000000000001"
+            }
+        }
+    },
+    "security": {
+        "nameIdEncrypted": false,
+        "authnRequestsSigned": true,
+        "logoutRequestSigned": true,
+        "logoutResponseSigned": false,
+        "signMetadata": true,
+        "wantMessagesSigned": true,
+        "wantAssertionsSigned": true,
+        "wantNameId": true,
+        "wantNameIdEncrypted": false,
+        "wantAssertionsEncrypted": false,
+        "requestedAuthnContext": ["urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"],
+        "requestedAuthnContextComparison": "minimum",
+        "allowSingleLabelDomains": false,
+        "signatureAlgorithm": "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+        "digestAlgorithm": "http://www.w3.org/2001/04/xmlenc#sha256",
+        "allowScoping": true,
+        "authorizationByProxyRequestIds": ["urn:nl-eid-gdi:1.0:BVD:00000004003214345001:entities:9002"],
+        "authorizationByProxyScopes": [
+            "00000000-0000-0000-0000-000000000002",
+            "00000000-0000-0000-0000-000000000003"],
+        "defaultScopes": ["00000000-0000-0000-0000-000000000002"]
+    },
+    "contactPerson": {
+        "technical": {
+            "givenName": "Test",
+            "emailAddress": "test@rdobeheer.invalid"
+        }
+    },
+    "organization": {
+        "en-US": {
+            "name": "Test",
+            "displayname": "Test display name",
+            "url": "https://www.test.invalid"
+        }
+    }
+}

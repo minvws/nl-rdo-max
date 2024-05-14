@@ -1,0 +1,17 @@
+{
+  "Invalid request": "Ongeldig verzoek",
+  "You need to be logged in for this request": "U moet ingelogd zijn voor deze aanvraag",
+  "You are not authorized for this request": "U bent niet geauthoriseerd voor deze aanvraag",
+  "The response type is not supported": "Response type wordt niet ondersteund",
+  "The scope is not supported": "De 'scope' wordt niet ondersteund",
+  "Something went wrong, try again later": "Er is iets misgegaan, probeer het later opnieuw",
+  "The services are temporarily unavailable, try again later": "De services zijn tijdelijk niet beschikbaar, probeer het later opnieuw",
+  "Login state not found or expired": "Login status niet gevonden of verlopen",
+  "access_denied": "Geen toegang",
+  "Unable to decrypt userinfo JWE": "Kan userinfo JWE niet ontsleutelen",
+  "You will automatically be redirected in {{ redirect_delay }} seconds": "U wordt automatisch doorgestuurd na {{ redirect_delay }} seconden",
+  "Error code: ": "Foutcode: ",
+  "Continue": "Doorgaan",
+  "missing": "het ontbreken van",
+  "The following errors occurred:": "De volgende fouten zijn voorgekomen:"
+}

@@ -1,5 +1,5 @@
-export PYTHON_SETTINGS_MODULE=inge6.runtime.settings
 env = env PATH="${bin}:$$PATH"
+create_key_pair =
 
 venv: .venv/touchfile ## Create virtual environment
 .venv/touchfile:
@@ -15,100 +15,47 @@ clean_venv: ## Remove virtual environment
 	@echo "Cleaning venv"
 	@rm -rf .venv
 
-clients.json: clients.json.example
-	cp clients.json.example clients.json
-
-inge6.conf: inge6.conf.example
-	cp inge6.conf.example inge6.conf
-
-saml/tvs/settings.json: saml/settings.json.example
-	cp saml/settings.json.example saml/tvs/settings.json
-
-saml/digid/settings.json: saml/settings.json.example
-	cp saml/settings.json.example saml/digid/settings.json
-
-secrets/private_unencrypted.pem:
-	openssl genrsa -out secrets/private_unencrypted.pem 2048
-secrets/public.pem: secrets/private_unencrypted.pem
-	openssl rsa -in secrets/private_unencrypted.pem -pubout -out secrets/public.pem
-
-secrets/ssl:
-	mkdir -p -m 750 secrets/ssl/certs
-	mkdir -p -m 750 secrets/ssl/private
-
-secrets/ssl/private/apache-selfsigned.key: secrets/ssl
-	openssl req -newkey rsa:2048 -nodes -keyout secrets/ssl/private/apache-selfsigned.key -x509 -days 365 -out secrets/ssl/certs/apache-selfsigned.crt  -subj '/CN=inge6/C=NL'
-
-secrets-redis-certs:
-	mkdir -p -m 750 secrets/redis/certs
-	mkdir -p -m 750 secrets/redis/private
-
-	openssl genrsa -out secrets/redis/private/cacert.key 4096
-	openssl req -x509 -new -nodes -key secrets/redis/private/cacert.key -sha256 -days 1024 -out secrets/redis/certs/cacert.crt -subj "/CN=US/CN=inge6.redisserver.ca"
-	openssl genrsa -out secrets/redis/private/redis_key.key 2048
-	openssl req -new -sha256 -key secrets/redis/private/redis_key.key -subj "/C=US/CN=inge6.redisserver" -out secrets/redis/certs/redis_key.csr
-	openssl x509 -req -in secrets/redis/certs/redis_key.csr -CA secrets/redis/certs/cacert.crt -CAkey secrets/redis/private/cacert.key -CAcreateserial -out secrets/redis/certs/cert.crt -days 500 -sha256
-
-saml/tvs/certs/sp.key:
-	openssl genrsa -out saml/tvs/certs/sp.key 2048
-saml/tvs/certs/sp.crt: saml/tvs/certs/sp.key
-	openssl req -new -x509 -key saml/tvs/certs/sp.key -out saml/tvs/certs/sp.crt -days 360 -subj "/C=US/ST=SCA/L=SCA/O=Oracle/OU=Java/CN=test cert"
-
-saml/digid/certs/sp.key:
-	openssl genrsa -out saml/digid/certs/sp.key 2048
-saml/digid/certs/sp.crt: saml/digid/certs/sp.key
-	openssl req -new -x509 -key saml/digid/certs/sp.key -out saml/digid/certs/sp.crt -days 360 -subj "/C=US/ST=SCA/L=SCA/O=Oracle/OU=Java/CN=test cert"
-
-saml/identity_providers:
-	cp saml/identity_providers.json.example saml/identity_providers.json
-
-saml-files: saml/tvs/certs/sp.crt saml/digid/certs/sp.crt saml/identity_providers saml/tvs/settings.json
-
-secret-files: secrets/public.pem secrets/ssl/private/apache-selfsigned.key
-
-metadata:
-	mkdir -p saml/digid/metadata
-	mkdir -p saml/tvs/metadata
-	curl "https://was-preprod1.digid.nl/saml/idp/metadata" --output saml/digid/metadata/idp_metadata.xml
-	curl "https://pp2.toegang.overheid.nl/kvs/rd/metadata" --output saml/tvs/metadata/idp_metadata.xml
-
-setup: inge6.conf clients.json saml secrets/ssl secret-files saml-files secrets-redis-certs metadata
-
-fresh: clean_venv venv
-
-pip-compile: ## synchronizes the .venv with the state of requirements.txt
-	. .venv/bin/activate && ${env} python3 -m piptools compile requirements.in
-	. .venv/bin/activate && ${env} python3 -m piptools compile requirements-dev.in
+run:
+	docker-compose up -d
+	npm run build
+	. .venv/bin/activate && ${env} python -m app.main
 
 pip-sync: ## synchronizes the .venv with the state of requirements.txt
-	. .venv/bin/activate && ${env} python3 -m piptools sync requirements.txt
+	. .venv/bin/activate && ${env} pip-compile --extra dev
+	. .venv/bin/activate && ${env} pip-sync
 	. .venv/bin/activate && ${env} pip install -e .
 
-pip-sync-dev: ## synchronizes the .venv with the state of requirements.txt
-	. .venv/bin/activate && ${env} python3 -m piptools sync requirements.txt requirements-dev.txt
-	. .venv/bin/activate && ${env} pip install -e .
+setup-secrets:
+	scripts/./setup-secrets.sh
 
-lint:
-	. .venv/bin/activate && ${env} pylint inge6 tests
-	. .venv/bin/activate && ${env} black --check inge6 tests
+setup-saml:
+	scripts/./setup-saml.sh
+
+setup-config:
+	scripts/./setup-config.sh
+
+setup-npm:
+	scripts/./setup-npm.sh
+
+setup: venv setup-config setup-saml setup-secrets setup-npm
+
+check:
+	. .venv/bin/activate && ${env} pylint app
+	. .venv/bin/activate && ${env} black --check app
 
 audit:
-	. .venv/bin/activate && ${env} bandit inge6
+	. .venv/bin/activate && ${env} bandit app
 
 fix:
-	. .venv/bin/activate && $(env) black inge6 tests
+	. .venv/bin/activate && $(env) black app tests
 
-test:
+test: venv setup
 	. .venv/bin/activate && ${env} pytest tests
 
-utests:
-	. .venv/bin/activate && ${env} pytest tests/utests
-
-itests:
-	. .venv/bin/activate && ${env} pytest tests/itests
-
-
 type-check:
-	. .venv/bin/activate && ${env} MYPYPATH=stubs/ mypy --show-error-codes inge6
+	. .venv/bin/activate && ${env} MYPYPATH=stubs/ mypy --show-error-codes app
 
-check-all: lint type-check test audit
+coverage:
+	. .venv/bin/activate && ${env} coverage run -m pytest tests && coverage report && coverage html
+
+check-all: fix check type-check test audit

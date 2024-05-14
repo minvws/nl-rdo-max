@@ -1,11 +1,46 @@
 {
-    "test_client": {
+    "37692967-0a74-4e91-85ec-a4250e7ad5e8": {
+        "name": "Test Client",
+        "external_id": "87654321",
         "token_endpoint_auth_method": "none",
         "redirect_uris": [
-                "http://localhost:3000/login",
-                "http://10.48.118.250:3000/login",
-                "https://1bf9dfabcf2d.ngrok.io/login"
-            ],
-        "response_types": ["code"]
-        }
+            "http://localhost:3000/login",
+            "http://localhost:8000/uzi-login",
+            "http://localhost:8000/oidc/login"
+        ],
+        "response_types": ["code"],
+        "pubkey_type": "RSA",
+        "client_public_key_path": "secrets/clients/test_client/test_client.crt",
+        "exclude_login_methods": ["yivi"],
+        "client_assertion_method": "none"
+    },
+    "c512596d-43e0-430a-8926-6e5a53cb9ebc": {
+        "name": "Test Client",
+        "external_id": "87654321",
+        "token_endpoint_auth_method": "none",
+        "redirect_uris": [
+            "http://localhost:8000/oidc/login"
+        ],
+        "error_page": "http://localhost:8000/oidc/login",
+        "response_types": ["code"],
+        "pubkey_type": "RSA",
+        "client_public_key_path": "secrets/clients/dusi/client.cert",
+        "login_methods": ["digid_mock"],
+        "client_assertion_method": "none"
+    },
+    "006fbf34-a80b-4c81-b6e9-593600675fb1": {
+        "name": "uzip oidc client POC",
+        "external_id": "87654321",
+        "token_endpoint_auth_method": "none",
+        "redirect_uris": [
+            "http://localhost:3000/login",
+            "http://localhost:12005/oidc/login",
+            "http://localhost:8000/oidc/login"
+        ],
+        "error_page": "http://localhost:8000/login",
+        "response_types": ["code"],
+        "pubkey_type": "RSA",
+        "client_public_key_path": "secrets/clients/test_client/test_client.crt",
+        "client_assertion_method": "none"
+    }
 }

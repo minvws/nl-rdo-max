@@ -1,0 +1,24 @@
+{% extends layout %}
+{% block body %}
+    <section class="bg-color-offset">
+        <div class="layout-authentication">
+            <p class="condensed">Inloggen bij '{{ ura_name }}'</p>
+            <h2>Hoe wilt u inloggen?</h2>
+
+            <ul class="tiles">
+                {% for login_method in login_methods %}
+                    <li>
+                        <a href="{{ login_methods[login_method]["url"] }}" class="horizontal-view">
+                            <img src="{{ login_methods[login_method]["logo"] }}" alt="{{ login_methods[login_method]["name"] }} logo" width="56px">
+                            {{ login_methods[login_method]["text"] }} <i class="icon icon-chevron-right"></i>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <div class="button-container">
+                <a href="{{ redirect_uri }}" class="button ghost">Terug</a>
+            </div>
+        </div>
+    </section>
+{% endblock %}

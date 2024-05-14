@@ -1,0 +1,18 @@
+<html>
+<head>
+    <script src="{{ vite_asset('resources/js/digid_mock.js') }}"></script>
+</head>
+<h1> DigiD MOCK </h1>
+<div style='font-size:36;'>
+    <form method="GET" action="digid-mock-catch">
+        <label style='height:200px; width:400px' for="bsn">BSN Value:</label><br>
+        <input id='bsn_inp' style='height:200px; width:400px; font-size:36pt' type="text" id="bsn" value="999991772"
+               name="bsn"><br>
+        <input type="hidden" name="SAMLart" value="{{ artifact }}">
+        <input type="hidden" name="RelayState" value="{{ relay_state }}">
+    </form>
+</div>
+<a href='' id="submit_two" relayState="{{ relay_state }}" samlArt="{{ artifact }}"
+   style='font-size:55; color: white; background-color:grey; display:box'> Login / Submit </a>
+<br/>
+</html>

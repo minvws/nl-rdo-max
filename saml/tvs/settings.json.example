@@ -1,0 +1,83 @@
+{
+    "saml_specification_version": 4.5,
+    "verify_ssl": true,
+    "sp": {
+        "cert_path": "saml/tvs/certs/sp.crt",
+        "key_path": "saml/tvs/certs/sp.key",
+        "entityId": "urn:nl-eid-gdi:1.0:LC:00000000000000000000:entities:0000",
+        "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+        "assertionConsumerService": {
+            "url": "https://localhost:8006/acs",
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+        },
+        "attributeConsumingService": {
+            "serviceName": "Max",
+            "serviceDescription": "Max Inlogservice",
+            "requestedAttributes": [
+                {
+                    "name": "urn:nl-eid-gdi:1.0:ServiceUUID",
+                    "isRequired": true,
+                    "nameFormat": "",
+                    "friendlyName": "",
+                    "attributeValue": [ "2ee831d9-59e0-4d45-9a80-683c1ec0892d" ]
+                }
+            ]
+        }
+    },
+    "idp": {
+        "entityId": "idp_entity_id",
+        "metadata_path": "saml/tvs/metadata/idp_metadata.xml",
+        "singleSignOnService": {
+            "url": "https://preprod1.digid.nl/saml/idp/request_authentication",
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+        },
+        "x509cert": "<onelogin_connector_cert>"
+    },
+    "cluster_settings": {
+        "tls_keypath": "saml/tvs/certs/tls.crt",
+        "connections":{
+            "dv": {
+                "userinfo_endpoint": "https://dv_endpoint",
+                "key_path": "saml/tvs/certs/dv.key",
+                "cert_path": "saml/tvs/certs/dv.crt",
+                "entity_id": "urn:nl-eid-gdi:1.0:DV:00000000000000000001:entities:0001"
+            }
+        }
+    },
+    "security": {
+        "nameIdEncrypted": false,
+        "authnRequestsSigned": true,
+        "logoutRequestSigned": true,
+        "logoutResponseSigned": false,
+        "signMetadata": true,
+        "wantMessagesSigned": true,
+        "wantAssertionsSigned": true,
+        "wantNameId": true,
+        "wantNameIdEncrypted": false,
+        "wantAssertionsEncrypted": false,
+        "requestedAuthnContext": ["urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"],
+        "requestedAuthnContextComparison": "minimum",
+        "allowSingleLabelDomains": false,
+        "signatureAlgorithm": "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+        "digestAlgorithm": "http://www.w3.org/2001/04/xmlenc#sha256",
+        "allowScoping": true,
+        "authorizationByProxyRequestIds": ["urn:nl-eid-gdi:1.0:BVD:00000000000000000002:entities:0002"],
+        "authorizationByProxyScopes": [
+            "urn:nl-eid-gdi:1.0:AD:00000000000000000003:entities:0003",
+            "urn:nl-eid-gdi:1.0:BVD:00000000000000000002:entities:0002"],
+        "defaultScopes": ["urn:nl-eid-gdi:1.0:AD:00000000000000000003:entities:0003"]
+    },
+    "contactPerson": {
+        "technical": {
+            "givenName": "Helpdesk",
+            "emailAddress": "helpdesk@rdobeheer.nl"
+        }
+    },
+    "organization": {
+        "en-US": {
+            "name": "MinVWS",
+            "displayname": "Ministerie van Volksgezondheid, Welzijn en Sport",
+            "url": "https://www.rijksoverheid.nl/ministeries/ministerie-van-volksgezondheid-welzijn-en-sport"
+        }
+    }
+}

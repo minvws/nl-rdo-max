@@ -1,8 +1,30 @@
 # https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
+registries:
+  github-minvws:
+    type: git
+    url: https://github.com
+    username: x-access-token
+    password: "${{ secrets.REPO_READ_ONLY_TOKEN }}"
+
 updates:
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Maintain dependencies for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    registries:
+      - github-minvws
+    schedule:
+      interval: "weekly"
+
+  # Maintain dependencies for pip
   - package-ecosystem: "pip" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
-      interval: "daily"
+      interval: "weekly"
