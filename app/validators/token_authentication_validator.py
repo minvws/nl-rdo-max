@@ -43,7 +43,7 @@ class TokenAuthenticationValidator:
         ):
             raise ServerErrorException(
                 error_description="Invalid client assertion method",
-                log_message=f"{client_authentication_method} is not a valid method, make sure client_assertion_method is present in clients configuration with values {self.assertion_methods}",
+                log_message=f"{client_authentication_method} is not a valid method, make sure client_authentication_method is present in clients configuration with values {self.assertion_methods}",
             )
 
         if client_authentication_method == ClientAssertionMethods.NONE.value:

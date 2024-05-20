@@ -594,7 +594,7 @@ def test_token_with_client_authentication_method():
     clients = {
         "client_id": {
             "name": "name",
-            "client_assertion_method": "private_key_jwt",
+            "client_authentication_method": "private_key_jwt",
             "client_public_key_path": "secrets/clients/test_client/test_client.crt",
             "client_private_key_path": "secrets/clients/test_client/test_client.key",
             "client_authentication_method": "private_key_jwt",
