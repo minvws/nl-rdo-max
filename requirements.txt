@@ -193,7 +193,7 @@ requests==2.32.0
     # via
     #   oic
     #   pyjwkest
-rich==13.6.0
+rich==13.7.1
     # via bandit
 six==1.16.0
     # via
