@@ -54,7 +54,7 @@ dependency-injector==4.41.0
     # via app (setup.py)
 dill==0.3.8
     # via pylint
-fastapi==0.110.1
+fastapi==0.111.0
     # via app (setup.py)
 freezegun==1.4.0
     # via app (setup.py)
