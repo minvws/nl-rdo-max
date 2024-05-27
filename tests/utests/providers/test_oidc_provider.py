@@ -122,12 +122,14 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
                     "text": "",
                     "logo": "",
                     "url": "http://base_url/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=a",
+                    "hidden": False
                 },
                 "b": {
                     "name": "b",
                     "text": "",
                     "logo": "",
                     "url": "http://base_url/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=b",
+                    "hidden": False,
                 },
             },
             "redirect_uri": "redirect_uri?key=value&error=login_required&error_description=Authentication+cancelled",

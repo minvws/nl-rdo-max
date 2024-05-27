@@ -488,6 +488,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                     parsed_url, base_url, query_params, login_method_name
                 ),
                 "logo": str(login_method.get("logo", "")),
+                "hidden": login_method.get("hidden", False),
             }
 
         return login_methods_dict
