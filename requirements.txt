@@ -210,7 +210,7 @@ sniffio==1.3.0
     #   httpx
 starlette==0.37.2
     # via fastapi
-stevedore==5.1.0
+stevedore==5.2.0
     # via bandit
 tomlkit==0.12.4
     # via pylint
