@@ -373,7 +373,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         login_methods: List[Dict[str, Union[str, bool]]],
     ) -> Union[None, Response]:
         if len(login_methods) > 1:
-            login_methods_by_name = self._get_visible_login_methods_by_name(
+            login_methods_by_name = self._get_login_methods_by_name(
                 request_url=str(request.url), login_methods=login_methods
             )
 
@@ -392,7 +392,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                     query=parse.urlencode(query)
                 ).geturl(),
             }
-
             return self._template_service.render_layout(
                 request=request,
                 template_name="login_options.html",
@@ -471,7 +470,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         )
         return updated_url
 
-    def _get_visible_login_methods_by_name(
+    def _get_login_methods_by_name(
         self, request_url: str, login_methods: List[Dict[str, Union[str, bool]]]
     ) -> Dict[str, Dict[str, str]]:
         base_url = parse.urlparse(self._external_base_url)
@@ -481,9 +480,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
         login_methods_dict = {}
         for login_method in login_methods:
-            if login_method["hidden"]:
-                continue
-
             login_method_name = str(login_method["name"])
             login_methods_dict[login_method_name] = {
                 "name": login_method_name,
