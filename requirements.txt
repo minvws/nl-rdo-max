@@ -14,7 +14,7 @@ astroid==2.15.8
     # via pylint
 attrs==23.2.0
     # via pytest-docker
-autoflake==2.2.0
+autoflake==2.3.1
     # via app (setup.py)
 bandit==1.7.5
     # via app (setup.py)
