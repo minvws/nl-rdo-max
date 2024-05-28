@@ -13,7 +13,7 @@ from functools import cached_property
 from logging import Logger
 
 # pylint: disable=c-extension-no-member
-from typing import Text, List, Optional, Union
+from typing import List, Optional, Union
 
 import dateutil.parser
 from Cryptodome.Cipher import AES
@@ -462,7 +462,7 @@ class ArtifactResponse:
     def _plaintext_bsn(self):
         return self.assertion_subject.find("./saml:NameID", NAMESPACES)
 
-    def get_bsn(self, authorization_by_proxy: bool) -> Text:
+    def get_bsn(self, authorization_by_proxy: bool) -> str:
         if self._saml_specification_version >= Version("4.4"):
             if "urn:nl-eid-gdi:1.0:LegalSubjectID" in self.attributes:
                 self.log.info(

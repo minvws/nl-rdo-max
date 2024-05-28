@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Text, Union
+from typing import Union
 
 from packaging.version import Version
 
@@ -28,7 +28,7 @@ class ArtifactResponseMock(ArtifactResponse):
     def validate(self) -> None:
         pass
 
-    def get_bsn(self, authorization_by_proxy: bool) -> Text:
+    def get_bsn(self, authorization_by_proxy: bool) -> str:
         return self.artifact_response_str
 
     @cached_property
