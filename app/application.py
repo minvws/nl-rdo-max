@@ -1,5 +1,6 @@
 # pylint: disable=c-extension-no-member, too-few-public-methods
 import logging
+import urllib.parse
 from configparser import ConfigParser
 from typing import Type, Union, Callable, Tuple, List
 
@@ -7,6 +8,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 
 import app.dependency_injection.container
 from app.dependency_injection.config import get_config, get_swagger_config
@@ -58,6 +60,16 @@ def _add_exception_handlers(fastapi: FastAPI):
 
 def run():
     uvicorn.run("app.application:create_fastapi_app", **kwargs_from_config())
+
+
+def _parse_origins(container: Container) -> List[str]:
+    clients = container.pyop_services.clients()
+    origins = []
+    for client in clients:
+        for redirect_url in clients[client]["redirect_uris"]:
+            parsed = urllib.parse.urlparse(redirect_url)
+            origins.append(parsed.scheme + "://" + parsed.netloc)
+    return origins
 
 
 def create_fastapi_app(
@@ -114,5 +126,6 @@ def create_fastapi_app(
     app.dependency_injection.container._container = (  # pylint: disable=protected-access
         container
     )
+    fastapi.add_middleware(CORSMiddleware, allow_origins=_parse_origins(container))
     _add_exception_handlers(fastapi)
     return fastapi
