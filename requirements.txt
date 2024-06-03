@@ -60,7 +60,7 @@ freezegun==1.4.0
     # via app (setup.py)
 future==0.18.3
     # via pyjwkest
-gitdb==4.0.10
+gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via bandit
