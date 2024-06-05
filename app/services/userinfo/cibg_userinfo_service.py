@@ -84,11 +84,11 @@ class CIBGUserinfoService(UserinfoService):
         auth_type: str,
         json_schema: str,
         sub: str,
+        authentication_meta: AuthenticationMeta,
         saml_id: Optional[str] = None,
         loa_authn: Optional[str] = None,
         exchange_token: Optional[str] = None,
         req_acme_tokens: Optional[List[str]] = None,
-        authentication_meta: Optional[AuthenticationMeta] = None,
     ):
         ura_pubkey = file_content_raise_if_none(ura_pubkey_path)
 
@@ -104,7 +104,7 @@ class CIBGUserinfoService(UserinfoService):
             "req_iss": self._req_issuer,
             "req_aud": client_id,
             "req_sub": sub,
-            "meta": authentication_meta.model_dump() if authentication_meta else {},
+            "meta": authentication_meta.model_dump(),
         }
         if loa_authn is not None:
             jwt_payload["loa_authn"] = loa_authn
@@ -125,12 +125,12 @@ class CIBGUserinfoService(UserinfoService):
         auth_type: str,
         json_schema: str,
         sub: str,
+        authentication_meta: AuthenticationMeta,
         saml_id: Optional[str] = None,
         loa_authn: Optional[str] = None,
         data: Optional[str] = None,
         exchange_token: Optional[str] = None,
         req_acme_tokens: Optional[List[str]] = None,
-        authentication_meta: Optional[AuthenticationMeta] = None,
     ):
         external_id = "*"
         if "external_id" in client:
