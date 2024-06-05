@@ -15,6 +15,7 @@ from app.misc.utils import (
     mocked_bsn_to_uzi_data,
 )
 from app.models.authentication_context import AuthenticationContext
+from app.models.authentication_meta import AuthenticationMeta
 from app.models.saml.artifact_response import ArtifactResponse
 from app.models.saml.saml_identity_provider import SamlIdentityProvider
 from app.services.encryption.jwe_service_provider import JweServiceProvider
@@ -83,6 +84,7 @@ class CIBGUserinfoService(UserinfoService):
         auth_type: str,
         json_schema: str,
         sub: str,
+        authentication_meta: AuthenticationMeta,
         saml_id: Optional[str] = None,
         loa_authn: Optional[str] = None,
         exchange_token: Optional[str] = None,
@@ -102,6 +104,7 @@ class CIBGUserinfoService(UserinfoService):
             "req_iss": self._req_issuer,
             "req_aud": client_id,
             "req_sub": sub,
+            "meta": authentication_meta.model_dump(),
         }
         if loa_authn is not None:
             jwt_payload["loa_authn"] = loa_authn
@@ -122,6 +125,7 @@ class CIBGUserinfoService(UserinfoService):
         auth_type: str,
         json_schema: str,
         sub: str,
+        authentication_meta: AuthenticationMeta,
         saml_id: Optional[str] = None,
         loa_authn: Optional[str] = None,
         data: Optional[str] = None,
@@ -153,6 +157,7 @@ class CIBGUserinfoService(UserinfoService):
             exchange_token=exchange_token,
             req_acme_tokens=req_acme_tokens,
             sub=sub,
+            authentication_meta=authentication_meta,
         )
         jwt_token = JWT(
             header=jwt_header,
@@ -201,6 +206,7 @@ class CIBGUserinfoService(UserinfoService):
                 artifact_response=artifact_response,
                 req_acme_tokens=authentication_context.req_acme_tokens,
                 subject_identifier=subject_identifier,
+                authentication_meta=authentication_context.authentication_meta,
             )
         return self._request_userinfo(
             cibg_endpoint=self._cibg_saml_endpoint,
@@ -213,6 +219,7 @@ class CIBGUserinfoService(UserinfoService):
             data=artifact_response.to_envelope_string(),
             req_acme_tokens=authentication_context.req_acme_tokens,
             sub=subject_identifier,
+            authentication_meta=authentication_context.authentication_meta,
         )
 
     def request_userinfo_for_exchange_token(
@@ -232,6 +239,7 @@ class CIBGUserinfoService(UserinfoService):
             saml_id=authentication_context.session_id,
             req_acme_tokens=authentication_context.req_acme_tokens,
             sub=subject_identifier,
+            authentication_meta=authentication_context.authentication_meta,
         )
 
     def _request_userinfo_for_mock_artifact(
@@ -241,6 +249,7 @@ class CIBGUserinfoService(UserinfoService):
         artifact_response: ArtifactResponse,
         req_acme_tokens: Optional[List[str]],
         subject_identifier: str,
+        authentication_meta: AuthenticationMeta,
     ):
         bsn = artifact_response.get_bsn(False)
         ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
@@ -261,6 +270,7 @@ class CIBGUserinfoService(UserinfoService):
             "nbf": int(time.time()) - self._jwt_nbf_lag,
             "exp": int(time.time()) + self._jwt_expiration_duration,
             "x5c": strip_cert(ura_pubkey),
+            "meta": authentication_meta.model_dump(),
         }
         if req_acme_tokens:
             data["acme_tokens"] = req_acme_tokens

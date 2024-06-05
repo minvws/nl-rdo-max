@@ -1,4 +1,3 @@
-
 from dependency_injector import providers
 
 from app.application import _parse_origins

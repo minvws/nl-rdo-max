@@ -18,6 +18,7 @@ from app.exceptions.max_exceptions import (
     InvalidResponseType,
 )
 from app.misc.utils import load_jwk
+from app.models.authentication_meta import AuthenticationMeta
 from app.models.authorize_request import AuthorizeRequest
 from app.models.response_type import ResponseType
 from app.providers.oidc_provider import OIDCProvider
@@ -122,7 +123,7 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
                     "text": "",
                     "logo": "",
                     "url": "http://base_url/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=a",
-                    "hidden": False
+                    "hidden": False,
                 },
                 "b": {
                     "name": "b",
@@ -443,6 +444,9 @@ def test_authorize():
     authorize_response.session_id = "session_id"
     authorize_response.response = "actual_response"
 
+    request.client.host = "some.ip.address"
+    request.headers = {"Authorization": "bearer some token"}
+
     oidc_provider = create_oidc_provider(
         pyop_provider=pyop_provider,
         rate_limiter=rate_limiter,
@@ -472,6 +476,8 @@ def test_authorize():
         pyop_authentication_request, authorize_request
     )
 
+    authentication_meta = AuthenticationMeta.create_authentication_meta(request)
+
     authentication_cache.cache_authentication_request_state.assert_called_with(
         pyop_authentication_request,
         authorize_request,
@@ -479,6 +485,7 @@ def test_authorize():
         authentication_state,
         login_option["name"],
         "session_id",
+        authentication_meta=authentication_meta,
         req_acme_tokens=None,
     )
 

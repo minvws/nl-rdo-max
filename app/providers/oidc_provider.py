@@ -21,6 +21,7 @@ from app.exceptions.max_exceptions import (
     InvalidRedirectUriException,
     InvalidResponseType,
 )
+from app.models.authentication_meta import AuthenticationMeta
 from app.providers.pyop_provider import MaxPyopProvider
 from app.exceptions.oidc_exceptions import LOGIN_REQUIRED
 from app.misc.rate_limiter import RateLimiter
@@ -172,6 +173,8 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             else secrets.token_urlsafe(32)
         )
 
+        authentication_meta = AuthenticationMeta.create_authentication_meta(request)
+
         self._authentication_cache.cache_authentication_request_state(
             pyop_authentication_request,
             authorize_request,
@@ -180,6 +183,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             str(login_option["name"]),
             session_id,
             req_acme_tokens=authorize_request.acme_tokens,
+            authentication_meta=authentication_meta,
         )
 
         return authorize_response.response
@@ -472,7 +476,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
     def _get_login_methods_by_name(
         self, request_url: str, login_methods: List[Dict[str, Union[str, bool]]]
-    ) -> Dict[str, Dict[str, str]]:
+    ) -> Dict[str, Dict[str, Union[str, bool]]]:
         base_url = parse.urlparse(self._external_base_url)
 
         parsed_url = parse.urlparse(request_url)

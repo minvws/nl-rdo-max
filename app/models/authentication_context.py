@@ -3,6 +3,8 @@ from typing import Any, Dict, Optional, List
 from pydantic import BaseModel
 from pyop.message import AuthorizationRequest
 
+from app.models.authentication_meta import AuthenticationMeta
+
 
 class AuthenticationContext(BaseModel):
     authorization_request: AuthorizationRequest
@@ -11,6 +13,7 @@ class AuthenticationContext(BaseModel):
     authentication_state: Dict[str, Any]
     session_id: str
     req_acme_tokens: Optional[List[str]]
+    authentication_meta: AuthenticationMeta
 
     class Config:
         arbitrary_types_allowed = True
@@ -23,6 +26,7 @@ class AuthenticationContext(BaseModel):
             "authentication_state": self.authentication_state,
             "session_id": self.session_id,
             "req_acme_tokens": self.req_acme_tokens,
+            "authentication_meta": self.authentication_meta.model_dump(),
         }
 
     @classmethod
@@ -37,4 +41,5 @@ class AuthenticationContext(BaseModel):
             authentication_state=dictionary["authentication_state"],
             session_id=dictionary["session_id"],
             req_acme_tokens=dictionary["req_acme_tokens"],
+            authentication_meta=dictionary["authentication_meta"],
         )
