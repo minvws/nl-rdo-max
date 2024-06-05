@@ -270,7 +270,7 @@ class CIBGUserinfoService(UserinfoService):
             "nbf": int(time.time()) - self._jwt_nbf_lag,
             "exp": int(time.time()) + self._jwt_expiration_duration,
             "x5c": strip_cert(ura_pubkey),
-            "meta": authentication_meta.model_dump() if authentication_meta else {},
+            "meta": authentication_meta.model_dump(),
         }
         if req_acme_tokens:
             data["acme_tokens"] = req_acme_tokens
