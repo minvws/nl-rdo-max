@@ -104,6 +104,7 @@ class CIBGUserinfoService(UserinfoService):
             "req_iss": self._req_issuer,
             "req_aud": client_id,
             "req_sub": sub,
+            "meta": authentication_meta.model_dump() if authentication_meta else {},
         }
         if loa_authn is not None:
             jwt_payload["loa_authn"] = loa_authn
@@ -113,8 +114,6 @@ class CIBGUserinfoService(UserinfoService):
             jwt_payload["saml_id"] = saml_id
         if exchange_token is not None:
             jwt_payload["exchange_token"] = exchange_token
-        if authentication_meta is not None:
-            jwt_payload["authentication_meta"] = authentication_meta.model_dump()
 
         return jwt_payload
 
@@ -207,6 +206,7 @@ class CIBGUserinfoService(UserinfoService):
                 artifact_response=artifact_response,
                 req_acme_tokens=authentication_context.req_acme_tokens,
                 subject_identifier=subject_identifier,
+                authentication_meta=authentication_context.authentication_meta,
             )
         return self._request_userinfo(
             cibg_endpoint=self._cibg_saml_endpoint,
@@ -219,6 +219,7 @@ class CIBGUserinfoService(UserinfoService):
             data=artifact_response.to_envelope_string(),
             req_acme_tokens=authentication_context.req_acme_tokens,
             sub=subject_identifier,
+            authentication_meta=authentication_context.authentication_meta,
         )
 
     def request_userinfo_for_exchange_token(
@@ -248,6 +249,7 @@ class CIBGUserinfoService(UserinfoService):
         artifact_response: ArtifactResponse,
         req_acme_tokens: Optional[List[str]],
         subject_identifier: str,
+        authentication_meta: AuthenticationMeta,
     ):
         bsn = artifact_response.get_bsn(False)
         ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
@@ -268,6 +270,7 @@ class CIBGUserinfoService(UserinfoService):
             "nbf": int(time.time()) - self._jwt_nbf_lag,
             "exp": int(time.time()) + self._jwt_expiration_duration,
             "x5c": strip_cert(ura_pubkey),
+            "meta": authentication_meta.model_dump() if authentication_meta else {},
         }
         if req_acme_tokens:
             data["acme_tokens"] = req_acme_tokens
