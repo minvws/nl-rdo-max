@@ -15,6 +15,7 @@ from app.misc.utils import (
     mocked_bsn_to_uzi_data,
 )
 from app.models.authentication_context import AuthenticationContext
+from app.models.authentication_meta import AuthenticationMeta
 from app.models.saml.artifact_response import ArtifactResponse
 from app.models.saml.saml_identity_provider import SamlIdentityProvider
 from app.services.encryption.jwe_service_provider import JweServiceProvider
@@ -87,6 +88,7 @@ class CIBGUserinfoService(UserinfoService):
         loa_authn: Optional[str] = None,
         exchange_token: Optional[str] = None,
         req_acme_tokens: Optional[List[str]] = None,
+        authentication_meta: Optional[AuthenticationMeta] = None,
     ):
         ura_pubkey = file_content_raise_if_none(ura_pubkey_path)
 
@@ -111,6 +113,8 @@ class CIBGUserinfoService(UserinfoService):
             jwt_payload["saml_id"] = saml_id
         if exchange_token is not None:
             jwt_payload["exchange_token"] = exchange_token
+        if authentication_meta is not None:
+            jwt_payload["authentication_meta"] = authentication_meta.model_dump()
 
         return jwt_payload
 
@@ -127,6 +131,7 @@ class CIBGUserinfoService(UserinfoService):
         data: Optional[str] = None,
         exchange_token: Optional[str] = None,
         req_acme_tokens: Optional[List[str]] = None,
+        authentication_meta: Optional[AuthenticationMeta] = None,
     ):
         external_id = "*"
         if "external_id" in client:
@@ -153,6 +158,7 @@ class CIBGUserinfoService(UserinfoService):
             exchange_token=exchange_token,
             req_acme_tokens=req_acme_tokens,
             sub=sub,
+            authentication_meta=authentication_meta,
         )
         jwt_token = JWT(
             header=jwt_header,
@@ -232,6 +238,7 @@ class CIBGUserinfoService(UserinfoService):
             saml_id=authentication_context.session_id,
             req_acme_tokens=authentication_context.req_acme_tokens,
             sub=subject_identifier,
+            authentication_meta=authentication_context.authentication_meta,
         )
 
     def _request_userinfo_for_mock_artifact(

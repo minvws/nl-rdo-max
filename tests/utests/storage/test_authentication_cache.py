@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 from app.models.acs_context import AcsContext
 from app.models.authentication_context import AuthenticationContext
+from app.models.authentication_meta import AuthenticationMeta
 from app.models.userinfo_context import UserinfoContext
 from app.services.encryption.sym_encryption_service import SymEncryptionService
 from app.storage.authentication_cache import AuthenticationCache
@@ -67,6 +68,10 @@ def test_create_authentication_request_state():
 
     acache = create_authentication_cache(cache)
 
+    authentication_meta = AuthenticationMeta(
+        ip="some.ip.address", headers={"X-Forwarded-For": "some-forwarded-for"}
+    )
+
     acache.cache_authentication_request_state(
         pyop_authentication_request,
         authorize_request,
@@ -75,6 +80,7 @@ def test_create_authentication_request_state():
         "login_option",
         "session_id",
         req_acme_tokens=None,
+        authentication_meta=authentication_meta,
     )
 
     cache.set_complex_object.assert_called_with(
@@ -86,6 +92,7 @@ def test_create_authentication_request_state():
             authentication_state=authentication_state,
             session_id="session_id",
             req_acme_tokens=None,
+            authentication_meta=authentication_meta,
         ),
     )
 
