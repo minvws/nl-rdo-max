@@ -5,7 +5,6 @@ from typing import List, Union, Dict, Any
 from urllib import parse
 from urllib.parse import urlencode, urlunparse, ParseResult
 
-import requests
 from fastapi import Request, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -29,6 +28,9 @@ from app.models.acs_context import AcsContext
 from app.models.authentication_context import AuthenticationContext
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
+from app.services.loginhandler.exchange_based_authentication_handler import (
+    ExchangeBasedAuthenticationHandler,
+)
 from app.services.template_service import TemplateService
 from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
@@ -59,7 +61,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         login_methods: List[Dict[str, Union[str, bool]]],
         authentication_handler_factory: AuthenticationHandlerFactory,
         external_base_url: str,
-        session_url: str,
         external_http_requests_timeout_seconds: int,
         login_options_sidebar_template: str,
         template_service: TemplateService,
@@ -78,7 +79,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self._login_methods = login_methods
         self._authentication_handler_factory = authentication_handler_factory
         self._external_base_url = external_base_url
-        self._session_url = session_url
+        # self._session_url = session_url
         self._pyop_provider.configuration_information[
             "code_challenge_methods_supported"
         ] = ["S256"]
@@ -309,11 +310,22 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         if exchange_token != incoming_exchange_token:
             raise UnauthorizedError(error_description="Authentication Failed")
 
-        external_session_status = requests.get(
-            f"{self._session_url}/{exchange_token}/status",
-            headers={"Content-Type": "text/plain"},
-            timeout=self._external_http_requests_timeout_seconds,
+        login_method = next(
+            (
+                login_method
+                for login_method in self._login_methods
+                if login_method["name"] == authentication_context.authentication_method
+            )
         )
+        login_handler = self._authentication_handler_factory.create(login_method)
+        if not isinstance(login_handler, ExchangeBasedAuthenticationHandler):
+            raise ServerErrorException(
+                error_description="Incorrect login method assigned"
+            )
+        external_session_status = login_handler.get_external_session_status(
+            exchange_token
+        )
+
         if external_session_status.status_code != 200:
             raise UnauthorizedError(error_description="Authentication failed")
         if external_session_status.json() != "DONE":

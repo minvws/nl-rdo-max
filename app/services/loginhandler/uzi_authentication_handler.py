@@ -15,13 +15,15 @@ from app.exceptions.max_exceptions import (
     UnauthorizedError,
 )
 from app.models.authorize_request import AuthorizeRequest
-from app.services.loginhandler.authentication_handler import AuthenticationHandler
+from app.services.loginhandler.exchange_based_authentication_handler import (
+    ExchangeBasedAuthenticationHandler,
+)
 
 logger = logging.getLogger(__name__)
 
 
 # pylint: disable=too-many-arguments
-class UziAuthenticationHandler(CommonFields, AuthenticationHandler):
+class UziAuthenticationHandler(CommonFields, ExchangeBasedAuthenticationHandler):
     def __init__(self, uzi_login_redirect_url: str, **kwargs):
         super().__init__(**kwargs)
         self._uzi_login_redirect_url = uzi_login_redirect_url
@@ -88,3 +90,31 @@ class UziAuthenticationHandler(CommonFields, AuthenticationHandler):
                 redirect_url=f"{self._uzi_login_redirect_url}/{authentication_state['exchange_token']}?state={randstate}"
             )
         )
+
+    def get_external_session_status(self, exchange_token: str):
+        exchange_token_jwt = JWT(
+            header={
+                "alg": "RS256",
+                "x5t": self._private_sign_jwk_key.thumbprint(hashes.SHA256()),
+                "kid": self._public_sign_jwk_key.kid,
+            },
+            claims={
+                "iss": self._session_jwt_issuer,
+                "aud": self._session_jwt_audience,
+                "nbf": int(time.time()) - 10,
+                "exp": int(time.time()) + 60,
+                "exchange_token": exchange_token,
+            },
+        )
+        exchange_token_jwt.make_signed_token(self._private_sign_jwk_key)
+        serialized_jwt = exchange_token_jwt.serialize()
+
+        external_session_status = requests.get(
+            f"{self._session_url}/status",
+            headers={
+                "Content-Type": "text/plain",
+                "Authorization": f"Bearer {serialized_jwt}",
+            },
+            timeout=self._external_http_requests_timeout_seconds,
+        )
+        return external_session_status

@@ -4,6 +4,9 @@ from app.exceptions.max_exceptions import UnauthorizedError
 from app.misc.rate_limiter import RateLimiter
 from app.services.encryption.jwe_service_provider import JweServiceProvider
 from app.services.loginhandler.authentication_handler import AuthenticationHandler
+from app.services.loginhandler.exchange_based_authentication_handler import (
+    ExchangeBasedAuthenticationHandler,
+)
 
 from app.services.loginhandler.mock_saml_authentication_handler import (
     MockSamlAuthenticationHandler,
@@ -60,7 +63,7 @@ class AuthenticationHandlerFactory:
 
     def create(
         self, authentication_method: Dict[str, Union[str, bool]]
-    ) -> AuthenticationHandler:
+    ) -> AuthenticationHandler | ExchangeBasedAuthenticationHandler:
         if authentication_method["type"] == "specific":
             if authentication_method["name"] == "digid":
                 return self.create_saml_authentication_handler()
