@@ -63,7 +63,7 @@ class AuthenticationHandlerFactory:
 
     def create(
         self, authentication_method: Dict[str, Union[str, bool]]
-    ) -> AuthenticationHandler | ExchangeBasedAuthenticationHandler:
+    ) -> Union[AuthenticationHandler, ExchangeBasedAuthenticationHandler]:
         if authentication_method["type"] == "specific":
             if authentication_method["name"] == "digid":
                 return self.create_saml_authentication_handler()
