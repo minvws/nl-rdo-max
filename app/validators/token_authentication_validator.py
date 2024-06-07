@@ -70,17 +70,13 @@ class TokenAuthenticationValidator:
 
         client_public_key = client["public_key"]
         try:
-            expected_audience_claim = str(
-                self.oidc_configuration_info.get("issuer")
-            ) + str(self.oidc_configuration_info.get("accesstoken_endpoint"))
-
             client_assertion_jwt_claims = JWT(
                 jwt=client_assertion_jwt,
                 key=client_public_key,
                 check_claims={
                     "iss": client_id,
                     "sub": client_id,
-                    "aud": expected_audience_claim,
+                    "aud": self.oidc_configuration_info.get("token_endpoint"),
                     "exp": int(time.time()),
                 },
             )

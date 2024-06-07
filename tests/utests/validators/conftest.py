@@ -57,11 +57,6 @@ def invalid_client(client) -> Dict[str, Any]:
 
 @pytest.fixture
 def valid_client_jwt(client, token_authentication_validator) -> JWT:
-    oidc_configuration = token_authentication_validator.oidc_configuration_info
-    audience = str(oidc_configuration.get("issuer")) + str(
-        oidc_configuration.get("accesstoken_endpoint")
-    )
-
     return JWT(
         header={
             "alg": "RS256",
@@ -70,7 +65,9 @@ def valid_client_jwt(client, token_authentication_validator) -> JWT:
         claims={
             "iss": CLIENT_ID,
             "sub": CLIENT_ID,
-            "aud": audience,
+            "aud": token_authentication_validator.oidc_configuration_info.get(
+                "token_endpoint"
+            ),
             "exp": int(time.time()),
         },
     )
