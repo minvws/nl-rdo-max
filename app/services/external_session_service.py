@@ -44,7 +44,7 @@ class ExternalSessionService:
             raise UnauthorizedError(
                 log_message=f"Error while fetching {session_type} Response, {session_type} server returned: "
                 f"{external_server_response.status_code}, {external_server_response.text}",
-                error_description="Unable to create UZI session",
+                error_description="Unable to create external session",
             )
 
         return {"exchange_token": external_server_response.json()}

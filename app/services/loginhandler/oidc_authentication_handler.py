@@ -40,10 +40,10 @@ class OidcAuthenticationHandler(ExchangeBasedAuthenticationHandler):
             "login_title": client["name"],
             "oidc_provider_name": oidc_provider_name,
         }
-        uzi_response = self._external_session_service.create_session(
+        session_response = self._external_session_service.create_session(
             claims, claims["session_type"]
         )
-        return uzi_response
+        return session_response
 
     def authorize_response(
         self,
