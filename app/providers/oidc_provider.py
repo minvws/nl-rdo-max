@@ -325,9 +325,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             exchange_token
         )
 
-        if external_session_status.status_code != 200:
-            raise UnauthorizedError(error_description="Authentication failed")
-        if external_session_status.json() != "DONE":
+        if external_session_status != "DONE":
             # Login aborted by user
             raise UnauthorizedError(
                 error=LOGIN_REQUIRED, error_description="Authentication cancelled"

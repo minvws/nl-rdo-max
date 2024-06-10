@@ -3,6 +3,8 @@ from typing import Dict, Any, Union
 from app.exceptions.max_exceptions import UnauthorizedError
 from app.misc.rate_limiter import RateLimiter
 from app.services.encryption.jwe_service_provider import JweServiceProvider
+from app.services.encryption.jwt_service import JWTService
+from app.services.external_session_service import ExternalSessionService
 from app.services.loginhandler.authentication_handler import AuthenticationHandler
 from app.services.loginhandler.exchange_based_authentication_handler import (
     ExchangeBasedAuthenticationHandler,
@@ -141,22 +143,28 @@ class AuthenticationHandlerFactory:
 
     def create_oidc_authentication_handler(self) -> OidcAuthenticationHandler:
         if self._oidc_authentication_handler is None:
-            self._oidc_authentication_handler = OidcAuthenticationHandler(
-                jwe_service_provider=self._jwe_service_provider,
-                response_factory=self._response_factory,
+            jwt_service = JWTService(
+                jwt_private_key_path=self._config["jwt"][
+                    "session_jwt_sign_priv_key_path"
+                ],
+                certificate_kid_path=self._config["jwt"]["session_jwt_sign_crt_path"],
+            )
+            external_session_service = ExternalSessionService(
                 session_url=self._config["app"]["session_url"],
+                external_http_requests_timeout_seconds=int(
+                    self._config["app"]["external_http_requests_timeout_seconds"]
+                ),
+            )
+
+            self._oidc_authentication_handler = OidcAuthenticationHandler(
+                response_factory=self._response_factory,
                 oidc_login_redirect_url=self._config["oidc_client"][
                     "oidc_login_redirect_url"
                 ],
                 clients=self._clients,
                 session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
                 session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
-                jwt_sign_priv_key_path=self._config["jwt"][
-                    "session_jwt_sign_priv_key_path"
-                ],
-                jwt_sign_crt_path=self._config["jwt"]["session_jwt_sign_crt_path"],
-                external_http_requests_timeout_seconds=int(
-                    self._config["app"]["external_http_requests_timeout_seconds"]
-                ),
+                jwt_service=jwt_service,
+                external_session_service=external_session_service,
             )
         return self._oidc_authentication_handler
