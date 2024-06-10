@@ -151,7 +151,7 @@ pydantic-settings==2.2.1
     # via oic
 pyflakes==3.2.0
     # via autoflake
-pygments==2.16.1
+pygments==2.18.0
     # via rich
 pyjwkest==1.4.2
     # via oic
