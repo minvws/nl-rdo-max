@@ -6,7 +6,6 @@ from fastapi import Request
 from pyop.message import AuthorizationRequest
 
 from app.models.authorize_response import AuthorizeResponse
-from app.services.encryption.jwt_service import JWTService
 from app.services.external_session_service import ExternalSessionService
 
 from app.models.authorize_request import AuthorizeRequest
@@ -23,18 +22,12 @@ class OidcAuthenticationHandler(ExchangeBasedAuthenticationHandler):
         self,
         response_factory: ResponseFactory,
         oidc_login_redirect_url: str,
-        session_jwt_issuer: str,
-        session_jwt_audience: str,
         clients: Dict[str, Any],
-        jwt_service: JWTService,
         external_session_service: ExternalSessionService,
     ):
         self._response_factory = response_factory
         self._clients = clients
-        self._session_jwt_issuer = session_jwt_issuer
-        self._session_jwt_audience = session_jwt_audience
         self._oidc_login_redirect_url = oidc_login_redirect_url
-        self._jwt_service = jwt_service
         self._external_session_service = external_session_service
 
     def authentication_state(
@@ -43,15 +36,12 @@ class OidcAuthenticationHandler(ExchangeBasedAuthenticationHandler):
         client = self._clients[authorize_request.client_id]
         oidc_provider_name = authorize_request.login_hint
         claims = {
-            "iss": self._session_jwt_issuer,
-            "aud": self._session_jwt_audience,
             "session_type": "oidc",
             "login_title": client["name"],
             "oidc_provider_name": oidc_provider_name,
         }
-        jwt = self._jwt_service.create_jwt(claims)
         uzi_response = self._external_session_service.create_session(
-            jwt, claims["session_type"]
+            claims, claims["session_type"]
         )
         return uzi_response
 
@@ -71,13 +61,7 @@ class OidcAuthenticationHandler(ExchangeBasedAuthenticationHandler):
         )
 
     def get_external_session_status(self, exchange_token: str) -> str:
-        claims = {
-            "iss": self._session_jwt_issuer,
-            "aud": self._session_jwt_audience,
-            "exchange_token": exchange_token,
-        }
-        exchange_token_jwt = self._jwt_service.create_jwt(claims)
         external_session_status = self._external_session_service.get_session_status(
-            exchange_token_jwt
+            exchange_token
         )
         return external_session_status

@@ -1,22 +1,40 @@
-from typing import Dict
+from typing import Dict, Any
 
 import requests
 
 from app.exceptions.max_exceptions import UnauthorizedError
+from app.services.encryption.jwt_service import JWTService
 
 ALG = "RS256"
 
 
 class ExternalSessionService:
     def __init__(
-        self, session_url: str, external_http_requests_timeout_seconds: int
+        self,
+        session_url: str,
+        session_jwt_issuer: str,
+        session_jwt_audience: str,
+        external_http_requests_timeout_seconds: int,
+        jwt_service: JWTService,
     ) -> None:
         self._session_url = session_url
+        self._session_jwt_issuer = session_jwt_issuer
+        self._session_jwt_audience = session_jwt_audience
         self._external_http_requests_timeout_seconds = (
             external_http_requests_timeout_seconds
         )
+        self._jwt_service = jwt_service
 
-    def create_session(self, jwt: str, session_type: str) -> Dict[str, str]:
+    def create_session(
+        self, claims: Dict[str, Any], session_type: str
+    ) -> Dict[str, str]:
+        jwt = self._jwt_service.create_jwt(
+            {
+                **claims,
+                "iss": self._session_jwt_issuer,
+                "aud": self._session_jwt_audience,
+            }
+        )
         external_server_response = requests.post(
             f"{self._session_url}",
             headers={"Content-Type": "text/plain"},
@@ -32,12 +50,19 @@ class ExternalSessionService:
 
         return {"exchange_token": external_server_response.json()}
 
-    def get_session_status(self, token_jwt: str) -> str:
+    def get_session_status(self, exchange_token: str) -> str:
+        jwt = self._jwt_service.create_jwt(
+            {
+                "iss": self._session_jwt_issuer,
+                "aud": self._session_jwt_audience,
+                "exchange_token": exchange_token,
+            }
+        )
         session_status = requests.get(
             f"{self._session_url}/status",
             headers={
                 "Content-Type": "text/plain",
-                "Authorization": f"Bearer {token_jwt}",
+                "Authorization": f"Bearer {jwt}",
             },
             timeout=self._external_http_requests_timeout_seconds,
         )

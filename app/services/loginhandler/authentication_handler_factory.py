@@ -114,15 +114,15 @@ class AuthenticationHandlerFactory:
                 external_http_requests_timeout_seconds=int(
                     self._config["app"]["external_http_requests_timeout_seconds"]
                 ),
+                session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
+                session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
+                jwt_service=jwt_service,
             )
 
             self._irma_authentication_handler = IrmaAuthenticationHandler(
                 response_factory=self._response_factory,
                 irma_login_redirect_url=self._config["irma"]["irma_login_redirect_url"],
                 clients=self._clients,
-                session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
-                session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
-                jwt_service=jwt_service,
                 external_session_service=external_session_service,
             )
         return self._irma_authentication_handler
@@ -140,16 +140,16 @@ class AuthenticationHandlerFactory:
                 external_http_requests_timeout_seconds=int(
                     self._config["app"]["external_http_requests_timeout_seconds"]
                 ),
+                session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
+                session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
+                jwt_service=jwt_service,
             )
 
             self._uzi_authentication_handler = UziAuthenticationHandler(
                 response_factory=self._response_factory,
-                jwt_service=jwt_service,
                 external_session_service=external_session_service,
                 uzi_login_redirect_url=self._config["uzi"]["uzi_login_redirect_url"],
                 clients=self._clients,
-                session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
-                session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
             )
         return self._uzi_authentication_handler
 
@@ -166,6 +166,9 @@ class AuthenticationHandlerFactory:
                 external_http_requests_timeout_seconds=int(
                     self._config["app"]["external_http_requests_timeout_seconds"]
                 ),
+                session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
+                session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
+                jwt_service=jwt_service,
             )
 
             self._oidc_authentication_handler = OidcAuthenticationHandler(
@@ -174,9 +177,6 @@ class AuthenticationHandlerFactory:
                     "oidc_login_redirect_url"
                 ],
                 clients=self._clients,
-                session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
-                session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
-                jwt_service=jwt_service,
                 external_session_service=external_session_service,
             )
         return self._oidc_authentication_handler
