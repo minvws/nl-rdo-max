@@ -37,8 +37,7 @@ class ExternalSessionService:
         )
         external_server_response = requests.post(
             f"{self._session_url}",
-            headers={"Content-Type": "text/plain"},
-            data=jwt,
+            headers={"Content-Type": "text/plain", "Authorization": f"Bearer {jwt}"},
             timeout=self._external_http_requests_timeout_seconds,
         )
         if external_server_response.status_code >= 400:
