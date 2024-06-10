@@ -3,7 +3,6 @@ from typing import Any, Dict
 
 from fastapi import Request
 from pyop.message import AuthorizationRequest
-from requests import Response
 
 from app.models.authorize_request import AuthorizeRequest
 from app.models.authorize_response import AuthorizeResponse
@@ -28,5 +27,5 @@ class ExchangeBasedAuthenticationHandler(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_external_session_status(self, exchange_token: str) -> Response:
+    def get_external_session_status(self, exchange_token: str) -> str:
         pass

@@ -103,41 +103,53 @@ class AuthenticationHandlerFactory:
 
     def create_irma_authentication_handler(self) -> IrmaAuthenticationHandler:
         if self._irma_authentication_handler is None:
-            self._irma_authentication_handler = IrmaAuthenticationHandler(
-                jwe_service_provider=self._jwe_service_provider,
-                response_factory=self._response_factory,
+            jwt_service = JWTService(
+                jwt_private_key_path=self._config["jwt"][
+                    "session_jwt_sign_priv_key_path"
+                ],
+                certificate_kid_path=self._config["jwt"]["session_jwt_sign_crt_path"],
+            )
+            external_session_service = ExternalSessionService(
                 session_url=self._config["app"]["session_url"],
+                external_http_requests_timeout_seconds=int(
+                    self._config["app"]["external_http_requests_timeout_seconds"]
+                ),
+            )
+
+            self._irma_authentication_handler = IrmaAuthenticationHandler(
+                response_factory=self._response_factory,
                 irma_login_redirect_url=self._config["irma"]["irma_login_redirect_url"],
                 clients=self._clients,
                 session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
                 session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
-                jwt_sign_priv_key_path=self._config["jwt"][
-                    "session_jwt_sign_priv_key_path"
-                ],
-                jwt_sign_crt_path=self._config["jwt"]["session_jwt_sign_crt_path"],
-                external_http_requests_timeout_seconds=int(
-                    self._config["app"]["external_http_requests_timeout_seconds"]
-                ),
+                jwt_service=jwt_service,
+                external_session_service=external_session_service,
             )
         return self._irma_authentication_handler
 
     def create_uzi_authentication_handler(self) -> UziAuthenticationHandler:
         if self._uzi_authentication_handler is None:
-            self._uzi_authentication_handler = UziAuthenticationHandler(
-                jwe_service_provider=self._jwe_service_provider,
-                response_factory=self._response_factory,
+            jwt_service = JWTService(
+                jwt_private_key_path=self._config["jwt"][
+                    "session_jwt_sign_priv_key_path"
+                ],
+                certificate_kid_path=self._config["jwt"]["session_jwt_sign_crt_path"],
+            )
+            external_session_service = ExternalSessionService(
                 session_url=self._config["app"]["session_url"],
+                external_http_requests_timeout_seconds=int(
+                    self._config["app"]["external_http_requests_timeout_seconds"]
+                ),
+            )
+
+            self._uzi_authentication_handler = UziAuthenticationHandler(
+                response_factory=self._response_factory,
+                jwt_service=jwt_service,
+                external_session_service=external_session_service,
                 uzi_login_redirect_url=self._config["uzi"]["uzi_login_redirect_url"],
                 clients=self._clients,
                 session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
                 session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
-                jwt_sign_priv_key_path=self._config["jwt"][
-                    "session_jwt_sign_priv_key_path"
-                ],
-                jwt_sign_crt_path=self._config["jwt"]["session_jwt_sign_crt_path"],
-                external_http_requests_timeout_seconds=int(
-                    self._config["app"]["external_http_requests_timeout_seconds"]
-                ),
             )
         return self._uzi_authentication_handler
 

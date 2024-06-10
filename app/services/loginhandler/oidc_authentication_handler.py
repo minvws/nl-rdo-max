@@ -50,7 +50,9 @@ class OidcAuthenticationHandler(ExchangeBasedAuthenticationHandler):
             "oidc_provider_name": oidc_provider_name,
         }
         jwt = self._jwt_service.create_jwt(claims)
-        uzi_response = self._external_session_service.get_exchange_token(jwt)
+        uzi_response = self._external_session_service.create_session(
+            jwt, claims["session_type"]
+        )
         return uzi_response
 
     def authorize_response(
@@ -68,7 +70,7 @@ class OidcAuthenticationHandler(ExchangeBasedAuthenticationHandler):
             )
         )
 
-    def get_external_session_status(self, exchange_token: str):
+    def get_external_session_status(self, exchange_token: str) -> str:
         claims = {
             "iss": self._session_jwt_issuer,
             "aud": self._session_jwt_audience,

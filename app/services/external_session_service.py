@@ -16,21 +16,21 @@ class ExternalSessionService:
             external_http_requests_timeout_seconds
         )
 
-    def get_exchange_token(self, jwt: str) -> Dict[str, str]:
-        uzi_response = requests.post(
+    def create_session(self, jwt: str, session_type: str) -> Dict[str, str]:
+        external_server_response = requests.post(
             f"{self._session_url}",
             headers={"Content-Type": "text/plain"},
             data=jwt,
             timeout=self._external_http_requests_timeout_seconds,
         )
-        if uzi_response.status_code >= 400:
+        if external_server_response.status_code >= 400:
             raise UnauthorizedError(
-                log_message="Error while fetching UziResponse, Uzi server returned: "
-                f"{uzi_response.status_code}, {uzi_response.text}",
+                log_message=f"Error while fetching {session_type} Response, {session_type} server returned: "
+                f"{external_server_response.status_code}, {external_server_response.text}",
                 error_description="Unable to create UZI session",
             )
 
-        return {"exchange_token": uzi_response.json()}
+        return {"exchange_token": external_server_response.json()}
 
     def get_session_status(self, token_jwt: str) -> str:
         session_status = requests.get(
