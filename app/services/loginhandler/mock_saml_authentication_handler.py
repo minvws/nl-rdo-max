@@ -19,11 +19,8 @@ class MockSamlAuthenticationHandler(SamlAuthenticationHandler):
         authentication_state: Dict[str, Any],
         randstate: str,
     ) -> AuthorizeResponse:
-        identity_provider = self._get_identity_provider(
-            authentication_state["identity_provider_name"]
-        )
         return AuthorizeResponse(
             response=self._saml_response_factory.create_saml_mock_response(
-                identity_provider, authorize_request, randstate
+                authorize_request, randstate
             )
         )

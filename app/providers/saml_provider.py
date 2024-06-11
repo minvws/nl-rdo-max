@@ -44,9 +44,6 @@ class SAMLProvider:
         authentication_context = self._oidc_provider.get_authentication_request_state(
             request.RelayState
         )
-        identity_provider = self._saml_identity_provider_service.get_identity_provider(
-            authentication_context.authentication_state["identity_provider_name"]
-        )
 
         if (
             not self._environment.startswith("prod")
@@ -54,6 +51,13 @@ class SAMLProvider:
         ):
             artifact_response: ArtifactResponse = ArtifactResponseMock(request.SAMLart)
         else:
+            identity_provider = (
+                self._saml_identity_provider_service.get_identity_provider(
+                    authentication_context.authentication_state[
+                        "identity_provider_name"
+                    ]
+                )
+            )
             artifact_response = identity_provider.resolve_artifact(request.SAMLart)
         if artifact_response.saml_status.code.lower() != "success":
             if artifact_response.saml_status.message is not None:
@@ -76,7 +80,6 @@ class SAMLProvider:
         userinfo = self._userinfo_service.request_userinfo_for_digid_artifact(
             authentication_context,
             artifact_response,
-            identity_provider,
             subject_identifier,
         )
         return self._oidc_provider.authenticate(

@@ -6,11 +6,12 @@
         "redirect_uris": [
             "http://localhost:3000/login",
             "http://localhost:8000/uzi-login",
-            "http://localhost:8000/oidc/login"
+            "http://localhost:8000/oidc/login",
+            "http://localhost:9000/oidc/login"
         ],
         "response_types": ["code"],
         "pubkey_type": "RSA",
-        "client_public_key_path": "secrets/clients/test_client/test_client.crt",
+        "client_public_key_path": "secrets/clients/laravel-demo/nl-uzipoc-php-laravel-demo.crt",
         "exclude_login_methods": ["yivi"],
         "client_authentication_method": "none"
     },

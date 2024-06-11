@@ -9,10 +9,10 @@ mkdir -p saml/tvs/metadata
 #  echo "Fetching saml digid idp metadata"
 #  curl "https://was-preprod1.digid.nl/saml/idp/metadata" --output saml/digid/metadata/idp_metadata.xml
 #fi
-if [[ ! -f "saml/tvs/metadata/idp_metadata.xml" ]]; then
-  echo "Fetching saml tvs idp metadata"
-  curl "https://pp2.toegang.overheid.nl/kvs/rd/metadata" --output saml/tvs/metadata/idp_metadata.xml
-fi
+#if [[ ! -f "saml/tvs/metadata/idp_metadata.xml" ]]; then
+#  echo "Fetching saml tvs idp metadata"
+#  curl "https://pp2.toegang.overheid.nl/kvs/rd/metadata" --output saml/tvs/metadata/idp_metadata.xml
+#fi
 if [[ ! -f "tests/resources/idp_metadata.xml" ]]; then
   echo "Fetching saml tvs idp metadata for tests"
   curl "https://pp2.toegang.overheid.nl/kvs/rd/metadata" --output tests/resources/idp_metadata.xml

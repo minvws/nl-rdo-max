@@ -17,7 +17,6 @@ from app.misc.utils import (
 from app.models.authentication_context import AuthenticationContext
 from app.models.authentication_meta import AuthenticationMeta
 from app.models.saml.artifact_response import ArtifactResponse
-from app.models.saml.saml_identity_provider import SamlIdentityProvider
 from app.services.encryption.jwe_service_provider import JweServiceProvider
 from app.services.userinfo.userinfo_service import UserinfoService
 
@@ -191,7 +190,6 @@ class CIBGUserinfoService(UserinfoService):
         self,
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
-        saml_identity_provider: SamlIdentityProvider,
         subject_identifier: str,
     ) -> str:
         client_id = authentication_context.authorization_request["client_id"]
