@@ -15,7 +15,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: ${{ secrets.DEPENDABOT_OPEN_PULL_LIMIT }}
 
   # Maintain dependencies for npm
   - package-ecosystem: "npm"
@@ -24,11 +23,9 @@ updates:
       - github-minvws
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: ${{ secrets.DEPENDABOT_OPEN_PULL_LIMIT }}
 
   # Maintain dependencies for pip
   - package-ecosystem: "pip" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: ${{ secrets.DEPENDABOT_OPEN_PULL_LIMIT }}
