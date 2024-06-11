@@ -158,7 +158,6 @@ class Services(containers.DeclarativeContainer):
         login_methods=config.app.login_methods_file_path.as_(json_from_file),
         authentication_handler_factory=login_handler_factory,
         external_base_url=config.app.external_base_url,
-        session_url=config.app.session_url,
         external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
         login_options_sidebar_template=config.templates.login_options_sidebar_template,
         template_service=template_service,
