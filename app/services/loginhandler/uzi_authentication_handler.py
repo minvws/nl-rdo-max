@@ -35,24 +35,9 @@ class UziAuthenticationHandler(ExchangeBasedAuthenticationHandler):
     ) -> Dict[str, Any]:
         client = self._clients[authorize_request.client_id]
         claims = {
-            "disclosures": [{"disclose_type": "uziId"}, {"disclose_type": "roles"}],
             "session_type": "uzi_card",
             "login_title": client["name"],
         }
-        disclose = [{"disclose_type": "uziId"}, {"disclose_type": "roles"}]
-
-        if client["external_id"] == "*":
-            # Request disclosure of entityName and ura
-            disclose.append({"disclose_type": "entityName"})
-            disclose.append({"disclose_type": "ura"})
-        else:
-            # Request disclosure of entityName and ura with specific values
-            disclose.append(
-                {"disclose_type": "entityName", "disclose_value": client["name"]}
-            )
-            disclose.append(
-                {"disclose_type": "ura", "disclose_value": client["external_id"]}
-            )
 
         uzi_response = self._external_session_service.create_session(
             claims, claims["session_type"]
