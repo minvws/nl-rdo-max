@@ -32,7 +32,8 @@ class JWTService:
         )
 
     def create_jwt(self, payload: Dict[str, Any]) -> str:
-        return create_jwt(self._jwt_private_key, self._certificate_kid, payload)
+        # temporary type ignore
+        return create_jwt(self._jwt_private_key, self._certificate_kid, payload)  # type: ignore
 
     def from_jwt(self, jwt_pub_key: JWK, jwt: str) -> Dict[str, Any]:
         return from_jwt(jwt_pub_key, jwt)
