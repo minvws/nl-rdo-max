@@ -1,0 +1,39 @@
+from _typeshed import Incomplete
+from jwcrypto import common as common
+from jwcrypto.common import JWException as JWException, JWKeyNotFound as JWKeyNotFound, JWSEHeaderParameter as JWSEHeaderParameter, JWSEHeaderRegistry as JWSEHeaderRegistry, base64url_decode as base64url_decode, base64url_encode as base64url_encode, json_decode as json_decode, json_encode as json_encode
+from jwcrypto.jwa import JWA as JWA
+from jwcrypto.jwk import JWKSet as JWKSet
+
+default_max_compressed_size: Incomplete
+JWEHeaderRegistry: Incomplete
+default_allowed_algs: Incomplete
+
+class InvalidJWEData(JWException):
+    def __init__(self, message: Incomplete | None = None, exception: Incomplete | None = None) -> None: ...
+InvalidCEKeyLength = common.InvalidCEKeyLength
+InvalidJWEKeyLength = common.InvalidJWEKeyLength
+InvalidJWEKeyType = common.InvalidJWEKeyType
+InvalidJWEOperation = common.InvalidJWEOperation
+
+class JWE:
+    objects: Incomplete
+    plaintext: Incomplete
+    header_registry: Incomplete
+    cek: Incomplete
+    decryptlog: Incomplete
+    def __init__(self, plaintext: Incomplete | None = None, protected: Incomplete | None = None, unprotected: Incomplete | None = None, aad: Incomplete | None = None, algs: Incomplete | None = None, recipient: Incomplete | None = None, header: Incomplete | None = None, header_registry: Incomplete | None = None) -> None: ...
+    @property
+    def allowed_algs(self): ...
+    @allowed_algs.setter
+    def allowed_algs(self, algs) -> None: ...
+    def add_recipient(self, key, header: Incomplete | None = None) -> None: ...
+    def serialize(self, compact: bool = False): ...
+    def decrypt(self, key) -> None: ...
+    def deserialize(self, raw_jwe, key: Incomplete | None = None) -> None: ...
+    @property
+    def payload(self): ...
+    @property
+    def jose_header(self): ...
+    @classmethod
+    def from_jose_token(cls, token): ...
+    def __eq__(self, other): ...
