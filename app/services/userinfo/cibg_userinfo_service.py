@@ -3,10 +3,7 @@ import time
 from typing import Dict, Any, Optional, List
 
 import requests
-from cryptography.hazmat.primitives import hashes
 from fastapi.security.utils import get_authorization_scheme_param
-from jwcrypto.jwk import JWK
-from jwcrypto.jwt import JWT
 
 from app.exceptions.max_exceptions import InvalidClientException, UnauthorizedError
 from app.misc.utils import (
@@ -17,7 +14,7 @@ from app.misc.utils import (
 from app.models.authentication_context import AuthenticationContext
 from app.models.authentication_meta import AuthenticationMeta
 from app.models.saml.artifact_response import ArtifactResponse
-from app.services.encryption.jwe_service_provider import JweServiceProvider
+from app.services.encryption.jwt_service_factory import JWTServiceFactory
 from app.services.userinfo.userinfo_service import UserinfoService
 
 log = logging.getLogger(__name__)
@@ -27,7 +24,7 @@ log = logging.getLogger(__name__)
 class CIBGUserinfoService(UserinfoService):
     def __init__(
         self,
-        jwe_service_provider: JweServiceProvider,
+        jwt_service_factory: JWTServiceFactory,
         environment: str,
         clients: dict,
         userinfo_request_signing_priv_key_path: str,
@@ -45,21 +42,12 @@ class CIBGUserinfoService(UserinfoService):
         external_http_requests_timeout_seconds: int,
         external_base_url: str,
     ):
-        self._jwe_service_provider = jwe_service_provider
+
         self._environment = environment
-        userinfo_request_signing_priv_key = file_content_raise_if_none(
-            userinfo_request_signing_priv_key_path
-        )
-        userinfo_request_signing_crt = file_content_raise_if_none(
-            userinfo_request_signing_crt_path
-        )
         self._ssl_client_cert = (ssl_client_crt_path, ssl_client_key_path)
         self._ssl_client_verify = ssl_client_verify
-        self._private_sign_jwk_key = JWK.from_pem(
-            userinfo_request_signing_priv_key.encode("utf-8")
-        )
-        self._public_sign_jwk_key = JWK.from_pem(
-            userinfo_request_signing_crt.encode("utf-8")
+        self.jwt_service = jwt_service_factory.create(
+            userinfo_request_signing_priv_key_path, userinfo_request_signing_crt_path
         )
         self._clients = clients
         self._cibg_exchange_token_endpoint = cibg_exchange_token_endpoint
@@ -95,6 +83,7 @@ class CIBGUserinfoService(UserinfoService):
             "json_schema": json_schema,
             "iss": self._cibg_userinfo_issuer,
             "aud": self._cibg_userinfo_audience,
+            # still needs to be configurable?
             "nbf": int(time.time()) - self._jwt_nbf_lag,
             "exp": int(time.time()) + self._jwt_expiration_duration,
             "ura": external_id,
@@ -138,13 +127,7 @@ class CIBGUserinfoService(UserinfoService):
                 raise InvalidClientException(
                     error_description="client pubkey_type should be RSA"
                 )
-        jwt_header = {
-            "typ": "JWT",
-            "cty": "JWT",
-            "alg": "RS256",
-            "enc": "A128CBC-HS256",
-            "x5t": self._private_sign_jwk_key.thumbprint(hashes.SHA256()),
-        }
+
         jwt_payload = self._create_jwt_payload(
             json_schema=json_schema,
             ura_pubkey_path=client["client_public_key_path"],
@@ -158,12 +141,9 @@ class CIBGUserinfoService(UserinfoService):
             sub=sub,
             authentication_meta=authentication_meta,
         )
-        jwt_token = JWT(
-            header=jwt_header,
-            claims=jwt_payload,
-        )
-        jwt_token.make_signed_token(self._private_sign_jwk_key)
-        headers = {"Authorization": f"Bearer {jwt_token.serialize()}"}
+
+        jwt_token = self.jwt_service.create_jwt(jwt_payload)
+        headers = {"Authorization": f"Bearer {jwt_token}"}
         if data is not None:
             headers["Content-Type"] = "application/xml"
         cibg_exchange_response = requests.post(
@@ -248,7 +228,7 @@ class CIBGUserinfoService(UserinfoService):
         req_acme_tokens: Optional[List[str]],
         subject_identifier: str,
         authentication_meta: AuthenticationMeta,
-    ):
+    ) -> str:
         bsn = artifact_response.get_bsn(False)
         ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
 
@@ -272,7 +252,7 @@ class CIBGUserinfoService(UserinfoService):
         }
         if req_acme_tokens:
             data["acme_tokens"] = req_acme_tokens
-        return self._jwe_service_provider.get_jwe_service(client["pubkey_type"]).to_jwe(
-            data,
-            file_content_raise_if_none(client["client_public_key_path"]),
-        )
+
+        jwe_token = self.jwt_service.create_jwe(client["public_key"], data)
+
+        return jwe_token

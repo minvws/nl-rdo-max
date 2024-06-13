@@ -1,5 +1,4 @@
 from app.misc.utils import file_content_raise_if_none
-from app.models.enums import RedirectType
 from app.services.encryption.rsa_jwe_service import RSAJweService
 from jwcrypto.jwe import JWE
 from jwcrypto.jwk import JWK

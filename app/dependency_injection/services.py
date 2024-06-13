@@ -96,7 +96,7 @@ class Services(containers.DeclarativeContainer):
 
     cibg_userinfo_service = providers.Singleton(
         CIBGUserinfoService,
-        jwe_service_provider=encryption_services.jwe_service_provider,
+        jwt_service_factory=encryption_services.jwt_service_factory,
         environment=config.app.environment,
         clients=pyop_services.clients,
         userinfo_request_signing_priv_key_path=config.jwe.jwe_sign_priv_key_path,
@@ -133,12 +133,12 @@ class Services(containers.DeclarativeContainer):
 
     login_handler_factory = providers.Singleton(
         AuthenticationHandlerFactory,
+        jwt_service_factory=encryption_services.jwt_service_factory,
         rate_limiter=rate_limiter,
         saml_identity_provider_service=saml_identity_provider_service,
         authentication_cache=storage.authentication_cache,
         saml_response_factory=saml_response_factory,
         userinfo_service=userinfo_service,
-        jwe_service_provider=encryption_services.jwe_service_provider,
         response_factory=response_factory,
         clients=pyop_services.clients,
         config=config,
