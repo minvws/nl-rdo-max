@@ -3,6 +3,7 @@
 from dependency_injector import containers, providers
 
 from app.services.encryption.jwe_service_provider import JweServiceProvider
+from app.services.encryption.jwt_service_factory import JWTServiceFactory
 from app.services.encryption.sym_encryption_service import SymEncryptionService
 
 
@@ -17,3 +18,5 @@ class EncryptionServices(containers.DeclarativeContainer):
         JweServiceProvider,
         config=config.jwe,
     )
+
+    jwt_service_factory = providers.Singleton(JWTServiceFactory)

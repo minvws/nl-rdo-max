@@ -38,6 +38,7 @@ class RSAJweService(JweService):
             },
             claims=data,
         )
+
         jwt_token.make_signed_token(self._private_sign_jwk_key)
         etoken = JWT(header=header, claims=jwt_token.serialize())
         etoken.make_encrypted_token(JWK.from_pem(pubkey.encode("utf-8")))
