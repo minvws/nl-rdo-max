@@ -54,12 +54,7 @@ class AuthenticationHandlerFactory:
         self._response_factory = response_factory
         self._clients = clients
         self._config = config
-        self._jwt_service = jwt_service_factory.create(
-            jwt_private_key_path=self._config["jwt"]["session_jwt_sign_priv_key_path"],
-            jwt_signing_certificate_path=self._config["jwt"][
-                "session_jwt_sign_crt_path"
-            ],
-        )
+        self._jwt_service_factory = jwt_service_factory
         self._saml_authentication_handler: Union[SamlAuthenticationHandler, None] = None
         self._mock_saml_authentication_handler: Union[
             MockSamlAuthenticationHandler, None
@@ -107,6 +102,12 @@ class AuthenticationHandlerFactory:
         return self._mock_saml_authentication_handler
 
     def create_external_session_service(self) -> ExternalSessionService:
+        jwt_service = self._jwt_service_factory.create(
+            jwt_private_key_path=self._config["jwt"]["session_jwt_sign_priv_key_path"],
+            jwt_signing_certificate_path=self._config["jwt"][
+                "session_jwt_sign_crt_path"
+            ],
+        )
         return ExternalSessionService(
             session_url=self._config["app"]["session_url"],
             external_http_requests_timeout_seconds=int(
@@ -114,7 +115,7 @@ class AuthenticationHandlerFactory:
             ),
             session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
             session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
-            jwt_service=self._jwt_service,
+            jwt_service=jwt_service,
         )
 
     def create_irma_authentication_handler(self) -> IrmaAuthenticationHandler:
