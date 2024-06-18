@@ -1,10 +1,10 @@
 import json
+import logging
 import secrets
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Any
 from urllib import parse
-from urllib.parse import urlencode, urlunparse
+from urllib.parse import urlencode, urlunparse, ParseResult
 
-import requests
 from fastapi import Request, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -20,6 +20,7 @@ from app.exceptions.max_exceptions import (
     InvalidRedirectUriException,
     InvalidResponseType,
 )
+from app.models.authentication_meta import AuthenticationMeta
 from app.providers.pyop_provider import MaxPyopProvider
 from app.exceptions.oidc_exceptions import LOGIN_REQUIRED
 from app.misc.rate_limiter import RateLimiter
@@ -27,6 +28,9 @@ from app.models.acs_context import AcsContext
 from app.models.authentication_context import AuthenticationContext
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
+from app.services.loginhandler.exchange_based_authentication_handler import (
+    ExchangeBasedAuthenticationHandler,
+)
 from app.services.template_service import TemplateService
 from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
@@ -35,6 +39,10 @@ from app.services.response_factory import ResponseFactory
 from app.services.saml.saml_response_factory import SamlResponseFactory
 from app.services.userinfo.userinfo_service import UserinfoService
 from app.storage.authentication_cache import AuthenticationCache
+from app.validators.token_authentication_validator import TokenAuthenticationValidator
+
+
+logger = logging.getLogger(__name__)
 
 
 # pylint:disable=too-many-arguments
@@ -44,20 +52,20 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         pyop_provider: MaxPyopProvider,
         authentication_cache: AuthenticationCache,
         rate_limiter: RateLimiter,
-        clients: dict,
+        clients: Dict[str, Dict[str, Any]],
         saml_response_factory: SamlResponseFactory,
         response_factory: ResponseFactory,
         userinfo_service: UserinfoService,
         app_mode: str,
         environment: str,
-        login_methods: List[Dict[str, str]],
+        login_methods: List[Dict[str, Union[str, bool]]],
         authentication_handler_factory: AuthenticationHandlerFactory,
         external_base_url: str,
-        session_url: str,
         external_http_requests_timeout_seconds: int,
         login_options_sidebar_template: str,
         template_service: TemplateService,
         allow_wildcard_redirect_uri: bool,
+        token_authentication_validator: TokenAuthenticationValidator,
     ):
         self._pyop_provider = pyop_provider
         self._authentication_cache = authentication_cache
@@ -71,7 +79,6 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self._login_methods = login_methods
         self._authentication_handler_factory = authentication_handler_factory
         self._external_base_url = external_base_url
-        self._session_url = session_url
         self._pyop_provider.configuration_information[
             "code_challenge_methods_supported"
         ] = ["S256"]
@@ -81,6 +88,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self._login_options_sidebar_template = login_options_sidebar_template
         self._template_service = template_service
         self._allow_wildcard_redirect_uri = allow_wildcard_redirect_uri
+        self._token_authentication_validator = token_authentication_validator
 
     def well_known(self):
         return JSONResponse(
@@ -128,7 +136,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self,
         request: Request,
         authorize_request: AuthorizeRequest,
-        login_option: Dict[str, str],
+        login_option: Dict[str, Union[str, bool]],
     ) -> Response:
         self._rate_limiter.validate_outage()
 
@@ -165,14 +173,17 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             else secrets.token_urlsafe(32)
         )
 
+        authentication_meta = AuthenticationMeta.create_authentication_meta(request)
+
         self._authentication_cache.cache_authentication_request_state(
             pyop_authentication_request,
             authorize_request,
             randstate,
             authentication_state,
-            login_option["name"],
+            str(login_option["name"]),
             session_id,
             req_acme_tokens=authorize_request.acme_tokens,
+            authentication_meta=authentication_meta,
         )
 
         return authorize_response.response
@@ -210,6 +221,17 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         return response_url
 
     def token(self, token_request: TokenRequest, headers: Headers) -> Response:
+        client = self._clients.get(token_request.client_id)
+        if client is None:
+            raise InvalidClientException(error_description="unknown client")
+
+        self._token_authentication_validator.validate_client_authentication(
+            client_id=token_request.client_id,
+            client=client,
+            client_assertion_jwt=token_request.client_assertion,
+            client_assertion_type=token_request.client_assertion_type,
+        )
+
         acs_context = self._authentication_cache.get_acs_context(token_request.code)
         if acs_context is None:
             raise HTTPException(
@@ -287,14 +309,23 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         if exchange_token != incoming_exchange_token:
             raise UnauthorizedError(error_description="Authentication Failed")
 
-        external_session_status = requests.get(
-            f"{self._session_url}/{exchange_token}/status",
-            headers={"Content-Type": "text/plain"},
-            timeout=self._external_http_requests_timeout_seconds,
+        login_method = next(
+            (
+                login_method
+                for login_method in self._login_methods
+                if login_method["name"] == authentication_context.authentication_method
+            )
         )
-        if external_session_status.status_code != 200:
-            raise UnauthorizedError(error_description="Authentication failed")
-        if external_session_status.json() != "DONE":
+        login_handler = self._authentication_handler_factory.create(login_method)
+        if not isinstance(login_handler, ExchangeBasedAuthenticationHandler):
+            raise ServerErrorException(
+                error_description="Incorrect login method assigned"
+            )
+        external_session_status = login_handler.get_external_session_status(
+            exchange_token
+        )
+
+        if external_session_status != "DONE":
             # Login aborted by user
             raise UnauthorizedError(
                 error=LOGIN_REQUIRED, error_description="Authentication cancelled"
@@ -325,8 +356,10 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
     def _get_login_methods(
         self, client: dict, authorize_request: AuthorizeRequest
-    ) -> List[Dict[str, str]]:
+    ) -> List[Dict[str, Union[str, bool]]]:
         login_methods = self._login_methods
+        for login_method in login_methods:
+            login_method["hidden"] = "hidden" in login_method and login_method["hidden"]
 
         if "login_methods" in client:
             login_methods = [
@@ -350,31 +383,12 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self,
         client_name: str,
         request: Request,
-        login_methods: List[Dict[str, str]],
+        login_methods: List[Dict[str, Union[str, bool]]],
     ) -> Union[None, Response]:
         if len(login_methods) > 1:
-            parsed_url = parse.urlparse(str(request.url))
-            base_url = parse.urlparse(self._external_base_url)
-
-            query_params = parse.parse_qs(parsed_url.query)
-
-            for login_method in login_methods:
-                query_params["login_hint"] = [login_method["name"]]
-                updated_query = urlencode(query_params, doseq=True)
-                combined_path = base_url.path + parsed_url.path
-                updated_url = urlunparse(
-                    (
-                        base_url.scheme,
-                        base_url.netloc,
-                        combined_path,
-                        parsed_url.params,
-                        updated_query,
-                        parsed_url.fragment,
-                    )
-                )
-                login_method["url"] = updated_url
-
-            login_method_by_name = {x["name"]: x for x in login_methods}
+            login_methods_by_name = self._get_login_methods_by_name(
+                request_url=str(request.url), login_methods=login_methods
+            )
 
             redirect_url_parts = parse.urlparse(request.query_params["redirect_uri"])
             query = dict(parse.parse_qsl(redirect_url_parts.query))
@@ -386,12 +400,11 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             )
             page_context = {
                 "ura_name": client_name,
-                "login_methods": login_method_by_name,
+                "login_methods": login_methods_by_name,
                 "redirect_uri": redirect_url_parts._replace(
                     query=parse.urlencode(query)
                 ).geturl(),
             }
-
             return self._template_service.render_layout(
                 request=request,
                 template_name="login_options.html",
@@ -447,3 +460,48 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         Wrapper method to expose pyop authorization method.
         """
         return self._pyop_provider.authorize(authorization_request, "_")
+
+    def _get_url_for_login_method(
+        self,
+        parsed_url: ParseResult,
+        base_url: ParseResult,
+        query_params: Dict[str, List[str]],
+        login_method_name: str,
+    ) -> str:
+        query_params["login_hint"] = [login_method_name]
+        updated_query = urlencode(query_params, doseq=True)
+        combined_path = base_url.path + parsed_url.path
+        updated_url = urlunparse(
+            (
+                base_url.scheme,
+                base_url.netloc,
+                combined_path,
+                parsed_url.params,
+                updated_query,
+                parsed_url.fragment,
+            )
+        )
+        return updated_url
+
+    def _get_login_methods_by_name(
+        self, request_url: str, login_methods: List[Dict[str, Union[str, bool]]]
+    ) -> Dict[str, Dict[str, Union[str, bool]]]:
+        base_url = parse.urlparse(self._external_base_url)
+
+        parsed_url = parse.urlparse(request_url)
+        query_params = parse.parse_qs(parsed_url.query)
+
+        login_methods_dict = {}
+        for login_method in login_methods:
+            login_method_name = str(login_method["name"])
+            login_methods_dict[login_method_name] = {
+                "name": login_method_name,
+                "text": str(login_method.get("text", "")),
+                "url": self._get_url_for_login_method(
+                    parsed_url, base_url, query_params, login_method_name
+                ),
+                "logo": str(login_method.get("logo", "")),
+                "hidden": login_method.get("hidden", False),
+            }
+
+        return login_methods_dict

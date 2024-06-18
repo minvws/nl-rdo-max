@@ -8,7 +8,7 @@ class ViteManifestService:
     def get_manifest(self) -> Dict[str, Dict[str, Any]]:
         return self.manifest
 
-    def get_asset_url(self, input_path) -> str:
+    def get_asset_url(self, input_path: str) -> str:
         if input_path not in self.manifest:
             raise ValueError(f"No asset found for input path: {input_path}")
 

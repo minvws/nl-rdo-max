@@ -8,7 +8,7 @@ Required settings:
 """
 
 import json
-from typing import Any, Text, Optional, Union, Type
+from typing import Any, Optional, Union, Type
 
 from redis import StrictRedis
 
@@ -111,7 +111,7 @@ class RedisCache(Cache):
     def get_and_delete_complex_object(self, key: str, clazz: Type) -> Any:
         return _deserialize(self.get_and_delete(key), clazz)
 
-    def gen_token(self) -> Text:
+    def gen_token(self) -> str:
         """
         Generate a random string, useful to generate unique keys that should be stored in the redis database.
         """

@@ -1,10 +1,15 @@
+import time
 from typing import List, Dict
 
 from unittest.mock import MagicMock, patch
 
 import pytest
+from cryptography.hazmat.primitives import hashes
 from fastapi.exceptions import HTTPException
+from configparser import ConfigParser
+from jwcrypto.jwt import JWT
 
+from app.constants import CLIENT_ASSERTION_TYPE
 from app.exceptions.max_exceptions import (
     ServerErrorException,
     UnauthorizedError,
@@ -12,6 +17,8 @@ from app.exceptions.max_exceptions import (
     InvalidClientException,
     InvalidResponseType,
 )
+from app.misc.utils import load_jwk
+from app.models.authentication_meta import AuthenticationMeta
 from app.models.authorize_request import AuthorizeRequest
 from app.models.response_type import ResponseType
 from app.providers.oidc_provider import OIDCProvider
@@ -30,10 +37,10 @@ def create_oidc_provider(
     login_methods: List[Dict[str, str]] = [{"name": "login_option"}],
     authentication_handler_factory=MagicMock(),
     external_base_url="external_base_url",
-    session_url="local.example",
     external_http_requests_timeout_seconds=2,
     template_service=MagicMock(),
     wildcard_allowed=False,
+    token_authentication_validator=MagicMock(),
 ):
     return OIDCProvider(
         pyop_provider,
@@ -48,11 +55,11 @@ def create_oidc_provider(
         login_methods,
         authentication_handler_factory,
         external_base_url,
-        session_url,
         external_http_requests_timeout_seconds,
         "sidebar.html",
         template_service,
         wildcard_allowed,
+        token_authentication_validator,
     )
 
 
@@ -81,17 +88,21 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
     template_service.render_layout = MagicMock()
     template_service.render_layout.return_value = template_response
 
+    client = {"name": "name"}
     oidc_provider = create_oidc_provider(
-        clients={"client_id": {"name": "name"}},
+        clients={"client_id": client},
+        login_methods=[{"name": "a"}, {"name": "b"}],
         external_base_url="http://base_url",
         template_service=template_service,
     )
-    request = MagicMock()
-    login_methods = [{"name": "a"}, {"name": "b"}]
 
+    request = MagicMock()
+    request.client_id = "client_id"
     request.url = (
         "http://localhost:8000/redirect_path?redirect_uri=redirect_uri&key=value"
     )
+
+    login_methods = oidc_provider._get_login_methods({"name": "name"}, request)
     request.query_params = {"redirect_uri": "redirect_uri?key=value"}
 
     actual = oidc_provider._provide_login_options_response(
@@ -107,11 +118,17 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
             "login_methods": {
                 "a": {
                     "name": "a",
+                    "text": "",
+                    "logo": "",
                     "url": "http://base_url/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=a",
+                    "hidden": False,
                 },
                 "b": {
                     "name": "b",
+                    "text": "",
+                    "logo": "",
                     "url": "http://base_url/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=b",
+                    "hidden": False,
                 },
             },
             "redirect_uri": "redirect_uri?key=value&error=login_required&error_description=Authentication+cancelled",
@@ -165,7 +182,7 @@ def test_get_login_methods():
     client = {"name": "name"}
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "a"}, {"name": "b"}]
+    assert actual == [{"name": "a", "hidden": False}, {"name": "b", "hidden": False}]
 
 
 def test_get_login_methods_with_invalid_option_provided():
@@ -178,7 +195,7 @@ def test_get_login_methods_with_invalid_option_provided():
     authorize_request.login_hints = ["a", "c"]
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "a"}]
+    assert actual == [{"name": "a", "hidden": False}]
 
 
 def test_get_login_methods_with_none_provided():
@@ -191,7 +208,7 @@ def test_get_login_methods_with_none_provided():
     authorize_request.login_hints = []
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "a"}, {"name": "b"}]
+    assert actual == [{"name": "a", "hidden": False}, {"name": "b", "hidden": False}]
 
 
 def test_get_login_methods_with_one_provided():
@@ -204,7 +221,7 @@ def test_get_login_methods_with_one_provided():
     authorize_request.login_hints = ["b"]
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "b"}]
+    assert actual == [{"name": "b", "hidden": False}]
 
 
 def test_get_login_methods_with_excluded_provided_method():
@@ -217,7 +234,7 @@ def test_get_login_methods_with_excluded_provided_method():
     authorize_request.login_hints = ["b"]
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "a"}]
+    assert actual == [{"name": "a", "hidden": False}]
 
 
 def test_get_login_methods_with_excluded_default_method():
@@ -230,7 +247,7 @@ def test_get_login_methods_with_excluded_default_method():
     authorize_request.login_hints = []
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "b"}]
+    assert actual == [{"name": "b", "hidden": False}]
 
 
 def test_get_login_methods_with_client_method():
@@ -243,7 +260,7 @@ def test_get_login_methods_with_client_method():
     authorize_request.login_hints = []
     authorize_request.client_id = "client_id"
     actual = oidc_provider._get_login_methods(client, authorize_request)
-    assert actual == [{"name": "b"}]
+    assert actual == [{"name": "b", "hidden": False}]
 
 
 def test_present_login_options_or_authorize():
@@ -425,6 +442,9 @@ def test_authorize():
     authorize_response.session_id = "session_id"
     authorize_response.response = "actual_response"
 
+    request.client.host = "some.ip.address"
+    request.headers = {"Authorization": "bearer some token"}
+
     oidc_provider = create_oidc_provider(
         pyop_provider=pyop_provider,
         rate_limiter=rate_limiter,
@@ -454,6 +474,8 @@ def test_authorize():
         pyop_authentication_request, authorize_request
     )
 
+    authentication_meta = AuthenticationMeta.create_authentication_meta(request)
+
     authentication_cache.cache_authentication_request_state.assert_called_with(
         pyop_authentication_request,
         authorize_request,
@@ -461,6 +483,7 @@ def test_authorize():
         authentication_state,
         login_option["name"],
         "session_id",
+        authentication_meta=authentication_meta,
         req_acme_tokens=None,
     )
 
@@ -520,9 +543,13 @@ def test_token_with_expired_authentication():
     authentication_cache = MagicMock()
     authentication_cache.get_acs_context.return_value = None
     token_request = MagicMock()
+    token_request.client_id = "client_id"
     headers = MagicMock()
     token_request.code = "c"
-    oidc_provider = create_oidc_provider(authentication_cache=authentication_cache)
+    oidc_provider = create_oidc_provider(
+        authentication_cache=authentication_cache,
+        clients={"client_id": {"name": "name"}},
+    )
     with pytest.raises(HTTPException):
         oidc_provider.token(token_request, headers)
     authentication_cache.get_acs_context.assert_called_with("c")
@@ -531,7 +558,6 @@ def test_token_with_expired_authentication():
 def test_token():
     pyop_provider = MagicMock()
     authentication_cache = MagicMock()
-    artifact_resolving_service = MagicMock()
     userinfo_service = MagicMock()
     token_request = MagicMock()
     headers = MagicMock()
@@ -540,6 +566,7 @@ def test_token():
     token_response = MagicMock()
     token_request.code = "c"
     token_request.query_string = "qs"
+    token_request.client_id = "client_id"
     authentication_cache.get_acs_context.return_value = acs_context
     pyop_provider.handle_token_request.return_value = token_response
     userinfo_service.request_userinfo_for_artifact.return_value = userinfo
@@ -547,12 +574,80 @@ def test_token():
         pyop_provider=pyop_provider,
         userinfo_service=userinfo_service,
         authentication_cache=authentication_cache,
+        clients={"client_id": {"name": "name"}},
     )
     assert token_response == oidc_provider.token(token_request, headers)
     authentication_cache.get_acs_context.assert_called_with("c")
     pyop_provider.handle_token_request.assert_called_with("qs", headers)
     authentication_cache.cache_userinfo_context.assert_called_with(
         token_response["access_token"], token_response["access_token"], acs_context
+    )
+
+
+def test_token_with_client_authentication_method():
+    config = ConfigParser()
+    config.read("tests/max.test.conf")
+
+    pyop_provider = MagicMock()
+    authentication_cache = MagicMock()
+    userinfo_service = MagicMock()
+    acs_context = MagicMock()
+    userinfo = MagicMock()
+    token_response = MagicMock()
+    token_authentication_validator = MagicMock()
+    authentication_cache.get_acs_context.return_value = acs_context
+    pyop_provider.handle_token_request.return_value = token_response
+    userinfo_service.request_userinfo_for_artifact.return_value = userinfo
+    clients = {
+        "client_id": {
+            "name": "name",
+            "client_authentication_method": "private_key_jwt",
+            "client_public_key_path": "secrets/clients/test_client/test_client.crt",
+            "client_private_key_path": "secrets/clients/test_client/test_client.key",
+            "client_authentication_method": "private_key_jwt",
+        }
+    }
+
+    oidc_provider = create_oidc_provider(
+        pyop_provider=pyop_provider,
+        userinfo_service=userinfo_service,
+        authentication_cache=authentication_cache,
+        clients=clients,
+        token_authentication_validator=token_authentication_validator,
+    )
+
+    client_id = "client_id"
+    client = clients[client_id]
+    client_private_key = load_jwk(client["client_private_key_path"])
+    client_assertion_jwt = JWT(
+        header={"alg": "RS256", "x5t": client_private_key.thumbprint(hashes.SHA256())},
+        claims={
+            "iss": "37692967-0a74-4e91-85ec-a4250e7ad5e8",
+            "sub": "37692967-0a74-4e91-85ec-a4250e7ad5e8",
+            "aud": "example.com",
+            "exp": int(time.time()),
+        },
+    )
+    client_assertion_jwt.make_signed_token(client_private_key)
+    token_request = MagicMock()
+    token_request.code = "c"
+    token_request.query_string = "qs"
+    token_request.client_id = client_id
+    token_request.client_assertion = client_assertion_jwt.serialize()
+    token_request.client_assertion_type = CLIENT_ASSERTION_TYPE
+    headers = MagicMock()
+
+    assert token_response == oidc_provider.token(token_request, headers)
+    authentication_cache.get_acs_context.assert_called_with("c")
+    pyop_provider.handle_token_request.assert_called_with("qs", headers)
+    authentication_cache.cache_userinfo_context.assert_called_with(
+        token_response["access_token"], token_response["access_token"], acs_context
+    )
+    token_authentication_validator.validate_client_authentication.assert_called_with(
+        client_id=token_request.client_id,
+        client=client,
+        client_assertion_jwt=token_request.client_assertion,
+        client_assertion_type=token_request.client_assertion_type,
     )
 
 

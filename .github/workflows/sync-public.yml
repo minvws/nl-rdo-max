@@ -1,0 +1,17 @@
+name: Public repo sync
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - v*
+
+jobs:
+  sync-public:
+    uses: minvws/nl-irealisatie-generic-pipelines/.github/workflows/repo-sync.yml@main
+    with:
+      repository: git@github.com:minvws/nl-rdo-max.git
+      ref: main
+      push_tags: true
+    secrets:
+      REPO_SYNC_PUSH_KEY: ${{ secrets.REPO_SYNC_PUSH_KEY }}

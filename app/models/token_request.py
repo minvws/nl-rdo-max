@@ -1,3 +1,4 @@
+from typing import Optional
 from urllib.parse import parse_qs
 
 from pydantic import BaseModel
@@ -10,6 +11,8 @@ class TokenRequest(BaseModel):
     redirect_uri: str
     code_verifier: str
     client_id: str
+    client_assertion_type: Optional[str] = None
+    client_assertion: Optional[str] = None
     query_string: str
 
     # pylint: disable=invalid-name

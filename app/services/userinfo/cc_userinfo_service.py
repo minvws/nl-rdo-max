@@ -4,7 +4,6 @@ import time
 from app.misc.utils import file_content_raise_if_none, strip_cert
 from app.models.authentication_context import AuthenticationContext
 from app.models.saml.artifact_response import ArtifactResponse
-from app.models.saml.saml_identity_provider import SamlIdentityProvider
 from app.services.encryption.jwe_service_provider import JweServiceProvider
 from app.services.userinfo.userinfo_service import UserinfoService
 
@@ -30,7 +29,6 @@ class CCUserinfoService(UserinfoService):
         self,
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
-        saml_identity_provider: SamlIdentityProvider,
         subject_identifier: str,
     ) -> str:
         client_id = authentication_context.authorization_request["client_id"]

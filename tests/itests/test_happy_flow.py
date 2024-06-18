@@ -12,7 +12,6 @@ import lxml.etree
 import lxml.html
 import pytest
 import requests
-import uvicorn
 from fastapi.testclient import TestClient
 from jwcrypto.jwt import JWT, JWK, JWKSet, JWE
 from nacl.encoding import Base64Encoder

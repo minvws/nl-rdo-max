@@ -6,13 +6,16 @@ class Version(Enum):
     V2 = 2
 
 
-class SomethingWrongReason(str, Enum):
-    OUTAGE = "outage"
-    TOO_BUSY = "too_busy"
-    TOO_MANY_REQUEST = "too_many_requests"
-    AUTH_BY_PROXY_DISABLED = "auth_by_proxy_disabled"
-
-
 class RedirectType(str, Enum):
     HTML = "html"
     HTTP = "http"
+
+
+# pylint:disable=no-member
+class ClientAssertionMethods(str, Enum):
+    PRIVATE_KEY_JWT = "private_key_jwt"
+    NONE = "none"
+
+    @classmethod
+    def to_list(cls):
+        return list(map(lambda member: member.value, cls._member_map_.values()))

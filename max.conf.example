@@ -27,9 +27,10 @@ user_authentication_sym_key = 00000000000000000000000000000000000000000000000000
 external_http_requests_timeout_seconds = 15
 version_file_path = static/version.json
 
-# possible values are en, nl
-language = nl
-oidc_error_map_path = lang/nl.json
+# path to the translation file of the configured language
+language_path = lang/nl.json
+
+include_log_message_in_error_response = True
 
 [jwe]
 # list with comma seperated values
@@ -86,6 +87,8 @@ use_ssl = True
 base_dir = secrets/ssl
 cert_file = server.crt
 key_file = server.key
+
+reload_includes = *.conf
 
 [oidc]
 certificates_directory = secrets/jwks-certs

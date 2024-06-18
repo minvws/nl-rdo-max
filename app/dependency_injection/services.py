@@ -19,6 +19,7 @@ from app.services.userinfo.cc_userinfo_service import CCUserinfoService
 from app.services.userinfo.cibg_userinfo_service import (
     CIBGUserinfoService,
 )
+from app.validators.token_authentication_validator import TokenAuthenticationValidator
 
 
 def as_redirect_type(value):
@@ -45,6 +46,16 @@ class Services(containers.DeclarativeContainer):
         manifest=providers.Callable(
             json_from_file, config.templates.vite_manifest_path
         ),
+    )
+
+    language_map = providers.Callable(json_from_file, config.app.language_path)
+    include_log_message_in_error_response = (
+        config.app.include_log_message_in_error_response.as_(as_bool)
+    )
+
+    token_authentication_validator = providers.Singleton(
+        TokenAuthenticationValidator,
+        oidc_configuration_info=pyop_services.pyop_configuration_information,
     )
 
     template_service = providers.Singleton(
@@ -85,7 +96,7 @@ class Services(containers.DeclarativeContainer):
 
     cibg_userinfo_service = providers.Singleton(
         CIBGUserinfoService,
-        jwe_service_provider=encryption_services.jwe_service_provider,
+        jwt_service_factory=encryption_services.jwt_service_factory,
         environment=config.app.environment,
         clients=pyop_services.clients,
         userinfo_request_signing_priv_key_path=config.jwe.jwe_sign_priv_key_path,
@@ -122,12 +133,12 @@ class Services(containers.DeclarativeContainer):
 
     login_handler_factory = providers.Singleton(
         AuthenticationHandlerFactory,
+        jwt_service_factory=encryption_services.jwt_service_factory,
         rate_limiter=rate_limiter,
         saml_identity_provider_service=saml_identity_provider_service,
         authentication_cache=storage.authentication_cache,
         saml_response_factory=saml_response_factory,
         userinfo_service=userinfo_service,
-        jwe_service_provider=encryption_services.jwe_service_provider,
         response_factory=response_factory,
         clients=pyop_services.clients,
         config=config,
@@ -147,13 +158,13 @@ class Services(containers.DeclarativeContainer):
         login_methods=config.app.login_methods_file_path.as_(json_from_file),
         authentication_handler_factory=login_handler_factory,
         external_base_url=config.app.external_base_url,
-        session_url=config.app.session_url,
         external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
         login_options_sidebar_template=config.templates.login_options_sidebar_template,
         template_service=template_service,
         allow_wildcard_redirect_uri=config.oidc.allow_wildcard_redirect_uri.as_(
             as_bool
         ),
+        token_authentication_validator=token_authentication_validator,
     )
 
     digid_mock_provider = providers.Singleton(

@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+import uuid
 from typing import Union
 from urllib import parse
 
@@ -123,25 +124,22 @@ class SamlResponseFactory:
             session_id=auth.get_last_request_id(),
         )
 
-    def create_saml_mock_response(
-        self, saml_identity_provider, authorize_request, randstate
-    ):
+    def create_saml_mock_response(self, authorize_request, randstate):
         base64_authn_request = base64.urlsafe_b64encode(
             json.dumps(authorize_request.dict()).encode()
         ).decode()
         sso_url = "digid-mock?" + parse.urlencode(
             {
                 "state": randstate,
-                "idp_name": saml_identity_provider.name,
+                "idp_name": "mock",
                 "authorize_request": base64_authn_request,
             }
         )
-        authn_request = saml_identity_provider.create_authn_request([], [])
         template = Template(self._authn_request_template)
         rendered = template.render(
             {
                 "sso_url": sso_url,
-                "saml_request": authn_request.get_base64_string().decode(),
+                "saml_request": uuid.uuid4(),
                 "relay_state": randstate,
                 "vite_asset": self._vite_manifest_service.get_asset_url,
             }

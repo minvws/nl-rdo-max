@@ -6,12 +6,14 @@
         "redirect_uris": [
             "http://localhost:3000/login",
             "http://localhost:8000/uzi-login",
-            "http://localhost:8000/oidc/login"
+            "http://localhost:8000/oidc/login",
+            "http://localhost:9000/oidc/login"
         ],
         "response_types": ["code"],
         "pubkey_type": "RSA",
-        "client_public_key_path": "secrets/clients/test_client/test_client.crt",
-        "exclude_login_methods": ["yivi"]
+        "client_public_key_path": "secrets/clients/laravel-demo/nl-uzipoc-php-laravel-demo.crt",
+        "exclude_login_methods": ["yivi"],
+        "client_authentication_method": "none"
     },
     "c512596d-43e0-430a-8926-6e5a53cb9ebc": {
         "name": "Test Client",
@@ -25,6 +27,7 @@
         "pubkey_type": "RSA",
         "client_public_key_path": "secrets/clients/dusi/client.cert",
         "login_methods": ["digid_mock"],
+        "client_authentication_method": "none"
     },
     "006fbf34-a80b-4c81-b6e9-593600675fb1": {
         "name": "uzip oidc client POC",
@@ -38,6 +41,7 @@
         "error_page": "http://localhost:8000/login",
         "response_types": ["code"],
         "pubkey_type": "RSA",
-        "client_public_key_path": "secrets/clients/test_client/test_client.crt"
+        "client_public_key_path": "secrets/clients/test_client/test_client.crt",
+        "client_authentication_method": "none"
     }
 }

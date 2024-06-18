@@ -1,11 +1,14 @@
 # pylint: disable=c-extension-no-member, too-few-public-methods
 import logging
+import urllib.parse
 from configparser import ConfigParser
 from typing import Type, Union, Callable, Tuple, List
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 
 import app.dependency_injection.container
 from app.dependency_injection.config import get_config, get_swagger_config
@@ -21,6 +24,7 @@ from app.routers.docs_router import DocsRouter
 
 _exception_handlers: List[Tuple[Union[int, Type[Exception]], Callable]] = [
     (Exception, general_exception_handler),
+    (RequestValidationError, general_exception_handler),
 ]
 
 
@@ -34,6 +38,11 @@ def kwargs_from_config():
         "proxy_headers": True,
         "workers": config.getint("uvicorn", "workers"),
     }
+
+    reload_includes = config.get("uvicorn", "reload_includes", fallback=None)
+    if reload_includes is not None and reload_includes != "":
+        kwargs["reload_includes"] = config.get("uvicorn", "reload_includes").split(" ")
+
     if config.getboolean("uvicorn", "use_ssl"):
         kwargs["ssl_keyfile"] = (
             config.get("uvicorn", "base_dir") + "/" + config.get("uvicorn", "key_file")
@@ -51,6 +60,16 @@ def _add_exception_handlers(fastapi: FastAPI):
 
 def run():
     uvicorn.run("app.application:create_fastapi_app", **kwargs_from_config())
+
+
+def _parse_origins(container: Container) -> List[str]:
+    clients = container.pyop_services.clients()
+    origins = []
+    for client in clients:
+        for redirect_url in clients[client]["redirect_uris"]:
+            parsed = urllib.parse.urlparse(redirect_url)
+            origins.append(parsed.scheme + "://" + parsed.netloc)
+    return origins
 
 
 def create_fastapi_app(
@@ -107,5 +126,6 @@ def create_fastapi_app(
     app.dependency_injection.container._container = (  # pylint: disable=protected-access
         container
     )
+    fastapi.add_middleware(CORSMiddleware, allow_origins=_parse_origins(container))
     _add_exception_handlers(fastapi)
     return fastapi

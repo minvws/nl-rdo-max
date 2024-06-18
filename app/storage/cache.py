@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Text, Optional, Union, Type
+from typing import Any, Optional, Union, Type
 
 
 class Cache(abc.ABC):
@@ -44,5 +44,5 @@ class Cache(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def gen_token(self) -> Text:
+    def gen_token(self) -> str:
         pass

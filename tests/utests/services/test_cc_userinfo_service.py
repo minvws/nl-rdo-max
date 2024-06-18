@@ -49,7 +49,6 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
     actual_result = service_to_test.request_userinfo_for_digid_artifact(
         authentication_context=authentication_context_mock,
         artifact_response=artifact_response_mock,
-        saml_identity_provider=saml_identity_provider_mock,
         subject_identifier="123456",
     )
 

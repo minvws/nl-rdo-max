@@ -45,7 +45,7 @@ def pyop_configuration_information_callable(
         "response_modes_supported": ["query"],
         "grant_types_supported": ["authorization_code"],
         "subject_types_supported": ["pairwise"],
-        "token_endpoint_auth_methods_supported": ["none"],
+        "token_endpoint_auth_methods_supported": ["none", "private_key_jwt"],
         "claims_parameter_supported": True,
         "userinfo_endpoint": issuer + userinfo_endpoint,
     }

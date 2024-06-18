@@ -11,6 +11,7 @@ from app.constants import (
 )
 from app.models.acs_context import AcsContext
 from app.models.authentication_context import AuthenticationContext
+from app.models.authentication_meta import AuthenticationMeta
 from app.models.userinfo_context import UserinfoContext
 from app.models.authorize_request import AuthorizeRequest
 from app.services.encryption.sym_encryption_service import SymEncryptionService
@@ -54,6 +55,7 @@ class AuthenticationCache:
         login_option: str,
         session_id: str,
         req_acme_tokens: Optional[List[str]],
+        authentication_meta: AuthenticationMeta,
     ) -> None:
         authentication_context = AuthenticationContext(
             authorization_request=authorization_request,
@@ -62,6 +64,7 @@ class AuthenticationCache:
             authentication_state=authentication_state,
             session_id=session_id,
             req_acme_tokens=req_acme_tokens,
+            authentication_meta=authentication_meta,
         )
         self.cache_authentication_context(randstate, authentication_context)
 
@@ -99,7 +102,7 @@ class AuthenticationCache:
                     access_token=access_token,
                     userinfo=acs_context.userinfo,
                 )
-                .json()
+                .model_dump_json()
                 .encode("utf-8")
             )
         )
