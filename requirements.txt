@@ -122,7 +122,7 @@ packaging==23.2
     #   pytest
 pathspec==0.12.1
     # via black
-pbr==5.11.1
+pbr==6.0.0
     # via stevedore
 platformdirs==4.2.0
     # via
