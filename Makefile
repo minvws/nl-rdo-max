@@ -59,6 +59,6 @@ type-check:
 	. .venv/bin/activate && ${env} MYPYPATH=stubs/ mypy --show-error-codes app
 
 coverage:
-	. .venv/bin/activate && ${env} coverage run -m pytest tests && coverage report && coverage html
+	. .venv/bin/activate && ${env} coverage run -m pytest tests && coverage report && coverage html && coverage xml
 
 check-all: fix check type-check test audit

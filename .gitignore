@@ -11,6 +11,8 @@ __pycache__
 *.swp
 *.pyc
 .coverage*
+!.coveragerc
+coverage.xml
 .DS_Store
 *.bak
 ## Configuration and secrets
