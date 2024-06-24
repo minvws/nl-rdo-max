@@ -17,6 +17,8 @@ loglevel = debug
 
 login_methods_file_path = login_methods.json
 
+json_schema_path = json_schema.json
+
 # only used with html redirect
 redirect_html_delay = 5
 # possible values: http, html
