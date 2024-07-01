@@ -4,6 +4,7 @@ import json
 import os
 import re
 import secrets
+import time
 from datetime import datetime
 from urllib.parse import urlparse, parse_qs, urlencode
 from typing import Union
@@ -38,10 +39,11 @@ def test_external_application():
 
 
 # pylint:disable=unused-argument
-def test_legacy_flow(lazy_app, config, app_mode_legacy, legacy_client, pynacl_keys):
+def test_legacy_flow(lazy_app, config, app_mode_legacy, legacy_client, pynacl_keys, redis):
     base_uri = config["oidc"]["issuer"]
     app = lazy_app.value
     client_id = legacy_client[0]
+    redis.set("max:primary_identity_provider", "tvs")
 
     openid_configuration, access_token_response, _ = base_flow(
         app=app, base_uri=base_uri, client_id=client_id
@@ -52,10 +54,11 @@ def test_legacy_flow(lazy_app, config, app_mode_legacy, legacy_client, pynacl_ke
     )
 
 
-def test_flow(lazy_app, config, app_mode_default, client, lazy_container):
+def test_flow(lazy_app, config, app_mode_default, client, lazy_container, redis):
     base_uri = config["oidc"]["issuer"]
     app = lazy_app.value
     client_id = client[0]
+    redis.set("max:primary_identity_provider", "tvs")
 
     openid_configuration, access_token_response, jwk_set = base_flow(
         app, base_uri, client_id
@@ -64,6 +67,7 @@ def test_flow(lazy_app, config, app_mode_default, client, lazy_container):
 
 
 def base_flow(app: Union[None, TestClient], base_uri, client_id):
+    # time.sleep(300)
     code_verifier = base64.urlsafe_b64encode(os.urandom(40)).decode("utf-8")
     code_verifier = re.sub("[^a-zA-Z0-9]+", "", code_verifier)
     oidc_configuration = get_request(
@@ -73,7 +77,6 @@ def base_flow(app: Union[None, TestClient], base_uri, client_id):
     jwk_set = JWKSet.from_json(
         json.dumps(get_request(app, oidc_configuration["jwks_uri"]).json())
     )
-
     authorize_request = fetch_authorize_request(
         app, oidc_configuration, code_verifier, client_id
     )
