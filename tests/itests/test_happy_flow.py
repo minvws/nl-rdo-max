@@ -4,7 +4,6 @@ import json
 import os
 import re
 import secrets
-import time
 from datetime import datetime
 from urllib.parse import urlparse, parse_qs, urlencode
 from typing import Union
@@ -67,7 +66,6 @@ def test_flow(lazy_app, config, app_mode_default, client, lazy_container, redis)
 
 
 def base_flow(app: Union[None, TestClient], base_uri, client_id):
-    # time.sleep(300)
     code_verifier = base64.urlsafe_b64encode(os.urandom(40)).decode("utf-8")
     code_verifier = re.sub("[^a-zA-Z0-9]+", "", code_verifier)
     oidc_configuration = get_request(
