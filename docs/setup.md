@@ -1,6 +1,6 @@
 # Setup
 
-As Inge6 is a OIDC <-> SAML bridge, one has to have files for both. Each file is described below. Further, one needs to create an `inge6.conf` to define all settings. An example is found in inge6.conf.example with the corresponding explanations
+As Inge6 is a OIDC <-> SAML bridge, one has to have files for both. Each file is described below. Further, one needs to create an `max.conf` to define all settings. An example is found in max.conf.example with the corresponding explanations
 
 ## OIDC
 For the Open ID Connect protocol we need a file containing the allowed clients. These clients are defined in the `clients_file` setting in the settings file. An example of such a file is found under `clients.json.example`. Finally, one needs to setup a public-private keypair for signing and verification of JWT tokens. Both locations configurable in the settings file.
