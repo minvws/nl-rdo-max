@@ -38,7 +38,9 @@ def test_external_application():
 
 
 # pylint:disable=unused-argument
-def test_legacy_flow(lazy_app, config, app_mode_legacy, legacy_client, pynacl_keys, redis):
+def test_legacy_flow(
+    lazy_app, config, app_mode_legacy, legacy_client, pynacl_keys, redis
+):
     base_uri = config["oidc"]["issuer"]
     app = lazy_app.value
     client_id = legacy_client[0]

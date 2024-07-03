@@ -137,6 +137,7 @@ class AuthNRequest(SAMLRequest):
         if not self.sp_metadata.clustered:
             return None
 
+        cluster_name = self.cluster_name
         if not self.cluster_name:
             # if no cluster name is passed, use the first defined connection
             cluster_name = list(
