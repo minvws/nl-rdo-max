@@ -44,7 +44,7 @@ setup: venv setup-config setup-saml setup-secrets setup-npm
 
 check:
 	. .venv/bin/activate && ${env} pylint app
-	. .venv/bin/activate && ${env} black --check app
+	. .venv/bin/activate && ${env} black --check app tests
 
 audit:
 	. .venv/bin/activate && ${env} bandit app

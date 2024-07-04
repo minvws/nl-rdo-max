@@ -60,6 +60,9 @@ jobs:
       - name: Linting (pylint & black)
         run: make check
 
+      - name: Typing (mypy)
+        run: make type-check
+
       - name: Audit (bandit)
         run: make audit
 
