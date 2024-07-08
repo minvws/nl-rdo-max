@@ -94,7 +94,7 @@ lxml==5.2.2
     #   app (setup.py)
     #   python3-saml
     #   xmlsec
-mako==1.2.4
+mako==1.3.5
     # via oic
 markdown-it-py==3.0.0
     # via rich
