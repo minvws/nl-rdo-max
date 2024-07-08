@@ -114,7 +114,7 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   mypy
-oic==1.6.1
+oic==1.7.0
     # via pyop
 packaging==24.1
     # via
