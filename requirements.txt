@@ -147,7 +147,7 @@ pydantic==2.7.4
     #   pydantic-settings
 pydantic-core==2.16.3
     # via pydantic
-pydantic-settings==2.2.1
+pydantic-settings==2.3.4
     # via oic
 pyflakes==3.2.0
     # via autoflake
