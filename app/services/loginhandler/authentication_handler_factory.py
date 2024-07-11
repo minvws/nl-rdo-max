@@ -19,8 +19,8 @@ from app.services.loginhandler.oidc_authentication_handler import (
 from app.services.loginhandler.saml_authentication_handler import (
     SamlAuthenticationHandler,
 )
-from app.services.loginhandler.irma_authentication_handler import (
-    IrmaAuthenticationHandler,
+from app.services.loginhandler.yivi_authentication_handler import (
+    YiviAuthenticationHandler,
 )
 from app.services.loginhandler.uzi_authentication_handler import (
     UziAuthenticationHandler,
@@ -59,7 +59,7 @@ class AuthenticationHandlerFactory:
         self._mock_saml_authentication_handler: Union[
             MockSamlAuthenticationHandler, None
         ] = None
-        self._irma_authentication_handler: Union[IrmaAuthenticationHandler, None] = None
+        self._yivi_authentication_handler: Union[YiviAuthenticationHandler, None] = None
         self._uzi_authentication_handler: Union[UziAuthenticationHandler, None] = None
         self._oidc_authentication_handler: Union[OidcAuthenticationHandler, None] = None
 
@@ -72,7 +72,7 @@ class AuthenticationHandlerFactory:
             if authentication_method["name"] == "digid_mock":
                 return self.create_mock_saml_authentication_handler()
             if authentication_method["name"] == "yivi":
-                return self.create_irma_authentication_handler()
+                return self.create_yivi_authentication_handler()
             if authentication_method["name"] == "uzipas":
                 return self.create_uzi_authentication_handler()
         if authentication_method["type"] == "oidc":
@@ -118,16 +118,16 @@ class AuthenticationHandlerFactory:
             jwt_service=jwt_service,
         )
 
-    def create_irma_authentication_handler(self) -> IrmaAuthenticationHandler:
-        if self._irma_authentication_handler is None:
+    def create_yivi_authentication_handler(self) -> YiviAuthenticationHandler:
+        if self._yivi_authentication_handler is None:
             external_session_service = self.create_external_session_service()
-            self._irma_authentication_handler = IrmaAuthenticationHandler(
+            self._yivi_authentication_handler = YiviAuthenticationHandler(
                 response_factory=self._response_factory,
-                irma_login_redirect_url=self._config["irma"]["irma_login_redirect_url"],
+                yivi_login_redirect_url=self._config["yivi"]["yivi_login_redirect_url"],
                 clients=self._clients,
                 external_session_service=external_session_service,
             )
-        return self._irma_authentication_handler
+        return self._yivi_authentication_handler
 
     def create_uzi_authentication_handler(self) -> UziAuthenticationHandler:
         if self._uzi_authentication_handler is None:
