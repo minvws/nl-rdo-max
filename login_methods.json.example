@@ -24,7 +24,7 @@
     "type": "oidc",
     "hidden": true
   },
-   {
+  {
     "name": "identities",
     "logo": "",
     "text": "",

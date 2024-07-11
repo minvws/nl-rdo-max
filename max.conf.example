@@ -52,9 +52,9 @@ session_jwt_audience = nl-uzi-login-controller
 session_jwt_sign_priv_key_path = secrets/nl-rdo-max-private.key
 session_jwt_sign_crt_path = secrets/nl-rdo-max-private.crt
 
-# optional section when login method doesn't contain irma
-[irma]
-irma_login_redirect_url = http://localhost:8001/login/yivi
+# this section is optional when login_methods doesn't contain yivi
+[yivi]
+yivi_login_redirect_url = http://localhost:8001/login/yivi
 
 [uzi]
 uzi_login_redirect_url = https://localhost:8443/login/uzi

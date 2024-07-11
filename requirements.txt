@@ -8,8 +8,9 @@ annotated-types==0.6.0
     # via pydantic
 anyio==4.3.0
     # via
-    #   httpcore
+    #   httpx
     #   starlette
+    #   watchfiles
 astroid==3.2.2
     # via pylint
 attrs==23.2.0
@@ -34,6 +35,7 @@ charset-normalizer==3.3.2
 click==8.1.7
     # via
     #   black
+    #   typer
     #   uvicorn
 coverage==7.5.4
     # via
@@ -54,27 +56,34 @@ dependency-injector==4.41.0
     # via app (setup.py)
 dill==0.3.8
     # via pylint
+dnspython==2.6.1
+    # via email-validator
+email-validator==2.2.0
+    # via fastapi
 fastapi==0.111.0
     # via app (setup.py)
+fastapi-cli==0.0.4
+    # via fastapi
 freezegun==1.4.0
     # via app (setup.py)
 future==0.18.3
     # via pyjwkest
-gitdb==4.0.11
-    # via gitpython
-gitpython==3.1.43
-    # via bandit
 h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
 httpcore==1.0.5
     # via httpx
+httptools==0.6.1
+    # via uvicorn
 httpx==0.27.0
-    # via app (setup.py)
+    # via
+    #   app (setup.py)
+    #   fastapi
 idna==3.7
     # via
     #   anyio
+    #   email-validator
     #   httpx
     #   requests
 iniconfig==2.0.0
@@ -84,11 +93,11 @@ isodate==0.6.1
 isort==5.12.0
     # via pylint
 jinja2==3.1.4
-    # via app (setup.py)
+    # via
+    #   app (setup.py)
+    #   fastapi
 jwcrypto==1.5.6
     # via app (setup.py)
-lazy-object-proxy==1.10.0
-    # via astroid
 lxml==5.2.2
     # via
     #   app (setup.py)
@@ -116,6 +125,8 @@ mypy-extensions==1.0.0
     #   mypy
 oic==1.7.0
     # via pyop
+orjson==3.10.6
+    # via fastapi
 packaging==24.1
     # via
     #   black
@@ -145,7 +156,7 @@ pydantic==2.7.4
     # via
     #   fastapi
     #   pydantic-settings
-pydantic-core==2.16.3
+pydantic-core==2.18.4
     # via pydantic
 pydantic-settings==2.3.4
     # via oic
@@ -178,13 +189,19 @@ pytest-redis==3.1.2
 python-dateutil==2.9.0.post0
     # via freezegun
 python-dotenv==1.0.1
-    # via pydantic-settings
+    # via
+    #   pydantic-settings
+    #   uvicorn
 python-multipart==0.0.9
-    # via app (setup.py)
+    # via
+    #   app (setup.py)
+    #   fastapi
 python3-saml==1.16.0
     # via app (setup.py)
 pyyaml==6.0.1
-    # via bandit
+    # via
+    #   bandit
+    #   uvicorn
 redis==5.0.3
     # via
     #   app (setup.py)
@@ -194,19 +211,20 @@ requests==2.32.3
     #   oic
     #   pyjwkest
 rich==13.7.1
-    # via bandit
+    # via
+    #   bandit
+    #   typer
+shellingham==1.5.4
+    # via typer
 six==1.16.0
     # via
     #   dependency-injector
     #   isodate
     #   pyjwkest
     #   python-dateutil
-smmap==5.0.1
-    # via gitdb
 sniffio==1.3.1
     # via
     #   anyio
-    #   httpcore
     #   httpx
 starlette==0.37.2
     # via fastapi
@@ -214,6 +232,8 @@ stevedore==5.2.0
     # via bandit
 tomlkit==0.12.4
     # via pylint
+typer==0.12.3
+    # via fastapi-cli
 types-cffi==1.16.0.20240331
     # via types-pyopenssl
 types-pyopenssl==24.1.0.20240425
@@ -233,14 +253,23 @@ typing-extensions==4.8.0
     #   mypy
     #   pydantic
     #   pydantic-core
+    #   typer
+ujson==5.10.0
+    # via fastapi
 urllib3==2.2.2
     # via
     #   requests
     #   types-requests
-uvicorn==0.30.1
-    # via app (setup.py)
-wrapt==1.15.0
-    # via astroid
+uvicorn[standard]==0.30.1
+    # via
+    #   app (setup.py)
+    #   fastapi
+uvloop==0.19.0
+    # via uvicorn
+watchfiles==0.22.0
+    # via uvicorn
+websockets==12.0
+    # via uvicorn
 xmlsec==1.3.14
     # via
     #   app (setup.py)

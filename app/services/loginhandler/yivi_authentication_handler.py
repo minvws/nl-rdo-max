@@ -17,15 +17,15 @@ from app.services.response_factory import ResponseFactory
 logger = logging.getLogger(__name__)
 
 
-class IrmaAuthenticationHandler(ExchangeBasedAuthenticationHandler):
+class YiviAuthenticationHandler(ExchangeBasedAuthenticationHandler):
     def __init__(
         self,
         response_factory: ResponseFactory,
-        irma_login_redirect_url: str,
+        yivi_login_redirect_url: str,
         external_session_service: ExternalSessionService,
         clients: Dict[str, Any],
     ):
-        self._irma_login_redirect_url = irma_login_redirect_url
+        self._yivi_login_redirect_url = yivi_login_redirect_url
         self._external_session_service = external_session_service
         self._clients = clients
         self._response_factory = response_factory
@@ -35,13 +35,13 @@ class IrmaAuthenticationHandler(ExchangeBasedAuthenticationHandler):
     ) -> Dict[str, Any]:
         client = self._clients[authorize_request.client_id]
         claims = {
-            "session_type": "irma",
+            "session_type": "yivi",
             "login_title": client["name"],
         }
-        irma_response = self._external_session_service.create_session(
+        yivi_response = self._external_session_service.create_session(
             claims, claims["session_type"]
         )
-        return irma_response
+        return yivi_response
 
     def authorize_response(
         self,
@@ -53,7 +53,7 @@ class IrmaAuthenticationHandler(ExchangeBasedAuthenticationHandler):
     ) -> AuthorizeResponse:
         return AuthorizeResponse(
             response=self._response_factory.create_redirect_response(
-                redirect_url=f"{self._irma_login_redirect_url}/{authentication_state['exchange_token']}?state={randstate}"
+                redirect_url=f"{self._yivi_login_redirect_url}/{authentication_state['exchange_token']}?state={randstate}"
             )
         )
 
