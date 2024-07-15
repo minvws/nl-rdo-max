@@ -244,7 +244,7 @@ types-redis==4.6.0.20240425
     # via app (setup.py)
 types-requests==2.32.0.20240622
     # via app (setup.py)
-types-setuptools==69.5.0.20240423
+types-setuptools==70.3.0.20240710
     # via types-cffi
 typing-extensions==4.8.0
     # via
