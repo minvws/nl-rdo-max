@@ -43,7 +43,7 @@ coverage==7.5.4
     #   coverage-badge
 coverage-badge==1.1.0
     # via app (setup.py)
-cryptography==42.0.4
+cryptography==42.0.8
     # via
     #   jwcrypto
     #   oic
