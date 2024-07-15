@@ -152,7 +152,7 @@ pycryptodomex==3.20.0
     #   oic
     #   pyjwkest
     #   pyop
-pydantic==2.7.4
+pydantic==2.8.2
     # via
     #   fastapi
     #   pydantic-settings
