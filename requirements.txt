@@ -246,7 +246,7 @@ types-requests==2.32.0.20240622
     # via app (setup.py)
 types-setuptools==70.3.0.20240710
     # via types-cffi
-typing-extensions==4.8.0
+typing-extensions==4.12.2
     # via
     #   fastapi
     #   jwcrypto
