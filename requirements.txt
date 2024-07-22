@@ -41,7 +41,7 @@ coverage==7.6.0
     # via
     #   app (setup.py)
     #   coverage-badge
-coverage-badge==1.1.0
+coverage-badge==1.1.1
     # via app (setup.py)
 cryptography==42.0.8
     # via
