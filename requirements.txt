@@ -64,7 +64,7 @@ fastapi==0.111.0
     # via app (setup.py)
 fastapi-cli==0.0.4
     # via fastapi
-freezegun==1.4.0
+freezegun==1.5.1
     # via app (setup.py)
 future==1.0.0
     # via pyjwkest
