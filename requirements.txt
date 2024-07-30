@@ -230,7 +230,7 @@ starlette==0.37.2
     # via fastapi
 stevedore==5.2.0
     # via bandit
-tomlkit==0.12.4
+tomlkit==0.13.0
     # via pylint
 typer==0.12.3
     # via fastapi-cli
