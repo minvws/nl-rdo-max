@@ -236,7 +236,7 @@ typer==0.12.3
     # via fastapi-cli
 types-cffi==1.16.0.20240331
     # via types-pyopenssl
-types-pyopenssl==24.1.0.20240425
+types-pyopenssl==24.1.0.20240722
     # via types-redis
 types-python-dateutil==2.9.0.20240316
     # via app (setup.py)
