@@ -174,7 +174,7 @@ pyop==3.4.1
     # via app (setup.py)
 pyopenssl==24.1.0
     # via app (setup.py)
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   app (setup.py)
     #   pytest-docker
