@@ -18,7 +18,9 @@ def get_loc_bind(element) -> Dict[str, str]:
     return {"location": location, "binding": binding}
 
 
-def has_valid_signature(root, signature_node, signing_certificates: dict[str, str] = {}):
+def has_valid_signature(root, signature_node, signing_certificates: Union[dict[str, str],None] = None):
+    if signing_certificates is None:
+        raise xmlsec.VerificationError
     signature_key = signature_node.find(".//dsig:KeyName", NAMESPACES).text
     key = xmlsec.Key.from_memory(
         signing_certificates[signature_key], xmlsec.constants.KeyDataFormatCertPem
@@ -58,7 +60,7 @@ def is_advice_node(node: etree.Element, advice_nodes: List[etree.Element]):
 
 def has_valid_signatures(
     root: lxml.etree,
-    signing_certificates: dict[str, str] = {},
+    signing_certificates: Union[dict[str, str],None] = None,
 ) -> Tuple[Any, bool]:
     signature_nodes: List[etree.Element] = root.findall(".//dsig:Signature", NAMESPACES)
     advice_nodes: List[etree.Element] = root.findall(".//saml2:Advice", NAMESPACES)
