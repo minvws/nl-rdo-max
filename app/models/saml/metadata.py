@@ -303,7 +303,7 @@ class IdPMetadata:
         resolution_service = self.find_in_md("ArtifactResolutionService")
         return get_loc_bind(resolution_service)
 
-    def get_signing_certificates(self) -> Dict[str,str]:
+    def get_signing_certificates(self) -> Dict[str, str]:
         signing_certificates = {}
         for key_descriptor in self.template.findall(
             ".//md:IDPSSODescriptor//md:KeyDescriptor", NAMESPACES
