@@ -314,9 +314,9 @@ class IdPMetadata:
                     ".//dsig:X509Certificate", NAMESPACES
                 ).text
                 cert = enforce_cert_newlines(cert_data)
-                signing_certificates[
-                    keyname
-                ] = f"""-----BEGIN CERTIFICATE-----\n{cert}\n-----END CERTIFICATE-----"""
+                signing_certificates[keyname] = (
+                    f"""-----BEGIN CERTIFICATE-----\n{cert}\n-----END CERTIFICATE-----"""
+                )
         return signing_certificates
 
     def get_sso(self, binding="POST") -> Dict[str, str]:
