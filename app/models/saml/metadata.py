@@ -303,12 +303,12 @@ class IdPMetadata:
 
     def get_signing_certificates(self) -> {}:
         signing_certificates = {}
-        for key_destriptor in self.template.findall(
+        for key_descriptor in self.template.findall(
             ".//md:IDPSSODescriptor//md:KeyDescriptor", NAMESPACES
         ):
-            if key_destriptor.attrib.get("use") == "signing":
-                keyname = key_destriptor.find(".//dsig:KeyName", NAMESPACES).text
-                cert_data = key_destriptor.find(".//dsig:X509Certificate", NAMESPACES).text
+            if key_descriptor.attrib.get("use") == "signing":
+                keyname = key_descriptor.find(".//dsig:KeyName", NAMESPACES).text
+                cert_data = key_descriptor.find(".//dsig:X509Certificate", NAMESPACES).text
                 cert = enforce_cert_newlines(cert_data)
                 signing_certificates[keyname] = f"""-----BEGIN CERTIFICATE-----\n{cert}\n-----END CERTIFICATE-----"""
         return signing_certificates
