@@ -18,15 +18,10 @@ def get_loc_bind(element) -> Dict[str, str]:
     return {"location": location, "binding": binding}
 
 
-def has_valid_signature(
-    root,
-    signature_node,
-    signing_certificates: [] = None
-):
+def has_valid_signature(root, signature_node, signing_certificates: [] = None):
     signature_key = signature_node.find(".//dsig:KeyName", NAMESPACES).text
     key = xmlsec.Key.from_memory(
-        signing_certificates[signature_key],
-        xmlsec.constants.KeyDataFormatCertPem
+        signing_certificates[signature_key], xmlsec.constants.KeyDataFormatCertPem
     )
 
     # Create a digital signature context (no key manager is needed).
@@ -83,6 +78,7 @@ def has_valid_signatures(
         except xmlsec.VerificationError:
             continue
     return None, False
+
 
 def remove_padding(enc_data: bytes) -> bytes:
     return enc_data[: -enc_data[-1]]

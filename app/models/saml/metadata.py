@@ -223,11 +223,13 @@ class SPMetadata(SAMLRequest):
         signing_certificates = []
         with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
             data = cert_file.read()
-            keyname = data.partition('\n')[0]
-            cert = data.partition('\n')[1:]
+            keyname = data.partition("\n")[0]
+            cert = data.partition("\n")[1:]
             signing_certificates[keyname] = cert
 
-        _, is_valid = has_valid_signatures(self.root, signing_certificates=signing_certificates)
+        _, is_valid = has_valid_signatures(
+            self.root, signing_certificates=signing_certificates
+        )
         return is_valid
 
     def _contains_keyname(self):
@@ -308,9 +310,13 @@ class IdPMetadata:
         ):
             if key_descriptor.attrib.get("use") == "signing":
                 keyname = key_descriptor.find(".//dsig:KeyName", NAMESPACES).text
-                cert_data = key_descriptor.find(".//dsig:X509Certificate", NAMESPACES).text
+                cert_data = key_descriptor.find(
+                    ".//dsig:X509Certificate", NAMESPACES
+                ).text
                 cert = enforce_cert_newlines(cert_data)
-                signing_certificates[keyname] = f"""-----BEGIN CERTIFICATE-----\n{cert}\n-----END CERTIFICATE-----"""
+                signing_certificates[
+                    keyname
+                ] = f"""-----BEGIN CERTIFICATE-----\n{cert}\n-----END CERTIFICATE-----"""
         return signing_certificates
 
     def get_sso(self, binding="POST") -> Dict[str, str]:
