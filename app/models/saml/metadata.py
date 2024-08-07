@@ -220,13 +220,14 @@ class SPMetadata(SAMLRequest):
         return self.render_unclustered_template()
 
     def _valid_signature(self) -> bool:
-        # todo: This must be a dict of keyname to cert, conditions checken!
-        # todo: current made a list, should be dict.
-        signing_certs = []
+        signing_certificates = []
         with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
-            signing_certs.append(cert_file.read())
+            data = cert_file.read()
+            keyname = data.partition('\n')[0]
+            cert = data.partition('\n')[1:]
+            signing_certificates[keyname] = cert
 
-        _, is_valid = has_valid_signatures(self.root, certs_data=signing_certs)
+        _, is_valid = has_valid_signatures(self.root, signing_certificates=signing_certificates)
         return is_valid
 
     def _contains_keyname(self):
@@ -282,16 +283,14 @@ class IdPMetadata:
     def __init__(self, idp_metadata_path) -> None:
         self.template = etree.parse(idp_metadata_path).getroot()
         new_root, valid_sign = has_valid_signatures(
-            self.template, certs_data=self.get_certs_pem_data()
+            self.template, signing_certificates=self.get_signing_certificates()
         )
         if not valid_sign:
             raise xmlsec.VerificationError("Signature is invalid")
+
         self.template = new_root
 
         self.entity_id = self.template.attrib["entityID"]
-        self.keyname = self.template.find(
-            ".//md:IDPSSODescriptor//dsig:KeyName", NAMESPACES
-        ).text
 
     def find_in_md(self, name: str):
         return self.template.find(
@@ -302,14 +301,17 @@ class IdPMetadata:
         resolution_service = self.find_in_md("ArtifactResolutionService")
         return get_loc_bind(resolution_service)
 
-    def get_certs_pem_data(self) -> []:
-        cert_strings = []
-        for cert_data in self.template.findall(
-            ".//md:IDPSSODescriptor//dsig:X509Certificate", NAMESPACES
+    def get_signing_certificates(self) -> {}:
+        signing_certificates = {}
+        for key_destriptor in self.template.findall(
+            ".//md:IDPSSODescriptor//md:KeyDescriptor", NAMESPACES
         ):
-            cert = enforce_cert_newlines(cert_data)
-            cert_strings.append(f"""-----BEGIN CERTIFICATE-----\n{cert}\n-----END CERTIFICATE-----""")
-        return cert_strings
+            if key_destriptor.attrib.get("use") == "signing":
+                keyname = key_destriptor.find(".//dsig:KeyName", NAMESPACES).text
+                cert_data = key_destriptor.find(".//dsig:X509Certificate", NAMESPACES).text
+                cert = enforce_cert_newlines(cert_data)
+                signing_certificates[keyname] = f"""-----BEGIN CERTIFICATE-----\n{cert}\n-----END CERTIFICATE-----"""
+        return signing_certificates
 
     def get_sso(self, binding="POST") -> Dict[str, str]:
         sso = self.template.find(

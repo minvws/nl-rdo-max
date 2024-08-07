@@ -34,8 +34,8 @@ class ArtifactResponseFactory:
         self._insecure = insecure
 
     def verify_signatures(self, tree):
-        certs_data = self._idp_metadata.get_certs_pem_data()
-        root, valid = has_valid_signatures(tree, certs_data=certs_data)
+        signing_certificates = self._idp_metadata.get_signing_certificates()
+        root, valid = has_valid_signatures(tree, signing_certificates=signing_certificates)
         if not valid:
             raise ValidationError("Invalid signatures")
         return root
