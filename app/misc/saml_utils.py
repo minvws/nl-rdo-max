@@ -80,11 +80,10 @@ def has_valid_signatures(
             has_valid_signature(
                 referred_node, node, cert_data=cert_data, cert_path=cert_path
             )
+            return get_referred_node(root, node), True
         except xmlsec.VerificationError:
-            return None, False
-
-    return get_referred_node(root, signature_nodes[0]), True
-
+            continue
+    return None, False
 
 def remove_padding(enc_data: bytes) -> bytes:
     return enc_data[: -enc_data[-1]]
