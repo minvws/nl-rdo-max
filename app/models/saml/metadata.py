@@ -221,10 +221,12 @@ class SPMetadata(SAMLRequest):
 
     def _valid_signature(self) -> bool:
         # todo: This must be a dict of keyname to cert, conditions checken!
+        # todo: current made a list, should be dict.
+        signing_certs = []
         with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
-            signing_cert = cert_file.read()
+            signing_certs.append(cert_file.read())
 
-        _, is_valid = has_valid_signatures(self.root, cert_data=signing_cert)
+        _, is_valid = has_valid_signatures(self.root, certs_data=signing_certs)
         return is_valid
 
     def _contains_keyname(self):
