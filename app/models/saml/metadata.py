@@ -280,7 +280,7 @@ class IdPMetadata:
     def __init__(self, idp_metadata_path) -> None:
         self.template = etree.parse(idp_metadata_path).getroot()
         new_root, valid_sign = has_valid_signatures(
-            self.template, cert_data=self.get_cert_pem_data()
+            self.template, certs_data=self.get_certs_pem_data()
         )
         if not valid_sign:
             raise xmlsec.VerificationError("Signature is invalid")
@@ -300,14 +300,14 @@ class IdPMetadata:
         resolution_service = self.find_in_md("ArtifactResolutionService")
         return get_loc_bind(resolution_service)
 
-    def get_cert_pem_data(self) -> str:
-        cert_data = self.template.find(
+    def get_certs_pem_data(self) -> []:
+        cert_strings = []
+        for cert_data in self.template.findall(
             ".//md:IDPSSODescriptor//dsig:X509Certificate", NAMESPACES
-        ).text
-        cert_data = enforce_cert_newlines(cert_data)
-        return (
-            f"""-----BEGIN CERTIFICATE-----\n{cert_data}\n-----END CERTIFICATE-----"""
-        )
+        ):
+            cert = enforce_cert_newlines(cert_data)
+            cert_strings.append(f"""-----BEGIN CERTIFICATE-----\n{cert}\n-----END CERTIFICATE-----""")
+        return cert_strings
 
     def get_sso(self, binding="POST") -> Dict[str, str]:
         sso = self.template.find(

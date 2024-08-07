@@ -21,20 +21,29 @@ def get_loc_bind(element) -> Dict[str, str]:
 def has_valid_signature(
     root,
     signature_node,
-    cert_data: Union[str, None] = None,
+    certs_data: Union[str, None] = None,
     cert_path: str = "saml/certs/sp.crt",
 ):
-    # Create a digital signature context (no key manager is needed).
-    ctx = xmlsec.SignatureContext()
+    keys = []
 
-    if cert_data is None:
-        key = xmlsec.Key.from_file(cert_path, xmlsec.constants.KeyDataFormatCertPem)
+    if certs_data is None:
+        keys.append(xmlsec.Key.from_file(cert_path, xmlsec.constants.KeyDataFormatCertPem))
     else:
-        key = xmlsec.Key.from_memory(cert_data, xmlsec.constants.KeyDataFormatCertPem)
-    # Set the key on the context.
-    ctx.key = key
-    ctx.register_id(root)
-    ctx.verify(signature_node)
+        for cert_data in certs_data:
+            keys.append(xmlsec.Key.from_memory(cert_data, xmlsec.constants.KeyDataFormatCertPem))
+
+    for key in keys:
+        try:
+            # Create a digital signature context (no key manager is needed).
+            ctx = xmlsec.SignatureContext()
+            # Set the key on the context.
+            ctx.key = key
+            ctx.register_id(root)
+            ctx.verify(signature_node)
+            return
+        except xmlsec.VerificationError:
+            continue
+    raise xmlsec.VerificationError
 
 
 def get_referred_node(root, signature_node):
@@ -63,7 +72,7 @@ def is_advice_node(node: etree.Element, advice_nodes: List[etree.Element]):
 
 def has_valid_signatures(
     root: lxml.etree,
-    cert_data: Union[str, None] = None,
+    certs_data: [] = None,
     cert_path: str = "saml/certs/sp.crt",
 ) -> Tuple[Any, bool]:
     signature_nodes: List[etree.Element] = root.findall(".//dsig:Signature", NAMESPACES)
@@ -78,7 +87,7 @@ def has_valid_signatures(
 
             referred_node = get_referred_node(root, node)
             has_valid_signature(
-                referred_node, node, cert_data=cert_data, cert_path=cert_path
+                referred_node, node, certs_data=certs_data, cert_path=cert_path
             )
             return get_referred_node(root, node), True
         except xmlsec.VerificationError:
