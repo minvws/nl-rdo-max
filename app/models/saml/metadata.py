@@ -220,11 +220,11 @@ class SPMetadata(SAMLRequest):
         return self.render_unclustered_template()
 
     def _valid_signature(self) -> bool:
-        signing_certificates = []
+        signing_certificates = {}
         with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
             data = cert_file.read()
             keyname = data.partition("\n")[0]
-            cert = data.partition("\n")[1:]
+            cert = "\n".join(data.partition("\n")[1:])
             signing_certificates[keyname] = cert
 
         _, is_valid = has_valid_signatures(
@@ -303,7 +303,7 @@ class IdPMetadata:
         resolution_service = self.find_in_md("ArtifactResolutionService")
         return get_loc_bind(resolution_service)
 
-    def get_signing_certificates(self) -> {}:
+    def get_signing_certificates(self) -> Dict[str,str]:
         signing_certificates = {}
         for key_descriptor in self.template.findall(
             ".//md:IDPSSODescriptor//md:KeyDescriptor", NAMESPACES
