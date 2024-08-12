@@ -125,7 +125,7 @@ mypy-extensions==1.0.0
     #   mypy
 oic==1.7.0
     # via pyop
-orjson==3.10.6
+orjson==3.10.7
     # via fastapi
 packaging==24.1
     # via
