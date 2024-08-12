@@ -11,7 +11,7 @@ anyio==4.4.0
     #   httpx
     #   starlette
     #   watchfiles
-astroid==3.2.2
+astroid==3.3.2
     # via pylint
 attrs==24.1.0
     # via pytest-docker
