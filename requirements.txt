@@ -260,7 +260,7 @@ urllib3==2.2.2
     # via
     #   requests
     #   types-requests
-uvicorn[standard]==0.30.1
+uvicorn[standard]==0.30.5
     # via
     #   app (setup.py)
     #   fastapi
