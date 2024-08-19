@@ -232,7 +232,7 @@ stevedore==5.2.0
     # via bandit
 tomlkit==0.13.0
     # via pylint
-typer==0.12.3
+typer==0.12.4
     # via fastapi-cli
 types-cffi==1.16.0.20240331
     # via types-pyopenssl
