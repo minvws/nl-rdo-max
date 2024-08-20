@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 
 import requests
 from fastapi.security.utils import get_authorization_scheme_param
@@ -79,6 +79,14 @@ class CIBGUserinfoService(UserinfoService):
     ):
         ura_pubkey = file_content_raise_if_none(ura_pubkey_path)
 
+        req_claims: Dict[str, Union[str, List[str]]] = {
+            "req_iss": self._req_issuer,
+            "req_aud": client_id,
+            "req_sub": sub,
+        }
+        if req_acme_tokens is not None:
+            req_claims["req_acme_tokens"] = req_acme_tokens
+
         jwt_payload = {
             "json_schema": json_schema,
             "iss": self._cibg_userinfo_issuer,
@@ -89,15 +97,13 @@ class CIBGUserinfoService(UserinfoService):
             "ura": external_id,
             "x5c": strip_cert(ura_pubkey),
             "auth_type": auth_type,
-            "req_iss": self._req_issuer,
-            "req_aud": client_id,
-            "req_sub": sub,
+            "req_claims": {
+                **req_claims,
+            },
             "meta": authentication_meta.model_dump(),
         }
         if loa_authn is not None:
             jwt_payload["loa_authn"] = loa_authn
-        if req_acme_tokens is not None:
-            jwt_payload["req_acme_tokens"] = req_acme_tokens
         if saml_id is not None:
             jwt_payload["saml_id"] = saml_id
         if exchange_token is not None:
