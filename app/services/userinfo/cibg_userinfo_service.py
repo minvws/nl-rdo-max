@@ -2,7 +2,7 @@ import logging
 import time
 from typing import Dict, Any, Optional, List, Union
 
-import requests
+from requests import request
 from fastapi.security.utils import get_authorization_scheme_param
 
 from app.exceptions.max_exceptions import InvalidClientException, UnauthorizedError
@@ -80,9 +80,9 @@ class CIBGUserinfoService(UserinfoService):
         ura_pubkey = file_content_raise_if_none(ura_pubkey_path)
 
         req_claims: Dict[str, Union[str, List[str]]] = {
-            "req_iss": self._req_issuer,
-            "req_aud": client_id,
-            "req_sub": sub,
+            "iss": self._req_issuer,
+            "aud": client_id,
+            "sub": sub,
         }
         if req_acme_tokens is not None:
             req_claims["req_acme_tokens"] = req_acme_tokens
@@ -152,8 +152,9 @@ class CIBGUserinfoService(UserinfoService):
         headers = {"Authorization": f"Bearer {jwt_token}"}
         if data is not None:
             headers["Content-Type"] = "application/xml"
-        cibg_exchange_response = requests.post(
-            cibg_endpoint,
+        cibg_exchange_response = request(
+            method="GET" if data is None else "POST",  # post for DigiD else GET
+            url=cibg_endpoint,
             headers=headers,
             data=data,
             timeout=self._external_http_requests_timeout_seconds,
