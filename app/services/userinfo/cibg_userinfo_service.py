@@ -153,7 +153,7 @@ class CIBGUserinfoService(UserinfoService):
         if data is not None:
             headers["Content-Type"] = "application/xml"
         cibg_exchange_response = request(
-            method="POST" if data is None else "GET",  # post for DigiD else GET
+            method="GET" if data is None else "POST",  # post for DigiD else GET
             url=cibg_endpoint,
             headers=headers,
             data=data,
