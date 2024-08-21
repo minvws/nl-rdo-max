@@ -2,7 +2,7 @@ import logging
 import time
 from typing import Dict, Any, Optional, List, Union
 
-import requests
+from requests import request
 from fastapi.security.utils import get_authorization_scheme_param
 
 from app.exceptions.max_exceptions import InvalidClientException, UnauthorizedError
@@ -152,8 +152,9 @@ class CIBGUserinfoService(UserinfoService):
         headers = {"Authorization": f"Bearer {jwt_token}"}
         if data is not None:
             headers["Content-Type"] = "application/xml"
-        cibg_exchange_response = requests.post(
-            cibg_endpoint,
+        cibg_exchange_response = request(
+            method="POST" if data is None else "GET",  # post for DigiD else GET
+            url=cibg_endpoint,
             headers=headers,
             data=data,
             timeout=self._external_http_requests_timeout_seconds,
