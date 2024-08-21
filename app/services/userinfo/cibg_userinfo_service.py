@@ -80,9 +80,9 @@ class CIBGUserinfoService(UserinfoService):
         ura_pubkey = file_content_raise_if_none(ura_pubkey_path)
 
         req_claims: Dict[str, Union[str, List[str]]] = {
-            "req_iss": self._req_issuer,
-            "req_aud": client_id,
-            "req_sub": sub,
+            "iss": self._req_issuer,
+            "aud": client_id,
+            "sub": sub,
         }
         if req_acme_tokens is not None:
             req_claims["req_acme_tokens"] = req_acme_tokens
