@@ -48,6 +48,14 @@ if [[ ! -f $SECRETS_DIR/ssl/server.crt ]]; then
 fi
 
 ###
+# JWE signing cert
+###
+if [[ ! -f $SECRETS_DIR/nl-rdo-max-private.crt ]]; then
+  create_key_pair $SECRETS_DIR "nl-rdo-max-private" "nl-rdo-max-private"
+  cp $SECRETS_DIR/nl-rdo-max-private.crt $SECRETS_DIR/jwks-certs/
+fi
+
+###
 # OIDC JWT signing
 ###
 if [[ ! -f $SECRETS_DIR/oidc/selfsigned.crt ]]; then
