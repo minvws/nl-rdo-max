@@ -14,7 +14,8 @@ requirements = [
     "pyOpenSSL",
     "python3-saml==1.16.0",
     "python-multipart",
-    "pynacl"
+    "pynacl",
+    "async-timeout"
 ]
 
 setup(
