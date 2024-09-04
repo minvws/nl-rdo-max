@@ -207,8 +207,8 @@ def test_increase_ip_count():
     cache.incr.return_value = expected
     rate_limiter = create_rate_limiter(cache)
     actual = rate_limiter._increase_ip_count("ipaddress")
-    cache.incr.assert_called_with("ipv4:ipaddress")
-    cache.expire.assert_called_with("ipv4:ipaddress", IAMCES)
+    cache.incr.assert_called_with("ip:ipaddress")
+    cache.expire.assert_called_with("ip:ipaddress", IAMCES)
     assert actual == expected
 
 
@@ -218,7 +218,7 @@ def test_increase_user_count():
     cache.incr.return_value = expected
     rate_limiter = create_rate_limiter(cache)
     actual = rate_limiter._increase_user_count("idp", "timeslot")
-    cache.incr.assert_called_with("timeslot")
+    cache.incr.assert_called_with("max:limiter:idp:timeslot")
     cache.expire.assert_called_with("max:limiter:idp:timeslot", 2)
     assert actual == expected
 

@@ -90,14 +90,14 @@ class RateLimiter:
             raise TooBusyError()
 
     def _increase_ip_count(self, ipaddress) -> int:
-        ip_key = f"ipv4:{ipaddress}"
+        ip_key = f"ip:{ipaddress}"
         count = self._cache.incr(ip_key)
         self._cache.expire(ip_key, self._ipaddress_max_count_expire_seconds)
         return count
 
     def _increase_user_count(self, identity_provider_name: str, timeslot: str) -> int:
         timeslot_key = f"max:limiter:{identity_provider_name}:{timeslot}"
-        count = self._cache.incr(timeslot)
+        count = self._cache.incr(timeslot_key)
         self._cache.expire(timeslot_key, 2)
         return count
 
