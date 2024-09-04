@@ -97,7 +97,7 @@ class RateLimiter:
 
     def _increase_user_count(self, identity_provider_name: str, timeslot: str) -> int:
         timeslot_key = f"max:limiter:{identity_provider_name}:{timeslot}"
-        count = self._cache.incr(timeslot)
+        count = self._cache.incr(timeslot_key)
         self._cache.expire(timeslot_key, 2)
         return count
 
