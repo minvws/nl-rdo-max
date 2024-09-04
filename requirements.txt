@@ -141,7 +141,7 @@ pydantic==2.8.2
     # via
     #   fastapi
     #   pydantic-settings
-pydantic-core==2.20.1
+pydantic-core==2.23.1
     # via pydantic
 pydantic-settings==2.3.4
     # via oic
