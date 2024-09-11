@@ -201,9 +201,19 @@ def test_user_limit_test_without_limit_in_cache():
     assert rate_limiter._user_limit_test(user_limit_key, identity_provider_name) is None
 
 
-def test_increase_ip_count():
+def test_increase_ip_count_without_expire():
     cache = MagicMock()
     expected = 4
+    cache.incr.return_value = expected
+    rate_limiter = create_rate_limiter(cache)
+    actual = rate_limiter._increase_ip_count("ipaddress")
+    cache.incr.assert_called_with("ip:ipaddress")
+    assert actual == expected
+
+
+def test_increase_ip_count():
+    cache = MagicMock()
+    expected = 2
     cache.incr.return_value = expected
     rate_limiter = create_rate_limiter(cache)
     actual = rate_limiter._increase_ip_count("ipaddress")

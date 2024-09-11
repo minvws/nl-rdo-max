@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from app.exceptions.max_exceptions import (
@@ -83,7 +83,7 @@ class RateLimiter:
         if user_limit is None:
             return
 
-        timeslot = str(int(datetime.utcnow().timestamp()))
+        timeslot = str(int(datetime.now(timezone.utc).timestamp()))
 
         num_users = self._increase_user_count(identity_provider_name, timeslot)
         if num_users > user_limit:
@@ -92,7 +92,11 @@ class RateLimiter:
     def _increase_ip_count(self, ipaddress) -> int:
         ip_key = f"ip:{ipaddress}"
         count = self._cache.incr(ip_key)
-        self._cache.expire(ip_key, self._ipaddress_max_count_expire_seconds)
+
+        # Set expire when this is the first time this IP does the request.
+        # To be completely sure, also set expire on the second try.
+        if count <= 2:
+            self._cache.expire(ip_key, self._ipaddress_max_count_expire_seconds)
         return count
 
     def _increase_user_count(self, identity_provider_name: str, timeslot: str) -> int:
