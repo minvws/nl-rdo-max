@@ -173,7 +173,9 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             else secrets.token_urlsafe(32)
         )
 
-        authentication_meta = AuthenticationMeta.create_authentication_meta(request)
+        authentication_meta = AuthenticationMeta.create_authentication_meta(
+            request, login_option
+        )
 
         self._authentication_cache.cache_authentication_request_state(
             pyop_authentication_request,

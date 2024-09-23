@@ -474,7 +474,9 @@ def test_authorize():
         pyop_authentication_request, authorize_request
     )
 
-    authentication_meta = AuthenticationMeta.create_authentication_meta(request)
+    authentication_meta = AuthenticationMeta.create_authentication_meta(
+        request, login_option
+    )
 
     authentication_cache.cache_authentication_request_state.assert_called_with(
         pyop_authentication_request,

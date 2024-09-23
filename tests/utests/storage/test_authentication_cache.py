@@ -69,7 +69,9 @@ def test_create_authentication_request_state():
     acache = create_authentication_cache(cache)
 
     authentication_meta = AuthenticationMeta(
-        ip="some.ip.address", headers={"X-Forwarded-For": "some-forwarded-for"}
+        ip="some.ip.address",
+        headers={"X-Forwarded-For": "some-forwarded-for"},
+        authentication_method_name="digid",
     )
 
     acache.cache_authentication_request_state(
