@@ -44,3 +44,15 @@ class TestAuthenticationMeta(unittest.TestCase):
         )
 
         self.assertEqual(auth_meta.authentication_method_name, "")
+
+    def test_authentication_meta_json_dump(self):
+        auth_meta = AuthenticationMeta.create_authentication_meta(
+            self.mock_request, self.authentication_method
+        )
+
+        expected_json = (
+            '{"ip":"192.168.1.1","headers":{"User-Agent":"test-agent"},'
+            '"authentication_method_name":"digid"}'
+        )
+
+        self.assertEqual(auth_meta.json(), expected_json)
