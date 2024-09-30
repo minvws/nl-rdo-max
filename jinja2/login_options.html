@@ -6,12 +6,12 @@
             <h2>Hoe wilt u inloggen?</h2>
 
             <ul class="tiles">
-                {% for login_method in login_methods %}
-                    {% if not login_methods[login_method]["hidden"] %}
+                {% for login_method in login_methods.values() %}
+                    {% if not login_method.hidden %}
                     <li>
-                        <a href="{{ login_methods[login_method]["url"] }}" class="horizontal-view">
-                            <img src="{{ login_methods[login_method]["logo"] }}" alt="{{ login_methods[login_method]["name"] }} logo" width="56px">
-                            {{ login_methods[login_method]["text"] }} <i class="icon icon-chevron-right"></i>
+                        <a href="{{ login_method.url }}" class="horizontal-view">
+                            <img src="{{ login_method.logo }}" alt="{{ login_method.name }} logo" width="56px">
+                            {{ login_method.text }} <i class="icon icon-chevron-right"></i>
                         </a>
                     </li>
                     {% endif %}

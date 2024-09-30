@@ -21,6 +21,7 @@ from app.exceptions.max_exceptions import (
     InvalidResponseType,
 )
 from app.models.authentication_meta import AuthenticationMeta
+from app.models.login_method import LoginMethod, LoginMethodLink
 from app.providers.pyop_provider import MaxPyopProvider
 from app.exceptions.oidc_exceptions import LOGIN_REQUIRED
 from app.misc.rate_limiter import RateLimiter
@@ -58,7 +59,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         userinfo_service: UserinfoService,
         app_mode: str,
         environment: str,
-        login_methods: List[Dict[str, Union[str, bool]]],
+        login_methods: List[LoginMethod],
         authentication_handler_factory: AuthenticationHandlerFactory,
         external_base_url: str,
         external_http_requests_timeout_seconds: int,
@@ -136,7 +137,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self,
         request: Request,
         authorize_request: AuthorizeRequest,
-        login_option: Dict[str, Union[str, bool]],
+        login_method: LoginMethod,
     ) -> Response:
         self._rate_limiter.validate_outage()
 
@@ -151,7 +152,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
         self._rate_limiter.ip_limit_test(request.client.host)
 
-        login_handler = self._authentication_handler_factory.create(login_option)
+        login_handler = self._authentication_handler_factory.create(login_method)
 
         authentication_state = login_handler.authentication_state(authorize_request)
 
@@ -174,7 +175,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         )
 
         authentication_meta = AuthenticationMeta.create_authentication_meta(
-            request, login_option
+            request, login_method
         )
 
         self._authentication_cache.cache_authentication_request_state(
@@ -182,7 +183,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             authorize_request,
             randstate,
             authentication_state,
-            str(login_option["name"]),
+            login_method.name,
             session_id,
             req_acme_tokens=authorize_request.acme_tokens,
             authentication_meta=authentication_meta,
@@ -315,7 +316,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
             (
                 login_method
                 for login_method in self._login_methods
-                if login_method["name"] == authentication_context.authentication_method
+                if login_method.name == authentication_context.authentication_method
             )
         )
         login_handler = self._authentication_handler_factory.create(login_method)
@@ -358,25 +359,23 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
     def _get_login_methods(
         self, client: dict, authorize_request: AuthorizeRequest
-    ) -> List[Dict[str, Union[str, bool]]]:
+    ) -> List[LoginMethod]:
         login_methods = self._login_methods
-        for login_method in login_methods:
-            login_method["hidden"] = "hidden" in login_method and login_method["hidden"]
 
         if "login_methods" in client:
             login_methods = [
-                x for x in login_methods if x["name"] in client["login_methods"]
+                x for x in login_methods if x.name in client["login_methods"]
             ]
 
         if "exclude_login_methods" in client:
             login_methods = [
                 x
                 for x in login_methods
-                if x["name"] not in client["exclude_login_methods"]
+                if x.name not in client["exclude_login_methods"]
             ]
 
         requested_login_methods = [
-            x for x in login_methods if x["name"] in authorize_request.login_hints
+            x for x in login_methods if x.name in authorize_request.login_hints
         ]
 
         return requested_login_methods if requested_login_methods else login_methods
@@ -385,10 +384,10 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         self,
         client_name: str,
         request: Request,
-        login_methods: List[Dict[str, Union[str, bool]]],
+        login_methods: List[LoginMethod],
     ) -> Union[None, Response]:
         if len(login_methods) > 1:
-            login_methods_by_name = self._get_login_methods_by_name(
+            login_methods_by_name = self._get_login_method_links_by_name(
                 request_url=str(request.url), login_methods=login_methods
             )
 
@@ -485,9 +484,9 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         )
         return updated_url
 
-    def _get_login_methods_by_name(
-        self, request_url: str, login_methods: List[Dict[str, Union[str, bool]]]
-    ) -> Dict[str, Dict[str, Union[str, bool]]]:
+    def _get_login_method_links_by_name(
+        self, request_url: str, login_methods: List[LoginMethod]
+    ) -> Dict[str, LoginMethodLink]:
         base_url = parse.urlparse(self._external_base_url)
 
         parsed_url = parse.urlparse(request_url)
@@ -495,15 +494,11 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
         login_methods_dict = {}
         for login_method in login_methods:
-            login_method_name = str(login_method["name"])
-            login_methods_dict[login_method_name] = {
-                "name": login_method_name,
-                "text": str(login_method.get("text", "")),
-                "url": self._get_url_for_login_method(
-                    parsed_url, base_url, query_params, login_method_name
+            login_methods_dict[login_method.name] = LoginMethodLink(
+                **login_method.dict(),
+                url=self._get_url_for_login_method(
+                    parsed_url, base_url, query_params, login_method.name
                 ),
-                "logo": str(login_method.get("logo", "")),
-                "hidden": login_method.get("hidden", False),
-            }
+            )
 
         return login_methods_dict

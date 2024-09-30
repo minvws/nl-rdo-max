@@ -4,6 +4,8 @@ from starlette.requests import Request
 
 from app.exceptions.max_exceptions import ServerErrorException
 from app.models.authentication_meta import AuthenticationMeta
+from app.models.login_method import LoginMethod
+from app.models.login_method_type import LoginMethodType
 
 
 class TestAuthenticationMeta(unittest.TestCase):
@@ -12,12 +14,12 @@ class TestAuthenticationMeta(unittest.TestCase):
         self.mock_request.client.host = "192.168.1.1"
         self.mock_request.headers = {"User-Agent": "test-agent"}
 
-        self.authentication_method = {
-            "name": "digid",
-            "logo": "static/img/digid-logo.svg",
-            "text": "Inloggen met DigiD",
-            "type": "specific",
-        }
+        self.authentication_method = LoginMethod(
+            name="digid",
+            logo="static/img/digid-logo.svg",
+            text="Inloggen met DigiD",
+            type=LoginMethodType.SPECIFIC,
+        )
 
     def test_create_authentication_meta_success(self):
         auth_meta = AuthenticationMeta.create_authentication_meta(
@@ -35,15 +37,6 @@ class TestAuthenticationMeta(unittest.TestCase):
             AuthenticationMeta.create_authentication_meta(
                 self.mock_request, self.authentication_method
             )
-
-    def test_create_authentication_meta_name_not_string(self):
-        invalid_auth_method = {"name": None, "enabled": True}
-
-        auth_meta = AuthenticationMeta.create_authentication_meta(
-            self.mock_request, invalid_auth_method
-        )
-
-        self.assertEqual(auth_meta.authentication_method_name, "")
 
     def test_authentication_meta_json_dump(self):
         auth_meta = AuthenticationMeta.create_authentication_meta(

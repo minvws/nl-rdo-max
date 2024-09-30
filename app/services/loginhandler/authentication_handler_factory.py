@@ -2,6 +2,8 @@ from typing import Dict, Any, Union
 
 from app.exceptions.max_exceptions import UnauthorizedError
 from app.misc.rate_limiter import RateLimiter
+from app.models.login_method import LoginMethod
+from app.models.login_method_type import LoginMethodType
 
 from app.services.encryption.jwt_service_factory import JWTServiceFactory
 from app.services.external_session_service import ExternalSessionService
@@ -64,18 +66,18 @@ class AuthenticationHandlerFactory:
         self._oidc_authentication_handler: Union[OidcAuthenticationHandler, None] = None
 
     def create(
-        self, authentication_method: Dict[str, Union[str, bool]]
+        self, login_method: LoginMethod
     ) -> Union[AuthenticationHandler, ExchangeBasedAuthenticationHandler]:
-        if authentication_method["type"] == "specific":
-            if authentication_method["name"] == "digid":
+        if login_method.type == LoginMethodType.SPECIFIC:
+            if login_method.name == "digid":
                 return self.create_saml_authentication_handler()
-            if authentication_method["name"] == "digid_mock":
+            if login_method.name == "digid_mock":
                 return self.create_mock_saml_authentication_handler()
-            if authentication_method["name"] == "yivi":
+            if login_method.name == "yivi":
                 return self.create_yivi_authentication_handler()
-            if authentication_method["name"] == "uzipas":
+            if login_method.name == "uzipas":
                 return self.create_uzi_authentication_handler()
-        if authentication_method["type"] == "oidc":
+        if login_method.type == LoginMethodType.OIDC:
             return self.create_oidc_authentication_handler()
         raise UnauthorizedError(error_description="unknown authentication method")
 
