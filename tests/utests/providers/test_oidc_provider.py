@@ -20,7 +20,7 @@ from app.exceptions.max_exceptions import (
 from app.misc.utils import load_jwk
 from app.models.authentication_meta import AuthenticationMeta
 from app.models.authorize_request import AuthorizeRequest
-from app.models.login_method import LoginMethod, LoginMethodLink
+from app.models.login_method import LoginMethod, LoginMethodWithLink
 from app.models.login_method_type import LoginMethodType
 from app.models.response_type import ResponseType
 from app.providers.oidc_provider import OIDCProvider
@@ -124,7 +124,7 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
         page_context={
             "ura_name": "name",
             "login_methods": {
-                "a": LoginMethodLink(
+                "a": LoginMethodWithLink(
                     name="a",
                     logo=None,
                     text="",
@@ -132,7 +132,7 @@ def test_provide_login_options_response_with_multiple_login_options(mocker):
                     hidden=False,
                     url="http://base_url/redirect_path?redirect_uri=redirect_uri&key=value&login_hint=a",
                 ),
-                "b": LoginMethodLink(
+                "b": LoginMethodWithLink(
                     name="b",
                     logo=None,
                     text="",

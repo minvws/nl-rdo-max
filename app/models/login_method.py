@@ -13,5 +13,5 @@ class LoginMethod(BaseModel):
     hidden: bool = False
 
 
-class LoginMethodLink(LoginMethod):
+class LoginMethodWithLink(LoginMethod):
     url: str

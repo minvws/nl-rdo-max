@@ -21,7 +21,7 @@ from app.exceptions.max_exceptions import (
     InvalidResponseType,
 )
 from app.models.authentication_meta import AuthenticationMeta
-from app.models.login_method import LoginMethod, LoginMethodLink
+from app.models.login_method import LoginMethod, LoginMethodWithLink
 from app.providers.pyop_provider import MaxPyopProvider
 from app.exceptions.oidc_exceptions import LOGIN_REQUIRED
 from app.misc.rate_limiter import RateLimiter
@@ -486,7 +486,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
     def _get_login_method_links_by_name(
         self, request_url: str, login_methods: List[LoginMethod]
-    ) -> Dict[str, LoginMethodLink]:
+    ) -> Dict[str, LoginMethodWithLink]:
         base_url = parse.urlparse(self._external_base_url)
 
         parsed_url = parse.urlparse(request_url)
@@ -494,7 +494,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
         login_methods_dict = {}
         for login_method in login_methods:
-            login_methods_dict[login_method.name] = LoginMethodLink(
+            login_methods_dict[login_method.name] = LoginMethodWithLink(
                 **login_method.dict(),
                 url=self._get_url_for_login_method(
                     parsed_url, base_url, query_params, login_method.name
