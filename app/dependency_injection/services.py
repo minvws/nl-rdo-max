@@ -1,29 +1,38 @@
 # pylint: disable=c-extension-no-member, too-few-public-methods
+from typing import List
+
 from dependency_injector import containers, providers
 
+from app.mappers.login_method_mapper import map_login_methods_json_to_list_of_objects
 from app.misc.rate_limiter import RateLimiter
 from app.misc.utils import as_bool, json_from_file
-from app.services.template_service import TemplateService
-from app.services.vite_manifest_service import ViteManifestService
 from app.models.enums import RedirectType
+from app.models.login_method import LoginMethod
 from app.providers.digid_mock_provider import DigidMockProvider
 from app.providers.oidc_provider import OIDCProvider
 from app.providers.saml_provider import SAMLProvider
 from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
 )
+from app.services.response_factory import ResponseFactory
 from app.services.saml.saml_identity_provider_service import SamlIdentityProviderService
 from app.services.saml.saml_response_factory import SamlResponseFactory
-from app.services.response_factory import ResponseFactory
+from app.services.template_service import TemplateService
 from app.services.userinfo.cc_userinfo_service import CCUserinfoService
 from app.services.userinfo.cibg_userinfo_service import (
     CIBGUserinfoService,
 )
+from app.services.vite_manifest_service import ViteManifestService
 from app.validators.token_authentication_validator import TokenAuthenticationValidator
 
 
 def as_redirect_type(value):
     return RedirectType(value)
+
+
+def as_login_methods(login_methods_path) -> List[LoginMethod]:
+    json = json_from_file(login_methods_path)
+    return map_login_methods_json_to_list_of_objects(json)
 
 
 class Services(containers.DeclarativeContainer):
@@ -40,6 +49,9 @@ class Services(containers.DeclarativeContainer):
     redirect_type = config.app.redirect_type.as_(as_redirect_type)
 
     json_schema = providers.Callable(json_from_file, config.app.json_schema_path)
+    login_methods = providers.Callable(
+        as_login_methods, config.app.login_methods_file_path
+    )
 
     vite_manifest_service = providers.Singleton(
         ViteManifestService,
@@ -155,7 +167,7 @@ class Services(containers.DeclarativeContainer):
         userinfo_service=userinfo_service,
         app_mode=config.app.app_mode,
         environment=config.app.environment,
-        login_methods=config.app.login_methods_file_path.as_(json_from_file),
+        login_methods=login_methods,
         authentication_handler_factory=login_handler_factory,
         external_base_url=config.app.external_base_url,
         external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
