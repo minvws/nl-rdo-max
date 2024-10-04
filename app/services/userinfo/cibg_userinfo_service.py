@@ -82,12 +82,12 @@ class CIBGUserinfoService(UserinfoService):
             "iss": self._req_issuer,
             "aud": client_id,
             "sub": sub,
+            "json_schema": json_schema,
         }
         if req_acme_tokens is not None:
             req_claims["req_acme_tokens"] = req_acme_tokens
 
         jwt_payload = {
-            "json_schema": json_schema,
             "iss": self._cibg_userinfo_issuer,
             "aud": self._cibg_userinfo_audience,
             # still needs to be configurable?
