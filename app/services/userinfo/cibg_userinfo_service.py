@@ -42,7 +42,6 @@ class CIBGUserinfoService(UserinfoService):
         external_http_requests_timeout_seconds: int,
         external_base_url: str,
     ):
-
         self._environment = environment
         self._ssl_client_cert = (ssl_client_crt_path, ssl_client_key_path)
         self._ssl_client_verify = ssl_client_verify
