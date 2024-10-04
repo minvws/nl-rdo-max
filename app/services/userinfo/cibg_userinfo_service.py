@@ -190,7 +190,6 @@ class CIBGUserinfoService(UserinfoService):
                 artifact_response=artifact_response,
                 req_acme_tokens=authentication_context.req_acme_tokens,
                 subject_identifier=subject_identifier,
-                authentication_meta=authentication_context.authentication_meta,
             )
         return self._request_userinfo(
             cibg_endpoint=self._cibg_saml_endpoint,
@@ -233,7 +232,6 @@ class CIBGUserinfoService(UserinfoService):
         artifact_response: ArtifactResponse,
         req_acme_tokens: Optional[List[str]],
         subject_identifier: str,
-        authentication_meta: AuthenticationMeta,
     ) -> str:
         bsn = artifact_response.get_bsn(False)
         ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
@@ -254,7 +252,6 @@ class CIBGUserinfoService(UserinfoService):
             "nbf": int(time.time()) - self._jwt_nbf_lag,
             "exp": int(time.time()) + self._jwt_expiration_duration,
             "x5c": strip_cert(ura_pubkey),
-            "meta": authentication_meta.model_dump(),
         }
         if req_acme_tokens:
             data["acme_tokens"] = req_acme_tokens
