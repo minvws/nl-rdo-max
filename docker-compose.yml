@@ -1,4 +1,12 @@
 services:
+  app:
+    build:
+      context: .
+    volumes:
+      - '.:/src'
+    ports:
+      - '8006:8006'
+    depends_on: [ 'redis' ]
   redis:
     image: redis:7.2.4
     restart: 'no'
