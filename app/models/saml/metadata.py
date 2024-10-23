@@ -52,9 +52,14 @@ class SPMetadata(SAMLRequest):
 
         with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
             cert_data = cert_file.read()
+
         self.root.find(
             ".//ds:Signature/ds:KeyInfo//ds:X509Certificate", NAMESPACES
         ).text = strip_cert(cert_data)
+
+        self.root.find(".//ds:Signature/ds:KeyInfo//ds:KeyName", NAMESPACES).text = (
+            compute_keyname(cert_data)
+        )
 
         self.sign(self.root, self._id_hash)
 
@@ -222,9 +227,8 @@ class SPMetadata(SAMLRequest):
     def _valid_signature(self) -> bool:
         signing_certificates = {}
         with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
-            data = cert_file.read()
-            keyname = data.partition("\n")[0]
-            cert = "\n".join(data.partition("\n")[1:])
+            cert = cert_file.read()
+            keyname = compute_keyname(cert)
             signing_certificates[keyname] = cert
 
         _, is_valid = has_valid_signatures(
