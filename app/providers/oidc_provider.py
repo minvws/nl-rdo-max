@@ -334,8 +334,8 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                 error=LOGIN_REQUIRED, error_description="Authentication cancelled"
             )
 
-        pyop_authorization_response = self._pyop_provider.authorize(
-            authentication_context.authorization_request, "_"
+        pyop_authorization_response = self.py_op_authorize(
+            authentication_context.authorization_request
         )
         subject = self.get_subject_identifier(pyop_authorization_response["code"])
         userinfo = self._userinfo_service.request_userinfo_for_exchange_token(
