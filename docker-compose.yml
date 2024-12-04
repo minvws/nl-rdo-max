@@ -2,6 +2,8 @@ services:
   app:
     build:
       context: .
+      secrets:
+        - github_token
     volumes:
       - '.:/src'
     ports:
@@ -17,3 +19,7 @@ services:
     image: redis:7.2.4
     restart: 'no'
     command: 'redis-cli -h redis set max:primary_identity_provider tvs'
+
+secrets:
+  github_token:
+    file: .env

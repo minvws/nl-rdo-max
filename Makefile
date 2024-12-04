@@ -18,11 +18,6 @@ clean_venv: ## Remove virtual environment
 	@echo "Cleaning venv"
 	@rm -rf .venv
 
-run:
-	docker compose up -d
-	npm run build
-	. .venv/bin/activate && ${env} python -m app.main
-
 pip-sync: ## synchronizes the .venv with the state of requirements.txt
 	. .venv/bin/activate && ${env} pip-compile --extra dev
 	. .venv/bin/activate && ${env} pip-sync
@@ -40,7 +35,20 @@ setup-config:
 setup-npm:
 	scripts/./setup-npm.sh
 
-setup: venv setup-config setup-saml setup-secrets setup-npm
+docker-build:
+	NODE_VERSION=$$(cat ./.nvmrc) && docker compose build --build-arg NODE_VERSION=$$NODE_VERSION
+
+setup-docker: setup-config setup-saml setup-secrets docker-build
+
+setup-venv: venv setup-config setup-saml setup-secrets setup-npm
+
+run-docker:
+	docker compose up
+
+run-venv:
+	docker compose up -d
+	npm run build
+	. .venv/bin/activate && ${env} python -m app.main
 
 check:
 	. .venv/bin/activate && ${env} pylint app

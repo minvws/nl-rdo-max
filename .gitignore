@@ -2,6 +2,7 @@
 .idea
 .venv
 .fleet
+.env
 node_modules
 env
 *.egg-info
