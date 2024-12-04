@@ -4,7 +4,7 @@
 FROM python:3.10-slim AS base
 
 ARG PROJECT_DIR="/src"
-ARG NODE_VERSION=20
+ARG NODE_VERSION
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -14,7 +14,6 @@ RUN apt update && \
     apt install -y --no-install-recommends make curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Install NVM, Node.js, and npm
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && \
     . "$NVM_DIR/nvm.sh" && \
     nvm install $NODE_VERSION && \
@@ -29,15 +28,6 @@ RUN --mount=type=secret,id=github_token \
 
 COPY ./scripts/setup-npm.sh /setup-npm.sh
 RUN chmod +x /setup-npm.sh && ./setup-npm.sh
-
-COPY requirements.txt setup.cfg setup.py ./
-RUN pip install --no-cache-dir -U pip \
-    && pip install --no-cache-dir pip-tools \
-    && pip-compile --extra dev \
-    && pip-sync \
-    && pip install --no-binary lxml==4.9.3 lxml==4.9.3 --force-reinstall \
-    && pip install --no-binary xmlsec==1.3.14 xmlsec==1.3.14 --force-reinstall \
-    && pip install -e .
 
 FROM base AS final
 
