@@ -11,7 +11,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     NVM_DIR=/root/.nvm
 
 RUN apt update && \
-    apt install -y --no-install-recommends make curl && \
+    apt install -y --no-install-recommends make curl libxmlsec1-dev && \
     rm -rf /var/lib/apt/lists/*
 
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && \
@@ -20,6 +20,8 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | b
     nvm use $NODE_VERSION && \
     nvm alias default $NODE_VERSION && \
     npm install -g npm
+
+ENV PATH="$NVM_DIR/versions/node/$NODE_VERSION/bin:$PATH"
 
 COPY .npmrc /root/.npmrc
 RUN --mount=type=secret,id=github_token \
@@ -35,8 +37,6 @@ WORKDIR ${PROJECT_DIR}
 EXPOSE 8006
 
 COPY ./ ${PROJECT_DIR}
-
-ENV PATH="$NVM_DIR/versions/node/$NODE_VERSION/bin:$PATH"
 
 RUN chmod +x /src/entrypoint.sh
 ENTRYPOINT ["/src/entrypoint.sh"]
