@@ -15,7 +15,9 @@ requirements = [
     "python3-saml==1.16.0",
     "python-multipart",
     "pynacl",
-    "async-timeout"
+    "async-timeout",
+    "inject",
+    "python-jose[cryptography]>=3.3.0" 
 ]
 
 setup(
