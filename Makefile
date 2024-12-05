@@ -41,7 +41,7 @@ setup-docker: setup-config setup-saml setup-secrets
 setup-venv: venv setup-config setup-saml setup-secrets setup-npm
 
 start:
-	docker compose up
+	docker compose up -d
 
 run:
 	@if [ ! -f /.dockerenv ]; then \
