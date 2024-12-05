@@ -35,18 +35,16 @@ setup-config:
 setup-npm:
 	scripts/./setup-npm.sh	
 
-setup-docker: setup-config setup-saml setup-secrets
+setup-remote: setup-config setup-saml setup-secrets
 	NODE_VERSION=$$(cat ./.nvmrc) && docker compose build --build-arg NODE_VERSION=$$NODE_VERSION
 
-setup-venv: venv setup-config setup-saml setup-secrets setup-npm
+setup-local: venv setup-config setup-saml setup-secrets setup-npm
 
-start:
+run-remote:
 	docker compose up -d
 
-run:
-	@if [ ! -f /.dockerenv ]; then \
-	    docker compose up -d; \
-	fi; \
+run-local:
+	docker compose up -d
 	npm run build
 	. .venv/bin/activate && ${env} python -m app.main
 

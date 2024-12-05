@@ -7,6 +7,8 @@ export NVM_DIR="/root/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # load nvm bash_completion
 
 make venv
-make run
+
+npm run build
+. .venv/bin/activate && ${env} python -m app.main
 
 exec "$@"
