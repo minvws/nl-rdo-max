@@ -3,41 +3,42 @@
 
 FROM python:3.11-slim AS base
 
-ARG PROJECT_DIR="/src"
-ARG NODE_VERSION
+ARG PROJECT_DIR="/src" \
+    NODE_VERSION \
+    APP_USER="app" \
+    APP_GROUP="app" \
+    UID=1000 \
+    GID=1000
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    NVM_DIR=/root/.nvm
+    PYTHONUNBUFFERED=1
 
-RUN apt update && \
-    apt install -y --no-install-recommends make curl libxmlsec1-dev && \
+ENV NVM_DIR=/home/${APP_USER}/.nvm
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends make curl libxmlsec1-dev gnupg2 lsb-release && \
+    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g npm && \
     rm -rf /var/lib/apt/lists/*
 
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && \
-    . "$NVM_DIR/nvm.sh" && \
-    nvm install $NODE_VERSION && \
-    nvm use $NODE_VERSION && \
-    nvm alias default $NODE_VERSION && \
-    npm install -g npm
+RUN groupadd --system ${APP_GROUP} --gid=${GID} && \
+    adduser --disabled-password --gecos "" --uid ${UID} --gid ${GID} \
+    --home /home/${APP_USER} ${APP_USER}
 
-ENV PATH="$NVM_DIR/versions/node/$NODE_VERSION/bin:$PATH"
+USER ${APP_USER}
 
-COPY .npmrc /root/.npmrc
-RUN --mount=type=secret,id=github_token \
-    sh -c '. $NVM_DIR/nvm.sh && \
-            echo "//npm.pkg.github.com/:_authToken=$(cat /run/secrets/github_token)" >> /root/.npmrc'
-
-COPY ./scripts/setup-npm.sh /setup-npm.sh
-RUN chmod +x /setup-npm.sh && ./setup-npm.sh
+ENV PATH="/usr/local/bin:$PATH"
 
 FROM base AS final
 
 WORKDIR ${PROJECT_DIR}
+
 EXPOSE 8006
 
-COPY ./ ${PROJECT_DIR}
+COPY --chown=${APP_USER}:${APP_GROUP} ./ ${PROJECT_DIR}
 
 RUN chmod +x /src/entrypoint.sh
+
 ENTRYPOINT ["/src/entrypoint.sh"]
 CMD ["python", "-m", "app.main"]

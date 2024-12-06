@@ -55,7 +55,7 @@ sudo apt-get update && sudo apt-get install libxmlsec1-dev
 Install npm if not already installated ([npm documentation](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm))
 As GitHub is used as an npm repository, set your GitHub token in your `.npmrc` file before running npm install.
 
-#### Steps:
+### Steps:
 1. Generate a GitHub token with the `read:packages` scope ([Generate Token](https://docs.github.com/en/packages/using-github-packages-with-your-projects-ecosystem/configuring-npm-for-use-with-github-packages)).
 2. Add the token to your `.npmrc` file:
 ```bash
@@ -68,7 +68,10 @@ As GitHub is used as an npm repository, set your GitHub token in your `.npmrc` f
 
 ### Steps:
 1. Generate a GitHub token with the `read:packages` scope ([Generate Token](https://docs.github.com/en/packages/using-github-packages-with-your-projects-ecosystem/configuring-npm-for-use-with-github-packages)).
-2. Copy `.env.example` to `.env` and add your GitHub token.
+2. Add the token to your `.npmrc` file:
+```bash
+//npm.pkg.github.com/:_authToken=YOUR_TOKEN
+```
 3. Build the project: `make setup-remote`
 4. Run the service: `make run-remote`
 

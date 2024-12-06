@@ -3,8 +3,6 @@
 NPMRC_FILE_NAME=".npmrc"
 GITHUB_REGISTRY="//npm.pkg.github.com/:_authToken="
 
-TOKEN="${GITHUB_TOKEN}"
-
 ask_for_token() {
     echo -e "\nYou need to add your GitHub read packages token to $1\n"
     echo "Please enter your GitHub read packages token: "
