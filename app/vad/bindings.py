@@ -3,15 +3,12 @@ import logging
 
 from inject import Binder
 
-from .vad.repositories import KeyRepository
-
 from .brp.repositories import ApiBrpRepository, BrpRepository, MockBrpRepository
 from .config.schemas import Config, JweFactoryType
 from .config.services import ConfigParser
 from .prs.factories import PrsRepositoryFactory
 from .prs.repositories import PrsRepository
 from .utils import root_path
-from .vad.service import JoseJweFactory, JweFactory, NoOpJweFactory
 from .version.models import VersionInfo
 from .version.services import read_version_info
 
@@ -28,8 +25,6 @@ def configure_bindings(binder: Binder, config_file: str) -> None:
 
     __bind_prs_repository(binder, config)
     __bind_brp_repository(binder, config)
-    __bind_jwe_factory(binder, config)
-    __bind_key_repository(binder, config)
 
 
 def setup_logging(binder: Binder, config: Config) -> None:
@@ -47,7 +42,6 @@ def __parse_app_config(config_file: str) -> Config:
     )
     return config_parser.parse()
 
-
 def __bind_prs_repository(binder: Binder, config: Config) -> None:
     binder.bind_to_constructor(PrsRepository, PrsRepositoryFactory(config.prs).create)
 
@@ -59,18 +53,3 @@ def __bind_brp_repository(binder: Binder, config: Config) -> None:
         binder.bind_to_constructor(
             BrpRepository, lambda: ApiBrpRepository(config.brp.base_url, api_key=config.brp.api_key)
         )
-
-
-def __bind_jwe_factory(binder: Binder, config: Config) -> None:
-    match config.app.jwe_factory:
-        case JweFactoryType.JOSE:
-            binder.bind_to_constructor(JweFactory, lambda: JoseJweFactory())
-        case JweFactoryType.NOOP:
-            binder.bind_to_constructor(JweFactory, lambda: NoOpJweFactory())
-
-        case _:
-            raise ValueError(f"Unsupported JWE factory: {config.app.jwe_factory}")
-
-
-def __bind_key_repository(binder: Binder, config: Config) -> None:
-    binder.bind(KeyRepository, KeyRepository(config.app.jwe_encryption_key))
