@@ -18,7 +18,9 @@ class ConfigParser:
 
     def parse(self) -> Config:
         if not os.path.exists(self.config_path):
-            raise FileNotFoundError(f"Configuration file '{self.config_path}' not found.")
+            raise FileNotFoundError(
+                f"Configuration file '{self.config_path}' not found."
+            )
 
         self.config_parser.read(self.config_path)
 
@@ -26,6 +28,10 @@ class ConfigParser:
 
         for section in self.config_parser.sections():
             section_values = dict(self.config_parser[section])
-            conf_values.update({section: section_values} if section != self.DEFAULT_SECTION else section_values)
+            conf_values.update(
+                {section: section_values}
+                if section != self.DEFAULT_SECTION
+                else section_values
+            )
 
         return Config(**conf_values)

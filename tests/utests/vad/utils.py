@@ -11,7 +11,6 @@ from app.vad.utils import root_path
 from app.dependency_injection.config import get_config
 
 
-
 def configure_bindings(
     bindings_override: Callable[[Binder], Binder] | None = None,
 ) -> None:
@@ -23,7 +22,11 @@ def configure_bindings(
     """
 
     def bindings_config(binder: inject.Binder) -> None:
-        binder.install(lambda binder: configure_app_bindings(binder, config_file="app/vad/vad.conf.test"))
+        binder.install(
+            lambda binder: configure_app_bindings(
+                binder, config_file="app/vad/vad.conf.test"
+            )
+        )
 
         if bindings_override:
             bindings_override(binder)
@@ -41,4 +44,3 @@ def load_app_config() -> Config:
 
     app_config: Config = inject.instance(Config)
     return app_config
-

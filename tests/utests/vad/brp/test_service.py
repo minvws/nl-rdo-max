@@ -21,13 +21,20 @@ class TestBrpApiHandling:
         return mock_brp_repo
 
     @pytest.fixture
-    def brp_service(self, mocker: MockerFixture, mock_brp_repository: ApiBrpRepository) -> BrpService:
-        mock_brp_service: BrpService = BrpService(brp_repository=mock_brp_repository, logger=mocker.Mock(Logger))
+    def brp_service(
+        self, mocker: MockerFixture, mock_brp_repository: ApiBrpRepository
+    ) -> BrpService:
+        mock_brp_service: BrpService = BrpService(
+            brp_repository=mock_brp_repository, logger=mocker.Mock(Logger)
+        )
         return mock_brp_service
 
     @pytest.mark.asyncio
     async def test_find(
-        self, brp_service: BrpService, mock_brp_repository: ApiBrpRepository, mocker: MockerFixture
+        self,
+        brp_service: BrpService,
+        mock_brp_repository: ApiBrpRepository,
+        mocker: MockerFixture,
     ) -> None:
         bsn = "123456789"
         person_data = BrpPersonDTO(
@@ -36,11 +43,15 @@ class TestBrpApiHandling:
                 geslachtsnaam="Doe",
                 voorletters="J.",
                 volledigeNaam="John Doe",
-                aanduidingNaamgebruik=NameUsageIndicator(code="E", omschrijving="eigen geslachtsnaam"),
+                aanduidingNaamgebruik=NameUsageIndicator(
+                    code="E", omschrijving="eigen geslachtsnaam"
+                ),
             ),
             leeftijd=46,
         )
-        response_data = BrpPersonsResponseDTO(personen=[person_data], type="RaadpleegMetBurgerservicenummer")
+        response_data = BrpPersonsResponseDTO(
+            personen=[person_data], type="RaadpleegMetBurgerservicenummer"
+        )
         mock_brp_repository_find = mocker.patch.object(mock_brp_repository, "find")
         mock_brp_repository_find.return_value = response_data
 
@@ -50,10 +61,15 @@ class TestBrpApiHandling:
 
     @pytest.mark.asyncio
     async def test_find_raises_exception_when_no_person_was_found(
-        self, brp_service: BrpService, mock_brp_repository: ApiBrpRepository, mocker: MockerFixture
+        self,
+        brp_service: BrpService,
+        mock_brp_repository: ApiBrpRepository,
+        mocker: MockerFixture,
     ) -> None:
         bsn = "123456789"
-        response_data = BrpPersonsResponseDTO(personen=[], type="RaadpleegMetBurgerservicenummer")
+        response_data = BrpPersonsResponseDTO(
+            personen=[], type="RaadpleegMetBurgerservicenummer"
+        )
         mock_brp_repository_find = mocker.patch.object(mock_brp_repository, "find")
         mock_brp_repository_find.return_value = response_data
 
@@ -62,7 +78,10 @@ class TestBrpApiHandling:
 
     @pytest.mark.asyncio
     async def test_find_raises_exception_when_multiple_persons_were_found(
-        self, brp_service: BrpService, mock_brp_repository: ApiBrpRepository, mocker: MockerFixture
+        self,
+        brp_service: BrpService,
+        mock_brp_repository: ApiBrpRepository,
+        mocker: MockerFixture,
     ) -> None:
         bsn = "123456789"
         person_data_1 = BrpPersonDTO(
@@ -71,7 +90,9 @@ class TestBrpApiHandling:
                 geslachtsnaam="Doe",
                 voorletters="J.",
                 volledigeNaam="John Doe",
-                aanduidingNaamgebruik=NameUsageIndicator(code="E", omschrijving="eigen geslachtsnaam"),
+                aanduidingNaamgebruik=NameUsageIndicator(
+                    code="E", omschrijving="eigen geslachtsnaam"
+                ),
             ),
             leeftijd=46,
         )
@@ -81,12 +102,15 @@ class TestBrpApiHandling:
                 geslachtsnaam="Doe",
                 voorletters="J.",
                 volledigeNaam="John Doe",
-                aanduidingNaamgebruik=NameUsageIndicator(code="E", omschrijving="eigen geslachtsnaam"),
+                aanduidingNaamgebruik=NameUsageIndicator(
+                    code="E", omschrijving="eigen geslachtsnaam"
+                ),
             ),
             leeftijd=45,
         )
         response_data = BrpPersonsResponseDTO(
-            personen=[person_data_1, person_data_2], type="RaadpleegMetBurgerservicenummer"
+            personen=[person_data_1, person_data_2],
+            type="RaadpleegMetBurgerservicenummer",
         )
         mock_brp_repository_find = mocker.patch.object(mock_brp_repository, "find")
         mock_brp_repository_find.return_value = response_data
@@ -96,7 +120,10 @@ class TestBrpApiHandling:
 
     @pytest.mark.asyncio
     async def test_find_can_return_deceased_person(
-        self, brp_service: BrpService, mock_brp_repository: ApiBrpRepository, mocker: MockerFixture
+        self,
+        brp_service: BrpService,
+        mock_brp_repository: ApiBrpRepository,
+        mocker: MockerFixture,
     ) -> None:
         bsn = "123456789"
         person_data = BrpPersonDTO(
@@ -105,10 +132,14 @@ class TestBrpApiHandling:
                 geslachtsnaam="Doe",
                 voorletters="J.",
                 volledigeNaam="John Doe",
-                aanduidingNaamgebruik=NameUsageIndicator(code="E", omschrijving="eigen geslachtsnaam"),
+                aanduidingNaamgebruik=NameUsageIndicator(
+                    code="E", omschrijving="eigen geslachtsnaam"
+                ),
             ),
         )
-        response_data = BrpPersonsResponseDTO(personen=[person_data], type="RaadpleegMetBurgerservicenummer")
+        response_data = BrpPersonsResponseDTO(
+            personen=[person_data], type="RaadpleegMetBurgerservicenummer"
+        )
         mock_brp_repository_find = mocker.patch.object(mock_brp_repository, "find")
         mock_brp_repository_find.return_value = response_data
 
@@ -118,7 +149,10 @@ class TestBrpApiHandling:
 
     @pytest.mark.asyncio
     async def test_find_can_return_person_without_age(
-        self, brp_service: BrpService, mock_brp_repository: ApiBrpRepository, mocker: MockerFixture
+        self,
+        brp_service: BrpService,
+        mock_brp_repository: ApiBrpRepository,
+        mocker: MockerFixture,
     ) -> None:
         bsn = "123456789"
         person_data = BrpPersonDTO(
@@ -127,10 +161,14 @@ class TestBrpApiHandling:
                 geslachtsnaam="Doe",
                 voorletters="J.",
                 volledigeNaam="John Doe",
-                aanduidingNaamgebruik=NameUsageIndicator(code="E", omschrijving="eigen geslachtsnaam"),
+                aanduidingNaamgebruik=NameUsageIndicator(
+                    code="E", omschrijving="eigen geslachtsnaam"
+                ),
             ),
         )
-        response_data = BrpPersonsResponseDTO(personen=[person_data], type="RaadpleegMetBurgerservicenummer")
+        response_data = BrpPersonsResponseDTO(
+            personen=[person_data], type="RaadpleegMetBurgerservicenummer"
+        )
         mock_brp_repository_find = mocker.patch.object(mock_brp_repository, "find")
         mock_brp_repository_find.return_value = response_data
 

@@ -1,9 +1,6 @@
 import json
-import uuid
 
 import inject
-import requests
-from requests import Response
 
 from app.models.authentication_context import AuthenticationContext
 from app.models.saml.artifact_response import ArtifactResponse
@@ -27,7 +24,7 @@ class VadUserinfoService(UserinfoService):
     ) -> None:
         self._req_issuer = req_issuer
         # self.jwt_service = jwt_service_factory.create(
-        #     jwt_private_key_path=userinfo_request_signing_priv_key_path, 
+        #     jwt_private_key_path=userinfo_request_signing_priv_key_path,
         #     jwt_signing_certificate_path=userinfo_request_signing_crt_path
         # )
         self.clients = clients
@@ -39,9 +36,9 @@ class VadUserinfoService(UserinfoService):
         artifact_response: ArtifactResponse,
         subject_identifier: str,
     ) -> str:
-        bsn = artifact_response.get_bsn(authorization_by_proxy=True)        
+        bsn = artifact_response.get_bsn(authorization_by_proxy=True)
         user_data: UserInfoDTO = await self.bsn_exchanger.exchange(bsn)
-        return user_data
+        return json.dumps(user_data.model_dump())
 
     def request_userinfo_for_exchange_token(
         self, authentication_context: AuthenticationContext, subject_identifier: str

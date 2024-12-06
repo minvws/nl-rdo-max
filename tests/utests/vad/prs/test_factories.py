@@ -10,13 +10,17 @@ from tests.utests.vad.utils import configure_bindings
 
 @pytest.fixture
 def mock_prs_config() -> PrsConfig:
-    return PrsConfig(prs_repository=PrsRepositoryType.MOCK, repo_base_url="", organisation_id="")
+    return PrsConfig(
+        prs_repository=PrsRepositoryType.MOCK, repo_base_url="", organisation_id=""
+    )
 
 
 @pytest.fixture
 def api_prs_config() -> PrsConfig:
     return PrsConfig(
-        prs_repository=PrsRepositoryType.API, repo_base_url="http://localhost", organisation_id="test-org-id"
+        prs_repository=PrsRepositoryType.API,
+        repo_base_url="http://localhost",
+        organisation_id="test-org-id",
     )
 
 
@@ -37,14 +41,16 @@ class TestPrsRepositoryFactory:
     # Using configure_bindings() here to use DI for the AsyncClient
     def test_create_api_repository(self, api_prs_config: PrsConfig) -> None:
         configure_bindings()
-        
+
         factory = PrsRepositoryFactory(api_prs_config)
         repository = factory.create()
 
         assert isinstance(repository, ApiPrsRepository)
         assert repository._repo_base_url == "http://localhost"
 
-    def test_factory_raises_error_with_invalid_config(self, invalid_prs_config: PrsConfig) -> None:
+    def test_factory_raises_error_with_invalid_config(
+        self, invalid_prs_config: PrsConfig
+    ) -> None:
         factory = PrsRepositoryFactory(invalid_prs_config)
         with pytest.raises(NotImplementedError):
             factory.create()

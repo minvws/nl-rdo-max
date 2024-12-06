@@ -4,13 +4,11 @@ import logging
 from inject import Binder
 
 from .brp.repositories import ApiBrpRepository, BrpRepository, MockBrpRepository
-from .config.schemas import Config, JweFactoryType
+from .config.schemas import Config
 from .config.services import ConfigParser
 from .prs.factories import PrsRepositoryFactory
 from .prs.repositories import PrsRepository
 from .utils import root_path
-from .version.models import VersionInfo
-from .version.services import read_version_info
 
 
 def configure_bindings(binder: Binder, config_file: str) -> None:
@@ -19,7 +17,6 @@ def configure_bindings(binder: Binder, config_file: str) -> None:
     """
     config: Config = __parse_app_config(config_file=config_file)
     binder.bind(Config, config)
-    # binder.bind(VersionInfo, read_version_info())
 
     setup_logging(binder=binder, config=config)
 
@@ -42,6 +39,7 @@ def __parse_app_config(config_file: str) -> Config:
     )
     return config_parser.parse()
 
+
 def __bind_prs_repository(binder: Binder, config: Config) -> None:
     binder.bind_to_constructor(PrsRepository, PrsRepositoryFactory(config.prs).create)
 
@@ -51,5 +49,6 @@ def __bind_brp_repository(binder: Binder, config: Config) -> None:
         binder.bind(BrpRepository, MockBrpRepository())
     else:
         binder.bind_to_constructor(
-            BrpRepository, lambda: ApiBrpRepository(config.brp.base_url, api_key=config.brp.api_key)
+            BrpRepository,
+            lambda: ApiBrpRepository(config.brp.base_url, api_key=config.brp.api_key),
         )

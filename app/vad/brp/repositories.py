@@ -4,7 +4,13 @@ import httpx
 
 from .exceptions import BrpHttpRequestException, BrpHttpResponseException
 
-from .schemas import BrpName, BrpPersonDTO, BrpPersonResponseError, BrpPersonsResponseDTO, NameUsageIndicator
+from .schemas import (
+    BrpName,
+    BrpPersonDTO,
+    BrpPersonResponseError,
+    BrpPersonsResponseDTO,
+    NameUsageIndicator,
+)
 
 
 class BrpRepository(ABC):
@@ -25,7 +31,9 @@ class MockBrpRepository(BrpRepository):
                         geslachtsnaam="Jansen",
                         voorletters="J.",
                         volledigeNaam="Jan van Jansen",
-                        aanduidingNaamgebruik=NameUsageIndicator(code="E", omschrijving="eigen geslachtsnaam"),
+                        aanduidingNaamgebruik=NameUsageIndicator(
+                            code="E", omschrijving="eigen geslachtsnaam"
+                        ),
                     ),
                 )
             ],
@@ -57,7 +65,9 @@ class ApiBrpRepository(BrpRepository):
                 return BrpPersonsResponseDTO.model_validate(data)
         except httpx.HTTPStatusError as exc:
             error_response = BrpPersonResponseError(**exc.response.json())
-            raise BrpHttpResponseException(status_code=exc.response.status_code, detail=error_response) from exc
+            raise BrpHttpResponseException(
+                status_code=exc.response.status_code, detail=error_response
+            ) from exc
         except httpx.RequestError as exc:
             raise BrpHttpRequestException(
                 500,

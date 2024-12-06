@@ -19,15 +19,21 @@ class BrpService:
 
     async def get_person_info(self, bsn: str) -> PersonDTO:
         try:
-            brp_persons_dto: BrpPersonsResponseDTO = await self._brp_repository.find(bsn)
+            brp_persons_dto: BrpPersonsResponseDTO = await self._brp_repository.find(
+                bsn
+            )
             self.validate_response(brp_persons_dto)
 
         except BrpHttpRequestException as e:
-            self.logger.error(f"Request error while requesting person info from BRP: {e}")
+            self.logger.error(
+                f"Request error while requesting person info from BRP: {e}"
+            )
             return self.create_empty_person_dto()
 
         except BrpHttpResponseException as e:
-            self.logger.error(f"Response error while requesting person info from BRP: {e}")
+            self.logger.error(
+                f"Response error while requesting person info from BRP: {e}"
+            )
             return self.create_empty_person_dto()
 
         brp_person_dto: BrpPersonDTO = brp_persons_dto.personen[0]

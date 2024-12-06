@@ -15,12 +15,17 @@ class PrsRepository(ABC):
 
 class MockPrsRepository(PrsRepository):
     async def get_pseudonym(self, bsn: str) -> PrsResponseData:
-        return PrsResponseData(rid=base64.b64encode(bsn.encode()).decode(), pdn=base64.b64encode(bsn.encode()).decode())
+        return PrsResponseData(
+            rid=base64.b64encode(bsn.encode()).decode(),
+            pdn=base64.b64encode(bsn.encode()).decode(),
+        )
 
 
 class ApiPrsRepository(PrsRepository):
     @inject.autoparams()
-    def __init__(self, client: AsyncClient, repo_base_url: str, organisation_id: str) -> None:
+    def __init__(
+        self, client: AsyncClient, repo_base_url: str, organisation_id: str
+    ) -> None:
         self.client = client
         self._repo_base_url = repo_base_url
         self._organisation_id = organisation_id
@@ -37,7 +42,9 @@ class ApiPrsRepository(PrsRepository):
             # type ignored because this method should only handle request success/failure and not data validation
             return data  # type: ignore
         except HTTPStatusError as e:
-            raise RuntimeError(f"HTTP error occurred: {e.response.status_code} - {e.response.text}") from e
+            raise RuntimeError(
+                f"HTTP error occurred: {e.response.status_code} - {e.response.text}"
+            ) from e
         except RequestError as e:
             raise RuntimeError(f"Request error occurred: {str(e)}") from e
         except Exception as e:

@@ -12,7 +12,9 @@ from app.vad.vad.schemas import UserInfoDTO
 
 class TestVadUserinfoService:
     @pytest.mark.asyncio
-    async def test_vad_request_userinfo_for_digid_artifact(self, mocker: MockerFixture) -> None:
+    async def test_vad_request_userinfo_for_digid_artifact(
+        self, mocker: MockerFixture
+    ) -> None:
         configure_bindings()
 
         jwt_service_factory = mocker.Mock()
@@ -38,13 +40,17 @@ class TestVadUserinfoService:
             authentication_meta=mocker.Mock(spec=AuthenticationMeta),
         )
         bsn = "123456789"
-        artifact_response: ArtifactResponseMock = ArtifactResponseMock(artifact_response_str=bsn)
-        subject_identifier: str = "subject_identifier"
-        user_info = await vad_userinfo_service.request_userinfo_for_digid_artifact(
-            authentication_context, artifact_response, subject_identifier
+        artifact_response: ArtifactResponseMock = ArtifactResponseMock(
+            artifact_response_str=bsn
         )
+        subject_identifier: str = "subject_identifier"
+        user_info_json: str = (
+            await vad_userinfo_service.request_userinfo_for_digid_artifact(
+                authentication_context, artifact_response, subject_identifier
+            )
+        )
+        user_info: UserInfoDTO = UserInfoDTO.model_validate_json(user_info_json)
 
-        assert isinstance(user_info, UserInfoDTO)
         assert user_info.person.name.last_name == "Jansen"
         assert user_info.reference_pseudonym.rid is not None
         assert isinstance(user_info.reference_pseudonym.rid, str)

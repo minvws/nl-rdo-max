@@ -26,13 +26,17 @@ class TestMockBrpRepository:
 
 class TestApiBrpRepository:
     @pytest.mark.asyncio
-    async def test_find_person_receives_empty_response_from_brp_api(self, mocker: MockerFixture) -> None:
+    async def test_find_person_receives_empty_response_from_brp_api(
+        self, mocker: MockerFixture
+    ) -> None:
         base_url = "https://api.example.com"
         bsn = "123456789"
         brp_api_response = {"type": "RaadpleegMetBurgerservicenummer", "personen": []}
 
         mock_post = mocker.patch.object(
-            httpx.AsyncClient, "post", return_value=mocker.Mock(status_code=200, json=lambda: brp_api_response)
+            httpx.AsyncClient,
+            "post",
+            return_value=mocker.Mock(status_code=200, json=lambda: brp_api_response),
         )
 
         repository = ApiBrpRepository(base_url=base_url)
@@ -61,7 +65,10 @@ class TestApiBrpRepository:
             "personen": [
                 {
                     "naam": {
-                        "aanduidingNaamgebruik": {"code": "E", "omschrijving": "eigen geslachtsnaam"},
+                        "aanduidingNaamgebruik": {
+                            "code": "E",
+                            "omschrijving": "eigen geslachtsnaam",
+                        },
                         "voornamen": "Suzanne",
                         "geslachtsnaam": "Moulin",
                         "voorletters": "S.",
@@ -73,7 +80,9 @@ class TestApiBrpRepository:
         }
 
         mock_post = mocker.patch.object(
-            httpx.AsyncClient, "post", return_value=mocker.Mock(status_code=200, json=lambda: brp_api_response)
+            httpx.AsyncClient,
+            "post",
+            return_value=mocker.Mock(status_code=200, json=lambda: brp_api_response),
         )
 
         repository = ApiBrpRepository(base_url=base_url, api_key=api_key)
@@ -100,7 +109,10 @@ class TestApiBrpRepository:
             "personen": [
                 {
                     "naam": {
-                        "aanduidingNaamgebruik": {"code": "E", "omschrijving": "eigen geslachtsnaam"},
+                        "aanduidingNaamgebruik": {
+                            "code": "E",
+                            "omschrijving": "eigen geslachtsnaam",
+                        },
                         "voornamen": "Evert",
                         "geslachtsnaam": "Eizenga",
                         "voorletters": "E.",
@@ -111,13 +123,17 @@ class TestApiBrpRepository:
         }
 
         mock_post = mocker.patch.object(
-            httpx.AsyncClient, "post", return_value=mocker.Mock(status_code=200, json=lambda: valid_response)
+            httpx.AsyncClient,
+            "post",
+            return_value=mocker.Mock(status_code=200, json=lambda: valid_response),
         )
 
         repository = ApiBrpRepository(base_url=base_url, api_key=api_key)
         result = await repository.find(bsn)
 
-        assert result == BrpPersonsResponseDTO.model_validate_json(json.dumps(valid_response))
+        assert result == BrpPersonsResponseDTO.model_validate_json(
+            json.dumps(valid_response)
+        )
         mock_post.assert_called_once_with(
             f"{base_url}/personen",
             json={

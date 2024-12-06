@@ -16,18 +16,18 @@ from app.dependency_injection.container import Container as MaxContainer
 
 def test_init_vad_parses_vad_config(mocker: MockerFixture) -> None:
     clear_bindings()
-    
+
     config_path = root_path("app/vad/vad.conf")
     if not os.path.isfile(config_path):
         pytest.fail(f"This test requires config file {config_path} to exist")
 
     inject_configure_spy = mocker.spy(inject, "configure")
     config_parser_init_spy = mocker.spy(ConfigParser, "__init__")
-    
+
     max_container = MaxContainer()
-    
+
     init_vad_module(max_container)
-    
+
     inject_configure_spy.assert_called()
     config_parser_init_spy.assert_called_once_with(
         mocker.ANY,
@@ -41,4 +41,3 @@ def test_init_vad_parses_vad_config(mocker: MockerFixture) -> None:
 #     inject_configure_spy = mocker.spy(inject, "configure")
 #     create_app()
 #     inject_configure_spy.assert_not_called()
-    

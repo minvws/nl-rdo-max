@@ -4,7 +4,6 @@ import urllib.parse
 from configparser import ConfigParser
 from typing import Type, Union, Callable, Tuple, List
 
-from app.vad.module import init_module as init_vad_module
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -21,6 +20,7 @@ from app.routers.oidc_router import oidc_router
 from app.routers.saml_router import saml_router
 from app.routers.misc_router import misc_router
 from app.routers.docs_router import DocsRouter
+from app.vad.module import init_module as init_vad_module
 
 
 _exception_handlers: List[Tuple[Union[int, Type[Exception]], Callable]] = [
@@ -77,9 +77,7 @@ def create_fastapi_app(
     config: Union[ConfigParser, None] = None, container: Union[Container, None] = None
 ) -> FastAPI:
     container = container if container is not None else Container()
-    # todo: we are getting a strange config (with request values)
-    # _config: ConfigParser = config if config is not None else get_config()
-    _config: ConfigParser = get_config()
+    _config: ConfigParser = config if config is not None else get_config()
     loglevel = logging.getLevelName(_config.get("app", "loglevel").upper())
     swagger_config = get_swagger_config(_config)
 
@@ -115,9 +113,9 @@ def create_fastapi_app(
         openapi_url=openapi_url,
         version=version,
     )
-    
+
     _load_routes(swagger_config, is_production, fastapi)
-    
+
     fastapi.mount("/static", StaticFiles(directory="static"), name="static")
     container.wire(modules=modules)
     fastapi.container = container  # type: ignore
@@ -125,12 +123,13 @@ def create_fastapi_app(
         container
     )
     fastapi.add_middleware(CORSMiddleware, allow_origins=_parse_origins(container))
-    
+
     _add_exception_handlers(fastapi)
-    
+
     _load_modules(container)
-    
+
     return fastapi
+
 
 def _load_routes(swagger_config, is_production, fastapi):
     fastapi.include_router(saml_router)

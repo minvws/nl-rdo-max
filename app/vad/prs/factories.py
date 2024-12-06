@@ -13,7 +13,8 @@ class PrsRepositoryFactory:
 
             case PrsRepositoryType.API:
                 repository: ApiPrsRepository = ApiPrsRepository(
-                    repo_base_url=self.config.repo_base_url, organisation_id=self.config.organisation_id
+                    repo_base_url=self.config.repo_base_url,
+                    organisation_id=self.config.organisation_id,
                 )
                 return repository
 

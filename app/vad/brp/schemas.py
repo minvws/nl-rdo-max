@@ -68,7 +68,9 @@ class PersonDTO(BaseModel):
 
     @staticmethod
     def from_brp_person(brp_person: BrpPersonDTO) -> "PersonDTO":
-        return PersonDTO(age=brp_person.leeftijd, name=NameDTO.from_brp_name(brp_person.naam))
+        return PersonDTO(
+            age=brp_person.leeftijd, name=NameDTO.from_brp_name(brp_person.naam)
+        )
 
 
 # https://brp-api.github.io/Haal-Centraal-BRP-bevragen/v2/redoc#tag/Personen/operation/Personen
