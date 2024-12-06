@@ -58,7 +58,7 @@ audit:
 fix:
 	. .venv/bin/activate && $(env) black app tests
 
-test: venv setup
+test: venv setup-local
 	. .venv/bin/activate && ${env} pytest tests
 
 type-check:
