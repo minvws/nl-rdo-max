@@ -66,8 +66,7 @@ for the basics:
 
 As MAX is a OIDC <-> SAML bridge, one has to have files for both. Each file is described below. Further, one needs
 to create an `max.conf` to define all settings. An example is found in max.conf.example with the corresponding
-explanations. To make use of all default settings, a single run of `make setup` should be sufficient. Allowing you
-to run the service on all default settings.
+explanations. To make use of all default settings, a single run of `make setup-local` or `make setup-remote` should be sufficient, allowing you to run the service on all default settings.
 
 ## Setup Identity Provider (IDP) Metadata
 To use DigiD or TVS you first need to download the metadata. During setup this is done in the make setup or make
