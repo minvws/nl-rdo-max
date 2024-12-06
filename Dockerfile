@@ -23,13 +23,7 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | b
 
 ENV PATH="$NVM_DIR/versions/node/$NODE_VERSION/bin:$PATH"
 
-COPY .npmrc /root/.npmrc
-RUN --mount=type=secret,id=github_token \
-    sh -c '. $NVM_DIR/nvm.sh && \
-            echo "//npm.pkg.github.com/:_authToken=$(cat /run/secrets/github_token)" >> /root/.npmrc'
-
-COPY ./scripts/setup-npm.sh /setup-npm.sh
-RUN chmod +x /setup-npm.sh && ./setup-npm.sh
+COPY .npmrc /root/.npmrc         
 
 FROM base AS final
 

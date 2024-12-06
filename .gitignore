@@ -2,7 +2,6 @@
 .idea
 .venv
 .fleet
-.env
 node_modules
 env
 *.egg-info
@@ -16,6 +15,7 @@ __pycache__
 coverage.xml
 .DS_Store
 *.bak
+.npmrc
 ## Configuration and secrets
 secrets
 tests/secrets
