@@ -36,7 +36,7 @@ setup-npm:
 	scripts/./setup-npm.sh	
 
 setup-remote: setup-config setup-saml setup-secrets
-	NODE_VERSION=$$(cat ./.nvmrc) && docker compose build --build-arg NODE_VERSION=$$NODE_VERSION
+	NODE_VERSION=$$(cat ./.nvmrc) && docker compose build --build-arg NODE_VERSION=$$NODE_VERSION --build-arg UID=$$(id -u) --build-arg GID=$$(id -g)
 
 setup-local: venv setup-config setup-saml setup-secrets setup-npm
 
