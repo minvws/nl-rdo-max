@@ -15,10 +15,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 ENV NVM_DIR=/home/${APP_USER}/.nvm
 
-RUN apt update && \
-    apt install -y --no-install-recommends make curl libxmlsec1-dev gnupg2 lsb-release && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends make curl libxmlsec1-dev gnupg2 lsb-release && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
-    apt install -y nodejs && \
+    apt-get install -y nodejs && \
     npm install -g npm && \
     rm -rf /var/lib/apt/lists/*
 
