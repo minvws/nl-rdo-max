@@ -16,8 +16,7 @@ requirements = [
     "python-multipart",
     "pynacl",
     "async-timeout",
-    "inject",
-    "python-jose[cryptography]>=3.3.0" 
+    "inject"
 ]
 
 setup(
@@ -42,11 +41,13 @@ setup(
             "pytest-mock",
             "pytest-docker",
             "pytest_redis",
+            "pytest-asyncio",
             "freezegun",
             "types-redis",
             "types-python-dateutil",
             "types-requests",
-            "httpx"
+            "httpx", 
+            "faker"
         ]
     },
 )

@@ -38,10 +38,10 @@ class VadUserinfoService(UserinfoService):
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
         subject_identifier: str,
-    ) -> dict:
+    ) -> str:
         bsn = artifact_response.get_bsn(authorization_by_proxy=True)        
         user_data: UserInfoDTO = await self.bsn_exchanger.exchange(bsn)
-        return user_data.dict()
+        return user_data
 
     def request_userinfo_for_exchange_token(
         self, authentication_context: AuthenticationContext, subject_identifier: str
