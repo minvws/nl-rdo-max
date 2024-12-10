@@ -126,7 +126,8 @@ def create_fastapi_app(
 
     _add_exception_handlers(fastapi)
 
-    _load_modules(container)
+    if _config.getboolean("vad", "enabled", fallback=False):
+        init_vad_module(container)
 
     return fastapi
 
@@ -140,7 +141,3 @@ def _load_routes(swagger_config, is_production, fastapi):
         fastapi.include_router(docs_router.get_docs_router())
     if not is_production:
         fastapi.include_router(digid_mock_router)
-
-
-def _load_modules(container: Container) -> None:
-    init_vad_module(container)

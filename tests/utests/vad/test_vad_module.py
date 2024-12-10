@@ -34,10 +34,3 @@ def test_init_vad_parses_vad_config(mocker: MockerFixture) -> None:
         mocker.ANY,
         root_path("vad.conf"),
     )
-
-
-# def test_create_app_does_not_reconfigure_inject(mocker: MockerFixture) -> None:
-#     configure_bindings()
-#     inject_configure_spy = mocker.spy(inject, "configure")
-#     create_app()
-#     inject_configure_spy.assert_not_called()

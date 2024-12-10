@@ -168,3 +168,7 @@ enabled = True
 swagger_ui_endpoint = /ui
 redoc_endpoint = /docs
 openapi_endpoint = /openapi.json
+
+[vad]
+enabled = False
+
