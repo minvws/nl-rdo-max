@@ -1,8 +1,9 @@
 # pylint:disable=too-few-public-methods
-import random
-import uuid
 import nacl
 import pytest
+import random
+import subprocess
+import uuid
 
 from dependency_injector import providers, containers
 from fastapi.testclient import TestClient
