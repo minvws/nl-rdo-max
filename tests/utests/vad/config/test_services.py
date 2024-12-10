@@ -12,7 +12,7 @@ class TestConfigParser:
     def test_config_file_is_valid_to_parse(self) -> None:
         config_parser = ConfigParser(
             config_parser=configparser.ConfigParser(),
-            config_path=root_path("app/vad/vad.conf.test"),
+            config_path=root_path("vad.conf.test"),
         )
         app_config = config_parser.parse()
 

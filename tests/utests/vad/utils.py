@@ -17,14 +17,14 @@ def configure_bindings(
     """
     Configures dependency injection bindings for the application.
 
-    Sets up standard bindings using `app/vad/vad.conf.test`.
+    Sets up standard bindings using `vad.conf.test`.
     If `bindings_override` is provided, it overrides bindings over other bindings.
     """
 
     def bindings_config(binder: inject.Binder) -> None:
         binder.install(
             lambda binder: configure_app_bindings(
-                binder, config_file="app/vad/vad.conf.test"
+                binder, config_file="vad.conf.test"
             )
         )
 

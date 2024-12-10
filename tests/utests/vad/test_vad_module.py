@@ -17,7 +17,7 @@ from app.dependency_injection.container import Container as MaxContainer
 def test_init_vad_parses_vad_config(mocker: MockerFixture) -> None:
     clear_bindings()
 
-    config_path = root_path("app/vad/vad.conf")
+    config_path = root_path("vad.conf")
     if not os.path.isfile(config_path):
         pytest.fail(f"This test requires config file {config_path} to exist")
 
@@ -32,7 +32,7 @@ def test_init_vad_parses_vad_config(mocker: MockerFixture) -> None:
     config_parser_init_spy.assert_called_once_with(
         mocker.ANY,
         mocker.ANY,
-        root_path("app/vad/vad.conf"),
+        root_path("vad.conf"),
     )
 
 

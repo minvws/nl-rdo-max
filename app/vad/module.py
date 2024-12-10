@@ -11,7 +11,7 @@ def init_module(container: MaxContainer) -> None:
     if not inject.is_configured():
         inject.configure(
             lambda binder: configure_bindings(
-                binder=binder, config_file="app/vad/vad.conf"
+                binder=binder, config_file="vad.conf"
             )
         )
 
