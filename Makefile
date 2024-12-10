@@ -44,7 +44,7 @@ run-remote:
 	docker compose up -d
 
 run-local:
-	docker compose up -d redis
+	docker compose up -d redis redis-init
 	npm run build
 	. .venv/bin/activate && ${env} python -m app.main
 
