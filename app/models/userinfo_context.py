@@ -8,3 +8,4 @@ class UserinfoContext(BaseModel):
     authentication_method: str
     access_token: str
     userinfo: Any
+    client_content_type: str | None = None

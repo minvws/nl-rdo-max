@@ -23,9 +23,7 @@ def configure_bindings(
 
     def bindings_config(binder: inject.Binder) -> None:
         binder.install(
-            lambda binder: configure_app_bindings(
-                binder, config_file="vad.conf.test"
-            )
+            lambda binder: configure_app_bindings(binder, config_file="vad.conf.test")
         )
 
         if bindings_override:

@@ -92,7 +92,11 @@ class AuthenticationCache:
         )
 
     def cache_userinfo_context(
-        self, userinfo_key: str, access_token: str, acs_context: AcsContext
+        self,
+        userinfo_key: str,
+        access_token: str,
+        acs_context: AcsContext,
+        client_content_type: str | None = None,
     ):
         userinfo_context_serialized = (
             self._authentication_context_encryption_service.symm_encrypt(
@@ -101,6 +105,7 @@ class AuthenticationCache:
                     authentication_method=acs_context.authentication_method,
                     access_token=access_token,
                     userinfo=acs_context.userinfo,
+                    client_content_type=client_content_type,
                 )
                 .model_dump_json()
                 .encode("utf-8")

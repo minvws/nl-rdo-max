@@ -10,9 +10,7 @@ from .services.userinfo.vad_userinfo_service import VadUserinfoService
 def init_module(container: MaxContainer) -> None:
     if not inject.is_configured():
         inject.configure(
-            lambda binder: configure_bindings(
-                binder=binder, config_file="vad.conf"
-            )
+            lambda binder: configure_bindings(binder=binder, config_file="vad.conf")
         )
 
     inject_vad_userinfo_service(max_container=container)

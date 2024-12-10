@@ -635,7 +635,42 @@ def test_token():
     authentication_cache.get_acs_context.assert_called_with("c")
     pyop_provider.handle_token_request.assert_called_with("qs", headers)
     authentication_cache.cache_userinfo_context.assert_called_with(
-        token_response["access_token"], token_response["access_token"], acs_context
+        token_response["access_token"],
+        token_response["access_token"],
+        acs_context,
+        client_content_type=None,
+    )
+
+
+def test_token_with_client_content_type():
+    pyop_provider = MagicMock()
+    authentication_cache = MagicMock()
+    userinfo_service = MagicMock()
+    token_request = MagicMock()
+    headers = MagicMock()
+    acs_context = MagicMock()
+    userinfo = MagicMock()
+    token_response = MagicMock()
+    token_request.code = "c"
+    token_request.query_string = "qs"
+    token_request.client_id = "client_id"
+    authentication_cache.get_acs_context.return_value = acs_context
+    pyop_provider.handle_token_request.return_value = token_response
+    userinfo_service.request_userinfo_for_artifact.return_value = userinfo
+    oidc_provider = create_oidc_provider(
+        pyop_provider=pyop_provider,
+        userinfo_service=userinfo_service,
+        authentication_cache=authentication_cache,
+        clients={"client_id": {"name": "name", "content_type": "application/json"}},
+    )
+    assert token_response == oidc_provider.token(token_request, headers)
+    authentication_cache.get_acs_context.assert_called_with("c")
+    pyop_provider.handle_token_request.assert_called_with("qs", headers)
+    authentication_cache.cache_userinfo_context.assert_called_with(
+        token_response["access_token"],
+        token_response["access_token"],
+        acs_context,
+        client_content_type="application/json",
     )
 
 
@@ -695,7 +730,10 @@ def test_token_with_client_authentication_method():
     authentication_cache.get_acs_context.assert_called_with("c")
     pyop_provider.handle_token_request.assert_called_with("qs", headers)
     authentication_cache.cache_userinfo_context.assert_called_with(
-        token_response["access_token"], token_response["access_token"], acs_context
+        token_response["access_token"],
+        token_response["access_token"],
+        acs_context,
+        client_content_type=None,
     )
     token_authentication_validator.validate_client_authentication.assert_called_with(
         client_id=token_request.client_id,
