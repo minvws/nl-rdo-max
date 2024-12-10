@@ -156,9 +156,9 @@ def redis_mock(prepare_docker_services, redis):
 @pytest.fixture
 def prepare_docker_services(inside_docker):
     if not inside_docker:
-        subprocess.run(["docker-compose", "up", "-d"], check=True)
+        subprocess.run(["docker compose", "up", "-d"], check=True)
 
     yield
 
     if not inside_docker:
-        subprocess.run(["docker-compose", "down"], check=True)
+        subprocess.run(["docker compose", "down"], check=True)
