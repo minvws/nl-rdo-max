@@ -20,12 +20,13 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends make curl libxmlsec1-dev gnupg2 lsb-release && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
     apt-get install -y nodejs && \
-    apt-get install -y npm && \
+    npm install -g npm && \
     rm -rf /var/lib/apt/lists/*
-
-RUN groupadd --system ${APP_GROUP} --gid=${GID} && \
+    
+RUN group -u ${GID} &>/dev/null || groupadd --system ${APP_GROUP} --gid=${GID} && \
     adduser --disabled-password --gecos "" --uid ${UID} --gid ${GID} \
     --home /home/${APP_USER} ${APP_USER}
+
 
 USER ${APP_USER}
 
