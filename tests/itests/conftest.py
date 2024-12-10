@@ -2,7 +2,6 @@
 import nacl
 import pytest
 import random
-import subprocess
 import uuid
 
 from dependency_injector import providers, containers
