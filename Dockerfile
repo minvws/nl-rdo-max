@@ -13,13 +13,14 @@ ARG PROJECT_DIR="/src" \
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
+ENV MYPYPATH=${PROJECT_DIR}/stubs
 ENV NVM_DIR=/home/${APP_USER}/.nvm
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends make curl libxmlsec1-dev gnupg2 lsb-release && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
     apt-get install -y nodejs && \
-    npm install -g npm && \
+    apt-get install -y npm && \
     rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --system ${APP_GROUP} --gid=${GID} && \

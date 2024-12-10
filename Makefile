@@ -61,6 +61,9 @@ fix:
 test: venv setup-local
 	. .venv/bin/activate && ${env} pytest tests
 
+test-remote: 
+	docker compose -p max-test -f docker-compose.testing.yml up
+
 type-check:
 	. .venv/bin/activate && ${env} MYPYPATH=stubs/ mypy --show-error-codes app
 

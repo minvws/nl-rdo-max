@@ -1,9 +1,10 @@
 # pylint:disable=too-few-public-methods
-import random
-import uuid
-
 import nacl
 import pytest
+import random
+import subprocess
+import uuid
+
 from dependency_injector import providers, containers
 from fastapi.testclient import TestClient
 from nacl.encoding import Base64Encoder
@@ -28,8 +29,10 @@ redis = factories.redisdb("redis_config")
 
 
 @pytest.fixture
-def config():
-    yield get_config("tests/max.test.conf")
+def config(inside_docker):
+    yield get_config(
+        "tests/max.test.conf.docker" if inside_docker else "tests/max.test.conf"
+    )
 
 
 @pytest.fixture
@@ -129,7 +132,7 @@ def lazy_container(config, legacy_client, client, container_overrides, pyop_over
 
 @pytest.fixture
 # pylint:disable=redefined-outer-name, unused-argument
-def lazy_app(docker_services, config, lazy_container):
+def lazy_app(prepare_docker_services, config, lazy_container):
     config["oidc"]["issuer"] = "https://localhost:" + str(random.randint(13000, 14000))
     config["app"]["user_authentication_sym_key"] = nacl.utils.random(
         nacl.secret.SecretBox.KEY_SIZE
@@ -145,6 +148,17 @@ def lazy_app(docker_services, config, lazy_container):
 @pytest.fixture
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-def redis_mock(docker_services, redis):
+def redis_mock(prepare_docker_services, redis):
     redis.config_set("notify-keyspace-events", "AKE")
     yield redis
+
+
+@pytest.fixture
+def prepare_docker_services(inside_docker):
+    if not inside_docker:
+        subprocess.run(["docker compose", "up", "-d"], check=True)
+
+    yield
+
+    if not inside_docker:
+        subprocess.run(["docker compose", "down"], check=True)
