@@ -19,8 +19,7 @@ ENV NVM_DIR=/home/${APP_USER}/.nvm
 RUN apt-get update && \
     apt-get install -y --no-install-recommends make curl libxmlsec1-dev gnupg2 lsb-release && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get install -y npm && \
+    apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --system ${APP_GROUP} --gid=${GID} && \
