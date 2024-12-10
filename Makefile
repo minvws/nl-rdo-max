@@ -61,6 +61,9 @@ fix:
 test: venv setup-local
 	. .venv/bin/activate && ${env} pytest tests
 
+setup-remote-test: 
+	NODE_VERSION=$$(cat ./.nvmrc) && docker compose -p max-test -f docker-compose.testing.yml build --build-arg NODE_VERSION=$$NODE_VERSION --build-arg UID=$$(id -u) --build-arg GID=$$(id -g)
+
 test-remote: 
 	docker compose -p max-test -f docker-compose.testing.yml up
 
