@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from nacl.encoding import Base64Encoder
 from nacl.public import PrivateKey
 from pytest_redis import factories
+from pytest_docker.plugin import get_docker_services, containers_scope
 
 from app.application import create_fastapi_app
 from app.dependency_injection.config import get_config, RouterConfig
@@ -153,12 +154,23 @@ def redis_mock(prepare_docker_services, redis):
     yield redis
 
 
-@pytest.fixture
-def prepare_docker_services(inside_docker):
-    if not inside_docker:
-        subprocess.run(["docker compose", "up", "-d"], check=True)
-
-    yield
-
-    if not inside_docker:
-        subprocess.run(["docker compose", "down"], check=True)
+@pytest.fixture(scope=containers_scope)
+def prepare_docker_services(
+    inside_docker,
+    docker_compose_command,
+    docker_compose_file,
+    docker_compose_project_name,
+    docker_setup,
+    docker_cleanup,
+):
+    if inside_docker:
+        yield
+    else:
+        with get_docker_services(
+            docker_compose_command,
+            docker_compose_file,
+            docker_compose_project_name,
+            docker_setup,
+            docker_cleanup,
+        ) as docker_service:
+            yield docker_service

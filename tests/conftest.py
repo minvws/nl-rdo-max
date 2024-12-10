@@ -11,6 +11,6 @@ def pytest_addoption(parser, pluginmanager):
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def inside_docker(pytestconfig):
     return pytestconfig.getoption("docker")
