@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # syntax directive is used to enable Docker BuildKit
 
-FROM python:3.11-slim AS base
+FROM python:3.8-bookworm AS base
 
 ARG PROJECT_DIR="/src" \
     NODE_VERSION \
@@ -22,8 +22,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
     
-RUN group -u ${GID} &>/dev/null || groupadd --system ${APP_GROUP} --gid=${GID} && \
-    adduser --disabled-password --gecos "" --uid ${UID} --gid ${GID} \
+RUN getent group ${APP_GROUP} || groupadd --system ${APP_GROUP} --gid=${GID} && \
+    getent passwd ${APP_USER} || adduser --disabled-password --gecos "" --uid ${UID} --gid ${GID} \
     --home /home/${APP_USER} ${APP_USER}
 
 
