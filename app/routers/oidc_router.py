@@ -1,26 +1,18 @@
-import json
 import logging
 from typing import Optional
-from unittest.mock import MagicMock
 
 
 from dependency_injector.wiring import inject, Provide
 from fastapi import APIRouter, Request, Depends, HTTPException
 from starlette.responses import JSONResponse
 
-from pyop.message import AuthorizationRequest
-
 
 from app.dependency_injection.config import RouterConfig
 from app.exceptions.max_exceptions import InvalidRequestException
 from app.exceptions.oidc_exceptions import INVALID_REQUEST
-from app.models.authentication_context import AuthenticationContext
-from app.models.authentication_meta import AuthenticationMeta
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
-from app.models.saml.artifact_response_mock import ArtifactResponseMock
 from app.providers.oidc_provider import OIDCProvider
-from app.services.userinfo.userinfo_service import UserinfoService
 
 
 oidc_router = APIRouter()
