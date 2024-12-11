@@ -21,9 +21,9 @@ RUN apt-get update && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
-
-RUN groupadd --system ${APP_GROUP} --gid=${GID} && \
-    adduser --disabled-password --gecos "" --uid ${UID} --gid ${GID} \
+    
+RUN getent group ${APP_GROUP} || groupadd --system ${APP_GROUP} --gid=${GID} && \
+    getent passwd ${APP_USER} || adduser --disabled-password --gecos "" --uid ${UID} --gid ${GID} \
     --home /home/${APP_USER} ${APP_USER}
 
 USER ${APP_USER}
