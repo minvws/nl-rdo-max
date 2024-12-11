@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Union
 
 from pydantic import BaseModel
 
@@ -8,4 +8,4 @@ class UserinfoContext(BaseModel):
     authentication_method: str
     access_token: str
     userinfo: Any
-    client_content_type: str | None = None
+    client_content_type: Union[str, None] = None
