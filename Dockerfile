@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # syntax directive is used to enable Docker BuildKit
 
-FROM python:3.11-slim AS base
+FROM python:3.8-bookworm AS base
 
 ARG PROJECT_DIR="/src" \
     NODE_VERSION \
