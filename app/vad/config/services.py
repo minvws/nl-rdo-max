@@ -27,7 +27,7 @@ class ConfigParser:
         conf_values: Dict[str, Any] = {}
 
         for section in self.config_parser.sections():
-            section_values = Dict(self.config_parser[section])
+            section_values = dict(self.config_parser[section])
             conf_values.update(
                 {section: section_values}
                 if section != self.DEFAULT_SECTION

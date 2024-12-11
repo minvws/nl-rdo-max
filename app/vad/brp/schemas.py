@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from pydantic import BaseModel
 
@@ -9,22 +9,22 @@ class NameUsageIndicator(BaseModel):
 
 
 class BrpName(BaseModel):
-    voornamen: str | None = None
-    voorvoegsel: str | None = None
-    geslachtsnaam: str | None = None
-    voorletters: str | None = None
-    volledigeNaam: str | None = None
-    aanduidingNaamgebruik: NameUsageIndicator | None = None
+    voornamen: Union[str, None] = None
+    voorvoegsel: Union[str, None] = None
+    geslachtsnaam: Union[str, None] = None
+    voorletters: Union[str, None] = None
+    volledigeNaam: Union[str, None] = None
+    aanduidingNaamgebruik: Union[NameUsageIndicator, None] = None
 
 
 class BrpPersonDTO(BaseModel):
     naam: BrpName
-    leeftijd: int | None = None
+    leeftijd: Union[int, None] = None
 
 
 class BrpPersonsResponseDTO(BaseModel):
     type: str
-    personen: list[BrpPersonDTO]
+    personen: List[BrpPersonDTO]
 
 
 class InvalidParam(BaseModel):
@@ -45,11 +45,11 @@ class BrpPersonResponseError(BaseModel):
 
 # VAD Response models
 class NameDTO(BaseModel):
-    first_name: str | None = None
-    prefix: str | None = None
-    last_name: str | None = None
-    initials: str | None = None
-    full_name: str | None = None
+    first_name: Union[str, None] = None
+    prefix: Union[str, None] = None
+    last_name: Union[str, None] = None
+    initials: Union[str, None] = None
+    full_name: Union[str, None] = None
 
     @staticmethod
     def from_brp_name(brp_name: BrpName) -> "NameDTO":
@@ -63,7 +63,7 @@ class NameDTO(BaseModel):
 
 
 class PersonDTO(BaseModel):
-    age: int | None
+    age: Union[int, None] = None
     name: NameDTO
 
     @staticmethod
@@ -75,5 +75,5 @@ class PersonDTO(BaseModel):
 
 # https://brp-api.github.io/Haal-Centraal-BRP-bevragen/v2/redoc#tag/Personen/operation/Personen
 class BrpRequest(BaseModel):
-    burgerservicenummer: str | int
+    burgerservicenummer: Union[str, int]
     type: str = "RaadpleegMetBurgerservicenummer"

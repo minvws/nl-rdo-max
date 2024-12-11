@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Union
 
 from fastapi import FastAPI
 import inject
@@ -12,7 +12,7 @@ from app.dependency_injection.config import get_config
 
 
 def configure_bindings(
-    bindings_override: Callable[[Binder], Binder] | None = None,
+    bindings_override: Union[Callable[[Binder], Binder], None] = None,
 ) -> None:
     """
     Configures dependency injection bindings for the application.
@@ -29,7 +29,7 @@ def configure_bindings(
         if bindings_override:
             bindings_override(binder)
 
-    inject.configure(bindings_config, clear=True, allow_override=True)
+    inject.clear_and_configure(bindings_config)
 
 
 def clear_bindings() -> None:

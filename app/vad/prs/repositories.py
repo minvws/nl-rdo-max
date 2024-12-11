@@ -1,6 +1,7 @@
 import asyncio
 import base64
 from abc import ABC, abstractmethod
+from typing import Dict
 
 import inject
 from httpx import AsyncClient, HTTPStatusError, RequestError
@@ -30,7 +31,7 @@ class ApiPrsRepository(PrsRepository):
         self._repo_base_url = repo_base_url
         self._organisation_id = organisation_id
 
-    async def _handle_request(self, url: str) -> dict[str, str]:
+    async def _handle_request(self, url: str) -> Dict[str, str]:
         try:
             response = await self.client.post(url)
             response.raise_for_status()

@@ -96,7 +96,7 @@ class AuthenticationCache:
         userinfo_key: str,
         access_token: str,
         acs_context: AcsContext,
-        client_content_type: Union[str, None] = None
+        client_content_type: Union[str, None] = None,
     ):
         userinfo_context_serialized = (
             self._authentication_context_encryption_service.symm_encrypt(

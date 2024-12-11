@@ -7,16 +7,15 @@ class PrsRepositoryFactory:
         self.config: PrsConfig = prs_config
 
     def create(self) -> PrsRepository:
-        match self.config.prs_repository:
-            case PrsRepositoryType.MOCK:
-                return MockPrsRepository()
+        if self.config.prs_repository == PrsRepositoryType.MOCK:
+            return MockPrsRepository()
 
-            case PrsRepositoryType.API:
-                repository: ApiPrsRepository = ApiPrsRepository(
-                    repo_base_url=self.config.repo_base_url,
-                    organisation_id=self.config.organisation_id,
-                )
-                return repository
+        elif self.config.prs_repository == PrsRepositoryType.API:
+            repository: ApiPrsRepository = ApiPrsRepository(
+                repo_base_url=self.config.repo_base_url,
+                organisation_id=self.config.organisation_id,
+            )
+            return repository
 
-            case _:
-                raise NotImplementedError("PRS client adapter not implemented yet.")
+        else:
+            raise NotImplementedError("PRS client adapter not implemented yet.")

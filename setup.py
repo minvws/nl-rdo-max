@@ -16,7 +16,7 @@ requirements = [
     "python-multipart",
     "pynacl",
     "async-timeout",
-    "inject"
+    "inject==4.3.1",
 ]
 
 setup(

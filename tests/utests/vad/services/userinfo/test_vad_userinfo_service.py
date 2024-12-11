@@ -11,24 +11,12 @@ from app.vad.vad.schemas import UserInfoDTO
 
 
 class TestVadUserinfoService:
-    @pytest.mark.asyncio
-    async def test_vad_request_userinfo_for_digid_artifact(
+    def test_vad_request_userinfo_for_digid_artifact(
         self, mocker: MockerFixture
     ) -> None:
         configure_bindings()
 
-        jwt_service_factory = mocker.Mock()
-        userinfo_request_signing_priv_key_path = "path/to/private/key"
-        userinfo_request_signing_crt_path = "path/to/cert"
-        req_issuer = "issuer"
-        clients = {}
-        vad_userinfo_service = VadUserinfoService(
-            jwt_service_factory,
-            userinfo_request_signing_priv_key_path,
-            userinfo_request_signing_crt_path,
-            req_issuer,
-            clients,
-        )
+        vad_userinfo_service = VadUserinfoService()
 
         authentication_context = AuthenticationContext(
             authorization_request=mocker.Mock(spec=AuthorizationRequest),
@@ -44,10 +32,8 @@ class TestVadUserinfoService:
             artifact_response_str=bsn
         )
         subject_identifier: str = "subject_identifier"
-        user_info_json: str = (
-            await vad_userinfo_service.request_userinfo_for_digid_artifact(
-                authentication_context, artifact_response, subject_identifier
-            )
+        user_info_json: str = vad_userinfo_service.request_userinfo_for_digid_artifact(
+            authentication_context, artifact_response, subject_identifier
         )
         user_info: UserInfoDTO = UserInfoDTO.model_validate_json(user_info_json)
 
