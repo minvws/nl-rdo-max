@@ -1,17 +1,26 @@
+import json
 import logging
 from typing import Optional
+from unittest.mock import MagicMock
 
 
 from dependency_injector.wiring import inject, Provide
 from fastapi import APIRouter, Request, Depends, HTTPException
 from starlette.responses import JSONResponse
 
+from pyop.message import AuthorizationRequest
+
+
 from app.dependency_injection.config import RouterConfig
 from app.exceptions.max_exceptions import InvalidRequestException
 from app.exceptions.oidc_exceptions import INVALID_REQUEST
+from app.models.authentication_context import AuthenticationContext
+from app.models.authentication_meta import AuthenticationMeta
 from app.models.authorize_request import AuthorizeRequest
 from app.models.token_request import TokenRequest
+from app.models.saml.artifact_response_mock import ArtifactResponseMock
 from app.providers.oidc_provider import OIDCProvider
+from app.services.userinfo.userinfo_service import UserinfoService
 
 
 oidc_router = APIRouter()
@@ -102,3 +111,29 @@ def json_schema(
     schema_content: str = Depends(Provide["services.json_schema"]),
 ):
     return JSONResponse(content=schema_content)
+
+
+@oidc_router.get("/vad/userinfo/{bsn}")
+@inject
+async def vad_userinfo(
+    bsn: str,
+    vad_user_provider: UserinfoService = Depends(Provide["services.userinfo_service"]),
+):
+    authentication_context = AuthenticationContext(
+        authorization_request=MagicMock(spec=AuthorizationRequest),
+        authorization_by_proxy=True,
+        authentication_method="method",
+        authentication_state={},
+        session_id="session_id",
+        req_acme_tokens=None,
+        authentication_meta=MagicMock(spec=AuthenticationMeta),
+    )
+    artifact_response: ArtifactResponseMock = ArtifactResponseMock(
+        artifact_response_str=bsn
+    )
+    subject_identifier: str = "subject_identifier"
+    userinfo_json_str: str = await vad_user_provider.request_userinfo_for_digid_artifact(
+        authentication_context, artifact_response, subject_identifier
+    )
+    userinfo_dict = json.loads(userinfo_json_str)
+    return JSONResponse(content=userinfo_dict)

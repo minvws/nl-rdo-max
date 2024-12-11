@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Union
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -18,7 +19,7 @@ class PrsRepositoryType(Enum):
 
 class PrsConfig(BaseModel):
     prs_repository: PrsRepositoryType
-    repo_base_url: str | None
+    repo_base_url: Union[str, None] = None
     organisation_id: str
 
     @model_validator(mode="after")
