@@ -111,29 +111,3 @@ def json_schema(
     schema_content: str = Depends(Provide["services.json_schema"]),
 ):
     return JSONResponse(content=schema_content)
-
-
-@oidc_router.get("/vad/userinfo/{bsn}")
-@inject
-async def vad_userinfo(
-    bsn: str,
-    vad_user_provider: UserinfoService = Depends(Provide["services.userinfo_service"]),
-):
-    authentication_context = AuthenticationContext(
-        authorization_request=MagicMock(spec=AuthorizationRequest),
-        authorization_by_proxy=True,
-        authentication_method="method",
-        authentication_state={},
-        session_id="session_id",
-        req_acme_tokens=None,
-        authentication_meta=MagicMock(spec=AuthenticationMeta),
-    )
-    artifact_response: ArtifactResponseMock = ArtifactResponseMock(
-        artifact_response_str=bsn
-    )
-    subject_identifier: str = "subject_identifier"
-    userinfo_json_str: str = await vad_user_provider.request_userinfo_for_digid_artifact(
-        authentication_context, artifact_response, subject_identifier
-    )
-    userinfo_dict = json.loads(userinfo_json_str)
-    return JSONResponse(content=userinfo_dict)
