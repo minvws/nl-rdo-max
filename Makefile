@@ -18,7 +18,7 @@ venv: .venv/touchfile ## Create virtual environment
 	touch .venv/touchfile
 
 clean_venv: ## Remove virtual environment
-	@echo "Cleaning venv"q
+	@echo "Cleaning venv"
 	@rm -rf .venv
 
 pip-sync: ## synchronizes the .venv with the state of requirements.txt
