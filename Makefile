@@ -1,3 +1,6 @@
+UID = $(shell id -u)
+GID = $(shell id -g)
+
 env = env PATH="${bin}:$$PATH"
 create_key_pair =
 
@@ -15,7 +18,7 @@ venv: .venv/touchfile ## Create virtual environment
 	touch .venv/touchfile
 
 clean_venv: ## Remove virtual environment
-	@echo "Cleaning venv"
+	@echo "Cleaning venv"q
 	@rm -rf .venv
 
 pip-sync: ## synchronizes the .venv with the state of requirements.txt
@@ -36,7 +39,7 @@ setup-npm:
 	scripts/./setup-npm.sh	
 
 setup-remote: setup-config setup-saml setup-secrets
-	NODE_VERSION=$$(cat ./.nvmrc) && docker compose build --build-arg NODE_VERSION=$$NODE_VERSION --build-arg UID=$$(id -u) --build-arg GID=$$(id -g)
+	docker compose build --build-arg="UID=${UID}" --build-arg="GID=${GID}"
 
 setup-local: venv setup-config setup-saml setup-secrets setup-npm
 
@@ -62,7 +65,7 @@ test: venv setup-local
 	. .venv/bin/activate && ${env} pytest tests
 
 setup-remote-test: 
-	NODE_VERSION=$$(cat ./.nvmrc) && docker compose -p max-test -f docker-compose.testing.yml build --build-arg NODE_VERSION=$$NODE_VERSION --build-arg UID=$$(id -u) --build-arg GID=$$(id -g)
+	docker compose -p max-test -f docker-compose.testing.yml build --build-arg="UID=${UID}" --build-arg="GID=${GID}"
 
 test-remote: 
 	docker compose -p max-test -f docker-compose.testing.yml up

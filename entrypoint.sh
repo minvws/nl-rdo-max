@@ -2,11 +2,17 @@
 
 set -e
 
-./scripts/setup-npm.sh
+if [ "$INSTALL_NPM_ASSETS" == "true" ]; then
+    echo "Setup NPM..."
+    ./scripts/setup-npm.sh
+fi
 
 make venv
 
-npm run build
+if [ "$INSTALL_NPM_ASSETS" == "true" ]; then
+    echo "NPM build..."
+    npm run build
+fi
 
 . .venv/bin/activate
 
