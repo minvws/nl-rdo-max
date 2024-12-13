@@ -126,7 +126,7 @@ def create_fastapi_app(
 
     _add_exception_handlers(fastapi)
 
-    if _config.getboolean("vad", "enabled", fallback=False):
+    if _config.get("app", "userinfo_service") == "vad":
         init_vad_module(container)
 
     return fastapi
