@@ -28,6 +28,7 @@ RUN getent group ${APP_GROUP} || groupadd --system ${APP_GROUP} --gid=${GID} && 
     getent passwd ${APP_USER} || adduser --disabled-password --gecos "" --uid ${UID} --gid ${GID} \
     --home /home/${APP_USER} ${APP_USER}
 
+
 USER ${APP_USER}
 
 ENV PATH="/usr/local/bin:$PATH"

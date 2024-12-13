@@ -15,7 +15,8 @@ requirements = [
     "python3-saml==1.16.0",
     "python-multipart",
     "pynacl",
-    "async-timeout"
+    "async-timeout",
+    "inject==4.3.1",
 ]
 
 setup(
@@ -40,11 +41,13 @@ setup(
             "pytest-mock",
             "pytest-docker",
             "pytest_redis",
+            "pytest-asyncio",
             "freezegun",
             "types-redis",
             "types-python-dateutil",
             "types-requests",
-            "httpx"
+            "httpx", 
+            "faker"
         ]
     },
 )

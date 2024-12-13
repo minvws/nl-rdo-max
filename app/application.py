@@ -20,6 +20,7 @@ from app.routers.oidc_router import oidc_router
 from app.routers.saml_router import saml_router
 from app.routers.misc_router import misc_router
 from app.routers.docs_router import DocsRouter
+from app.vad.module import init_module as init_vad_module
 
 
 _exception_handlers: List[Tuple[Union[int, Type[Exception]], Callable]] = [
@@ -30,13 +31,13 @@ _exception_handlers: List[Tuple[Union[int, Type[Exception]], Callable]] = [
 
 def kwargs_from_config():
     config = get_config()
-
     kwargs = {
         "host": config.get("uvicorn", "host"),
         "port": config.getint("uvicorn", "port"),
         "reload": config.getboolean("uvicorn", "reload"),
         "proxy_headers": True,
         "workers": config.getint("uvicorn", "workers"),
+        "factory": True,
     }
 
     reload_includes = config.get("uvicorn", "reload_includes", fallback=None)
@@ -112,6 +113,26 @@ def create_fastapi_app(
         openapi_url=openapi_url,
         version=version,
     )
+
+    _include_routes(swagger_config, is_production, fastapi)
+
+    fastapi.mount("/static", StaticFiles(directory="static"), name="static")
+    container.wire(modules=modules)
+    fastapi.container = container  # type: ignore
+    app.dependency_injection.container._container = (  # pylint: disable=protected-access
+        container
+    )
+    fastapi.add_middleware(CORSMiddleware, allow_origins=_parse_origins(container))
+
+    _add_exception_handlers(fastapi)
+
+    if _config.get("app", "userinfo_service") == "vad":
+        init_vad_module(container)
+
+    return fastapi
+
+
+def _include_routes(swagger_config, is_production, fastapi):
     fastapi.include_router(saml_router)
     fastapi.include_router(oidc_router)
     fastapi.include_router(misc_router)
@@ -120,12 +141,3 @@ def create_fastapi_app(
         fastapi.include_router(docs_router.get_docs_router())
     if not is_production:
         fastapi.include_router(digid_mock_router)
-    fastapi.mount("/static", StaticFiles(directory="static"), name="static")
-    container.wire(modules=modules)
-    fastapi.container = container  # type: ignore
-    app.dependency_injection.container._container = (  # pylint: disable=protected-access
-        container
-    )
-    fastapi.add_middleware(CORSMiddleware, allow_origins=_parse_origins(container))
-    _add_exception_handlers(fastapi)
-    return fastapi

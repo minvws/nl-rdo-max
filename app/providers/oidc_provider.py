@@ -258,6 +258,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
                 token_response["access_token"],
                 token_response["access_token"],
                 acs_context,
+                client_content_type=client.get("content_type"),
             )
         return token_response
 
@@ -298,7 +299,11 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
 
         return Response(
             headers={
-                "Content-Type": "application/jwt",
+                "Content-Type": (
+                    userinfo_context.client_content_type
+                    if userinfo_context.client_content_type
+                    else "application/jwt"
+                ),
                 "Authentication-Method": userinfo_context.authentication_method,
             },
             content=userinfo_context.userinfo,

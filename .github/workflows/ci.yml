@@ -66,6 +66,9 @@ jobs:
       - name: Audit (bandit)
         run: make audit
 
+      - name: Copy "vad.conf.test" to "vad.conf"
+        run: cp vad.conf.test vad.conf
+
       - name: Unit testing (pytest)
         run: make coverage
 

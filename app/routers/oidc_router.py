@@ -6,6 +6,7 @@ from dependency_injector.wiring import inject, Provide
 from fastapi import APIRouter, Request, Depends, HTTPException
 from starlette.responses import JSONResponse
 
+
 from app.dependency_injection.config import RouterConfig
 from app.exceptions.max_exceptions import InvalidRequestException
 from app.exceptions.oidc_exceptions import INVALID_REQUEST

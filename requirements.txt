@@ -62,6 +62,8 @@ exceptiongroup==1.2.2
     # via
     #   anyio
     #   pytest
+faker==33.1.0
+    # via app (setup.py)
 fastapi==0.112.0
     # via app (setup.py)
 freezegun==1.5.1
@@ -83,6 +85,8 @@ idna==3.7
     #   requests
 iniconfig==2.0.0
     # via pytest
+inject==4.3.1
+    # via app (setup.py)
 isodate==0.6.1
     # via python3-saml
 isort==5.13.2
@@ -168,9 +172,12 @@ pyopenssl==24.2.1
 pytest==8.3.2
     # via
     #   app (setup.py)
+    #   pytest-asyncio
     #   pytest-docker
     #   pytest-mock
     #   pytest-redis
+pytest-asyncio==0.24.0
+    # via app (setup.py)
 pytest-docker==3.1.1
     # via app (setup.py)
 pytest-mock==3.14.0
@@ -178,7 +185,9 @@ pytest-mock==3.14.0
 pytest-redis==3.1.2
     # via app (setup.py)
 python-dateutil==2.9.0.post0
-    # via freezegun
+    # via
+    #   faker
+    #   freezegun
 python-dotenv==1.0.1
     # via pydantic-settings
 python-multipart==0.0.9
@@ -238,6 +247,7 @@ typing-extensions==4.12.2
     #   anyio
     #   astroid
     #   black
+    #   faker
     #   fastapi
     #   jwcrypto
     #   mypy

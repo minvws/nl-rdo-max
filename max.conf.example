@@ -3,7 +3,7 @@
 environment = development
 # possible app_mode values are: legacy, none
 app_mode = none
-# possible services are: cc, cibg
+# possible services are: cc, cibg, vad
 userinfo_service = cibg
 # External url for max without trailing slash
 external_base_url = https://localhost:8006
@@ -168,3 +168,4 @@ enabled = True
 swagger_ui_endpoint = /ui
 redoc_endpoint = /docs
 openapi_endpoint = /openapi.json
+

@@ -1,0 +1,18 @@
+# Global application settings
+[app]
+name=VAD
+# Logging level of the application
+loglevel=debug
+
+[prs]
+; One of either (mock,api)
+prs_repository=mock
+repo_base_url=localhost
+
+;Organisation id, can be any arbitrary string
+organisation_id=123
+
+[brp]
+mock_brp=True
+base_url=http://brp:5010/haalcentraal/api/brp
+api_key=

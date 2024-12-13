@@ -1,8 +1,7 @@
 from typing import Optional
 from urllib.parse import parse_qs
 
-from pydantic import BaseModel
-from pydantic.error_wrappers import ValidationError
+from pydantic import BaseModel, ValidationError
 
 
 class TokenRequest(BaseModel):
