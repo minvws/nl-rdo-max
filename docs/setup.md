@@ -7,7 +7,7 @@ For the Open ID Connect protocol we need a file containing the allowed clients. 
 
 In short, setup these files:
 - `clients_file`, location configurable in the settings.
-- `rsa_private key`, for JWT token signing. Location configurable in the settings
+- `rsa_private_key`, for JWT token signing. Location configurable in the settings
 - `rsa_public_key`, for JWT token verifcation. Location configurable in the settings
 
 ## SAML
@@ -33,46 +33,48 @@ Redis is the store of this service. It is used to temporarily store data acquire
 ## SSL (local development)
 An SSL connection is usually required, also in an development environment. To set this up, please define where to find the certificates and keys in the settings file under the `ssl` header.
 
-# Dependencies
+# Setup Instructions
 
-Make sure to install the following dependencies: 
-```
+There are two ways to set up this project:
+
+- **Local Installation**: Install tools like Python and npm directly on your local machine. This requires manual setup of dependencies.
+- **Remote Docker Container**: Use a preconfigured Docker container for development.
+
+## 1. Local Installation
+
+### Dependencies
+
+Install required system packages:
+
+```bash
 sudo apt-get update && sudo apt-get install libxmlsec1-dev
 ```
 
-## npm
+### Install npm
 
-To build the frontend you need to install npm. Please check the npm documentation if you have not installed npm yet.
-You can find the documentation here: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
+Install npm if not already installated ([npm documentation](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm))
+As GitHub is used as an npm repository, set your GitHub token in your `.npmrc` file before running npm install.
 
-Because we are using GitHub as a npm repository, you need to set your GitHub token in your users `.npmrc` file before you can run npm install.
-You can find the documentation here: https://docs.github.com/en/packages/using-github-packages-with-your-projects-ecosystem/configuring-npm-for-use-with-github-packages
-
-In short, you need a GitHub token with the `read:packages` scope and add it to your `.npmrc` file.
-You can create your token here: https://github.com/settings/tokens/new?scopes=read:packages&description=GitHub+Packages+token
-
-After that you have created your token, you can add it to your `.npmrc` file.
-You can run:
-
-```
-make setup-npm
-```
-
-Or you can add it manually, find your `.npmrc` file in your home directory. If it does not exist, you can create it.
-Add the following line to your `.npmrc` file:
-
-```
-// npm.pkg.github.com/:_authToken=YOUR_TOKEN_HERE
-```
-
-
-# Running the service
-Make sure you followed the steps for the regular Setup, then run:
+### Steps:
+1. Generate a GitHub token with the `read:packages` scope ([Generate Token](https://docs.github.com/en/packages/using-github-packages-with-your-projects-ecosystem/configuring-npm-for-use-with-github-packages)).
+2. Add the token to your `.npmrc` file:
 ```bash
-$ make setup
-...
-$ sh run_server.sh
+//npm.pkg.github.com/:_authToken=YOUR_TOKEN
 ```
+3. Set up the project: `make setup-local`
+4. Run the service: `make run-local`
+
+## 2. Remote Docker Container
+
+### Steps:
+1. Generate a GitHub token with the `read:packages` scope ([Generate Token](https://docs.github.com/en/packages/using-github-packages-with-your-projects-ecosystem/configuring-npm-for-use-with-github-packages)).
+2. Add the token to your `.npmrc` file:
+```bash
+//npm.pkg.github.com/:_authToken=YOUR_TOKEN
+```
+3. Build the project: `make setup-remote`
+4. Run the service: `make run-remote`
+
 
 # Contributions
 When contributing to inge6 a few Make commands should be considered to make sure linting, type-checking (MyPy) and tests are still valid:

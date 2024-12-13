@@ -7,18 +7,18 @@ services:
         GID: ${GID:-1000}
     volumes:
       - '.:/src'
-    ports:
-      - '8006:8006'
     depends_on: [ 'redis' ]
+    command: pytest tests --redis-host=redis --docker
 
   redis:
     image: redis:7.2.4
     restart: 'no'
     ports:
-      - '6379:6379'
+      - '16379'
+    command: ["redis-server", "--port", "16379"]
 
   redis-init:
     depends_on: [ 'redis' ]
     image: redis:7.2.4
     restart: 'no'
-    command: 'redis-cli -h redis set max:primary_identity_provider tvs'
+    command: 'redis-cli -h redis -p 16379 set max:primary_identity_provider tvs'

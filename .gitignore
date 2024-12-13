@@ -15,6 +15,7 @@ __pycache__
 coverage.xml
 .DS_Store
 *.bak
+.npmrc
 ## Configuration and secrets
 secrets
 tests/secrets
