@@ -40,8 +40,14 @@ class ApiPrsRepository(PrsRepository):
             if not data:
                 raise RuntimeError("Received empty response")
 
-            # type ignored because this method should only handle request success/failure and not data validation
-            return data  # type: ignore
+            if not isinstance(data, dict) or not all(
+                isinstance(k, str) and isinstance(v, str) for k, v in data.items()
+            ):
+                raise RuntimeError(
+                    "Response data is not in the expected format of Dict[str, str]"
+                )
+
+            return data
         except HTTPStatusError as e:
             raise RuntimeError(
                 f"HTTP error occurred: {e.response.status_code} - {e.response.text}"
