@@ -114,7 +114,7 @@ def create_fastapi_app(
         version=version,
     )
 
-    _load_routes(swagger_config, is_production, fastapi)
+    _include_routes(swagger_config, is_production, fastapi)
 
     fastapi.mount("/static", StaticFiles(directory="static"), name="static")
     container.wire(modules=modules)
@@ -132,7 +132,7 @@ def create_fastapi_app(
     return fastapi
 
 
-def _load_routes(swagger_config, is_production, fastapi):
+def _include_routes(swagger_config, is_production, fastapi):
     fastapi.include_router(saml_router)
     fastapi.include_router(oidc_router)
     fastapi.include_router(misc_router)
