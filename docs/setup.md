@@ -46,7 +46,7 @@ Since we use GitHub as an npm repository, you must configure your GitHub token i
 For more information on authenticating to GitHub Packages, refer to the official documentation: [Configuring npm for use with GitHub Packages](https://docs.github.com/en/packages/using-github-packages-with-your-projects-ecosystem/configuring-npm-for-use-with-github-packages)
 
 In short:
-1. Copy the `.npmrc.example` file to `~/.npmrc`.
+1. Copy the contents of `.npmrc.example` to `~/.npmrc`.
 2. [Generate a GitHub token](https://github.com/settings/tokens/new?scopes=read:packages&description=GitHub+Packages+token) with, - at least - the `read:packages` scope.
 3. Open your `.npmrc` file and replace `<YOUR_GITHUB_TOKEN>` with your GitHub token.
 4. Create a symlink of `.npmrc` inside this project linking to the `.npmrc` file in your home directory:
