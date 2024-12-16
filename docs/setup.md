@@ -36,7 +36,7 @@ An SSL connection is usually required, also in an development environment. To se
 ## npm
 
 This project requires frontend assets to be built using npm.
-If you wish to run npm on your local machine, you must install both Node.js and npm. Instructions can be found [here](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm). However, if you plan to use the Docker setup provided in this repository, there is no need to install npm manually, as it will be installed automatically when the containers are built.
+If you wish to run npm on your local machine, you must install both Node.js and npm. In this case you can follow the [npm installation instructions](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm). However, if you plan to use the Docker setup provided in this repository, there is no need to install npm manually, as it will be installed automatically when the containers are built.
 
 
 Since we use GitHub as an npm repository, you must configure your GitHub token in your user's `~/.npmrc` file to install dependencies using `npm install`. While it is possible to place the `.npmrc` file in the project directory, it is recommended to place it in your home directory for reuse across multiple projects. An example `.npmrc` file (`.npmrc.example`) is available, which you can copy. Simply paste your token into this file to make it functional. Ensure you copy both lines from the `.npmrc.example` file:
