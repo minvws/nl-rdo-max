@@ -18,6 +18,7 @@ coverage.xml
 ## Configuration and secrets
 secrets
 tests/secrets
+.npmrc
 
 *.json
 !tests/resources/test_settings.json

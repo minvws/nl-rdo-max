@@ -1,11 +1,43 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    volumes:
+      - '.:/src'
+      - '.npmrc:/src/.npmrc:ro'
+    ports:
+      - '8006:8006'
+    depends_on: [ 'redis' ]
+    networks:
+        - mgo_vad
+
+  brp:
+    container_name: brp
+    image: ghcr.io/brp-api/personen-mock:2.3.0-latest
+    environment:
+        - ASPNETCORE_ENVIRONMENT=Release
+        - ASPNETCORE_URLS=http://+:5010
+    ports:
+        - "5010:5010"
+    networks:
+        - mgo_vad
+
   redis:
     image: redis:7.2.4
     restart: 'no'
     ports:
       - '6379:6379'
+
   redis-init:
     depends_on: [ 'redis' ]
     image: redis:7.2.4
     restart: 'no'
     command: 'redis-cli -h redis set max:primary_identity_provider tvs'
+
+networks:
+  mgo_vad:
+    driver: bridge

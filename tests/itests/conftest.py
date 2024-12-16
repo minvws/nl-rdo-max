@@ -1,14 +1,15 @@
 # pylint:disable=too-few-public-methods
+import nacl
+import pytest
 import random
 import uuid
 
-import nacl
-import pytest
 from dependency_injector import providers, containers
 from fastapi.testclient import TestClient
 from nacl.encoding import Base64Encoder
 from nacl.public import PrivateKey
 from pytest_redis import factories
+from pytest_docker.plugin import get_docker_services, containers_scope
 
 from app.application import create_fastapi_app
 from app.dependency_injection.config import get_config, RouterConfig
@@ -28,8 +29,10 @@ redis = factories.redisdb("redis_config")
 
 
 @pytest.fixture
-def config():
-    yield get_config("tests/max.test.conf")
+def config(inside_docker):
+    yield get_config(
+        "tests/max.test.conf.docker" if inside_docker else "tests/max.test.conf"
+    )
 
 
 @pytest.fixture
@@ -129,7 +132,7 @@ def lazy_container(config, legacy_client, client, container_overrides, pyop_over
 
 @pytest.fixture
 # pylint:disable=redefined-outer-name, unused-argument
-def lazy_app(docker_services, config, lazy_container):
+def lazy_app(prepare_docker_services, config, lazy_container):
     config["oidc"]["issuer"] = "https://localhost:" + str(random.randint(13000, 14000))
     config["app"]["user_authentication_sym_key"] = nacl.utils.random(
         nacl.secret.SecretBox.KEY_SIZE
@@ -145,6 +148,28 @@ def lazy_app(docker_services, config, lazy_container):
 @pytest.fixture
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-def redis_mock(docker_services, redis):
+def redis_mock(prepare_docker_services, redis):
     redis.config_set("notify-keyspace-events", "AKE")
     yield redis
+
+
+@pytest.fixture(scope=containers_scope)
+def prepare_docker_services(
+    inside_docker,
+    docker_compose_command,
+    docker_compose_file,
+    docker_compose_project_name,
+    docker_setup,
+    docker_cleanup,
+):
+    if inside_docker:
+        yield
+    else:
+        with get_docker_services(
+            docker_compose_command,
+            docker_compose_file,
+            docker_compose_project_name,
+            docker_setup,
+            docker_cleanup,
+        ) as docker_service:
+            yield docker_service
