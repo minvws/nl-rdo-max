@@ -190,7 +190,7 @@ python-dateutil==2.9.0.post0
     #   freezegun
 python-dotenv==1.0.1
     # via pydantic-settings
-python-multipart==0.0.9
+python-multipart==0.0.19
     # via app (setup.py)
 python3-saml==1.16.0
     # via app (setup.py)
