@@ -56,10 +56,24 @@ In short:
 
 # Setup Instructions
 
-There are two ways to set up this project:
+There are two different setup methods available to run this project:
 
-1. **Remote Docker Container**: Use a preconfigured Docker container for development. This includes all tools required to run this project.
-2. **Local Installation**: Install tools like Python and npm directly from your local machine. This requires manual setup of dependencies.
+1. **Docker**: Use a preconfigured Docker container for development. This includes Python, Node JS and npm.
+2. **Local**: Install tools like Python and npm directly from your local machine. This requires manual setup of Python, Node JS and npm.
+
+#### Requirements:
+An exact overview of tools per setup method can be found below:
+
+| Tool             | docker            | local              |
+|------------------|------------------|---------------------|
+| docker           | ✔️                | ✔️                   |
+| docker compose   | ✔️                | ✔️                   |
+| openssl          | ✔️                | ✔️                   |
+| gnu make         | ✔️                | ✔️                   |
+| python           |                  | ✔️                   |
+| npm 18           |                  | ✔️                   |
+| node js          |                  | ✔️                   |
+| curl             | ✔️                | ✔️                   |
 
 
 ## 1. Remote Docker Container

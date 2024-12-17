@@ -61,7 +61,7 @@ where you can read a more thorough explanation.
 # Setup
 If you are looking to set up MAX locally as part of the UZI project, please refer to the instructions in the 
 [nl-rdo-uzi-coordination](https://github.com/minvws/nl-rdo-uzi-coordination) repository. For more in depth set up
-documentation specifically for MAX you can check the `/docs/setup.md`. Otherwise, you can read the documentation below 
+documentation and requirements for MAX can be found at `/docs/setup.md`. Otherwise, you can read the documentation below 
 for the basics:  
 
 As MAX is a OIDC <-> SAML bridge, one has to have files for both. Each file is described below. Further, one needs
