@@ -64,16 +64,16 @@ There are two different setup methods available to run this project:
 #### Requirements:
 An exact overview of tools per setup method can be found below:
 
-| Tool             | docker            | local              |
-|------------------|------------------|---------------------|
-| docker           | ✔️                | ✔️                   |
-| docker compose   | ✔️                | ✔️                   |
-| openssl          | ✔️                | ✔️                   |
-| gnu make         | ✔️                | ✔️                   |
-| python           |                  | ✔️                   |
-| npm 18           |                  | ✔️                   |
-| node js          |                  | ✔️                   |
-| curl             | ✔️                | ✔️                   |
+| Tool             | docker            | local               |
+|------------------|-------------------|---------------------|
+| docker           | ✔️                | ✔️                  |
+| docker compose   | ✔️                | ✔️                  |
+| openssl          | ✔️                | ✔️                  |
+| gnu make         | ✔️                | ✔️                  |
+| python           |                   | ✔️                  |
+| npm              |                   | ✔️                  |
+| node js          |                   | ✔️                  |
+| curl             | ✔️                | ✔️                  |
 
 
 ## 1. Remote Docker Container
