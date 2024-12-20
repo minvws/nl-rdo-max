@@ -1,0 +1,114 @@
+[app]
+# possible app_modes are: *, production
+environment = test
+app_mode =
+userinfo_service =
+loglevel = debug
+login_methods_file_path = login_methods.json
+
+user_authentication_sym_key = 0000000000000000000000000000000000000000000000000000000000000000
+# only used with html redirect
+redirect_html_delay = 0
+# possible values: http, html
+redirect_type = html
+
+external_http_requests_timeout_seconds = 15
+version_file_path = static/version.json
+
+# possible values are en, nl
+language = nl
+language_path = lang/nl.json
+
+include_log_message_in_error_response = True
+
+[jwt]
+session_jwt_issuer = nl-rdo-max-private
+session_jwt_audience = nl-uzi-login-controller
+session_jwt_sign_priv_key_path = secrets/userinfo/jwe_sign.key
+session_jwt_sign_crt_path = secrets/userinfo/jwe_sign.crt
+
+
+[jwe]
+# list with comma seperated values
+services = x25519,rsa
+
+#rsa
+jwe_sign_priv_key_path = secrets/userinfo/jwe_sign.key
+jwe_sign_crt_path = secrets/userinfo/jwe_sign.crt
+
+#x25519
+jwe_sign_nacl_priv_key = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+
+[uvicorn]
+# Are we running in debug mode? turns on auto-reload on code changes
+reload = True
+workers = 1
+
+# Should we create an SSL connection through uvicorn?
+use_ssl = True
+
+# Setting for the SSL connection when enabled, defined by the use_ssl setting.
+base_dir = secrets/ssl
+cert_file = server.crt
+key_file = server.key
+
+[oidc]
+certificates_directory = secrets/jwks-certs
+rsa_private_key = secrets/oidc/selfsigned.key
+rsa_private_key_crt = secrets/oidc/selfsigned.crt
+issuer =
+authorize_endpoint = /authorize
+jwks_endpoint = /jwks
+accesstoken_endpoint = /token
+# userinfo_endpoint = /bsn_attribute
+userinfo_endpoint = /userinfo
+scopes_supported = openid
+clients_file = tests/clients.test.json
+subject_id_hash_salt = somesalt
+jwt_expiration_duration=60
+jwt_nbf_lag=10
+
+[saml]
+identity_providers_base_path = saml
+xml_templates_path = saml/templates/xml
+html_templates_path = saml/templates/html
+base_issuer = localhost:8007
+
+[redis]
+# Connecting to the redis server through parameters:
+host = redis
+port = 16379
+# Enable the RedisDebugger thread
+enable_debugger = False
+
+# SSL settings, to create a TLS connection to the redis store.
+ssl = False
+key =
+cert = 
+cafile =
+
+# How long do values live in redis?
+object_ttl = 600
+
+# prefix to cached key-value pairs stored using this service
+default_cache_namespace = max
+
+# prefix to tokens, subjects and codes stored in the redis database by the OIDC library
+token_namespace = tvs_token
+refresh_token_namespace = tvs_refresh_token
+subject_identifier_namespace = tvs_sub_id
+code_namespace = tvs_auth_code
+
+[ratelimiter]
+identity_provider_outage_key=identity_provider_outage
+primary_identity_provider_key=primary_identity_provider
+overflow_identity_provider_key=overflow_identity_provider
+primary_identity_provider_user_limit_key=primary_identity_provider_user_limit
+overflow_identity_provider_user_limit_key=overflow_identity_provider_user_limit
+
+ipaddress_max_count=10
+ipaddress_max_count_expire_seconds=10
+
+[templates]
+jinja_path = jinja2
+vite_manifest_path = tests/manifest.json
