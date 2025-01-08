@@ -132,7 +132,7 @@ psutil==6.0.0
     # via mirakuru
 pycparser==2.22
     # via cffi
-pycryptodomex==3.20.0
+pycryptodomex==3.21.0
     # via
     #   oic
     #   pyjwkest
