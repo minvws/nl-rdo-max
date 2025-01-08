@@ -10,6 +10,8 @@ services:
       - '.:/src'
       - '.npmrc:/src/.npmrc:ro'
       - '/src/.venv'
+      - '/src/node_modules'
+      - '/src/static/assets'
     ports:
       - '8006:8006'
     depends_on: [ 'redis' ]
