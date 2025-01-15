@@ -9,6 +9,9 @@ services:
     volumes:
       - '.:/src'
       - '.npmrc:/src/.npmrc:ro'
+      - '/src/.venv'
+      - '/src/node_modules'
+      - '/src/static/assets'
     depends_on: [ 'redis' ]
     command: pytest tests --redis-host=redis --docker
 

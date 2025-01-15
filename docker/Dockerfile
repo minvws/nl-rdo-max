@@ -1,5 +1,4 @@
 # syntax=docker/dockerfile:1
-# syntax directive is used to enable Docker BuildKit
 ARG PYTHON_VERSION=3.8
 
 FROM python:${PYTHON_VERSION}-bookworm AS base
@@ -28,19 +27,47 @@ RUN getent group ${APP_GROUP} || groupadd --system ${APP_GROUP} --gid=${GID} && 
     getent passwd ${APP_USER} || adduser --disabled-password --gecos "" --uid ${UID} --gid ${GID} \
     --home /home/${APP_USER} ${APP_USER}
 
-USER ${APP_USER}
+FROM base AS builder
 
-ENV PATH="/usr/local/bin:$PATH"
+WORKDIR /src
+
+# python environment setup
+COPY requirements.txt setup.py setup.cfg ./
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python3 -m venv /src/.venv && \
+    . /src/.venv/bin/activate && \
+    pip install -U pip && \
+    pip install pip-tools && \
+    pip-compile --extra dev && \
+    pip-sync && \
+    pip install -e . && \
+    pip install --no-binary lxml==4.9.3 lxml==4.9.3 --force-reinstall && \
+    pip install --no-binary xmlsec==1.3.14 xmlsec==1.3.14 --force-reinstall
+
+RUN if [ "$INSTALL_NPM_ASSETS" == "true" ]; then \
+        # node.js dependencies
+        COPY .npmrc scripts/setup-npm.sh vite.config.js package.json package-lock.json ./; \
+        chmod +x setup-npm.sh && ./setup-npm.sh; \
+        # build static assets
+        COPY resources ./resources; \
+        npm run build; \
+    fi
 
 FROM base AS final
 
-WORKDIR ${REMOTE_SOURCE_DIR}
+ENV PATH="/usr/local/bin:$PATH"
 
+WORKDIR ${REMOTE_SOURCE_DIR}
 EXPOSE 8006
 
 COPY --chown=${APP_USER}:${APP_GROUP} ${LOCAL_SOURCE_DIR}/ ${REMOTE_SOURCE_DIR}
+COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/.venv /src/.venv
+RUN if [ "$INSTALL_NPM_ASSETS" == "true" ]; then \
+        COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/node_modules /src/node_modules; \
+        COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/static/assets /src/static/assets; \
+    fi
 
+USER ${APP_USER}
 RUN chmod +x docker/entrypoint.sh
-
 ENTRYPOINT ["docker/entrypoint.sh"]
 CMD ["python", "-m", "app.main"]
