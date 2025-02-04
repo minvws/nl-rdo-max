@@ -49,9 +49,9 @@ In short:
 1. Copy the contents of `.npmrc.example` to `~/.npmrc`.
 2. [Generate a GitHub token](https://github.com/settings/tokens/new?scopes=read:packages&description=GitHub+Packages+token) with, - at least - the `read:packages` scope.
 3. Open your `.npmrc` file and replace `<YOUR_GITHUB_TOKEN>` with your GitHub token.
-4. Create a symlink of `.npmrc` inside this project linking to the `.npmrc` file in your home directory:
+4. Create a hardlink of `.npmrc` inside this project linking to the `.npmrc` file in your home directory:
     ```bash
-    ln -s ~/.npmrc .npmrc
+    ln ~/.npmrc .npmrc
     ```
 
 # Setup Instructions

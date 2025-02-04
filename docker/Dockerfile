@@ -9,13 +9,13 @@ ARG REMOTE_SOURCE_DIR="/src" \
     APP_USER="app" \
     APP_GROUP="app" \
     UID=1000 \
-    GID=1000
+    GID=1000 \
+    INSTALL_NPM_ASSETS=true
     
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 ENV MYPYPATH=${PROJECT_DIR}/stubs
-ENV INSTALL_NPM_ASSETS=true
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends make curl libxmlsec1-dev gnupg2 lsb-release && \
@@ -44,13 +44,14 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-binary lxml==4.9.3 lxml==4.9.3 --force-reinstall && \
     pip install --no-binary xmlsec==1.3.14 xmlsec==1.3.14 --force-reinstall
 
-RUN if [ "$INSTALL_NPM_ASSETS" == "true" ]; then \
-        # node.js dependencies
-        COPY .npmrc scripts/setup-npm.sh vite.config.js package.json package-lock.json ./; \
-        chmod +x setup-npm.sh && ./setup-npm.sh; \
-        # build static assets
-        COPY resources ./resources; \
-        npm run build; \
+RUN mkdir -p node_modules static/assets
+
+COPY .npmrc scripts/setup-npm.sh vite.config.js package.json package-lock.json ./
+COPY resources ./resources
+
+RUN if [ "$INSTALL_NPM_ASSETS" = "true" ]; then \
+        chmod +x setup-npm.sh && ./setup-npm.sh || { echo 'setup-npm.sh failed'; exit 1; }; \
+        npm run build || { echo 'npm build failed'; exit 1; }; \
     fi
 
 FROM base AS final
@@ -62,10 +63,8 @@ EXPOSE 8006
 
 COPY --chown=${APP_USER}:${APP_GROUP} ${LOCAL_SOURCE_DIR}/ ${REMOTE_SOURCE_DIR}
 COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/.venv /src/.venv
-RUN if [ "$INSTALL_NPM_ASSETS" == "true" ]; then \
-        COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/node_modules /src/node_modules; \
-        COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/static/assets /src/static/assets; \
-    fi
+COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/node_modules /src/node_modules
+COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/static/assets /src/static/assets
 
 USER ${APP_USER}
 RUN chmod +x docker/entrypoint.sh
