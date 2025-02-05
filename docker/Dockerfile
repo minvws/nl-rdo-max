@@ -67,6 +67,8 @@ COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/node_modules /src/node
 COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/static/assets /src/static/assets
 
 USER ${APP_USER}
+ENV PATH="/src/.venv/bin:$PATH"
+
 RUN chmod +x docker/entrypoint.sh
 ENTRYPOINT ["docker/entrypoint.sh"]
 CMD ["python", "-m", "app.main"]
