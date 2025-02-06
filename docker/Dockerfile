@@ -31,7 +31,17 @@ FROM base AS builder
 
 WORKDIR /src
 
-# python environment setup
+# setup npm
+RUN mkdir -p node_modules static/assets
+COPY scripts/setup-npm.sh vite.config.js package.json package-lock.json ./
+COPY resources ./resources
+RUN --mount=type=secret,id=npmrc,target=/src/.npmrc \
+    if [ "$INSTALL_NPM_ASSETS" = "true" ]; then \
+        chmod +x setup-npm.sh && ./setup-npm.sh; \
+        npm run build; \
+    fi
+
+# setup python environment
 COPY requirements.txt setup.py setup.cfg ./
 RUN --mount=type=cache,target=/root/.cache/pip \
     python3 -m venv /src/.venv && \
@@ -43,16 +53,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -e . && \
     pip install --no-binary lxml==4.9.3 lxml==4.9.3 --force-reinstall && \
     pip install --no-binary xmlsec==1.3.14 xmlsec==1.3.14 --force-reinstall
-
-RUN mkdir -p node_modules static/assets
-
-COPY .npmrc scripts/setup-npm.sh vite.config.js package.json package-lock.json ./
-COPY resources ./resources
-
-RUN if [ "$INSTALL_NPM_ASSETS" = "true" ]; then \
-        chmod +x setup-npm.sh && ./setup-npm.sh || { echo 'setup-npm.sh failed'; exit 1; }; \
-        npm run build || { echo 'npm build failed'; exit 1; }; \
-    fi
 
 FROM base AS final
 

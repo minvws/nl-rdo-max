@@ -48,11 +48,7 @@ For more information on authenticating to GitHub Packages, refer to the official
 In short:
 1. Copy the contents of `.npmrc.example` to `~/.npmrc`.
 2. [Generate a GitHub token](https://github.com/settings/tokens/new?scopes=read:packages&description=GitHub+Packages+token) with, - at least - the `read:packages` scope.
-3. Open your `.npmrc` file and replace `<YOUR_GITHUB_TOKEN>` with your GitHub token.
-4. Create a hardlink of `.npmrc` inside this project linking to the `.npmrc` file in your home directory:
-    ```bash
-    ln ~/.npmrc .npmrc
-    ```
+3. Open your `.npmrc` file and replace `<YOUR_GITHUB_TOKEN>` with your GitHub token.    ```
 
 # Setup Instructions
 
