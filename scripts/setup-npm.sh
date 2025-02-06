@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 NPMRC_FILE_NAME=".npmrc"
 GITHUB_REGISTRY="//npm.pkg.github.com/:_authToken="
 
