@@ -7,7 +7,7 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 
 ## [v1.3.7] 2022-02-21
 
-## What's Changed
+### What's Changed
 
 - when mocking and auth_by_proxy is disabled, an error is raised. But a… by @maxxiefjv in <https://github.com/91divoc-ln/inge-6/pull/290>
 - Bump mypy from 0.921 to 0.931 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/272>
@@ -22,7 +22,7 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 
 ## [v1.3.6] 2021-12-22
 
-## What's Changed
+### What's Changed
 
 - Bump mypy from 0.910 to 0.921 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/256>
 - Bump types-redis from 4.0.4 to 4.0.5 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/257>
