@@ -6,3 +6,6 @@ MD013:
   heading_line_length: 300
   # Number of characters for code blocks
   code_block_line_length: 1000
+MD024:
+  # Allow multiple headers with the same content within the same document with a different parent
+  siblings_only: true
