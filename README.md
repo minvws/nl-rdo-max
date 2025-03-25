@@ -78,7 +78,7 @@ To use DigiD or TVS you first need to download the metadata. During setup this i
 metadata step. This can manually be done using curl or another downloading tool. The URLs for the pre-production
 environment are included below as a reference.
 
-```curl
+```bash
 curl "https://was-preprod1.digid.nl/saml/idp/metadata" --output saml/digid/metadata/idp_metadata.xml
 curl "https://pp2.toegang.overheid.nl/kvs/rd/metadata" --output saml/tvs/metadata/idp_metadata.xml
 ```
