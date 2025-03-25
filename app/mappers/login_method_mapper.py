@@ -5,7 +5,7 @@ from app.models.login_method_type import LoginMethodType
 
 
 def map_login_methods_json_to_list_of_objects(
-    raw_login_methods: List[Dict[str, Union[str, bool]]]
+    raw_login_methods: List[Dict[str, Union[str, bool]]],
 ) -> List[LoginMethod]:
     login_methods: List[LoginMethod] = []
 

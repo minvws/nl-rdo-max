@@ -163,7 +163,7 @@ def get_app_test_config():
 
 
 def get_app_config(
-    override_config: Optional[Dict[str, Dict[str, Optional[str]]]]
+    override_config: Optional[Dict[str, Dict[str, Optional[str]]]],
 ) -> ConfigParser:
     config = get_app_test_config()
     if override_config and len(override_config) > 0:

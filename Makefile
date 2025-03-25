@@ -1,6 +1,6 @@
 UID = $(shell id -u)
 GID = $(shell id -g)
-PYTHON_VERSION=3.8
+PYTHON_VERSION=3.10
 
 env = env PATH="${bin}:$$PATH"
 create_key_pair =
