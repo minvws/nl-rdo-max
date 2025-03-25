@@ -57,7 +57,6 @@ where you can read a more thorough explanation.
                                           +-------------------+ 
 ```
 
-
 # Setup
 If you are looking to set up MAX locally as part of the UZI project, please refer to the instructions in the 
 [nl-rdo-uzi-coordination](https://github.com/minvws/nl-rdo-uzi-coordination) repository. For more in depth set up
@@ -137,7 +136,6 @@ config under the following config names:
 - `overflow_idp_key`
 - `user_limit_key_overflow_idp` (if there is a user limit on the overflow idp to be handled by the ratelimiter)
 
-
 # Using the mock environment
 For development purposes we have created a 'mock' to retrieve a JWT Token for arbitrary BSNs. This is only available 
 when `digid_mock` has been added to the `login_methods` in the `max.conf` and the set `environment` does not
@@ -187,9 +185,8 @@ Note that all commits should be signed using a gpg key.
 
 ## Security
 
-Security issues can be reported through a github issue, at security@rdobeheer.nl, or through the
+Security issues can be reported through a github issue, at security@irealisatie.nl, or through the
 https://www.ncsc.nl/contact/kwetsbaarheid-melden.
-
 
 ## Logging and monitoring
 The Logging/monitoring of data processing are, on the one hand, important measures to detect,
@@ -207,6 +204,4 @@ the obligation of healthcare providers to be able to comply with their obligatio
 to record actions related to the electronic patient record.
 
 ### Docker containers
-Docker containers and their configurations are meant to be used for development purposes only. And not meant to be used in a production setup. 
-
-
+Docker containers and their configurations are meant to be used for development purposes only. And not meant to be used in a production setup.
