@@ -58,14 +58,14 @@ In short:
 2. [Generate a GitHub token](https://github.com/settings/tokens/new?scopes=read:packages&description=GitHub+Packages+token) with, - at least - the `read:packages` scope.
 3. Open your `.npmrc` file and replace `<YOUR_GITHUB_TOKEN>` with your GitHub token.    ```
 
-# Setup Instructions
+## Setup Instructions
 
 There are two different setup methods available to run this project:
 
 1. **Docker**: Use a preconfigured Docker container for development. This includes Python, Node JS and npm.
 2. **Local**: Install tools like Python and npm directly from your local machine. This requires manual setup of Python, Node JS and npm.
 
-#### Requirements:
+### Requirements
 
 An exact overview of tools per setup method can be found below:
 
@@ -80,32 +80,31 @@ An exact overview of tools per setup method can be found below:
 | node js          |                   | ✔️                  |
 | curl             | ✔️                | ✔️                  |
 
+### 1. Remote Docker Container
 
-## 1. Remote Docker Container
-
-### Steps:
+#### Steps
 
 1. Prepare the `.npmrc` file with the instructions described earlier in this document.
-3. Build the project: `make setup-remote`
-4. Run the service: `make run-remote`
+2. Build the project: `make setup-remote`
+3. Run the service: `make run-remote`
 
-## 2. Local Installation
+### 2. Local Installation
 
-### Dependencies
+#### Dependencies
 
-Make sure to install the following dependencies: 
+Make sure to install the following dependencies:
 
 ```bash
 sudo apt-get update && sudo apt-get install libxmlsec1-dev
 ```
 
-### Steps:
+#### Steps
 
 1. Prepare the `.npmrc` file with the instructions described earlier in this document.
 2. Set up the project: `make setup-local`
 3. Run the service: `make run-local`
 
-# Contributions
+## Contributions
 
 When contributing to inge6 a few Make commands should be considered to make sure linting, type-checking (MyPy) and tests are still valid:
 
@@ -122,5 +121,5 @@ or
 To make use of our custom stubs when running mypy make sure you have correctly exported the env variable:
 
 ```bash
-$ export MYPYPATH=~/work/myproject/stubs
+export MYPYPATH=~/work/myproject/stubs
 ```
