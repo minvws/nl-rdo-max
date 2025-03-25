@@ -1,8 +1,11 @@
 # MD013/line-length : Line length : https://github.com/DavidAnson/markdownlint/blob/v0.34.0/doc/md013.md
 MD013:
   # Number of characters
-  line_length: 100
+  line_length: 1000
   # Number of characters for headings
-  heading_line_length: 100
+  heading_line_length: 300
   # Number of characters for code blocks
-  code_block_line_length: 100
+  code_block_line_length: 1000
+MD024:
+  # Allow multiple headers with the same content within the same document with a different parent
+  siblings_only: true
