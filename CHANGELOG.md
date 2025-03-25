@@ -9,28 +9,27 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 
 ## What's Changed
 
-- when mocking and auth_by_proxy is disabled, an error is raised. But a… by @maxxiefjv in https://github.com/91divoc-ln/inge-6/pull/290
-- Bump mypy from 0.921 to 0.931 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/272
-- Bump pytest-asyncio from 0.16.0 to 0.18.1 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/295
-- Bump types-requests from 2.26.2 to 2.27.10 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/296
-- Bump uvicorn from 0.16.0 to 0.17.5 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/297
-- Bump types-redis from 4.0.4 to 4.1.16 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/298
-- Bump pytest-mock from 3.6.1 to 3.7.0 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/302
-- Bump pytest-redis from 2.3.0 to 2.4.0 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/301
-- Bump black from 21.12b0 to 22.1.0 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/300
-- Bump bandit from 1.7.1 to 1.7.2 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/299
-
+- when mocking and auth_by_proxy is disabled, an error is raised. But a… by @maxxiefjv in <https://github.com/91divoc-ln/inge-6/pull/290>
+- Bump mypy from 0.921 to 0.931 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/272>
+- Bump pytest-asyncio from 0.16.0 to 0.18.1 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/295>
+- Bump types-requests from 2.26.2 to 2.27.10 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/296>
+- Bump uvicorn from 0.16.0 to 0.17.5 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/297>
+- Bump types-redis from 4.0.4 to 4.1.16 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/298>
+- Bump pytest-mock from 3.6.1 to 3.7.0 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/302>
+- Bump pytest-redis from 2.3.0 to 2.4.0 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/301>
+- Bump black from 21.12b0 to 22.1.0 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/300>
+- Bump bandit from 1.7.1 to 1.7.2 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/299>
 
 ## [v1.3.6] 2021-12-22
 
 ## What's Changed
 
-- Bump mypy from 0.910 to 0.921 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/256
-- Bump types-redis from 4.0.4 to 4.0.5 by @dependabot in https://github.com/91divoc-ln/inge-6/pull/257
-- improve log messages and start logging empty redirect query params by @maxxiefjv in https://github.com/91divoc-ln/inge-6/pull/255
-- add changelog to changelog.md by @maxxiefjv in https://github.com/91divoc-ln/inge-6/pull/261
-- Machtigen sorry page when not available by @maxxiefjv in https://github.com/91divoc-ln/inge-6/pull/254
-- form should be a GET method by @maxxiefjv in https://github.com/91divoc-ln/inge-6/pull/260
+- Bump mypy from 0.910 to 0.921 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/256>
+- Bump types-redis from 4.0.4 to 4.0.5 by @dependabot in <https://github.com/91divoc-ln/inge-6/pull/257>
+- improve log messages and start logging empty redirect query params by @maxxiefjv in <https://github.com/91divoc-ln/inge-6/pull/255>
+- add changelog to changelog.md by @maxxiefjv in <https://github.com/91divoc-ln/inge-6/pull/261>
+- Machtigen sorry page when not available by @maxxiefjv in <https://github.com/91divoc-ln/inge-6/pull/254>
+- form should be a GET method by @maxxiefjv in <https://github.com/91divoc-ln/inge-6/pull/260>
 
 ## [v1.3.5] 2021-12-21
 
@@ -103,12 +102,15 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 - The SAML issuer and inge6 issuer are now seperated in the config, solving the issue regarding the openid-configuration discovery
 
 - New config:
+
 ```
 [saml]
 # The domain which contains the subdomains of the configured Identity providers
 base_issuer = localhost:8007
 ```
+
 - Config change:
+
 ```
 [DEFAULT]
 # Needs to be a https full URL
@@ -137,13 +139,14 @@ issuer = https://10.48.118.250:8006
 ### Added
 
 - Support for multiple IDP configurations
-- Overflow to secundairy IDP when primary is full
+- Overflow to secondary IDP when primary is full
 - set primary IDP in redis
 - endpoints configurable
 - file existence checks on startup
 
 - config additions:
-```
+
+```text
     [DEFAULT]
     connect_to_idp_key = tvs:connect_to_idp
     overflow_idp_key = tvs:overflow_idp
