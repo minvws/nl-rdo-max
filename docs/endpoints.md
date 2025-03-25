@@ -62,7 +62,7 @@ The client identifier used to verify
 
 ### `state`
 
-The same state used in the /authorize request. 
+The same state used in the /authorize request.
 
 ### `grant_type`
 

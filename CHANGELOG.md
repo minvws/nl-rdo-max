@@ -67,7 +67,7 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 
 ### Added
 
-- perform machtigen on scope change 
+- perform machtigen on scope change
 
 ### Changed
 
@@ -89,7 +89,6 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 
 - hotfix redis creating 6 new connections per thread.
 
-
 ## [v1.1.1] - 2021-09-12
 
 ### Added
@@ -103,7 +102,7 @@ and (starting from v1.0.0) this project adheres to [Semantic Versioning](https:/
 
 - New config:
 
-```
+```text
 [saml]
 # The domain which contains the subdomains of the configured Identity providers
 base_issuer = localhost:8007
@@ -111,7 +110,7 @@ base_issuer = localhost:8007
 
 - Config change:
 
-```
+```text
 [DEFAULT]
 # Needs to be a https full URL
 issuer = https://10.48.118.250:8006
