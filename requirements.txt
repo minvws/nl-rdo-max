@@ -118,7 +118,7 @@ mypy-extensions==1.0.0
     #   mypy
 oic==1.7.0
     # via pyop
-packaging==24.1
+packaging==24.2
     # via
     #   black
     #   pytest
