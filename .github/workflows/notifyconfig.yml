@@ -25,7 +25,7 @@ jobs:
           username: ${{secrets.MAIL_USERNAME}}
           password: ${{secrets.MAIL_PASSWORD}}
           subject: Github Actions ${{github.repository}}
-          to: fyi@rdobeheer.nl
+          to: fyi@irealisatie.nl
           from: Github actions <${{secrets.MAIL_USERNAME}}>
           secure: false
           body: >
