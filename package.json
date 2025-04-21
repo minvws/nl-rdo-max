@@ -12,7 +12,7 @@
     "swagger-ui-dist": "^5.20.1"
   },
   "devDependencies": {
-    "sass": "^1.86.0",
+    "sass": "^1.86.3",
     "vite": "^6.3.2",
     "vite-plugin-static-copy": "^2.3.0"
   }
