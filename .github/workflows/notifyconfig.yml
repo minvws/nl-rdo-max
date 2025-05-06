@@ -18,7 +18,7 @@ jobs:
       - name: Diff configfiles
         run: git diff main~1:clients.json.example clients.json.example > clients.json.diff
       - name: Send mail
-        uses: dawidd6/action-send-mail@v4
+        uses: dawidd6/action-send-mail@v5
         with:
           server_address: smtp.prolocation.net
           server_port: 587
