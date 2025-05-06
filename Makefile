@@ -10,11 +10,10 @@ venv: .venv/touchfile ## Create virtual environment
 	test -d .venv || python3 -m venv .venv
 	. .venv/bin/activate; pip install -U pip
 	. .venv/bin/activate; pip install pip-tools
-	. .venv/bin/activate && ${env} pip-compile --extra dev
-	. .venv/bin/activate && ${env} pip-sync
-	. .venv/bin/activate && ${env} pip install -e .
-	. .venv/bin/activate && ${env} pip install --no-binary lxml==4.9.3 lxml==4.9.3 --force-reinstall
-	. .venv/bin/activate && ${env} pip install --no-binary xmlsec==1.3.14 xmlsec==1.3.14 --force-reinstall
+	. .venv/bin/activate && ${env} pip install -r requirements.txt
+	. .venv/bin/activate && ${env} pip install --force-reinstall --no-binary=xmlsec xmlsec==1.3.15
+	. .venv/bin/activate && ${env} pip install --force-reinstall --no-binary=lxml lxml==5.4.0
+
 
 	touch .venv/touchfile
 
