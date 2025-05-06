@@ -40,7 +40,7 @@ jobs:
       - name: npm ci
         run: npm ci --ignore-scripts
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.REPO_READ_ONLY_TOKEN }}
 
       - name: npm run build
         run: npm run build
@@ -55,7 +55,7 @@ jobs:
           make setup-saml 
           make setup-secrets
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.REPO_READ_ONLY_TOKEN }}
 
       - name: Linting (pylint & black)
         run: make check
