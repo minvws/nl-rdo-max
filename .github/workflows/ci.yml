@@ -7,12 +7,16 @@ on:
     tags: [ v* ]
   pull_request:
 
-env:
-  PYTHON_VERSION: '3.10'
-  NODE_VERSION: 18
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
+    strategy:
+      matrix:
+        python_version: ['3.10','3.11']
+
     runs-on: ubuntu-22.04
 
     steps:
@@ -24,13 +28,13 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{ matrix.python_version }}
           cache: 'pip' # caching pip dependencies
 
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: "22"
           registry-url: "https://npm.pkg.github.com"
           cache: "npm"
       
@@ -50,12 +54,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install libxmlsec1-dev pkg-config
           python -m pip install --upgrade pip setuptools wheel
-          make venv 
-          make setup-config 
-          make setup-saml 
+          make venv
+          make setup-config
+          make setup-saml
           make setup-secrets
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.REPO_READ_ONLY_TOKEN }}
 
       - name: Linting (pylint & black)
         run: make check
