@@ -62,7 +62,7 @@ freezegun==1.5.1
     # via app (setup.py)
 future==1.0.0
     # via pyjwkest
-h11==0.14.0
+h11==0.16.0
     # via
     #   httpcore
     #   uvicorn
