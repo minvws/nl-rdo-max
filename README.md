@@ -127,8 +127,6 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X
 
 ### Ubuntu dependencies
 
-13/07/2023:
-Most likely still needed but can not confirm since I am running macOS. Please update accordingly.
 Some Ubuntu dependencies that should be installed:
 `libxmlsec1-dev pkg-config`
 

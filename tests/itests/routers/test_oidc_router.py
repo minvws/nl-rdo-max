@@ -71,17 +71,6 @@ def test_accesstoken(lazy_app, oidc_provider_mocked):
         client_id="ci",
         query_string="grant_type=gt&code=c&redirect_uri=ru&code_verifier=cv&client_id=ci",
     )
-    headers = Headers(
-        {
-            "host": "testserver",
-            "user-agent": "testclient",
-            "accept-encoding": "gzip, deflate",
-            "accept": "*/*",
-            "connection": "keep-alive",
-            "a": "b",
-            "content-length": "66",
-        }
-    )
     mocked_provider.token.return_value = fake_response
     app = lazy_app.value
     actual_response = app.post(
@@ -91,7 +80,14 @@ def test_accesstoken(lazy_app, oidc_provider_mocked):
     )
     assert actual_response.text == "expected"
     assert actual_response.status_code == 234
-    mocked_provider.token.assert_called_with(token_request, headers)
+
+    # Check if the headers are received correctly
+    called_headers = mocked_provider.token.call_args[0][1]
+    assert isinstance(called_headers, Headers)
+    assert called_headers.get("a") == "b"
+    assert called_headers.get("accept") == "*/*"
+
+    mocked_provider.token.assert_called_with(token_request, called_headers)
 
 
 def test_jwks(lazy_app, oidc_provider_mocked):

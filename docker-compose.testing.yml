@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile
       args:
-        UID: ${UID:-1000}
-        GID: ${GID:-1000}
+        NEW_UID: ${UID:-1000}
+        NEW_GID: ${GID:-1000}
     volumes:
       - '.:/src'
       - '.npmrc:/src/.npmrc:ro'
