@@ -1,5 +1,4 @@
 import base64
-import json
 import logging
 import uuid
 from typing import Union
@@ -100,7 +99,7 @@ class SamlResponseFactory:
                 f"https://{saml_identity_provider.name}.{self._saml_base_issuer}"
             ),
             "script_name": self._oidc_authorize_endpoint,
-            "get_data": authorize_request.dict(),
+            "get_data": authorize_request.model_dump_json(),
         }
         if authorize_request.authorization_by_proxy:
             log.warning(
@@ -126,7 +125,7 @@ class SamlResponseFactory:
 
     def create_saml_mock_response(self, authorize_request, randstate):
         base64_authn_request = base64.urlsafe_b64encode(
-            json.dumps(authorize_request.dict()).encode()
+            authorize_request.model_dump_json().encode()
         ).decode()
         sso_url = "digid-mock?" + parse.urlencode(
             {

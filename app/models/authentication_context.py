@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, List
 
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 from pyop.message import AuthorizationRequest
 
 from app.models.authentication_meta import AuthenticationMeta
@@ -12,11 +12,9 @@ class AuthenticationContext(BaseModel):
     authentication_method: str
     authentication_state: Dict[str, Any]
     session_id: str
-    req_acme_tokens: Optional[List[str]]
+    req_acme_tokens: Optional[List[str]] = None
     authentication_meta: AuthenticationMeta
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def to_dict(self):
         return {

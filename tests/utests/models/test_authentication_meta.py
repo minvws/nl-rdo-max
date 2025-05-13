@@ -48,4 +48,4 @@ class TestAuthenticationMeta(unittest.TestCase):
             '"authentication_method_name":"digid"}'
         )
 
-        self.assertEqual(auth_meta.json(), expected_json)
+        self.assertEqual(auth_meta.model_dump_json(), expected_json)

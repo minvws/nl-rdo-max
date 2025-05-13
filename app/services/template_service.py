@@ -53,7 +53,6 @@ class TemplateService:
         sidebar_template: Optional[str] = None,
     ) -> _TemplateResponse:
         default_context = {
-            "request": request,
             "layout": "layout.html",
             "page_title": page_title,
         }
@@ -62,4 +61,6 @@ class TemplateService:
             default_context["sidebar"] = sidebar_template
 
         context = {**default_context, **page_context}
-        return self.templates.TemplateResponse(template_name, context)
+        return self.templates.TemplateResponse(
+            request=request, name=template_name, context=context
+        )

@@ -34,11 +34,9 @@ def _base_exception_handler(
     language_map: Dict[str, str] = Provide[Container.services.language_map],
 ):
     context = {
-        "request": request,
         "exception_title": error,
         "exception_message": error_description,
         "redirect_delay": redirect_html_delay,
-        "status_code": status_code,
         "redirect_message": translate(
             "You will automatically be redirected in {{ redirect_delay }} seconds",
             language_map,
@@ -49,7 +47,7 @@ def _base_exception_handler(
     if redirect_uri is not None:
         context["redirect_uri"] = redirect_uri
     return template_service.templates.TemplateResponse(
-        "exception.html", status_code=status_code, context=context
+        request=request, name="exception.html", context=context, status_code=status_code
     )
 
 

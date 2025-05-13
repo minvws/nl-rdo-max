@@ -244,7 +244,7 @@ class CIBGUserinfoService(UserinfoService):
             )
 
         data = {
-            **uzi_data.dict(),
+            **uzi_data.model_dump(),
             "iss": self._req_issuer,
             "aud": client_id,
             "sub": subject_identifier,
