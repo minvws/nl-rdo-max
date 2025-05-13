@@ -1,4 +1,3 @@
-# pylint: disable=
 import time
 
 from app.misc.utils import file_content_raise_if_none, strip_cert

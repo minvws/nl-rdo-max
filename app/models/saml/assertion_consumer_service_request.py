@@ -20,16 +20,16 @@ class AssertionConsumerServiceRequest(BaseModel):
     def from_request(
         SAMLart: str, RelayState: str, mocking: int = 0
     ) -> "AssertionConsumerServiceRequest":
-        return AssertionConsumerServiceRequest.parse_obj(
+        return AssertionConsumerServiceRequest.model_validate(
             {"SAMLart": SAMLart, "RelayState": RelayState, "mocking": mocking == 1}
         )
 
     def hashed_saml_art(self):
         return nacl.hash.sha256(self.SAMLart.encode()).decode()
 
-    @staticmethod
     @field_validator("SAMLart", "RelayState")
-    def convert_to_escaped_html(text):  # pylint: disable=no-self-argument
+    @classmethod
+    def convert_to_escaped_html(cls, text):
         return html.escape(text)
 
     @property

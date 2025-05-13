@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 """
 Handles parsing of Artifact responses, validating the signature among other validity checks.
 todo: check class for tests and comments like required settings
@@ -44,7 +45,7 @@ class ArtifactResponseStatus:
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
 class ArtifactResponse:
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         artifact_response_str,
         artifact_tree: etree,

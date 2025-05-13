@@ -70,7 +70,7 @@ class XEd25519JweService(JweService):
         jwe = JWE.from_jose_token(jwe_str)
         jwk = JWK()
         # noinspection PyProtectedMember
-        jwk._import_pyca_pri_okp(  # pylint: disable=protected-access
+        jwk._import_pyca_pri_okp(  # type: ignore[attr-defined] # pylint: disable=protected-access
             X25519PrivateKey.from_private_bytes(base64.b64decode(privkey))
         )
         jwe.decrypt(jwk)

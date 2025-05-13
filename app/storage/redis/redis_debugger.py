@@ -5,7 +5,6 @@ import threading
 from redis import StrictRedis
 
 
-# pylint: disable=too-few-public-methods
 class RedisGetDebuggerFactory:
     def __init__(
         self,

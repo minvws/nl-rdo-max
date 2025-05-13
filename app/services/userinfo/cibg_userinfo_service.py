@@ -20,7 +20,7 @@ from app.services.userinfo.userinfo_service import UserinfoService
 log = logging.getLogger(__name__)
 
 
-# pylint: disable=too-many-arguments, too-many-instance-attributes
+# pylint: disable=too-many-arguments, too-many-positional-arguments, too-many-instance-attributes
 class CIBGUserinfoService(UserinfoService):
     def __init__(
         self,

@@ -1,4 +1,3 @@
-# pylint:disable=too-few-public-methods
 import nacl
 import pytest
 import random

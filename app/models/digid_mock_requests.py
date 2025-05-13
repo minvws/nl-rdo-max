@@ -31,9 +31,9 @@ class DigiDMockRequest(BaseModel):
             }
         )
 
-    @staticmethod
     @field_validator("state", "RelayState", "SAMLRequest")
-    def convert_to_escaped_html(text):  # pylint: disable=no-self-argument
+    @classmethod
+    def convert_to_escaped_html(cls, text):
         return html.escape(text)
 
 
@@ -42,7 +42,7 @@ class DigiDMockCatchRequest(BaseModel):
     SAMLart: str
     RelayState: str
 
-    @staticmethod
     @field_validator("bsn", "SAMLart", "RelayState")
-    def convert_to_escaped_html(text):  # pylint: disable=no-self-argument
+    @classmethod
+    def convert_to_escaped_html(cls, text):
         return html.escape(text)

@@ -1,4 +1,4 @@
-# pylint: disable=c-extension-no-member, too-few-public-methods
+# pylint: disable=c-extension-no-member
 import logging
 import urllib.parse
 from configparser import ConfigParser

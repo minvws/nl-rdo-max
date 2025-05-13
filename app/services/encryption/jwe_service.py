@@ -3,7 +3,7 @@ import abc
 # todo: Define interface with pubkey from client ed25519 and rsa typed
 from typing import Dict, Any
 
-from jwcrypto.jwt import JWK
+from jwcrypto.jwk import JWK
 
 
 class JweService(abc.ABC):

@@ -1,4 +1,4 @@
-# pylint: disable=c-extension-no-member, too-few-public-methods
+# pylint: disable=c-extension-no-member, no-name-in-module
 from typing import List
 
 from dependency_injector import containers, providers
@@ -72,18 +72,20 @@ class PyopServices(containers.DeclarativeContainer):
         scopes_supported=config.oidc.scopes_supported.as_(as_list),
     )
 
-    subject_identifier_factory = providers.Singleton(
-        HashBasedSubjectIdentifierFactory, config.oidc.subject_id_hash_salt
-    )  # type: Singleton[HashBasedSubjectIdentifierFactory]
+    subject_identifier_factory: Singleton[HashBasedSubjectIdentifierFactory] = (
+        providers.Singleton(
+            HashBasedSubjectIdentifierFactory, config.oidc.subject_id_hash_salt
+        )
+    )
 
-    authz_state = providers.Singleton(
+    authz_state: Singleton[AuthorizationState] = providers.Singleton(
         AuthorizationState,
         subject_identifier_factory=subject_identifier_factory,
         authorization_code_db=storage.authorization_code_db,
         access_token_db=storage.authorization_code_db,
         refresh_token_db=storage.access_token_db,
         subject_identifier_db=storage.subject_identifier_db,
-    )  # type: Singleton[AuthorizationState]
+    )
 
     saml_provider = providers.Singleton(SAMLProvider)
 

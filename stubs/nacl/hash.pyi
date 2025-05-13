@@ -1,3 +1,0 @@
-import nacl.encoding
-
-def sha256(message: bytes, encoder=nacl.encoding.HexEncoder) -> bytes: ...

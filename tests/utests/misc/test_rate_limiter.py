@@ -44,13 +44,15 @@ def create_rate_limiter(
 
 
 def test_get_identity_provider_name_based_on_request_limits_happy_path():
-    with patch.object(
-        RateLimiter, "_get_primary_identity_provider_name", return_value="pipn"
-    ) as get_primary_idp_method, patch.object(
-        RateLimiter, "_user_limit_test"
-    ) as user_limit_test_method, patch.object(
-        RateLimiter, "_get_overflow_identity_provider_name"
-    ) as get_overflow_idp_method:
+    with (
+        patch.object(
+            RateLimiter, "_get_primary_identity_provider_name", return_value="pipn"
+        ) as get_primary_idp_method,
+        patch.object(RateLimiter, "_user_limit_test") as user_limit_test_method,
+        patch.object(
+            RateLimiter, "_get_overflow_identity_provider_name"
+        ) as get_overflow_idp_method,
+    ):
         rate_limiter = create_rate_limiter(
             primary_identity_provider_user_limit_key="pipulk",
             overflow_identity_provider_user_limit_key="oipulk",
@@ -65,13 +67,17 @@ def test_get_identity_provider_name_based_on_request_limits_happy_path():
 
 
 def test_get_identity_provider_name_based_on_request_limits_with_too_many_users_for_oidp():
-    with patch.object(
-        RateLimiter, "_get_primary_identity_provider_name", return_value="pipn"
-    ) as get_primary_idp_method, patch.object(
-        RateLimiter, "_user_limit_test", side_effect=TooBusyError()
-    ) as user_limit_test_method, patch.object(
-        RateLimiter, "_get_overflow_identity_provider_name", return_value="oipn"
-    ) as get_overflow_idp_method:
+    with (
+        patch.object(
+            RateLimiter, "_get_primary_identity_provider_name", return_value="pipn"
+        ) as get_primary_idp_method,
+        patch.object(
+            RateLimiter, "_user_limit_test", side_effect=TooBusyError()
+        ) as user_limit_test_method,
+        patch.object(
+            RateLimiter, "_get_overflow_identity_provider_name", return_value="oipn"
+        ) as get_overflow_idp_method,
+    ):
         rate_limiter = create_rate_limiter(
             primary_identity_provider_user_limit_key="pipulk",
             overflow_identity_provider_user_limit_key="oipulk",
@@ -89,15 +95,19 @@ def test_get_identity_provider_name_based_on_request_limits_with_too_many_users_
 
 
 def test_get_identity_provider_name_based_on_request_limits_with_too_many_users_for_pidp():
-    with patch.object(
-        RateLimiter, "_get_primary_identity_provider_name", return_value="pipn"
-    ) as get_primary_idp_method, patch.object(
-        RateLimiter,
-        "_user_limit_test",
-        side_effect=[TooBusyError(), None],
-    ) as user_limit_test_method, patch.object(
-        RateLimiter, "_get_overflow_identity_provider_name", return_value="oipn"
-    ) as get_overflow_idp_method:
+    with (
+        patch.object(
+            RateLimiter, "_get_primary_identity_provider_name", return_value="pipn"
+        ) as get_primary_idp_method,
+        patch.object(
+            RateLimiter,
+            "_user_limit_test",
+            side_effect=[TooBusyError(), None],
+        ) as user_limit_test_method,
+        patch.object(
+            RateLimiter, "_get_overflow_identity_provider_name", return_value="oipn"
+        ) as get_overflow_idp_method,
+    ):
         rate_limiter = create_rate_limiter(
             primary_identity_provider_user_limit_key="pipulk",
             overflow_identity_provider_user_limit_key="oipulk",

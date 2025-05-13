@@ -109,17 +109,9 @@ sudo apt-get update && sudo apt-get install libxmlsec1-dev
 When contributing to inge6 a few Make commands should be considered to make sure linting, type-checking (MyPy) and tests are still valid:
 
 - `make lint`, check linting using pylint.
-- `make check-type`, check that typing is done correctly. Also, see 'MyPy: stubs'.
+- `make check-type`, check that typing is done correctly.
 - `make test`, run the tests
 
 or
 
 - `make check-all`, to check all the above
-
-## MyPy: stubs
-
-To make use of our custom stubs when running mypy make sure you have correctly exported the env variable:
-
-```bash
-export MYPYPATH=~/work/myproject/stubs
-```
