@@ -1,2 +1,2 @@
 [installer]
-no-binary = ["xmlsec"]
+no-binary = ["xmlsec", "lxml"]
