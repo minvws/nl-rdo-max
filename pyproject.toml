@@ -1,6 +1,6 @@
 [project]
 name = "nl-rdo-max"
-version = "3.0.0"
+dynamic = ["version"]
 description = "Multiple Authentication eXchange"
 license = {text = "EUPL-1.2"}
 authors = [{ name = "Ministerie van Volksgezondheid, Welzijn en Sport" }]
