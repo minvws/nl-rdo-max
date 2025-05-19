@@ -33,6 +33,7 @@ RUN apt update && \
   git \
   gnupg2 \
   libxmlsec1-dev \
+  pkg-config \
   lsb-release \
   make \
   && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
