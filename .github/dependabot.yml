@@ -23,9 +23,17 @@ updates:
       - github-minvws
     schedule:
       interval: "weekly"
+    groups:
+      version-updates:
+        update-types: ["patch", "minor"]
+        patterns:
+          - "*"
 
   # Maintain dependencies for pip
-  - package-ecosystem: "pip" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "pip"
+    directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      development-dependencies:
+        dependency-type: "development"
