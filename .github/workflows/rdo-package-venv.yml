@@ -15,11 +15,19 @@ jobs:
     steps:
       - name: Set env
         run: |
-          echo "PACKAGE_FILE_NAME=max" >> $GITHUB_ENV
           echo "PIP_NO_BINARY=xmlsec,lxml" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxmlsec1-dev pkg-config
 
       - name: Build venv package
         uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/python-venv-package@main
         with:
           python_version: ${{ matrix.python_version }}
-          package_file_name: ${{ env.PACKAGE_FILE_NAME }}
+          checkout_repository: false
+          package_file_name: "max"
