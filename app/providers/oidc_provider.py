@@ -1,3 +1,4 @@
+# pylint:disable=too-many-lines
 import json
 import logging
 import secrets
@@ -46,8 +47,7 @@ from app.validators.token_authentication_validator import TokenAuthenticationVal
 logger = logging.getLogger(__name__)
 
 
-# pylint:disable=too-many-arguments
-class OIDCProvider:  # pylint:disable=too-many-instance-attributes
+class OIDCProvider:  # pylint:disable=too-many-arguments, too-many-positional-arguments, too-many-instance-attributes
     def __init__(
         self,
         pyop_provider: MaxPyopProvider,
@@ -495,7 +495,7 @@ class OIDCProvider:  # pylint:disable=too-many-instance-attributes
         login_methods_dict = {}
         for login_method in login_methods:
             login_methods_dict[login_method.name] = LoginMethodWithLink(
-                **login_method.dict(),
+                **login_method.model_dump(),
                 url=self._get_url_for_login_method(
                     parsed_url, base_url, query_params, login_method.name
                 ),

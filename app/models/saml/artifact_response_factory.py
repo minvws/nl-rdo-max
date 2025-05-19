@@ -9,7 +9,7 @@ from ...misc.saml_utils import has_valid_signatures
 
 
 class ArtifactResponseFactory:
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         cluster_key: Optional[str],  # todo: Remove this key
         priv_key: str,

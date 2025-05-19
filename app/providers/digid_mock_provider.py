@@ -26,9 +26,9 @@ class DigidMockProvider:
         relay_state = digid_mock_request.RelayState
         artifact = str(uuid.uuid4())
         return self._template_renderer.TemplateResponse(
-            "digid_mock.html",
-            {
-                "request": request,
+            request=request,
+            name="digid_mock.html",
+            context={
                 "artifact": artifact,
                 "relay_state": relay_state,
                 "state": state,

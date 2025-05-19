@@ -25,11 +25,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup python
-        uses: actions/setup-python@v5
+      - name: Prepare environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxmlsec1-dev pkg-config
+
+      - name: Run build action
+        uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/poetry-install@main
         with:
-          python-version: ${{ matrix.python_version }}
-          cache: 'pip' # caching pip dependencies
+          python_version: ${{ matrix.python_version }}
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -49,12 +53,8 @@ jobs:
       - name: npm run build
         run: npm run build
 
-      - name: Prepare venv
+      - name: Setup config
         run: |
-          sudo apt-get update
-          sudo apt-get install libxmlsec1-dev pkg-config
-          python -m pip install --upgrade pip setuptools wheel
-          make venv
           make setup-config
           make setup-saml
           make setup-secrets
@@ -69,7 +69,7 @@ jobs:
         run: make audit
 
       - name: Unit testing (pytest)
-        run: make coverage
+        run: make test
 
       - name: Run SonarCloud scanner
         uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/sonarcloud@main

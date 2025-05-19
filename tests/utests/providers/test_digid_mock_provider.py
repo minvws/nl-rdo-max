@@ -29,9 +29,9 @@ def test_digid_mock(mocker):
     assert actual_response == response_mock
 
     mock_jinja_service.templates.TemplateResponse.assert_called_with(
-        "digid_mock.html",
-        {
-            "request": request_mock,
+        request=request_mock,
+        name="digid_mock.html",
+        context={
             "artifact": "1234",
             "relay_state": "rs",
             "state": "s",

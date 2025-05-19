@@ -312,15 +312,16 @@ def test_present_login_options_or_authorize():
     ret_value = MagicMock()
     client = {"name": "name"}
 
-    with patch.object(
-        OIDCProvider, "_validate_authorize_request"
-    ) as validate_authorize_request_method, patch.object(
-        OIDCProvider, "_get_login_methods"
-    ) as get_login_methods_method, patch.object(
-        OIDCProvider, "_provide_login_options_response"
-    ) as provide_login_options_response_method, patch.object(
-        OIDCProvider, "_authorize"
-    ) as authorize_method:
+    with (
+        patch.object(
+            OIDCProvider, "_validate_authorize_request"
+        ) as validate_authorize_request_method,
+        patch.object(OIDCProvider, "_get_login_methods") as get_login_methods_method,
+        patch.object(
+            OIDCProvider, "_provide_login_options_response"
+        ) as provide_login_options_response_method,
+        patch.object(OIDCProvider, "_authorize") as authorize_method,
+    ):
         login_methods = [
             LoginMethod(name="a", type=LoginMethodType.SPECIFIC),
             LoginMethod(name="b", type=LoginMethodType.OIDC),

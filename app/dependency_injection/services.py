@@ -1,4 +1,4 @@
-# pylint: disable=c-extension-no-member, too-few-public-methods
+# pylint: disable=c-extension-no-member
 from typing import List
 
 from dependency_injector import containers, providers

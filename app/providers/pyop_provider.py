@@ -2,7 +2,7 @@ import os
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.x509 import load_pem_x509_certificate
-from jwcrypto.jwt import JWK
+from jwcrypto.jwk import JWK
 from jwkest.jwk import RSAKey
 from pyop.provider import Provider as PyopProvider
 from pyop.authz_state import AuthorizationState
@@ -10,7 +10,6 @@ from pyop.authz_state import AuthorizationState
 from app.misc.utils import kid_from_certificate
 
 
-# pylint:disable=too-few-public-methods
 class MaxPyopProvider(PyopProvider):
     def __init__(
         self,
@@ -50,9 +49,9 @@ class MaxPyopProvider(PyopProvider):
                             )
                             crt = JWK.from_pem(str.encode(cert_str))
                             kid = kid_from_certificate(cert_str)
-                            crt.kid = kid
+                            crt.kid = kid  # type: ignore[attr-defined]
                             if "alg" not in crt:
-                                crt.alg = "RS256"
+                                crt.alg = "RS256"  # type: ignore[attr-defined]
 
                             self._jwks_certs["keys"].append(crt)
                             self._keys[kid] = cert_obj.public_key()

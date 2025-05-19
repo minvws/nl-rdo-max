@@ -1,3 +1,126 @@
+[project]
+name = "nl-rdo-max"
+dynamic = ["version"]
+description = "Multiple Authentication eXchange"
+license = {text = "EUPL-1.2"}
+authors = [{ name = "Ministerie van Volksgezondheid, Welzijn en Sport" }]
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+packages = [{ include = "app" }]
+dependencies = [
+    "fastapi (>=0.115.12,<0.116.0)",
+    "dependency-injector (>=4.0,<5.0)",
+    "pyop (>=3.4.1,<4.0.0)",
+    "jwcrypto (>=1.5.6,<2.0.0)",
+    "redis (>=6.0.0,<7.0.0)",
+    "jinja2 (>=3.1.6,<4.0.0)",
+    "pyopenssl (>=25.0.0,<26.0.0)",
+    "pynacl (>=1.5.0,<2.0.0)",
+    "xmlsec (==1.3.15)",
+    "lxml (==5.4.0)",
+    "python3-saml (==1.16.0)",
+    "python-multipart (>=0.0.20,<0.0.21)",
+]
+
 [build-system]
-requires = ["setuptools >= 64"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+uvicorn = "^0.34.2"
+pylint = "^3.3.7"
+bandit = "^1.8.3"
+mypy = "^1.15.0"
+autoflake = "^2.3.1"
+freezegun = "^1.5.1"
+pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+pytest-mock = "^3.14.0"
+pytest-docker = "^3.2.1"
+pytest-redis = "^3.1.3"
+types-python-dateutil = "^2.9.0.20241206"
+# types redis used for typechecking in redis_cache.py. https://github.com/redis/redis-py/issues/2399
+types-redis = "^4.6.0.20241004"
+types-requests = "^2.32.0.20250328"
+types-jwcrypto = "^1.5.0.20250413"
+httpx = "^0.28.1"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+files = "app"
+python_version = "3.10"
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "lxml",
+    "uvicorn",
+    "OpenSSL.crypto",
+    "onelogin.saml2.utils",
+    "jwkest.jwk",
+    "jwcrypto.jwt",
+    "jwcrypto.jwk",
+    "onelogin.saml2.auth",
+    "pyop.message",
+    "lxml.etree",
+    "pyop.exceptions",
+    "pyop.userinfo",
+    "pyop.subject_identifier",
+    "pyop.authz_state",
+    "pyop.provider",
+    "pyop.storage",
+    "jwcrypto.jwe",
+]
+ignore_missing_imports = true
+
+[tool.pylint.messages_control]
+disable = ["C0114", "C0115", "C0116", "W0511"]
+
+[tool.pylint.design]
+# Maximum number of arguments for function / method.
+max-args = 10
+
+# Maximum number of attributes for a class (see R0902).
+max-attributes = 11
+
+# Maximum number of branch for function / method body.
+max-branches = 26
+
+# Maximum number of locals for function / method body.
+max-locals = 25
+
+# Maximum number of positional arguments for function / method.
+max-positional-arguments = 10
+
+# Maximum number of public methods for a class (see R0904).
+max-public-methods = 25
+
+# Maximum number of return / yield for function / method body.
+max-returns = 11
+
+# Maximum number of statements in function / method body.
+max-statements = 100
+
+# Minimum number of public methods for a class (see R0903).
+min-public-methods = 0
+
+[tool.pylint.format]
+# Expected format of line ending, e.g. empty (any line ending), LF or CRLF.
+expected-line-ending-format = "LF"
+
+# Maximum number of characters on a single line.
+max-line-length = 210
+
+# Maximum number of lines in a module.
+max-module-lines = 300
+
+[tool.pylint.similarities]
+
+# Minimum lines number of a similarity.
+min-similarity-lines = 10

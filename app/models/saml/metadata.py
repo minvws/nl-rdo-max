@@ -1,4 +1,4 @@
-# pylint: disable=c-extension-no-member
+# pylint: disable=c-extension-no-member,too-many-lines
 import datetime
 import secrets
 from typing import Dict, Optional, List

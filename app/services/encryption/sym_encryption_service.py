@@ -3,8 +3,7 @@
 # Licensed under the EUROPEAN UNION PUBLIC LICENCE v. 1.2
 #
 # SPDX-License-Identifier: EUPL-1.2
-#
-# todo: Add copyright to every file
+
 import base64
 import json
 

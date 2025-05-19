@@ -3,71 +3,79 @@ ARG PYTHON_VERSION=3.10
 
 FROM python:${PYTHON_VERSION}-bookworm AS base
 
-ARG REMOTE_SOURCE_DIR="/src" \
+ARG PROJECT_DIR="/src" \
     LOCAL_SOURCE_DIR="." \
-    NODE_VERSION=18 \
+    NODE_VERSION=22 \
     APP_USER="app" \
     APP_GROUP="app" \
-    UID=1000 \
-    GID=1000 \
+    NEW_UID=1000 \
+    NEW_GID=1000 \
     INSTALL_NPM_ASSETS=true
     
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    POETRY_CACHE_DIR=/tmp/poetry-cache \
+    POETRY_VIRTUALENVS_CREATE=false
 
-ENV MYPYPATH=${PROJECT_DIR}/stubs
+# Create a non-privileged user that the app will run under.
+RUN groupadd --system ${APP_GROUP} --gid=${NEW_GID} && \
+  adduser \
+  --disabled-password \
+  --gecos "" \
+  --uid ${NEW_UID} \
+  --gid ${NEW_GID} \
+  ${APP_USER}
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends make curl libxmlsec1-dev gnupg2 lsb-release && \
-    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
-    apt-get install -y --no-install-recommends nodejs && \
-    rm -rf /var/lib/apt/lists/* 
+RUN apt update && \
+  apt install -y \
+  curl \
+  iputils-ping \
+  git \
+  gnupg2 \
+  libxmlsec1-dev \
+  pkg-config \
+  lsb-release \
+  make \
+  && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+  && apt-get install -y --no-install-recommends nodejs \
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-RUN getent group ${APP_GROUP} || groupadd --system ${APP_GROUP} --gid=${GID} && \
-    getent passwd ${APP_USER} || adduser --disabled-password --gecos "" --uid ${UID} --gid ${GID} \
-    --home /home/${APP_USER} ${APP_USER}
+RUN pip3 install --upgrade pip && \
+  pip3 install poetry==2.1.3 --no-cache-dir
 
 FROM base AS builder
 
-WORKDIR /src
+WORKDIR ${PROJECT_DIR}
 
 # setup npm
 RUN mkdir -p node_modules static/assets
 COPY scripts/setup-npm.sh vite.config.js package.json package-lock.json ./
 COPY resources ./resources
-RUN --mount=type=secret,id=npmrc,target=/src/.npmrc \
+RUN --mount=type=secret,id=npmrc,target=${PROJECT_DIR}/.npmrc \
     if [ "$INSTALL_NPM_ASSETS" = "true" ]; then \
         chmod +x setup-npm.sh && ./setup-npm.sh; \
         npm run build; \
     fi
 
 # setup python environment
-COPY requirements.txt setup.py setup.cfg ./
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python3 -m venv /src/.venv && \
-    . /src/.venv/bin/activate && \
-    pip install -U pip && \
-    pip install pip-tools && \
-    pip-compile --extra dev && \
-    pip-sync && \
-    pip install -e . && \
-    pip install --no-binary lxml==4.9.3 lxml==4.9.3 --force-reinstall && \
-    pip install --no-binary xmlsec==1.3.14 xmlsec==1.3.14 --force-reinstall
+COPY ./pyproject.toml ./poetry.lock ./poetry.toml ./
+RUN --mount=type=cache,target=${POETRY_CACHE_DIR} poetry install --no-interaction
 
 FROM base AS final
 
+COPY --chown=${APP_USER}:${APP_GROUP} --from=builder /usr/local /usr/local
+
 ENV PATH="/usr/local/bin:$PATH"
 
-WORKDIR ${REMOTE_SOURCE_DIR}
+WORKDIR ${PROJECT_DIR}
 EXPOSE 8006
 
-COPY --chown=${APP_USER}:${APP_GROUP} ${LOCAL_SOURCE_DIR}/ ${REMOTE_SOURCE_DIR}
-COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/.venv /src/.venv
-COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/node_modules /src/node_modules
-COPY --from=builder --chown=${APP_USER}:${APP_GROUP} /src/static/assets /src/static/assets
+COPY --chown=${APP_USER}:${APP_GROUP} ${LOCAL_SOURCE_DIR}/ ${PROJECT_DIR}
+COPY --from=builder --chown=${APP_USER}:${APP_GROUP} ${PROJECT_DIR}/node_modules ${PROJECT_DIR}/node_modules
+COPY --from=builder --chown=${APP_USER}:${APP_GROUP} ${PROJECT_DIR}/static/assets ${PROJECT_DIR}/static/assets
 
 USER ${APP_USER}
-ENV PATH="/src/.venv/bin:$PATH"
+ENV PYTHONPATH=${PROJECT_DIR}
 
 RUN chmod +x docker/entrypoint.sh
 ENTRYPOINT ["docker/entrypoint.sh"]

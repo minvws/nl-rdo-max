@@ -33,7 +33,6 @@ def get_config_value(section: str, name: str, default: Any = None) -> Any:
     return default
 
 
-# pylint:disable=too-few-public-methods
 class RouterConfig:
     authorize_endpoint = get_config_value(
         "oidc", "authorize_endpoint", "/authorize_endpoint"

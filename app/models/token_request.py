@@ -1,8 +1,7 @@
 from typing import Optional
 from urllib.parse import parse_qs
 
-from pydantic import BaseModel
-from pydantic.error_wrappers import ValidationError
+from pydantic import BaseModel, ValidationError
 
 
 class TokenRequest(BaseModel):
@@ -15,14 +14,12 @@ class TokenRequest(BaseModel):
     client_assertion: Optional[str] = None
     query_string: str
 
-    # pylint: disable=invalid-name
-    # noinspection PyPep8Naming
     @classmethod
     def from_body_query_string(cls, query_string) -> "TokenRequest":
         parsed = dict((k, v[0]) for k, v in parse_qs(query_string).items())
         parsed["query_string"] = query_string
         try:
-            return TokenRequest.parse_obj(parsed)
+            return TokenRequest.model_validate(parsed)
         except ValidationError as validation_error:
             errors = [error["loc"][0] for error in validation_error.errors()]
             keys = ""

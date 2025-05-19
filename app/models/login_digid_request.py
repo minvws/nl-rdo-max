@@ -2,7 +2,7 @@ import base64
 import html
 import json
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 from app.models.authorize_request import AuthorizeRequest
 
@@ -12,8 +12,9 @@ class LoginDigiDRequest(BaseModel):
     authorize_request: AuthorizeRequest
     force_digid: bool = False
 
-    @validator("state")
-    def convert_to_escaped_html(cls, text):  # pylint: disable=no-self-argument
+    @field_validator("state")
+    @classmethod
+    def convert_to_escaped_html(cls, text):
         return html.escape(text)
 
     @staticmethod
@@ -22,7 +23,7 @@ class LoginDigiDRequest(BaseModel):
         authorize_request: str,
         force_digid: bool = False,
     ) -> "LoginDigiDRequest":
-        return LoginDigiDRequest.parse_obj(
+        return LoginDigiDRequest.model_validate(
             {
                 "state": state,
                 "authorize_request": AuthorizeRequest(

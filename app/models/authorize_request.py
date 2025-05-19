@@ -50,7 +50,8 @@ class AuthorizeRequest(BaseModel):
             return None
 
     @field_validator("scope")
-    def validate_scopes(cls, scopes):  # pylint: disable=no-self-argument
+    @classmethod
+    def validate_scopes(cls, scopes):
         splitted_scopes = scopes.split()
         for scope in splitted_scopes:
             if scope not in cls.get_allowed_scopes():
@@ -63,9 +64,8 @@ class AuthorizeRequest(BaseModel):
         return scopes
 
     @field_validator("code_challenge_method")
-    def validate_code_challenge_method(
-        cls, code_challenge_method: str
-    ):  # pylint: disable=no-self-argument
+    @classmethod
+    def validate_code_challenge_method(cls, code_challenge_method: str) -> str:
         if code_challenge_method != "S256":
             raise InvalidCodeChallengeMethodException()
 
@@ -76,9 +76,8 @@ class AuthorizeRequest(BaseModel):
         return constants.SCOPE_AUTHORIZATION_BY_PROXY in self.splitted_scopes
 
     @field_validator("response_type")
-    def validate_response_type(
-        cls, response_type: str
-    ):  # pylint: disable=no-self-argument
+    @classmethod
+    def validate_response_type(cls, response_type: str) -> str:
         response_types = ResponseType.list()
         if response_type not in response_types:
             log.warning(

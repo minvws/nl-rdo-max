@@ -4,31 +4,40 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile
       args:
-        UID: ${UID:-1000}
-        GID: ${GID:-1000}
+        NEW_UID: ${UID:-1000}
+        NEW_GID: ${GID:-1000}
       secrets:
         - npmrc
     volumes:
       - '.:/src'
-      - '/src/.venv'
       - '/src/node_modules'
       - '/src/static/assets'
     ports:
       - '8006:8006'
     depends_on: [ 'redis' ]
+    networks:
+      - default
 
   redis:
     image: redis:7.2.4
     restart: 'no'
-    ports:
-      - '6379:6379'
+    command: ["redis-server", "--port", "16379"]
+    networks:
+      - default
 
   redis-init:
     depends_on: [ 'redis' ]
     image: redis:7.2.4
     restart: 'no'
-    command: 'redis-cli -h redis set max:primary_identity_provider tvs'
+    command: 'redis-cli -h redis -p 16379 set max:primary_identity_provider tvs'
+    networks:
+      - default
 
 secrets:
   npmrc:
     file: ~/.npmrc
+
+
+networks:
+    default:
+        driver: bridge
