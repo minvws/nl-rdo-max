@@ -20,6 +20,7 @@ dependencies = [
     "lxml (==5.4.0)",
     "python3-saml (==1.16.0)",
     "python-multipart (>=0.0.20,<0.0.21)",
+    "uvicorn (>=0.34.2,<0.35.0)",
 ]
 
 [build-system]
@@ -31,7 +32,6 @@ package-mode = false
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
-uvicorn = "^0.34.2"
 pylint = "^3.3.7"
 bandit = "^1.8.3"
 mypy = "^1.15.0"
