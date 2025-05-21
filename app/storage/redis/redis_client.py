@@ -13,6 +13,7 @@ def create_redis_client(redis_settings) -> Redis:
         - settings.redis.key, path to the private key
         - settings.redis.cert, path to the certificate
         - settings.redis.cafile, path to a CAFile
+        - settings.redis.check_hostname, boolean to check the hostname
 
     :returns: Redis object having a connection with the configured redis server.
     """
@@ -26,6 +27,7 @@ def create_redis_client(redis_settings) -> Redis:
             ssl_keyfile=redis_settings["key"],
             ssl_certfile=redis_settings["cert"],
             ssl_ca_certs=redis_settings["cafile"],
+            ssl_check_hostname=redis_settings["check_hostname"] == "True",
         )
 
     return Redis(host=redis_settings["host"], port=redis_settings["port"], db=0)
