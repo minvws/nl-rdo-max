@@ -31,9 +31,9 @@ async def health(
     except RedisError as exception:
         logger.exception(
             "Redis server is not reachable. Attempted: %s:%s, ssl=%s",
-            config.redis_client.host,
-            config.redis_client.port,
-            config.redis_client.ssl,
+            config["redis"]["host"],
+            config["redis"]["port"],
+            config["redis"]["ssl"],
             exc_info=exception,
         )
         redis_healthy = False

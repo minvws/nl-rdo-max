@@ -10,7 +10,7 @@ Required settings:
 import json
 from typing import Any, Optional, Union, Type
 
-from redis import StrictRedis
+from redis import Redis
 
 from app.storage.cache import Cache
 from .redis_debugger import RedisGetDebuggerFactory
@@ -49,7 +49,7 @@ class RedisCache(Cache):
         default_cache_namespace: str,
         enable_debugger,
         expires_in_seconds: int,
-        redis_client: StrictRedis,
+        redis_client: Redis,
         redis_get_debugger_factory: RedisGetDebuggerFactory,
     ):
         self.key_prefix: str = default_cache_namespace

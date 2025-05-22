@@ -126,6 +126,7 @@ ssl = False
 key =
 cert =
 cafile =
+check_hostname = True
 
 # How long do values live in redis?
 object_ttl = 600

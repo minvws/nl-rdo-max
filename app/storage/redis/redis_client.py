@@ -1,7 +1,7 @@
-from redis import StrictRedis
+from redis import Redis
 
 
-def create_redis_client(redis_settings) -> StrictRedis:
+def create_redis_client(redis_settings) -> Redis:
     """
     Global function to retrieve the connection with the redis-server.
 
@@ -13,19 +13,22 @@ def create_redis_client(redis_settings) -> StrictRedis:
         - settings.redis.key, path to the private key
         - settings.redis.cert, path to the certificate
         - settings.redis.cafile, path to a CAFile
+        - settings.redis.check_hostname, boolean to check the hostname
 
-    :returns: StrictRedis object having a connection with the configured redis server.
+    :returns: Redis object having a connection with the configured redis server.
     """
-    use_ssl = redis_settings["ssl"] == "True"
-    if use_ssl:
-        return StrictRedis(
+    if redis_settings.getboolean("ssl"):
+        return Redis(
             host=redis_settings["host"],
-            port=redis_settings["port"],
+            port=redis_settings.getint("port"),
             db=0,
             ssl=True,
             ssl_keyfile=redis_settings["key"],
             ssl_certfile=redis_settings["cert"],
             ssl_ca_certs=redis_settings["cafile"],
+            ssl_check_hostname=redis_settings.getboolean(
+                "check_hostname", fallback=True
+            ),
         )
 
-    return StrictRedis(host=redis_settings["host"], port=redis_settings["port"], db=0)
+    return Redis(host=redis_settings["host"], port=redis_settings["port"], db=0)

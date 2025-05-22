@@ -2,13 +2,13 @@ import logging
 
 import threading
 
-from redis import StrictRedis
+from redis import Redis
 
 
 class RedisGetDebuggerFactory:
     def __init__(
         self,
-        redis_client: StrictRedis,
+        redis_client: Redis,
         loglevel: str,
         redis_object_ttl: int,
         redis_default_cache_namespace: str,
@@ -35,7 +35,7 @@ class RedisGetDebuggerFactory:
 class RedisGetDebugger(threading.Thread):
     def __init__(
         self,
-        redis_client: StrictRedis,
+        redis_client: Redis,
         loglevel: int,
         redis_object_ttl: int,
         redis_default_cache_namespace: str,
