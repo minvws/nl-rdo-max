@@ -41,7 +41,7 @@ check:
 	poetry run black --check app tests
 
 audit:
-	poetry run bandit app
+	poetry run bandit -r app
 
 fix:
 	poetry run black app tests
