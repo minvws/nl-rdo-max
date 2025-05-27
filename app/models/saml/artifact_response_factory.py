@@ -33,7 +33,9 @@ class ArtifactResponseFactory:
         self._strict = strict
         self._insecure = insecure
 
-    def verify_signatures(self, tree):
+    def verify_signatures(
+        self, tree: etree._Element
+    ):  # pylint: disable=c-extension-no-member, protected-access
         signing_certificates = self._idp_metadata.get_signing_certificates()
         root, valid = has_valid_signatures(
             tree, signing_certificates=signing_certificates
@@ -47,21 +49,27 @@ class ArtifactResponseFactory:
         artifact_str = xml_response.split('<?xml version="1.0" encoding="UTF-8"?>\n')[
             -1
         ]
-        artifact_tree = (
+        artifact_tree_root = (
             etree.fromstring(artifact_str)  # pylint: disable=c-extension-no-member
             .getroottree()
             .getroot()
         )
 
+        if artifact_tree_root is None:
+            raise ValidationError("Invalid XML response format")
+
         is_verified = False
         if not self._insecure:
-            artifact_tree = self.verify_signatures(artifact_tree)
+            artifact_tree = self.verify_signatures(artifact_tree_root)
             is_verified = True
         else:
-            artifact_tree = artifact_tree.find(
+            artifact_tree = artifact_tree_root.find(
                 ".//{http://schemas.xmlsoap.org/soap/envelope/}Body/"
                 "{urn:oasis:names:tc:SAML:2.0:protocol}ArtifactResponse"
             )
+
+        if artifact_tree is None:
+            raise ValidationError("ArtifactResponse not found in the XML response")
 
         return ArtifactResponse(
             artifact_response_str=xml_response,
