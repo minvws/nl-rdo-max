@@ -40,7 +40,7 @@ def _base_exception_handler(
         "redirect_message": translate(
             "You will automatically be redirected in {{ redirect_delay }} seconds",
             language_map,
-        ),
+        ).replace("{{ redirect_delay }}", str(redirect_html_delay)),
         "error_code": translate("Error code: ", language_map),
         "continue": translate("Continue", language_map),
     }

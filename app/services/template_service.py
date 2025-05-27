@@ -1,18 +1,10 @@
 from typing import Optional
 
-from markupsafe import Markup
-
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 from starlette.templating import _TemplateResponse
-from jinja2 import pass_context, Template
 
 from app.services.vite_manifest_service import ViteManifestService
-
-
-@pass_context
-def evaluate(context, value):
-    return Markup(Template(value).render(context))
 
 
 class TemplateService:
@@ -26,8 +18,6 @@ class TemplateService:
         self.vite_manifest_service = vite_manifest_service
 
         self._templates = Jinja2Templates(directory=jinja_template_directory)
-
-        self._templates.env.filters["evaluate"] = evaluate
 
         if self.vite_manifest_service is not None:
             self._templates.env.globals["vite_asset"] = (
