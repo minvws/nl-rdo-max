@@ -1,8 +1,7 @@
 # pylint: disable=c-extension-no-member
 import textwrap
-from typing import Dict, Tuple, Any, Union, List
+from typing import Dict, Tuple, Any, List
 
-import lxml
 import xmlsec
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 from lxml import etree
@@ -19,11 +18,14 @@ def get_loc_bind(element) -> Dict[str, str]:
 
 
 def has_valid_signature(
-    root, signature_node, signing_certificates: Union[Dict[str, str], None] = None
+    root, signature_node, signing_certificates: Dict[str, str] | None = None
 ):
     if signing_certificates is None:
         raise xmlsec.VerificationError
-    signature_key = signature_node.find(".//dsig:KeyName", NAMESPACES).text
+    signature_key = signature_node.findtext(".//dsig:KeyName", namespaces=NAMESPACES)
+    if signature_key is None:
+        raise xmlsec.VerificationError("No KeyName found in signature node")
+
     key = xmlsec.Key.from_memory(
         signing_certificates[signature_key], xmlsec.constants.KeyDataFormatCertPem
     )
@@ -44,7 +46,7 @@ def get_referred_node(root, signature_node):
     return root.find(f'.//*[@ID="{referrer_id}"]', NAMESPACES)
 
 
-def get_parents(node: etree.Element) -> List[etree.Element]:
+def get_parents(node: etree._Element) -> List[etree._Element]:
     parent = node.getparent()
     parents = []
     while parent is not None:
@@ -53,7 +55,7 @@ def get_parents(node: etree.Element) -> List[etree.Element]:
     return parents
 
 
-def is_advice_node(node: etree.Element, advice_nodes: List[etree.Element]):
+def is_advice_node(node: etree._Element, advice_nodes: List[etree._Element]):
     for parent in get_parents(node):
         if parent in advice_nodes:
             return True
@@ -61,14 +63,16 @@ def is_advice_node(node: etree.Element, advice_nodes: List[etree.Element]):
 
 
 def has_valid_signatures(
-    root: lxml.etree,
-    signing_certificates: Union[Dict[str, str], None] = None,
+    root: etree._Element,
+    signing_certificates: Dict[str, str] | None = None,
 ) -> Tuple[Any, bool]:
-    signature_nodes: List[etree.Element] = root.findall(".//dsig:Signature", NAMESPACES)
-    advice_nodes: List[etree.Element] = root.findall(".//saml2:Advice", NAMESPACES)
+    signature_nodes: List[etree._Element] = root.findall(
+        ".//dsig:Signature", NAMESPACES
+    )
+    advice_nodes: List[etree._Element] = root.findall(".//saml2:Advice", NAMESPACES)
     for node in signature_nodes:
         try:
-            if node.find(".//dsig:DigestValue", NAMESPACES).text is None:
+            if node.findtext(".//dsig:DigestValue", namespaces=NAMESPACES) is None:
                 continue
 
             if is_advice_node(node, advice_nodes):
@@ -101,29 +105,33 @@ def enforce_cert_newlines(cert_data):
 def to_soap_envelope(node):
     ns_map = {"env": SOAP_NS}
 
-    env = etree.Element(etree.QName(SOAP_NS, "Envelope"), nsmap=ns_map)
+    env = etree._Element(  # pylint: disable=protected-access
+        etree.QName(SOAP_NS, "Envelope"), nsmap=ns_map
+    )
     body = etree.SubElement(env, etree.QName(SOAP_NS, "Body"), nsmap=ns_map)
     body.append(node)
 
     return env
 
 
-def find_element_text_if_not_none(root: etree.Element, path) -> Union[str, None]:
+def find_element_text_if_not_none(root: etree._Element | None, path) -> str | None:
     element = find_element_if_not_none(root, path)
     return None if element is None else element.text
 
 
-def find_element_if_not_none(root: etree.Element, path) -> Union[etree.Element, None]:
+def find_element_if_not_none(
+    root: etree._Element | None, path
+) -> etree._Element | None:
     if root is not None and root.find(path, NAMESPACES) is not None:
         return root.find(path, NAMESPACES)
     return None
 
 
-def status_from_value(element: etree.Element) -> str:
+def status_from_value(element: etree._Element) -> str:
     return element.attrib["Value"].split(":")[-1]
 
 
-def status_from_element(element: etree.Element) -> str:
+def status_from_element(element: etree._Element) -> str:
     status = status_from_value(element)
     if status.lower() != "success":
         inner_status_code_element = element.find("./samlp:StatusCode", NAMESPACES)

@@ -50,6 +50,7 @@ types-redis = "^4.6.0.20241004"
 types-requests = "^2.32.0.20250328"
 types-jwcrypto = "^1.5.0.20250413"
 httpx = "^0.28.1"
+types-lxml = {extras = ["mypy"], version = "^2025.3.30"}
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -61,23 +62,16 @@ warn_unused_configs = true
 
 [[tool.mypy.overrides]]
 module = [
-    "lxml",
-    "uvicorn",
-    "OpenSSL.crypto",
-    "onelogin.saml2.utils",
-    "jwkest.jwk",
-    "jwcrypto.jwt",
-    "jwcrypto.jwk",
     "onelogin.saml2.auth",
-    "pyop.message",
-    "lxml.etree",
+    "onelogin.saml2.utils",
     "pyop.exceptions",
+    "pyop.message",
     "pyop.userinfo",
     "pyop.subject_identifier",
+    "pyop.storage",
     "pyop.authz_state",
     "pyop.provider",
-    "pyop.storage",
-    "jwcrypto.jwe",
+    "jwkest.jwk",
 ]
 ignore_missing_imports = true
 

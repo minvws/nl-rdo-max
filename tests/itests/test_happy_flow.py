@@ -8,7 +8,6 @@ from datetime import datetime
 from urllib.parse import urlparse, parse_qs, urlencode
 from typing import Union
 
-import lxml.etree
 import lxml.html
 import pytest
 import requests

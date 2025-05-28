@@ -21,7 +21,7 @@
             <div>
                 <a href="{{ redirect_uri }}">{{ continue }}</a>
                 {% if redirect_delay %}
-                <p>{{ redirect_message | evaluate }}</p>
+                <p>{{ redirect_message }}</p>
                 {% endif %}
             </div>
         {% endif %}

@@ -313,10 +313,16 @@ class IdPMetadata:
             ".//md:IDPSSODescriptor//md:KeyDescriptor", NAMESPACES
         ):
             if key_descriptor.attrib.get("use") == "signing":
-                keyname = key_descriptor.find(".//dsig:KeyName", NAMESPACES).text
-                cert_data = key_descriptor.find(
-                    ".//dsig:X509Certificate", NAMESPACES
-                ).text
+                keyname = key_descriptor.findtext(
+                    ".//dsig:KeyName", default="", namespaces=NAMESPACES
+                )
+                cert_data = key_descriptor.findtext(
+                    ".//dsig:X509Certificate", default="", namespaces=NAMESPACES
+                )
+
+                if not keyname or not cert_data:
+                    continue
+
                 cert = enforce_cert_newlines(cert_data)
                 signing_certificates[keyname] = (
                     f"""-----BEGIN CERTIFICATE-----\n{cert}\n-----END CERTIFICATE-----"""

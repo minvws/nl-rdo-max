@@ -1,4 +1,4 @@
-# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines,c-extension-no-member
 """
 Handles parsing of Artifact responses, validating the signature among other validity checks.
 todo: check class for tests and comments like required settings
@@ -13,8 +13,7 @@ from datetime import datetime, timedelta
 from functools import cached_property
 from logging import Logger
 
-# pylint: disable=c-extension-no-member
-from typing import List, Optional, Union
+from typing import List
 
 import dateutil.parser
 from Cryptodome.Cipher import AES
@@ -36,9 +35,9 @@ CAMEL_TO_SNAKE_RE = re.compile(r"(?<!^)(?=[A-Z])")
 
 class ArtifactResponseStatus:
     code: str
-    message: Union[str, None]
+    message: str | None
 
-    def __init__(self, code: str, message: Union[str, None] = None) -> None:
+    def __init__(self, code: str, message: str | None = None) -> None:
         self.code = code
         self.message = message
 
@@ -48,8 +47,8 @@ class ArtifactResponse:
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         artifact_response_str,
-        artifact_tree: etree,
-        cluster_priv_key: Optional[str],
+        artifact_tree: etree._Element | None,
+        cluster_priv_key: str | None,
         priv_key: str,
         expected_entity_id: str,
         expected_service_uuid: str,
@@ -90,7 +89,9 @@ class ArtifactResponse:
         self.validate()
 
     @property
-    def root(self):
+    def root(self) -> etree._Element:
+        if self._root is None:
+            raise ValueError("Artifact response tree is not set.")
         return self._root
 
     @property
@@ -112,7 +113,7 @@ class ArtifactResponse:
         )
 
     @cached_property
-    def status_message(self) -> Union[None, str]:
+    def status_message(self) -> None | str:
         return self.saml_status.message
 
     @cached_property
@@ -120,9 +121,16 @@ class ArtifactResponse:
         root_status_element = find_element_if_not_none(
             self.root, "./samlp:Status/samlp:StatusCode"
         )
+        if root_status_element is None:
+            self.log.error(
+                "No Status or StatusCode element found in the SAML response."
+            )
+            return ArtifactResponseStatus(code="InvalidAttrNameOrValue")
+
         status = status_from_element(root_status_element)
         if status.lower() != "success":
             return ArtifactResponseStatus(code=status)
+
         message = None
         response_status_element = find_element_if_not_none(
             self.response, "./samlp:Status"
@@ -335,7 +343,7 @@ class ArtifactResponse:
             if current_instant > expiration_time:
                 errors.append(
                     ValidationError(
-                        f"Issued ArtifactResponse:{elem.tag} has expired. Current time: {current_instant}, "
+                        f"Issued ArtifactResponse:{elem.tag} has expired. Current time: {current_instant}, "  # type: ignore[str-bytes-safe]
                         f"issue instant expiration time: {expiration_time}"
                     )
                 )

@@ -78,6 +78,9 @@ class SAMLRequest:
         add_reference(node, id_hash=id_hash)
 
         signature_node = xmlsec.tree.find_node(node, xmlsec.constants.NodeSignature)
+        if signature_node is None:
+            raise ValueError("Signature node not found, cannot sign the request.")
+
         ctx = xmlsec.SignatureContext()
         key = xmlsec.Key.from_memory(key_data, xmlsec.constants.KeyDataFormatPem)
         ctx.key = key
