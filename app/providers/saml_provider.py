@@ -45,9 +45,11 @@ class SAMLProvider:
             request.RelayState
         )
 
+        digid_mock = authentication_context.authentication_method == "digid_mock"
+        eherkenning_mock = authentication_context.authentication_method == "eherkenning_mock"
         if (
             not self._environment.startswith("prod")
-            and authentication_context.authentication_method == "digid_mock"
+            and (digid_mock or eherkenning_mock)
         ):
             artifact_response: ArtifactResponse = ArtifactResponseMock(request.SAMLart)
         else:
@@ -76,12 +78,18 @@ class SAMLProvider:
         subject_identifier = self._oidc_provider.get_subject_identifier(
             pyop_authorization_response["code"]
         )
-
-        userinfo = self._userinfo_service.request_userinfo_for_digid_artifact(
-            authentication_context,
-            artifact_response,
-            subject_identifier,
-        )
+        if eherkenning_mock:
+            userinfo = self._userinfo_service.request_userinfo_for_eherkenning_artifact(
+                authentication_context,
+                artifact_response,
+                subject_identifier,
+            )
+        else:
+            userinfo = self._userinfo_service.request_userinfo_for_digid_artifact(
+                authentication_context,
+                artifact_response,
+                subject_identifier,
+            )
         return self._oidc_provider.authenticate(
             authentication_context, userinfo, pyop_authorization_response
         )

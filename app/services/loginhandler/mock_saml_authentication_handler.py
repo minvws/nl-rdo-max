@@ -18,9 +18,10 @@ class MockSamlAuthenticationHandler(SamlAuthenticationHandler):
         pyop_authentication_request: AuthorizationRequest,
         authentication_state: Dict[str, Any],
         randstate: str,
+        name: str
     ) -> AuthorizeResponse:
         return AuthorizeResponse(
             response=self._saml_response_factory.create_saml_mock_response(
-                authorize_request, randstate
+                authorize_request, randstate, name
             )
         )

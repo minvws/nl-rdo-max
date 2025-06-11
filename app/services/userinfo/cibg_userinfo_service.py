@@ -181,8 +181,7 @@ class CIBGUserinfoService(UserinfoService):
         client_id = authentication_context.authorization_request["client_id"]
         client = self._clients[client_id]
         if (
-            authentication_context.authentication_method == "digid_mock"
-            and not self._environment.startswith("prod")
+            not self._environment.startswith("prod") and authentication_context.authentication_method == "digid_mock"
         ):
             return self._request_userinfo_for_mock_artifact(
                 client_id=client_id,
@@ -203,6 +202,16 @@ class CIBGUserinfoService(UserinfoService):
             req_acme_tokens=authentication_context.req_acme_tokens,
             sub=subject_identifier,
             authentication_meta=authentication_context.authentication_meta,
+        )
+    
+    def request_userinfo_for_eherkenning_artifact(
+        self,
+        authentication_context: AuthenticationContext,
+        artifact_response: ArtifactResponse,
+        subject_identifier: str,
+    ) -> str:
+        raise NotImplementedError(
+            "CIBGUserinfoService does not support request_userinfo_for_eherkenning_artifact"
         )
 
     def request_userinfo_for_exchange_token(

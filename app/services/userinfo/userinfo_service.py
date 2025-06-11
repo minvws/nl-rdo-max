@@ -13,6 +13,15 @@ class UserinfoService(abc.ABC):
         subject_identifier: str,
     ) -> str:
         pass
+    
+    @abc.abstractmethod
+    def request_userinfo_for_eherkenning_artifact(
+        self,
+        authentication_context: AuthenticationContext,
+        artifact_response: ArtifactResponse,
+        subject_identifier: str,
+    ) -> str:
+        pass
 
     @abc.abstractmethod
     def request_userinfo_for_exchange_token(

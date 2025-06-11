@@ -1,0 +1,15 @@
+{
+  "436638537946": {
+    "name": "Test org",
+    "date_of_registration": "2023-01-01",
+    "status": "active",
+    "legal_form": "BV",
+    "address": {
+      "street": "Teststraat",
+      "house_number": "123",
+      "postal_code": "1234AB",
+      "city": "Teststad",
+      "country": "Nederland"
+    }
+  }
+}

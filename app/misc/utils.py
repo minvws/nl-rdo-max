@@ -9,6 +9,7 @@ from Cryptodome.Hash import SHA256
 from Cryptodome.IO import PEM
 from jwcrypto.jwk import JWK
 
+from app.models.kvk_attributes import KvkAttributes
 from app.models.uzi_attributes import UziAttributes
 from app.dependency_injection.config import get_config
 
@@ -105,6 +106,13 @@ def mocked_bsn_to_uzi_data(
             if relation.ura == relation_id_filter
         ]
     return instance
+
+def mocked_kvk_value_to_kvk_data(
+    kvk: str,
+    filepath: str = config.get("app", "mocked_kvk_data_file_path"),
+) -> KvkAttributes:
+    kvk_data = json_from_file(filepath)
+    return KvkAttributes(**kvk_data[kvk])
 
 
 def get_version_from_file(file_path: Optional[str] = None) -> str:

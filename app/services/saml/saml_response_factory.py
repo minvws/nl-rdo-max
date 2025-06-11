@@ -124,11 +124,11 @@ class SamlResponseFactory:
             session_id=auth.get_last_request_id(),
         )
 
-    def create_saml_mock_response(self, authorize_request, randstate):
+    def create_saml_mock_response(self, authorize_request, randstate, name: str):
         base64_authn_request = base64.urlsafe_b64encode(
             authorize_request.model_dump_json().encode()
         ).decode()
-        sso_url = "digid-mock?" + parse.urlencode(
+        sso_url = name + "?" + parse.urlencode(
             {
                 "state": randstate,
                 "idp_name": "mock",
@@ -145,4 +145,5 @@ class SamlResponseFactory:
                 "vite_asset": self._vite_manifest_service.get_asset_url,
             }
         )
+
         return HTMLResponse(content=rendered, status_code=200)
