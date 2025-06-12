@@ -75,6 +75,7 @@ class SamlResponseFactory:
                 "sso_url": authn_request.sso_url,
                 "saml_request": authn_request.get_base64_string().decode(),
                 "relay_state": randstate,
+                "idp_provider": saml_identity_provider.name,
                 "vite_asset": self._vite_manifest_service.get_asset_url,
             }
         )
@@ -140,6 +141,7 @@ class SamlResponseFactory:
                 "sso_url": sso_url,
                 "saml_request": uuid.uuid4(),
                 "relay_state": randstate,
+                "idp_provider": "digid_mock",
                 "vite_asset": self._vite_manifest_service.get_asset_url,
             }
         )
