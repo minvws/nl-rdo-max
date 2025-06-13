@@ -128,12 +128,16 @@ class SamlResponseFactory:
         base64_authn_request = base64.urlsafe_b64encode(
             authorize_request.model_dump_json().encode()
         ).decode()
-        sso_url = name + "?" + parse.urlencode(
-            {
-                "state": randstate,
-                "idp_name": "mock",
-                "authorize_request": base64_authn_request,
-            }
+        sso_url = (
+            name
+            + "?"
+            + parse.urlencode(
+                {
+                    "state": randstate,
+                    "idp_name": "mock",
+                    "authorize_request": base64_authn_request,
+                }
+            )
         )
         template = Template(self._authn_request_template)
         rendered = template.render(

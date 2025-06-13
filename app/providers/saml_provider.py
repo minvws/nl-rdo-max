@@ -46,10 +46,11 @@ class SAMLProvider:
         )
 
         digid_mock = authentication_context.authentication_method == "digid_mock"
-        eherkenning_mock = authentication_context.authentication_method == "eherkenning_mock"
-        if (
-            not self._environment.startswith("prod")
-            and (digid_mock or eherkenning_mock)
+        eherkenning_mock = (
+            authentication_context.authentication_method == "eherkenning_mock"
+        )
+        if not self._environment.startswith("prod") and (
+            digid_mock or eherkenning_mock
         ):
             artifact_response: ArtifactResponse = ArtifactResponseMock(request.SAMLart)
         else:

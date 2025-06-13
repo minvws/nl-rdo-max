@@ -23,7 +23,9 @@ from app.services.userinfo.cc_userinfo_service import CCUserinfoService
 from app.services.userinfo.cibg_userinfo_service import (
     CIBGUserinfoService,
 )
-from app.services.userinfo.eherkenning_userinfo_service import EherkenningUserinfoService
+from app.services.userinfo.eherkenning_userinfo_service import (
+    EherkenningUserinfoService,
+)
 from app.services.vite_manifest_service import ViteManifestService
 from app.validators.token_authentication_validator import TokenAuthenticationValidator
 
@@ -156,7 +158,7 @@ class Services(containers.DeclarativeContainer):
         config.app.userinfo_service,
         cc=cc_userinfo_service,
         cibg=cibg_userinfo_service,
-        eherkenning=eherkenning_userinfo_service
+        eherkenning=eherkenning_userinfo_service,
     )
 
     login_handler_factory = providers.Singleton(

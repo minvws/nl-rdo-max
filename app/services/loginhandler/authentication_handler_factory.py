@@ -72,9 +72,9 @@ class AuthenticationHandlerFactory:
             if login_method.name == "digid":
                 return self.create_saml_authentication_handler()
             if login_method.name == "eherkenning_mock":
-                return self.create_mock_saml_authentication_handler("eherkenning_mock")
+                return self.create_mock_saml_authentication_handler()
             if login_method.name == "digid_mock":
-                return self.create_mock_saml_authentication_handler("digid_mock")
+                return self.create_mock_saml_authentication_handler()
             if login_method.name == "yivi":
                 return self.create_yivi_authentication_handler()
             if login_method.name == "uzipas":
@@ -94,7 +94,7 @@ class AuthenticationHandlerFactory:
             )
         return self._saml_authentication_handler
 
-    def create_mock_saml_authentication_handler(self, name) -> MockSamlAuthenticationHandler:
+    def create_mock_saml_authentication_handler(self) -> MockSamlAuthenticationHandler:
         if self._mock_saml_authentication_handler is None:
             self._mock_saml_authentication_handler = MockSamlAuthenticationHandler(
                 rate_limiter=self._rate_limiter,
@@ -102,7 +102,6 @@ class AuthenticationHandlerFactory:
                 authentication_cache=self._authentication_cache,
                 saml_response_factory=self._saml_response_factory,
                 userinfo_service=self._userinfo_service,
-                name=name
             )
         return self._mock_saml_authentication_handler
 

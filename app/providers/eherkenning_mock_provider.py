@@ -10,7 +10,10 @@ from fastapi import Request
 from fastapi.responses import RedirectResponse, Response
 
 from app.services.template_service import TemplateService
-from app.models.eherkenning_mock_requests import EherkenningMockRequest, EherkenningMockCatchRequest
+from app.models.eherkenning_mock_requests import (
+    EherkenningMockRequest,
+    EherkenningMockCatchRequest,
+)
 
 
 class EherkenningMockProvider:
@@ -37,10 +40,15 @@ class EherkenningMockProvider:
             },
         )
 
-    def eherkenning_mock_catch(self, request: EherkenningMockCatchRequest) -> RedirectResponse:
+    def eherkenning_mock_catch(
+        self, request: EherkenningMockCatchRequest
+    ) -> RedirectResponse:
         kvk = request.kvk
         organization_name = request.organization_name
         relay_state = request.RelayState
 
-        response_uri = "acs" + f"?SAMLart={kvk}-{organization_name}&RelayState={relay_state}&mocking=1"
+        response_uri = (
+            "acs"
+            + f"?SAMLart={kvk}-{organization_name}&RelayState={relay_state}&mocking=1"
+        )
         return RedirectResponse(response_uri, status_code=303)

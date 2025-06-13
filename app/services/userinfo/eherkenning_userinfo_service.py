@@ -5,9 +5,7 @@ from typing import Dict, Any, Optional, List
 
 from app.misc.utils import (
     file_content_raise_if_none,
-    mocked_kvk_value_to_kvk_data,
     strip_cert,
-    mocked_bsn_to_uzi_data,
 )
 from app.models.authentication_context import AuthenticationContext
 from app.models.saml.artifact_response import ArtifactResponse
@@ -50,7 +48,7 @@ class EherkenningUserinfoService(UserinfoService):
         raise NotImplementedError(
             "EherkenningUserinfoService does not support request_userinfo_for_digid_artifact"
         )
-    
+
     def request_userinfo_for_eherkenning_artifact(
         self,
         authentication_context: AuthenticationContext,
@@ -60,7 +58,8 @@ class EherkenningUserinfoService(UserinfoService):
         client_id = authentication_context.authorization_request["client_id"]
         client = self._clients[client_id]
         if (
-            not self._environment.startswith("prod") and authentication_context.authentication_method == "eherkenning_mock"
+            not self._environment.startswith("prod")
+            and authentication_context.authentication_method == "eherkenning_mock"
         ):
             return self._request_userinfo_for_mock_artifact(
                 client_id=client_id,
@@ -69,7 +68,9 @@ class EherkenningUserinfoService(UserinfoService):
                 req_acme_tokens=authentication_context.req_acme_tokens,
                 subject_identifier=subject_identifier,
             )
-        
+        raise NotImplementedError(
+            "EherkenningUserinfoService does not support request_userinfo_for_eherkenning_artifact"
+        )
 
     def request_userinfo_for_exchange_token(
         self, authentication_context: AuthenticationContext, subject_identifier: str
@@ -91,15 +92,10 @@ class EherkenningUserinfoService(UserinfoService):
         kvk_pubkey = file_content_raise_if_none(client["client_public_key_path"])
 
         kvk_number = kvk.split("-")[0]
-
-        kvk_data = mocked_kvk_value_to_kvk_data(
-            kvk_number
-        )
-
-        kvk_data.name = kvk.split("-")[1] or kvk_data.name
-
+        kvk_name = kvk.split("-")[1]
         data = {
-            **kvk_data.model_dump(),
+            "kvk_number": kvk_number,
+            "kvk_name": kvk_name,
             "iss": self._req_issuer,
             "aud": client_id,
             "sub": subject_identifier,

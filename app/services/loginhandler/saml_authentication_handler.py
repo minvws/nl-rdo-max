@@ -21,14 +21,12 @@ class SamlAuthenticationHandler(AuthenticationHandler):
         authentication_cache: AuthenticationCache,
         saml_response_factory: SamlResponseFactory,
         userinfo_service: UserinfoService,
-        name: str
     ):
         self._rate_limiter = rate_limiter
         self._saml_identity_provider_service = saml_identity_provider_service
         self._authentication_cache = authentication_cache
         self._saml_response_factory = saml_response_factory
         self._userinfo_service = userinfo_service
-        self.name = name
 
     def _get_identity_provider(self, identity_provider_name: str):
         return self._saml_identity_provider_service.get_identity_provider(

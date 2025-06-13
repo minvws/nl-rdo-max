@@ -30,8 +30,8 @@ class ArtifactResponseMock(ArtifactResponse):
 
     def get_bsn(self, authorization_by_proxy: bool) -> str:
         return self.artifact_response_str
-    
-    def get_kvk(self, authorization_by_proxy: bool) -> Union[str, None]:
+
+    def get_kvk(self, authorization_by_proxy: bool) -> str:
         return self.artifact_response_str
 
     @cached_property

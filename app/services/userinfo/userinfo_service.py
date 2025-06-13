@@ -13,7 +13,7 @@ class UserinfoService(abc.ABC):
         subject_identifier: str,
     ) -> str:
         pass
-    
+
     @abc.abstractmethod
     def request_userinfo_for_eherkenning_artifact(
         self,

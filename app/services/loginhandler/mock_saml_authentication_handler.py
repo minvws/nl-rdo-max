@@ -11,14 +11,14 @@ from app.services.loginhandler.saml_authentication_handler import (
 
 
 class MockSamlAuthenticationHandler(SamlAuthenticationHandler):
-    def authorize_response(
+    def authorize_response(  # type: ignore[override]  # pylint: disable=arguments-differ
         self,
         request: Request,
         authorize_request: AuthorizeRequest,
         pyop_authentication_request: AuthorizationRequest,
         authentication_state: Dict[str, Any],
         randstate: str,
-        name: str
+        name: str,
     ) -> AuthorizeResponse:
         return AuthorizeResponse(
             response=self._saml_response_factory.create_saml_mock_response(
