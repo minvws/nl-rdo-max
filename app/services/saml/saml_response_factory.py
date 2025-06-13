@@ -125,6 +125,9 @@ class SamlResponseFactory:
         )
 
     def create_saml_mock_response(self, authorize_request, randstate, name: str):
+        """
+        NOTE: The name is the route that the user will be redirected to. This route needs to be available.
+        """
         base64_authn_request = base64.urlsafe_b64encode(
             authorize_request.model_dump_json().encode()
         ).decode()

@@ -144,7 +144,6 @@ class Services(containers.DeclarativeContainer):
     eherkenning_userinfo_service = providers.Singleton(
         EherkenningUserinfoService,
         jwt_service_factory=encryption_services.jwt_service_factory,
-        environment=config.app.environment,
         clients=pyop_services.clients,
         userinfo_request_signing_priv_key_path=config.jwe.jwe_sign_priv_key_path,
         userinfo_request_signing_crt_path=config.jwe.jwe_sign_crt_path,

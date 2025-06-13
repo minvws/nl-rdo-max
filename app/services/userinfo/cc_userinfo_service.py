@@ -24,7 +24,7 @@ class CCUserinfoService(UserinfoService):
         self._jwt_expiration_duration = jwt_expiration_duration
         self._jwt_nbf_lag = jwt_nbf_lag
 
-    def request_userinfo_for_digid_artifact(
+    def request_userinfo_for_saml_artifact(
         self,
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,
