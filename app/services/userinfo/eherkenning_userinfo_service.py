@@ -48,11 +48,8 @@ class EherkenningUserinfoService(UserinfoService):
 
         kvk_pubkey = file_content_raise_if_none(client["client_public_key_path"])
 
-        kvk_number = kvk.split("-")[0]
-        kvk_name = kvk.split("-")[1]
         data = {
-            "kvk_number": kvk_number,
-            "kvk_name": kvk_name,
+            "kvk_number": kvk,
             "iss": self._req_issuer,
             "aud": client_id,
             "sub": subject_identifier,

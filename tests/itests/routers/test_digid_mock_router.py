@@ -52,7 +52,7 @@ def test_digid_mock_catch1(lazy_app, digid_mock_provider_mocked):
     )
     # digid_mock.login_digid.return_value = fake_response
     app = lazy_app.value
-    digid_get = app.get(f"/digid-mock-catch?bsn=d&SAMLart=s&RelayState=r")
+    digid_get = app.get("/digid-mock-catch?bsn=d&SAMLart=s&RelayState=r")
     assert digid_get.text == "expected"
     assert digid_get.status_code == 234
 

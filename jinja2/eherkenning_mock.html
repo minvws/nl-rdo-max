@@ -8,11 +8,6 @@
         <label style='height:200px; width:400px' for="kvk">KVK Value:</label><br>
         <input id='kvk_inp' style='height:200px; width:400px; font-size:36pt' type="text" id="kvk" value="436638537946"
                name="KVK"><br>
-        <label style='height:200px; width:400px' for="organization">Organization name:</label><br>
-        <input id='organization_inp' style='height:200px; width:400px; font-size:36pt' type="text" id="organization" value="Test Organization"
-               name="organization_name"><br>
-        <input type="hidden" name="SAMLart" value="{{ artifact }}">
-        <input type="hidden" name="RelayState" value="{{ relay_state }}">
     </form>
 </div>
 <a href='' id="submit_two" relayState="{{ relay_state }}" samlArt="{{ artifact }}"

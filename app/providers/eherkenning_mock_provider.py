@@ -44,11 +44,7 @@ class EherkenningMockProvider:
         self, request: EherkenningMockCatchRequest
     ) -> RedirectResponse:
         kvk = request.kvk
-        organization_name = request.organization_name
         relay_state = request.RelayState
 
-        response_uri = (
-            "acs"
-            + f"?SAMLart={kvk}-{organization_name}&RelayState={relay_state}&mocking=1"
-        )
+        response_uri = "acs" + f"?SAMLart={kvk}&RelayState={relay_state}&mocking=1"
         return RedirectResponse(response_uri, status_code=303)

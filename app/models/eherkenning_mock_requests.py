@@ -39,11 +39,10 @@ class EherkenningMockRequest(BaseModel):
 
 class EherkenningMockCatchRequest(BaseModel):
     kvk: str
-    organization_name: str
     SAMLart: str
     RelayState: str
 
-    @field_validator("kvk", "organization_name", "SAMLart", "RelayState")
+    @field_validator("kvk", "SAMLart", "RelayState")
     @classmethod
     def convert_to_escaped_html(cls, text):
         return html.escape(text)
