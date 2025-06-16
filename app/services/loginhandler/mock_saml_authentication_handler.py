@@ -12,7 +12,7 @@ from app.services.loginhandler.saml_authentication_handler import (
 
 
 class MockSamlAuthenticationHandler(SamlAuthenticationHandler):
-    def authorize_response(  # type: ignore[override]  # pylint: disable=arguments-differ
+    def authorize_response(
         self,
         request: Request,
         authorize_request: AuthorizeRequest,
