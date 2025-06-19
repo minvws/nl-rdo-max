@@ -6,6 +6,7 @@ from pyop.message import AuthorizationRequest
 
 from app.models.authorize_request import AuthorizeRequest
 from app.models.authorize_response import AuthorizeResponse
+from app.models.login_method import LoginMethod
 
 
 class ExchangeBasedAuthenticationHandler(abc.ABC):
@@ -23,6 +24,7 @@ class ExchangeBasedAuthenticationHandler(abc.ABC):
         pyop_authentication_request: AuthorizationRequest,
         authentication_state: Dict[str, Any],
         randstate: str,
+        login_method: LoginMethod,
     ) -> AuthorizeResponse:
         pass
 

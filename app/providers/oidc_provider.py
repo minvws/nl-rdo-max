@@ -166,6 +166,7 @@ class OIDCProvider:  # pylint:disable=too-many-arguments, too-many-positional-ar
             pyop_authentication_request,
             authentication_state,
             randstate,
+            login_method,
         )
 
         session_id = (

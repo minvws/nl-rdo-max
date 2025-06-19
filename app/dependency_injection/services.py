@@ -9,6 +9,7 @@ from app.misc.utils import as_bool, json_from_file
 from app.models.enums import RedirectType
 from app.models.login_method import LoginMethod
 from app.providers.digid_mock_provider import DigidMockProvider
+from app.providers.eherkenning_mock_provider import EherkenningMockProvider
 from app.providers.oidc_provider import OIDCProvider
 from app.providers.saml_provider import SAMLProvider
 from app.services.loginhandler.authentication_handler_factory import (
@@ -21,6 +22,9 @@ from app.services.template_service import TemplateService
 from app.services.userinfo.cc_userinfo_service import CCUserinfoService
 from app.services.userinfo.cibg_userinfo_service import (
     CIBGUserinfoService,
+)
+from app.services.userinfo.eherkenning_userinfo_service import (
+    EherkenningUserinfoService,
 )
 from app.services.vite_manifest_service import ViteManifestService
 from app.validators.token_authentication_validator import TokenAuthenticationValidator
@@ -137,10 +141,23 @@ class Services(containers.DeclarativeContainer):
         jwt_nbf_lag=config.oidc.jwt_nbf_lag.as_int(),
     )
 
+    eherkenning_userinfo_service = providers.Singleton(
+        EherkenningUserinfoService,
+        jwt_service_factory=encryption_services.jwt_service_factory,
+        clients=pyop_services.clients,
+        userinfo_request_signing_priv_key_path=config.jwe.jwe_sign_priv_key_path,
+        userinfo_request_signing_crt_path=config.jwe.jwe_sign_crt_path,
+        req_issuer=config.oidc.issuer,
+        jwt_expiration_duration=config.oidc.jwt_expiration_duration.as_int(),
+        jwt_nbf_lag=config.oidc.jwt_nbf_lag.as_int(),
+        external_base_url=config.app.external_base_url,
+    )
+
     userinfo_service = providers.Selector(
         config.app.userinfo_service,
         cc=cc_userinfo_service,
         cibg=cibg_userinfo_service,
+        eherkenning=eherkenning_userinfo_service,
     )
 
     login_handler_factory = providers.Singleton(
@@ -181,6 +198,11 @@ class Services(containers.DeclarativeContainer):
 
     digid_mock_provider = providers.Singleton(
         DigidMockProvider,
+        template_service=template_service,
+    )
+
+    eherkenning_mock_provider = providers.Singleton(
+        EherkenningMockProvider,
         template_service=template_service,
     )
 

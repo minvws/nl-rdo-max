@@ -71,6 +71,8 @@ class AuthenticationHandlerFactory:
         if login_method.type == LoginMethodType.SPECIFIC:
             if login_method.name == "digid":
                 return self.create_saml_authentication_handler()
+            if login_method.name == "eherkenning_mock":
+                return self.create_mock_saml_authentication_handler()
             if login_method.name == "digid_mock":
                 return self.create_mock_saml_authentication_handler()
             if login_method.name == "yivi":

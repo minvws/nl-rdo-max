@@ -31,6 +31,9 @@ class ArtifactResponseMock(ArtifactResponse):
     def get_bsn(self, authorization_by_proxy: bool) -> str:
         return self.artifact_response_str
 
+    def get_kvk(self, authorization_by_proxy: bool) -> str:
+        return self.artifact_response_str
+
     @cached_property
     def loa_authn(self) -> Union[str, None]:
         return "http://eidas.europa.eu/LoA/substantial"

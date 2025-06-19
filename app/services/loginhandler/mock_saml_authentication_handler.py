@@ -5,6 +5,7 @@ from pyop.message import AuthorizationRequest
 
 from app.models.authorize_request import AuthorizeRequest
 from app.models.authorize_response import AuthorizeResponse
+from app.models.login_method import LoginMethod
 from app.services.loginhandler.saml_authentication_handler import (
     SamlAuthenticationHandler,
 )
@@ -18,9 +19,10 @@ class MockSamlAuthenticationHandler(SamlAuthenticationHandler):
         pyop_authentication_request: AuthorizationRequest,
         authentication_state: Dict[str, Any],
         randstate: str,
+        login_method: LoginMethod,
     ) -> AuthorizeResponse:
         return AuthorizeResponse(
             response=self._saml_response_factory.create_saml_mock_response(
-                authorize_request, randstate
+                authorize_request, randstate, login_method.name.replace("_", "-")
             )
         )

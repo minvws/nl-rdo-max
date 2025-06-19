@@ -545,6 +545,9 @@ def test_authorize():
         pyop_authentication_request,
         authentication_state,
         "randstate",
+        LoginMethod(
+            name="a", logo=None, text="", type=LoginMethodType.OIDC, hidden=False
+        ),
     )
 
 

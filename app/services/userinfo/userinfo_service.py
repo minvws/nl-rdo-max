@@ -6,7 +6,7 @@ from app.models.saml.artifact_response import ArtifactResponse
 
 class UserinfoService(abc.ABC):
     @abc.abstractmethod
-    def request_userinfo_for_digid_artifact(
+    def request_userinfo_for_saml_artifact(
         self,
         authentication_context: AuthenticationContext,
         artifact_response: ArtifactResponse,

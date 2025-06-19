@@ -7,6 +7,7 @@ from pyop.message import AuthorizationRequest
 
 from app.models.authorize_request import AuthorizeRequest
 from app.models.authorize_response import AuthorizeResponse
+from app.models.login_method import LoginMethod
 from app.services.external_session_service import ExternalSessionService
 
 from app.services.loginhandler.exchange_based_authentication_handler import (
@@ -50,6 +51,7 @@ class YiviAuthenticationHandler(ExchangeBasedAuthenticationHandler):
         pyop_authentication_request: AuthorizationRequest,
         authentication_state: Dict[str, Any],
         randstate: str,
+        login_method: LoginMethod,
     ) -> AuthorizeResponse:
         return AuthorizeResponse(
             response=self._response_factory.create_redirect_response(

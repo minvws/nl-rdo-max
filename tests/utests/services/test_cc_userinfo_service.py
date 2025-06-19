@@ -3,7 +3,7 @@ from app.services.userinfo.cc_userinfo_service import CCUserinfoService
 from unittest.mock import MagicMock
 
 
-def test_request_userinfo_for_digid_artifact(tmp_path_factory, mocker):
+def test_request_userinfo_for_saml_artifact(tmp_path_factory, mocker):
     example_cert = """
 -----BEGIN CERTIFICATE-----
 MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
@@ -46,7 +46,7 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
     )
 
     expected_result = "encrypted_jwt"
-    actual_result = service_to_test.request_userinfo_for_digid_artifact(
+    actual_result = service_to_test.request_userinfo_for_saml_artifact(
         authentication_context=authentication_context_mock,
         artifact_response=artifact_response_mock,
         subject_identifier="123456",

@@ -495,6 +495,9 @@ class ArtifactResponse:
                 return sector_split[1]
         return bsn_element.text
 
+    def get_kvk(self, authorization_by_proxy: bool) -> str:
+        raise NotImplementedError("get_kvk is not implemented for ArtifactResponse.")
+
     def to_string(self) -> bytes:
         return etree.tostring(self.root)
 
