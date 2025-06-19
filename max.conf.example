@@ -10,7 +10,6 @@ external_base_url = https://localhost:8006
 session_url = http://localhost:8001/session
 # Used for DigiD Mock
 mocked_uzi_data_file_path = tests/resources/uzi_data.json
-mocked_kvk_data_file_path = tests/resources/kvk_data.json
 
 loglevel = debug
 
