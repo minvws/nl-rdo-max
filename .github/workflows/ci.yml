@@ -11,6 +11,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CURRENTLY_USED_PYTHON_VERSION: '3.11.2'
+
 jobs:
   validate:
     strategy:
@@ -72,6 +75,7 @@ jobs:
         run: make test
 
       - name: Run SonarCloud scanner
+        if: ${{ matrix.python_version == env.CURRENTLY_USED_PYTHON_VERSION }}
         uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/sonarcloud@main
         with:
           sonar-token: ${{ secrets.SONAR_TOKEN }}
