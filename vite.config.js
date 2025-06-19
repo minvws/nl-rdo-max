@@ -8,7 +8,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         layout: resolve(__dirname, 'resources', 'css', 'app.scss'),
-        digid_mock: resolve(__dirname, 'resources', 'js', 'digid_mock.js'),
         submit: resolve(__dirname, 'resources', 'js', 'submit.js'),
       },
     },
