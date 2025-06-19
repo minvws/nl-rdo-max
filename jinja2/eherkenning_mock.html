@@ -1,16 +1,16 @@
-<html>
-<head>
-    <script src="{{ vite_asset('resources/js/eherkenning_mock.js') }}"></script>
-</head>
-<h1> eHerkenning MOCK </h1>
-<div style='font-size:36;'>
-    <form method="GET" action="eherkenning-mock-catch">
-        <label style='height:200px; width:400px' for="kvk">KVK Value:</label><br>
-        <input id='kvk_inp' style='height:200px; width:400px; font-size:36pt' type="text" id="kvk" value="436638537946"
-               name="KVK"><br>
-    </form>
-</div>
-<a href='' id="submit_two" relayState="{{ relay_state }}" samlArt="{{ artifact }}"
-   style='font-size:55; color: white; background-color:grey; display:box'> Login / Submit </a>
-<br/>
+<html lang="en">
+    <head>
+        <title>eHerkenning Mock</title></head>
+    <body>
+        <h1>eHerkenning Mock</h1>
+        <div>
+            <form method="GET" action="eherkenning-mock-catch">
+                <label for="kvk_inp">KVK Value:</label><br>
+                <input id="kvk_inp" type="text" value="436638537946" name="kvk"><br>
+                <input type="hidden" name="SAMLart" value="{{ artifact }}">
+                <input type="hidden" name="RelayState" value="{{ relay_state }}">
+                <button type="submit"> Login / Submit </button>
+            </form>
+        </div>
+    </body>
 </html>
