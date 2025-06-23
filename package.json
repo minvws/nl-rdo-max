@@ -9,7 +9,7 @@
   "dependencies": {
     "@minvws/nl-rdo-rijksoverheid-ui-theme": "^0.0.18",
     "redoc": "^2.5.0",
-    "swagger-ui-dist": "^5.24.2"
+    "swagger-ui-dist": "^5.25.2"
   },
   "devDependencies": {
     "sass": "^1.89.2",
