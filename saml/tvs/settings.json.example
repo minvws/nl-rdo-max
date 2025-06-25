@@ -37,8 +37,6 @@
         "tls_keypath": "saml/tvs/certs/tls.crt",
         "connections":{
             "dv": {
-                "userinfo_endpoint": "https://dv_endpoint",
-                "key_path": "saml/tvs/certs/dv.key",
                 "cert_path": "saml/tvs/certs/dv.crt",
                 "entity_id": "urn:nl-eid-gdi:1.0:DV:00000000000000000001:entities:0001"
             }
