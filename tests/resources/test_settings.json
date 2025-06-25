@@ -37,7 +37,6 @@
         "tls_keypath": "tests/resources/secrets/tls.crt",
         "connections":{
             "cibg": {
-                "userinfo_endpoint": "http://localhost:8006/getuzi",
                 "cert_path": "tests/resources/secrets/cluster.crt",
                 "entity_id": "00000000-0000-0000-0000-000000000001"
             }
