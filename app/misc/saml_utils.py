@@ -105,9 +105,7 @@ def enforce_cert_newlines(cert_data):
 def to_soap_envelope(node):
     ns_map = {"env": SOAP_NS}
 
-    env = etree._Element(  # pylint: disable=protected-access
-        etree.QName(SOAP_NS, "Envelope"), nsmap=ns_map
-    )
+    env = etree.Element(etree.QName(SOAP_NS, "Envelope"), nsmap=ns_map)
     body = etree.SubElement(env, etree.QName(SOAP_NS, "Body"), nsmap=ns_map)
     body.append(node)
 

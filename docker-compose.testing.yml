@@ -6,9 +6,10 @@ services:
       args:
         NEW_UID: ${UID:-1000}
         NEW_GID: ${GID:-1000}
+      secrets:
+        - npmrc
     volumes:
       - '.:/src'
-      - '.npmrc:/src/.npmrc:ro'
       - '/src/.venv'
       - '/src/node_modules'
       - '/src/static/assets'
@@ -27,3 +28,7 @@ services:
     image: redis:7.2.4
     restart: 'no'
     command: 'redis-cli -h redis -p 16379 set max:primary_identity_provider tvs'
+
+secrets:
+  npmrc:
+    file: ~/.npmrc
