@@ -1,17 +1,19 @@
 {
   "resources/css/app.scss": {
-    "file": "static/assets/layout-ZiacpCkP.css",
-    "isEntry": true,
-    "src": "resources/css/app.scss"
+    "file": "static/assets/layout-CtH-RHQq.css",
+    "src": "resources/css/app.scss",
+    "isEntry": true
+  },
+  "resources/js/mock_redirect.js": {
+    "file": "static/assets/mock_redirect-BE2e8xbU.js",
+    "name": "mock_redirect",
+    "src": "resources/js/mock_redirect.js",
+    "isEntry": true
   },
   "resources/js/submit.js": {
-    "file": "static/assets/submit-oppVYYRo.js",
-    "isEntry": true,
-    "src": "resources/js/submit.js"
-  },
-  "resources/js/digid_mock.js": {
-    "file": "static/assets/digid_mock-abcdEFGH.js",
-    "isEntry": true,
-    "src": "resources/js/digid_mock.js"
+    "file": "static/assets/submit-CwWPfkWc.js",
+    "name": "submit",
+    "src": "resources/js/submit.js",
+    "isEntry": true
   }
 }
