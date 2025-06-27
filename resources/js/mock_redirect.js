@@ -11,22 +11,24 @@
  *
  * Since this workaround is only needed for the mock page and not needed in production,
  * it is unnecessary to loosen CSP rules by adding, for example, 'https:' to the policy.
- * DigiD does use 'https:' in their own form-action policy, but for us it is not needed.
+ * DigiD does use 'https:' in their own form-action policy, but for us, it is unnecessary.
  */
-window.onload = function() {
+document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
     if (form) {
         form.addEventListener('submit', mock_form_submit_listener);
     }
-}
+})
 
 function mock_form_submit_listener(e) {
     e.preventDefault();
     const form = e.target;
-    const params = Array.from(form.elements)
-        .filter(el => el.name && !el.disabled)
-        .map(el => encodeURIComponent(el.name) + '=' + encodeURIComponent(el.value))
-        .join('&');
+    if (!form) return;
+
     const action = form.getAttribute('action');
-    window.location.href = action + (action.includes('?') ? '&' : '?') + params;
+    const url = new URL(action, window.location.origin);
+    const params = new URLSearchParams(new FormData(form)).toString();
+
+    url.search = params.toString();
+    window.location.href = url.toString();
 }
