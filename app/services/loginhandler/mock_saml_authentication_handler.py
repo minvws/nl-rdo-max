@@ -12,6 +12,11 @@ from app.services.loginhandler.saml_authentication_handler import (
 
 
 class MockSamlAuthenticationHandler(SamlAuthenticationHandler):
+    def authentication_state(
+        self, authorize_request: AuthorizeRequest
+    ) -> Dict[str, Any]:
+        return {"identity_provider_name": "mock-saml-idp"}
+
     def authorize_response(
         self,
         request: Request,
