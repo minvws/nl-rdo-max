@@ -200,7 +200,7 @@ Note that all commits should be signed using a gpg key.
 
 ### Security
 
-Security issues can be reported through a GitHub issue, at <security@irealisatie.nl>, or through the
+Security issues can be reported through a GitHub issue or through the
 <https://www.ncsc.nl/contact/kwetsbaarheid-melden>.
 
 ### Logging and monitoring
