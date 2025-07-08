@@ -22,7 +22,7 @@ class PyopOverridingContainer(containers.DeclarativeContainer):
     clients = providers.Object({})
 
 
-REDIS_PORT = 16379
+REDIS_PORT = 6379
 redis_config = factories.redis_noproc(port=REDIS_PORT)
 redis = factories.redisdb("redis_config")
 
