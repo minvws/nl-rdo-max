@@ -1,4 +1,4 @@
-# Open ID Connect requests to Inge6
+# Open ID Connect requests to MAX
 
 Each of these requests are documented by the image above, and the documentation below. Please use as described.
 
@@ -99,4 +99,4 @@ Content-Type: application/x-www-form-urlencoded
 
 > AuthorizationAuthorization: Bearer 'id_token'
 
-Where the id_token is a base64 encoded JWT token containing a signature by the Inge6 instance retrieved during the authorization code flow.
+Where the id_token is a base64 encoded JWT token containing a signature by the MAX instance retrieved during the authorization code flow.
