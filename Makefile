@@ -59,3 +59,6 @@ type-check:
 	poetry run mypy
 
 check-all: fix check type-check test audit
+
+create-jwk: setup-secrets
+        poetry run python tools/create-jwk.py secrets/clients/test_client/test_client.key
