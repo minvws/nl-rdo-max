@@ -18,7 +18,6 @@ from nacl.public import PrivateKey, Box, PublicKey
 
 # Existing max server
 # todo fix this tests?
-from app.misc.utils import file_content_raise_if_none
 
 os.environ.setdefault("REQUESTS_CA_BUNDLE", "secrets/cacert.crt")
 
@@ -36,25 +35,7 @@ def test_external_application():
     base_flow(app=None, base_uri=base_uri, client_id=client_id)
 
 
-# pylint:disable=unused-argument
-def test_legacy_flow(
-    lazy_app, config, app_mode_legacy, legacy_client, pynacl_keys, redis
-):
-    base_uri = config["oidc"]["issuer"]
-    app = lazy_app.value
-    client_id = legacy_client[0]
-    redis.set("max:primary_identity_provider", "tvs")
-
-    openid_configuration, access_token_response, _ = base_flow(
-        app=app, base_uri=base_uri, client_id=client_id
-    )
-
-    validate_legacy_userinfo(
-        app, openid_configuration, access_token_response, pynacl_keys
-    )
-
-
-def test_flow(lazy_app, config, app_mode_default, client, lazy_container, redis):
+def test_flow(lazy_app, config, saml_userinfo_service, client, lazy_container, redis):
     base_uri = config["oidc"]["issuer"]
     app = lazy_app.value
     client_id = client[0]
@@ -160,25 +141,6 @@ def fetch_authorize_request(
     return get_request(
         app, openid_configuration["authorization_endpoint"], authorize_params
     ).text
-
-
-def validate_legacy_userinfo(
-    app: TestClient, oidc_configuration, access_token_response, pynacl_keys
-):
-    userinfo_response = post_request(
-        app,
-        oidc_configuration["userinfo_endpoint"],
-        headers={"Authorization": "Bearer " + access_token_response["id_token"]},
-    )
-    assert userinfo_response.headers["authentication-method"] == "digid_mock"
-    box = Box(
-        PrivateKey(pynacl_keys["client_key"].encode("utf-8"), encoder=Base64Encoder),
-        PublicKey(pynacl_keys["server_pub"].encode("utf-8"), encoder=Base64Encoder),
-    )
-    decrypted = box.decrypt(
-        userinfo_response.text.encode("utf-8"), encoder=Base64Encoder
-    ).decode("utf-8")
-    assert decrypted == "999991772"
 
 
 def validate_userinfo(app: TestClient, oidc_configuration, access_token_response, jwks):

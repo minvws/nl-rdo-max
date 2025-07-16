@@ -39,7 +39,6 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
     service_to_test = CCUserinfoService(
         jwe_service_provider=jwe_service_provider_mock,
         clients=clients,
-        app_mode="None",
         req_issuer="req_issuer",
         jwt_expiration_duration=60,
         jwt_nbf_lag=10,

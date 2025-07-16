@@ -1,8 +1,6 @@
 [app]
 # possible environment values are: development, production
 environment = development
-# possible app_mode values are: legacy, none
-app_mode = none
 # possible services are: cc, cibg, eherkenning
 userinfo_service = cc
 # External url for max without trailing slash

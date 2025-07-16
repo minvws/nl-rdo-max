@@ -1,7 +1,6 @@
 [app]
-# possible app_modes are: *, production
+# possible environments are: *, production
 environment = test
-app_mode =
 userinfo_service =
 loglevel = debug
 login_methods_file_path = login_methods.json

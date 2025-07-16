@@ -23,13 +23,11 @@ class AuthenticationCache:
         self,
         cache: Cache,
         authentication_context_encryption_service: SymEncryptionService,
-        app_mode: Union[str, None],
     ):
         self._cache = cache
         self._authentication_context_encryption_service = (
             authentication_context_encryption_service
         )
-        self._app_mode = app_mode
 
     def create_randstate(
         self,

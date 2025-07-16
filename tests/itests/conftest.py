@@ -36,16 +36,7 @@ def config(inside_docker):
 
 @pytest.fixture
 # pylint:disable=redefined-outer-name
-def app_mode_legacy(config, pynacl_keys):
-    config["app"]["app_mode"] = "legacy"
-    config["app"]["userinfo_service"] = "cc"
-    config["jwe"]["jwe_sign_nacl_priv_key"] = pynacl_keys["server_key"]
-
-
-@pytest.fixture
-# pylint:disable=redefined-outer-name
-def app_mode_default(config, pynacl_keys):
-    config["app"]["app_mode"] = ""
+def saml_userinfo_service(config, pynacl_keys):
     config["app"]["userinfo_service"] = "cc"
     config["jwe"]["jwe_sign_nacl_priv_key"] = pynacl_keys["server_key"]
 
@@ -104,12 +95,9 @@ def container_overrides():
 def pyop_override(config, legacy_client, client, container_overrides):
     def override_pyop(container):
         pyop = PyopOverridingContainer()
-        if config["app"]["app_mode"] == "legacy":
-            pyop.clients.override(providers.Object(dict([legacy_client])))
-        else:
-            pyop.clients.override(
-                providers.Object(dict([client]))
-            )  # pylint:disable=c-extension-no-member
+        pyop.clients.override(
+            providers.Object(dict([client]))
+        )  # pylint:disable=c-extension-no-member
         container.pyop_services.override(pyop)
 
     container_overrides.append(override_pyop)

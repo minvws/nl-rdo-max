@@ -12,14 +12,12 @@ class CCUserinfoService(UserinfoService):
         self,
         jwe_service_provider: JweServiceProvider,
         clients: dict,
-        app_mode: str,
         req_issuer: str,
         jwt_expiration_duration: int,
         jwt_nbf_lag: int,
     ):
         self._jwe_service_provider = jwe_service_provider
         self._clients = clients
-        self._app_mode = app_mode
         self._req_issuer = req_issuer
         self._jwt_expiration_duration = jwt_expiration_duration
         self._jwt_nbf_lag = jwt_nbf_lag
@@ -38,11 +36,6 @@ class CCUserinfoService(UserinfoService):
         loa_authn = artifact_response.loa_authn
 
         jwe_service = self._jwe_service_provider.get_jwe_service(client["pubkey_type"])
-        if self._app_mode == "legacy":
-            return jwe_service.box_encrypt(  # type:ignore
-                bsn, client_pubkey
-            )
-
         return jwe_service.to_jwe(
             {
                 "bsn": bsn,
