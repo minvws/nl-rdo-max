@@ -641,7 +641,7 @@ def test_token():
     )
 
 
-def test_token_with_client_authentication_method():
+def test_token_with_client_authentication_method(client_private_key):
     config = ConfigParser()
     config.read("tests/max.test.conf")
 
@@ -659,7 +659,6 @@ def test_token_with_client_authentication_method():
         "client_id": {
             "name": "name",
             "client_public_key_path": "secrets/clients/test_client/test_client.crt",
-            "client_private_key_path": "secrets/clients/test_client/test_client.key",
             "client_authentication_method": "private_key_jwt",
         }
     }
@@ -674,7 +673,6 @@ def test_token_with_client_authentication_method():
 
     client_id = "client_id"
     client = clients[client_id]
-    client_private_key = load_jwk(client["client_private_key_path"])
     client_assertion_jwt = JWT(
         header={"alg": "RS256", "x5t": client_private_key.thumbprint(hashes.SHA256())},
         claims={

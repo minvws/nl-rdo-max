@@ -5,6 +5,7 @@ import pytest
 from configparser import ConfigParser
 
 from cryptography.hazmat.primitives import hashes
+from jwcrypto.jwk import JWK
 from jwcrypto.jwt import JWT
 
 from app.validators.token_authentication_validator import TokenAuthenticationValidator
@@ -46,8 +47,12 @@ def client() -> Dict[str, Any]:
 
     clients = clients_from_json(config.get("oidc", "clients_file"))
     client = clients[CLIENT_ID]
-    client["private_key"] = load_jwk(client["client_private_key_path"])
     return client
+
+
+@pytest.fixture
+def client_private_key() -> JWK:
+    return load_jwk("secrets/clients/test_client/test_client.key")
 
 
 @pytest.fixture
@@ -60,7 +65,7 @@ def valid_client_jwt(client, token_authentication_validator) -> JWT:
     return JWT(
         header={
             "alg": "RS256",
-            "x5t": client["private_key"].thumbprint(hashes.SHA256()),
+            "x5t": client["public_key"].thumbprint(hashes.SHA256()),
         },
         claims={
             "iss": CLIENT_ID,
@@ -78,7 +83,7 @@ def invalid_client_jwt(client) -> JWT:
     return JWT(
         header={
             "alg": "RS256",
-            "x5t": client["private_key"].thumbprint(hashes.SHA256()),
+            "x5t": client["public_key"].thumbprint(hashes.SHA256()),
         },
         claims={
             "iss": "37692967-0a74-4e91-85ec-a4250e7ad5e8",

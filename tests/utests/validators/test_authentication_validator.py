@@ -9,9 +9,13 @@ from app.exceptions.max_exceptions import (
 
 
 def test_token_authentication_validator_success(
-    token_authentication_validator, client_id, client, valid_client_jwt
+    token_authentication_validator,
+    client_id,
+    client,
+    client_private_key,
+    valid_client_jwt,
 ):
-    valid_client_jwt.make_signed_token(client["private_key"])
+    valid_client_jwt.make_signed_token(client_private_key)
     client_assertion = valid_client_jwt.serialize()
     try:
         token_authentication_validator.validate_client_authentication(
@@ -26,9 +30,13 @@ def test_token_authentication_validator_success(
 
 
 def test_authentication_with_invalid_jwt(
-    token_authentication_validator, client_id, client, invalid_client_jwt
+    token_authentication_validator,
+    client_id,
+    client,
+    client_private_key,
+    invalid_client_jwt,
 ):
-    invalid_client_jwt.make_signed_token(client["private_key"])
+    invalid_client_jwt.make_signed_token(client_private_key)
     client_assertion = invalid_client_jwt.serialize()
 
     with pytest.raises(InvalidClientAssertionException):
@@ -38,9 +46,14 @@ def test_authentication_with_invalid_jwt(
 
 
 def test_authentication_with_invalid_client(
-    token_authentication_validator, client_id, invalid_client, valid_client_jwt
+    token_authentication_validator,
+    client_id,
+    invalid_client,
+    client_private_key,
+    valid_client_jwt,
 ):
-    valid_client_jwt.make_signed_token(invalid_client["private_key"])
+    # Sign token with valid JWK but the invalid client contains invalid authentication method
+    valid_client_jwt.make_signed_token(client_private_key)
     client_assertion = valid_client_jwt.serialize()
 
     with pytest.raises(ServerErrorException):
@@ -50,9 +63,13 @@ def test_authentication_with_invalid_client(
 
 
 def test_authentication_with_incorrect_query_param(
-    token_authentication_validator, client_id, client, valid_client_jwt
+    token_authentication_validator,
+    client_id,
+    client,
+    client_private_key,
+    valid_client_jwt,
 ):
-    valid_client_jwt.make_signed_token(client["private_key"])
+    valid_client_jwt.make_signed_token(client_private_key)
     client_assertion = valid_client_jwt.serialize()
 
     with pytest.raises(InvalidRequestException):
