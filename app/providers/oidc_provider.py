@@ -238,7 +238,7 @@ class OIDCProvider:  # pylint:disable=too-many-arguments, too-many-positional-ar
                 400, detail="Code challenge has expired. Please retry authorization."
             )
 
-        token_response = self._pyop_provider.handle_token_request(  # type:ignore
+        token_response = self._pyop_provider.handle_token_request(
             token_request.query_string, headers
         )
         self._authentication_cache.cache_userinfo_context(
@@ -252,11 +252,8 @@ class OIDCProvider:  # pylint:disable=too-many-arguments, too-many-positional-ar
         bearer_token = extract_bearer_token_from_http_request(
             authz_header=request.headers.get("Authorization")
         )
-
-        introspection = (
-            self._pyop_provider.authz_state.introspect_access_token(  # type:ignore
-                bearer_token
-            )
+        introspection = self._pyop_provider.authz_state.introspect_access_token(
+            bearer_token
         )
         userinfo_context = self._authentication_cache.get_userinfo_context(bearer_token)
         if not userinfo_context:
