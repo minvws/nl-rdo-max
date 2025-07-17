@@ -133,9 +133,8 @@ class Services(containers.DeclarativeContainer):
 
     cc_userinfo_service = providers.Singleton(
         CCUserinfoService,
-        jwe_service_provider=encryption_services.jwe_service_provider,
+        jwe_service=encryption_services.jwe_service,
         clients=pyop_services.clients,
-        app_mode=config.app.app_mode,
         req_issuer=config.oidc.issuer,
         jwt_expiration_duration=config.oidc.jwt_expiration_duration.as_int(),
         jwt_nbf_lag=config.oidc.jwt_nbf_lag.as_int(),
@@ -182,7 +181,6 @@ class Services(containers.DeclarativeContainer):
         saml_response_factory=saml_response_factory,
         response_factory=response_factory,
         userinfo_service=userinfo_service,
-        app_mode=config.app.app_mode,
         environment=config.app.environment,
         login_methods=login_methods,
         authentication_handler_factory=login_handler_factory,

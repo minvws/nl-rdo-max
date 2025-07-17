@@ -15,11 +15,9 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
         return_value=example_cert,
     )
 
-    jwe_service_provider_mock = MagicMock()
     jwe_service_mock = MagicMock()
     authentication_context_mock = MagicMock()
     artifact_response_mock = MagicMock()
-    saml_identity_provider_mock = MagicMock()
 
     authentication_context_mock.authorization_request = {"client_id": "client_id"}
     authentication_context_mock.session_id = "session_id"
@@ -33,13 +31,11 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
 
     artifact_response_mock.get_bsn.return_value = "bsn"
     artifact_response_mock.loa_authn = "http://eidas.europa.eu/LoA/substantial"
-    jwe_service_provider_mock.get_jwe_service.return_value = jwe_service_mock
     jwe_service_mock.to_jwe.return_value = "encrypted_jwt"
 
     service_to_test = CCUserinfoService(
-        jwe_service_provider=jwe_service_provider_mock,
+        jwe_service=jwe_service_mock,
         clients=clients,
-        app_mode="None",
         req_issuer="req_issuer",
         jwt_expiration_duration=60,
         jwt_nbf_lag=10,
