@@ -32,8 +32,7 @@ def config(inside_docker):
 
 
 @pytest.fixture
-# pylint:disable=redefined-outer-name
-def saml_userinfo_service(config):
+def set_cc_userinfo_service_in_config(config):
     config["app"]["userinfo_service"] = "cc"
 
 

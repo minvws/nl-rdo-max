@@ -33,7 +33,9 @@ def test_external_application():
     base_flow(app=None, base_uri=base_uri, client_id=client_id)
 
 
-def test_flow(lazy_app, config, saml_userinfo_service, client, lazy_container, redis):
+def test_flow(
+    lazy_app, config, set_cc_userinfo_service_in_config, client, lazy_container, redis
+):
     base_uri = config["oidc"]["issuer"]
     app = lazy_app.value
     client_id = client[0]

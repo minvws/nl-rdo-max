@@ -1,5 +1,7 @@
 # pylint:disable=unused-argument
-def test_openid_configuration(lazy_app, config, saml_userinfo_service, client):
+def test_openid_configuration(
+    lazy_app, config, set_cc_userinfo_service_in_config, client
+):
     app = lazy_app.value
     issuer_url = config["oidc"]["issuer"]
     openid_configuration = app.get(".well-known/openid-configuration").json()
