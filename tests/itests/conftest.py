@@ -9,7 +9,6 @@ from pytest_redis import factories
 from pytest_docker.plugin import get_docker_services, containers_scope
 
 from app.application import create_fastapi_app
-from app.dependency_injection.config import get_config
 from app.dependency_injection.container import Container
 from app.misc.lazy import Lazy
 
@@ -25,15 +24,9 @@ redis = factories.redisdb("redis_config")
 
 
 @pytest.fixture
-def config(inside_docker):
-    yield get_config(
-        "tests/max.test.conf.docker" if inside_docker else "tests/max.test.conf"
-    )
-
-
-@pytest.fixture
-def set_cc_userinfo_service_in_config(config):
+def config_with_cc_userinfo_service(config):
     config["app"]["userinfo_service"] = "cc"
+    return config
 
 
 @pytest.fixture

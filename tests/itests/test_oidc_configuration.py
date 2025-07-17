@@ -1,9 +1,6 @@
-# pylint:disable=unused-argument
-def test_openid_configuration(
-    lazy_app, config, set_cc_userinfo_service_in_config, client
-):
+def test_openid_configuration(lazy_app, config_with_cc_userinfo_service, client):
     app = lazy_app.value
-    issuer_url = config["oidc"]["issuer"]
+    issuer_url = config_with_cc_userinfo_service["oidc"]["issuer"]
     openid_configuration = app.get(".well-known/openid-configuration").json()
     assert openid_configuration == {
         "version": "3.0",

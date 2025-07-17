@@ -2,17 +2,11 @@ import time
 from typing import Dict, Any
 
 import pytest
-from configparser import ConfigParser
 
 from cryptography.hazmat.primitives import hashes
-from jwcrypto.jwk import JWK
 from jwcrypto.jwt import JWT
 
 from app.validators.token_authentication_validator import TokenAuthenticationValidator
-from app.misc.utils import clients_from_json, load_jwk
-
-# ID can be found in tests/clients.test.json
-CLIENT_ID = "37692967-0a74-4e91-85ec-a4250e7ad5e8"
 
 
 @pytest.fixture
@@ -36,40 +30,22 @@ def token_authentication_validator() -> TokenAuthenticationValidator:
 
 
 @pytest.fixture
-def client_id() -> str:
-    return CLIENT_ID
+def invalid_client(test_client) -> Dict[str, Any]:
+    return {**test_client, "client_authentication_method": "incorrect_method"}
 
 
 @pytest.fixture
-def client() -> Dict[str, Any]:
-    config = ConfigParser()
-    config.read("tests/max.test.conf")
-
-    clients = clients_from_json(config.get("oidc", "clients_file"))
-    client = clients[CLIENT_ID]
-    return client
-
-
-@pytest.fixture
-def client_private_key() -> JWK:
-    return load_jwk("secrets/clients/test_client/test_client.key")
-
-
-@pytest.fixture
-def invalid_client(client) -> Dict[str, Any]:
-    return {**client, "client_authentication_method": "incorrect_method"}
-
-
-@pytest.fixture
-def valid_client_jwt(client, token_authentication_validator) -> JWT:
+def valid_client_jwt(
+    test_client, token_authentication_validator, test_client_id
+) -> JWT:
     return JWT(
         header={
             "alg": "RS256",
-            "x5t": client["public_key"].thumbprint(hashes.SHA256()),
+            "x5t": test_client["public_key"].thumbprint(hashes.SHA256()),
         },
         claims={
-            "iss": CLIENT_ID,
-            "sub": CLIENT_ID,
+            "iss": test_client_id,
+            "sub": test_client_id,
             "aud": token_authentication_validator.oidc_configuration_info.get(
                 "token_endpoint"
             ),
@@ -79,11 +55,11 @@ def valid_client_jwt(client, token_authentication_validator) -> JWT:
 
 
 @pytest.fixture
-def invalid_client_jwt(client) -> JWT:
+def invalid_client_jwt(test_client) -> JWT:
     return JWT(
         header={
             "alg": "RS256",
-            "x5t": client["public_key"].thumbprint(hashes.SHA256()),
+            "x5t": test_client["public_key"].thumbprint(hashes.SHA256()),
         },
         claims={
             "iss": "37692967-0a74-4e91-85ec-a4250e7ad5e8",
