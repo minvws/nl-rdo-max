@@ -13,8 +13,6 @@ import pytest
 import requests
 from fastapi.testclient import TestClient
 from jwcrypto.jwt import JWT, JWK, JWKSet, JWE
-from nacl.encoding import Base64Encoder
-from nacl.public import PrivateKey, Box, PublicKey
 
 # Existing max server
 # todo fix this tests?
