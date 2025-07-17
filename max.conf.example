@@ -94,6 +94,7 @@ userinfo_endpoint = /userinfo
 scopes_supported = openid
 clients_file = clients.json
 subject_id_hash_salt = somesalt
+# The expiration time of the userinfo JWT, in seconds
 jwt_expiration_duration=60
 jwt_nbf_lag=10
 allow_wildcard_redirect_uri = False
@@ -118,7 +119,7 @@ cert =
 cafile =
 check_hostname = True
 
-# How long do values live in redis?
+# How long do values live in redis, this value is also used for the time the signed ID Tokens should be valid (in seconds)
 object_ttl = 600
 
 # prefix to cached key-value pairs stored using this service

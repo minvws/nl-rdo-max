@@ -253,7 +253,6 @@ class OIDCProvider:  # pylint:disable=too-many-arguments, too-many-positional-ar
             authz_header=request.headers.get("Authorization")
         )
 
-        # todo: id_token valid until same as redis cache ttl
         introspection = (
             self._pyop_provider.authz_state.introspect_access_token(  # type:ignore
                 bearer_token
