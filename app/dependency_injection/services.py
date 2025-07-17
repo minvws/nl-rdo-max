@@ -133,7 +133,7 @@ class Services(containers.DeclarativeContainer):
 
     cc_userinfo_service = providers.Singleton(
         CCUserinfoService,
-        jwe_service_provider=encryption_services.jwe_service_provider,
+        jwe_service=encryption_services.jwe_service,
         clients=pyop_services.clients,
         req_issuer=config.oidc.issuer,
         jwt_expiration_duration=config.oidc.jwt_expiration_duration.as_int(),

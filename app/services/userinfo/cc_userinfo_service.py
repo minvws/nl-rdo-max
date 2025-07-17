@@ -3,20 +3,20 @@ import time
 from app.misc.utils import file_content_raise_if_none, strip_cert
 from app.models.authentication_context import AuthenticationContext
 from app.models.saml.artifact_response import ArtifactResponse
-from app.services.encryption.jwe_service_provider import JweServiceProvider
+from app.services.encryption.rsa_jwe_service import RSAJweService
 from app.services.userinfo.userinfo_service import UserinfoService
 
 
 class CCUserinfoService(UserinfoService):
     def __init__(
         self,
-        jwe_service_provider: JweServiceProvider,
+        jwe_service: RSAJweService,
         clients: dict,
         req_issuer: str,
         jwt_expiration_duration: int,
         jwt_nbf_lag: int,
     ):
-        self._jwe_service_provider = jwe_service_provider
+        self._jwe_service = jwe_service
         self._clients = clients
         self._req_issuer = req_issuer
         self._jwt_expiration_duration = jwt_expiration_duration
@@ -35,8 +35,7 @@ class CCUserinfoService(UserinfoService):
         bsn = artifact_response.get_bsn(authorization_by_proxy=False)
         loa_authn = artifact_response.loa_authn
 
-        jwe_service = self._jwe_service_provider.get_jwe_service(client["pubkey_type"])
-        return jwe_service.to_jwe(
+        return self._jwe_service.to_jwe(
             {
                 "bsn": bsn,
                 "session_id": authentication_context.session_id,

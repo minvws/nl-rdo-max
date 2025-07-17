@@ -38,7 +38,6 @@ def config(inside_docker):
 # pylint:disable=redefined-outer-name
 def saml_userinfo_service(config, pynacl_keys):
     config["app"]["userinfo_service"] = "cc"
-    config["jwe"]["jwe_sign_nacl_priv_key"] = pynacl_keys["server_key"]
 
 
 @pytest.fixture
