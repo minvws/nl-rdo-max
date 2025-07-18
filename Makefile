@@ -21,7 +21,7 @@ setup-config:
 	scripts/./setup-config.sh
 
 setup-npm:
-	scripts/./setup-npm.sh	
+	scripts/./setup-npm.sh
 
 setup-remote: setup-config setup-saml setup-secrets
 	docker compose build --build-arg="NEW_UID=${UID}" --build-arg="NEW_GID=${GID}" --build-arg="PYTHON_VERSION=${PYTHON_VERSION}"
@@ -61,4 +61,4 @@ type-check:
 check-all: fix check type-check test audit
 
 create-jwk: setup-secrets
-        poetry run python tools/create-jwk.py secrets/clients/test_client/test_client.key
+	poetry run python tools/create-jwk.py secrets/clients/test_client/test_client.key
