@@ -12,50 +12,31 @@ import lxml.html
 import pytest
 import requests
 from fastapi.testclient import TestClient
-from jwcrypto.jwt import JWT, JWK, JWKSet, JWE
-from nacl.encoding import Base64Encoder
-from nacl.public import PrivateKey, Box, PublicKey
+from jwcrypto.jwt import JWT, JWKSet, JWE
 
 # Existing max server
 # todo fix this tests?
-from app.misc.utils import file_content_raise_if_none
 
 os.environ.setdefault("REQUESTS_CA_BUNDLE", "secrets/cacert.crt")
-
-EXTERNAL_CLIENT_ID = "37692967-0a74-4e91-85ec-a4250e7ad5e8"
-
 # os.environ.setdefault("REQUESTS_CA_BUNDLE", "secrets/cacert.crt")
-CLIENT_RSA_PRIV_KEY_PATH = "secrets/clients/test_client/test_client.key"
 
 
 @pytest.mark.skip(reason="Run this only with a local running max instance")
-def test_external_application():
+def test_external_application(test_client_id):
     base_uri = "https://localhost:8006"
-    client_id = EXTERNAL_CLIENT_ID
 
-    base_flow(app=None, base_uri=base_uri, client_id=client_id)
+    base_flow(app=None, base_uri=base_uri, client_id=test_client_id)
 
 
-# pylint:disable=unused-argument
-def test_legacy_flow(
-    lazy_app, config, app_mode_legacy, legacy_client, pynacl_keys, redis
+def test_flow(
+    lazy_app,
+    config_with_cc_userinfo_service,
+    client,
+    lazy_container,
+    redis,
+    test_client_private_key,
 ):
-    base_uri = config["oidc"]["issuer"]
-    app = lazy_app.value
-    client_id = legacy_client[0]
-    redis.set("max:primary_identity_provider", "tvs")
-
-    openid_configuration, access_token_response, _ = base_flow(
-        app=app, base_uri=base_uri, client_id=client_id
-    )
-
-    validate_legacy_userinfo(
-        app, openid_configuration, access_token_response, pynacl_keys
-    )
-
-
-def test_flow(lazy_app, config, app_mode_default, client, lazy_container, redis):
-    base_uri = config["oidc"]["issuer"]
+    base_uri = config_with_cc_userinfo_service["oidc"]["issuer"]
     app = lazy_app.value
     client_id = client[0]
     redis.set("max:primary_identity_provider", "tvs")
@@ -63,7 +44,13 @@ def test_flow(lazy_app, config, app_mode_default, client, lazy_container, redis)
     openid_configuration, access_token_response, jwk_set = base_flow(
         app, base_uri, client_id
     )
-    validate_userinfo(app, openid_configuration, access_token_response, jwk_set)
+    validate_userinfo(
+        app,
+        openid_configuration,
+        access_token_response,
+        jwk_set,
+        test_client_private_key,
+    )
 
 
 def base_flow(app: Union[None, TestClient], base_uri, client_id):
@@ -162,26 +149,13 @@ def fetch_authorize_request(
     ).text
 
 
-def validate_legacy_userinfo(
-    app: TestClient, oidc_configuration, access_token_response, pynacl_keys
+def validate_userinfo(
+    app: TestClient,
+    oidc_configuration,
+    access_token_response,
+    jwks,
+    test_client_private_key,
 ):
-    userinfo_response = post_request(
-        app,
-        oidc_configuration["userinfo_endpoint"],
-        headers={"Authorization": "Bearer " + access_token_response["id_token"]},
-    )
-    assert userinfo_response.headers["authentication-method"] == "digid_mock"
-    box = Box(
-        PrivateKey(pynacl_keys["client_key"].encode("utf-8"), encoder=Base64Encoder),
-        PublicKey(pynacl_keys["server_pub"].encode("utf-8"), encoder=Base64Encoder),
-    )
-    decrypted = box.decrypt(
-        userinfo_response.text.encode("utf-8"), encoder=Base64Encoder
-    ).decode("utf-8")
-    assert decrypted == "999991772"
-
-
-def validate_userinfo(app: TestClient, oidc_configuration, access_token_response, jwks):
     userinfo_response = post_request(
         app,
         oidc_configuration["userinfo_endpoint"],
@@ -190,10 +164,8 @@ def validate_userinfo(app: TestClient, oidc_configuration, access_token_response
 
     assert userinfo_response.headers["content-type"] == "application/jwt"
     assert userinfo_response.headers["authentication-method"] == "digid_mock"
-    with open(CLIENT_RSA_PRIV_KEY_PATH, "r", encoding="utf-8") as file:
-        pem = file.read().encode("utf-8")
     jwe = JWE.from_jose_token(userinfo_response.text)
-    jwe.decrypt(JWK.from_pem(pem))
+    jwe.decrypt(test_client_private_key)
     jwt = JWT()
     jwt.deserialize(jwe.payload.decode("utf-8"), jwks)
     claims = json.loads(jwt.claims)

@@ -1,8 +1,6 @@
 [app]
 # possible environment values are: development, production
 environment = development
-# possible app_mode values are: legacy, none
-app_mode = none
 # possible services are: cc, cibg, eherkenning
 userinfo_service = cc
 # External url for max without trailing slash
@@ -24,6 +22,7 @@ redirect_html_delay = 5
 # possible values: http, html
 redirect_type = html
 
+# NaCl Symmetric encryption key used for encrypting the authentication cache
 user_authentication_sym_key = 0000000000000000000000000000000000000000000000000000000000000000
 
 external_http_requests_timeout_seconds = 15
@@ -35,16 +34,9 @@ language_path = lang/nl.json
 include_log_message_in_error_response = True
 
 [jwe]
-# list with comma seperated values
-# possible values are x25519, rsa
-services = x25519,rsa
-
 #rsa
 jwe_sign_priv_key_path = secrets/nl-rdo-max-private.key
 jwe_sign_crt_path = secrets/nl-rdo-max-private.crt
-
-#x25519
-jwe_sign_nacl_priv_key = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 
 [jwt]
 session_jwt_issuer = nl-rdo-max-private
@@ -102,6 +94,7 @@ userinfo_endpoint = /userinfo
 scopes_supported = openid
 clients_file = clients.json
 subject_id_hash_salt = somesalt
+# The expiration time of the userinfo JWT, in seconds
 jwt_expiration_duration=60
 jwt_nbf_lag=10
 allow_wildcard_redirect_uri = False
@@ -126,7 +119,7 @@ cert =
 cafile =
 check_hostname = True
 
-# How long do values live in redis?
+# How long do values live in redis, this value is also used for the time the signed ID Tokens should be valid (in seconds)
 object_ttl = 600
 
 # prefix to cached key-value pairs stored using this service

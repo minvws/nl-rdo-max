@@ -1,5 +1,4 @@
 # pylint:disable=too-many-lines
-import json
 import logging
 import secrets
 from typing import List, Union, Dict, Any
@@ -9,7 +8,6 @@ from urllib.parse import urlencode, urlunparse, ParseResult
 from fastapi import Request, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from jwcrypto.jwt import JWT
 from pyop.message import AuthorizationRequest
 from pyop.provider import AuthorizationResponse, extract_bearer_token_from_http_request
 from starlette.datastructures import Headers
@@ -57,7 +55,6 @@ class OIDCProvider:  # pylint:disable=too-many-arguments, too-many-positional-ar
         saml_response_factory: SamlResponseFactory,
         response_factory: ResponseFactory,
         userinfo_service: UserinfoService,
-        app_mode: str,
         environment: str,
         login_methods: List[LoginMethod],
         authentication_handler_factory: AuthenticationHandlerFactory,
@@ -75,7 +72,6 @@ class OIDCProvider:  # pylint:disable=too-many-arguments, too-many-positional-ar
         self._saml_response_factory = saml_response_factory
         self._response_factory = response_factory
         self._userinfo_service = userinfo_service
-        self._app_mode = app_mode
         self._environment = environment
         self._login_methods = login_methods
         self._authentication_handler_factory = authentication_handler_factory
@@ -242,57 +238,26 @@ class OIDCProvider:  # pylint:disable=too-many-arguments, too-many-positional-ar
                 400, detail="Code challenge has expired. Please retry authorization."
             )
 
-        token_response = self._pyop_provider.handle_token_request(  # type:ignore
+        token_response = self._pyop_provider.handle_token_request(
             token_request.query_string, headers
         )
-
-        if self._app_mode == "legacy":
-            id_jwt = JWT.from_jose_token(token_response["id_token"])
-            at_hash_key = json.loads(id_jwt.token.objects["payload"].decode("utf-8"))[
-                "at_hash"
-            ]
-            self._authentication_cache.cache_userinfo_context(
-                at_hash_key, token_response["access_token"], acs_context
-            )
-        else:
-            self._authentication_cache.cache_userinfo_context(
-                token_response["access_token"],
-                token_response["access_token"],
-                acs_context,
-            )
+        self._authentication_cache.cache_userinfo_context(
+            token_response["access_token"],
+            token_response["access_token"],
+            acs_context,
+        )
         return token_response
 
     def userinfo(self, request: Request):
         bearer_token = extract_bearer_token_from_http_request(
             authz_header=request.headers.get("Authorization")
         )
-        if self._app_mode == "legacy":
-            id_jwt = JWT.from_jose_token(bearer_token)
-            at_hash_key = json.loads(id_jwt.token.objects["payload"].decode("utf-8"))[
-                "at_hash"
-            ]
-            userinfo_context = self._authentication_cache.get_userinfo_context(
-                at_hash_key
-            )
-            if not userinfo_context:
-                raise UnauthorizedError(error_description="not authorized")
-            introspection = (
-                self._pyop_provider.authz_state.introspect_access_token(  # type:ignore
-                    userinfo_context.access_token
-                )
-            )
-        else:
-            # todo: id_token valid until same as redis cache ttl
-            introspection = (
-                self._pyop_provider.authz_state.introspect_access_token(  # type:ignore
-                    bearer_token
-                )
-            )
-            userinfo_context = self._authentication_cache.get_userinfo_context(
-                bearer_token
-            )
-            if not userinfo_context:
-                raise UnauthorizedError(error_description="not authorized")
+        introspection = self._pyop_provider.authz_state.introspect_access_token(
+            bearer_token
+        )
+        userinfo_context = self._authentication_cache.get_userinfo_context(bearer_token)
+        if not userinfo_context:
+            raise UnauthorizedError(error_description="not authorized")
 
         if not introspection["active"] or not userinfo_context:
             raise UnauthorizedError(error_description="not authorized")

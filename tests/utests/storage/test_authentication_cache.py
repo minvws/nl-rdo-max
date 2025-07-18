@@ -15,9 +15,8 @@ from pyop.message import AuthorizationRequest
 def create_authentication_cache(
     cache: Cache = MagicMock(),
     sym_encryption_service: SymEncryptionService = MagicMock(),
-    app_mode: str = None,
 ):
-    return AuthenticationCache(cache, sym_encryption_service, app_mode)
+    return AuthenticationCache(cache, sym_encryption_service)
 
 
 def test_create_randstate():

@@ -66,5 +66,4 @@ class Storage(containers.DeclarativeContainer):
         AuthenticationCache,
         cache=cache,
         authentication_context_encryption_service=encryption_services.user_authentication_encryption_service,
-        app_mode=config.app.app_mode,
     )

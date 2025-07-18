@@ -1,12 +1,10 @@
 import time
-from typing import List, Dict
 
 from unittest.mock import MagicMock, patch
 
 import pytest
 from cryptography.hazmat.primitives import hashes
 from fastapi.exceptions import HTTPException
-from configparser import ConfigParser
 from jwcrypto.jwt import JWT
 
 from app.constants import CLIENT_ASSERTION_TYPE
@@ -17,7 +15,6 @@ from app.exceptions.max_exceptions import (
     InvalidClientException,
     InvalidResponseType,
 )
-from app.misc.utils import load_jwk
 from app.models.authentication_meta import AuthenticationMeta
 from app.models.authorize_request import AuthorizeRequest
 from app.models.login_method import LoginMethod, LoginMethodWithLink
@@ -34,7 +31,6 @@ def create_oidc_provider(
     saml_response_factory=MagicMock(),
     response_factory=MagicMock(),
     userinfo_service=MagicMock(),
-    app_mode="am",
     environment="test",
     login_methods=None,
     authentication_handler_factory=MagicMock(),
@@ -55,7 +51,6 @@ def create_oidc_provider(
         saml_response_factory,
         response_factory,
         userinfo_service,
-        app_mode,
         environment,
         login_methods,
         authentication_handler_factory,
@@ -643,10 +638,7 @@ def test_token():
     )
 
 
-def test_token_with_client_authentication_method():
-    config = ConfigParser()
-    config.read("tests/max.test.conf")
-
+def test_token_with_client_authentication_method(test_client, test_client_private_key):
     pyop_provider = MagicMock()
     authentication_cache = MagicMock()
     userinfo_service = MagicMock()
@@ -661,7 +653,6 @@ def test_token_with_client_authentication_method():
         "client_id": {
             "name": "name",
             "client_public_key_path": "secrets/clients/test_client/test_client.crt",
-            "client_private_key_path": "secrets/clients/test_client/test_client.key",
             "client_authentication_method": "private_key_jwt",
         }
     }
@@ -676,9 +667,11 @@ def test_token_with_client_authentication_method():
 
     client_id = "client_id"
     client = clients[client_id]
-    client_private_key = load_jwk(client["client_private_key_path"])
     client_assertion_jwt = JWT(
-        header={"alg": "RS256", "x5t": client_private_key.thumbprint(hashes.SHA256())},
+        header={
+            "alg": "RS256",
+            "x5t": test_client["public_key"].thumbprint(hashes.SHA256()),
+        },
         claims={
             "iss": "37692967-0a74-4e91-85ec-a4250e7ad5e8",
             "sub": "37692967-0a74-4e91-85ec-a4250e7ad5e8",
@@ -686,7 +679,7 @@ def test_token_with_client_authentication_method():
             "exp": int(time.time()),
         },
     )
-    client_assertion_jwt.make_signed_token(client_private_key)
+    client_assertion_jwt.make_signed_token(test_client_private_key)
     token_request = MagicMock()
     token_request.code = "c"
     token_request.query_string = "qs"
