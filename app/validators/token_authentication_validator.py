@@ -2,9 +2,6 @@ import logging
 import time
 from typing import Dict, Any, Optional
 
-from jwcrypto.common import JWException
-from jwcrypto.jwt import JWT
-
 from app.constants import CLIENT_ASSERTION_TYPE
 from app.exceptions.max_exceptions import (
     InvalidRequestException,
@@ -12,16 +9,35 @@ from app.exceptions.max_exceptions import (
     InvalidClientAssertionException,
 )
 from app.models.enums import ClientAssertionMethods
+from app.services.encryption.jwt_service import from_jwt
 
 logger = logging.getLogger(__name__)
 
 
 class TokenAuthenticationValidator:
     """
-    a class to validate token endpoint authentication methods.
-    current method supported is: private_key_jwt
+    Validates client authentication for the OAuth2/OIDC token endpoint, specifically supporting the
+    `private_key_jwt` method as described in the OpenID Connect Core specification
+    (see: https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication).
 
+    This validator is necessary because the pyOP library does not natively support `private_key_jwt`
+    authentication. Instead, this class implements the required logic to verify client assertions using
+    JWTs signed with the client's private key.
+
+    Usage:
+        - In the clients.json file, set the client's `token_endpoint_auth_method` to `none` (for pyOP compatibility).
+        - In the same clients.json file, set the custom field `client_authentication_method` to `private_key_jwt`
+          to enable this validation.
+        - The validator checks the presence and validity of the client assertion JWT, its type, and verifies
+          the JWT claims and signature using the client's public key.
+
+    For more details on the `private_key_jwt` authentication method, refer to the OpenID Connect Core specification:
     https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
+
+    Raises:
+        - ServerErrorException: If the client authentication method is invalid or misconfigured.
+        - InvalidRequestException: If required authentication parameters are missing or incorrect.
+        - InvalidClientAssertionException: If the client assertion JWT is invalid or cannot be verified.
     """
 
     def __init__(self, oidc_configuration_info: Dict[str, Any]):
@@ -68,20 +84,16 @@ class TokenAuthenticationValidator:
                 error_description="Invalid client assertion type"
             )
 
-        client_public_key = client["public_key"]
-        try:
-            client_assertion_jwt_claims = JWT(
-                jwt=client_assertion_jwt,
-                key=client_public_key,
-                check_claims={
-                    "iss": client_id,
-                    "sub": client_id,
-                    "aud": self.oidc_configuration_info.get("token_endpoint"),
-                    "exp": int(time.time()),
-                },
-            )
-            client_assertion_jwt_claims.validate(client_public_key)
-
-        except (JWException, ValueError) as exception:
-            logger.exception(exception)
-            raise InvalidClientAssertionException() from exception
+        client_certificate = client["certificate"]
+        claims = from_jwt(
+            jwt_pub_key=client_certificate.jwk,
+            jwt_str=client_assertion_jwt,
+            check_claims={
+                "iss": client_id,
+                "sub": client_id,
+                "aud": self.oidc_configuration_info.get("token_endpoint"),
+                "exp": int(time.time()),
+            },
+        )
+        if claims is None:
+            raise InvalidClientAssertionException()

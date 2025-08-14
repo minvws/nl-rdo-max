@@ -86,9 +86,6 @@ def test_swagger_ui_not_available_with_empty_openapi_endpoint():
     app = get_app(override_config=config)
     actual_response = app.get("/ui")
 
-    print(actual_response.status_code)
-    print(actual_response.text)
-
     assert actual_response.status_code == 404
 
 

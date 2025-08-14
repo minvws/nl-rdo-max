@@ -5,13 +5,20 @@ from dependency_injector import containers, providers
 
 from app.mappers.login_method_mapper import map_login_methods_json_to_list_of_objects
 from app.misc.rate_limiter import RateLimiter
-from app.misc.utils import as_bool, json_from_file
+from app.misc.utils import (
+    as_bool,
+    json_from_file,
+    load_jwk,
+    load_certificate_with_jwk_from_path,
+)
 from app.models.enums import RedirectType
 from app.models.login_method import LoginMethod
 from app.providers.digid_mock_provider import DigidMockProvider
 from app.providers.eherkenning_mock_provider import EherkenningMockProvider
 from app.providers.oidc_provider import OIDCProvider
 from app.providers.saml_provider import SAMLProvider
+from app.services.encryption.jwt_service import JWTService
+from app.services.external_session_service import ExternalSessionService
 from app.services.loginhandler.authentication_handler_factory import (
     AuthenticationHandlerFactory,
 )
@@ -37,6 +44,39 @@ def as_redirect_type(value):
 def as_login_methods(login_methods_path) -> List[LoginMethod]:
     json = json_from_file(login_methods_path)
     return map_login_methods_json_to_list_of_objects(json)
+
+
+def _external_session_service_factory(
+    session_server_url: str | None,
+    session_jwt_sign_priv_key_path: str | None,
+    session_jwt_sign_crt_path: str | None,
+    session_jwt_issuer: str | None,
+    session_jwt_audience: str | None,
+    external_http_requests_timeout_seconds: int,
+) -> ExternalSessionService | None:
+    if (
+        session_jwt_issuer is None
+        or session_jwt_audience is None
+        or session_server_url is None
+        or session_jwt_sign_priv_key_path is None
+        or session_jwt_sign_crt_path is None
+    ):
+        return None
+
+    jwt_service = JWTService(
+        issuer=session_jwt_issuer,
+        signing_private_key=load_jwk(session_jwt_sign_priv_key_path),
+        signing_certificate=load_certificate_with_jwk_from_path(
+            session_jwt_sign_crt_path
+        ),
+    )
+
+    return ExternalSessionService(
+        session_url=session_server_url,
+        session_jwt_audience=session_jwt_audience,
+        external_http_requests_timeout_seconds=external_http_requests_timeout_seconds,
+        jwt_service=jwt_service,
+    )
 
 
 class Services(containers.DeclarativeContainer):
@@ -110,45 +150,44 @@ class Services(containers.DeclarativeContainer):
         external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
     )
 
+    cibg_jwt_service = providers.Singleton(
+        JWTService,
+        issuer=config.cibg.userinfo_issuer,
+        signing_private_key=config.jwe.jwe_sign_priv_key_path.as_(load_jwk),
+        signing_certificate=config.jwe.jwe_sign_crt_path.as_(
+            load_certificate_with_jwk_from_path
+        ),
+        exp_margin=config.cibg.jwt_expiration_duration.as_int(),
+        nbf_margin=config.cibg.jwt_nbf_lag.as_int(),
+    )
+
     cibg_userinfo_service = providers.Singleton(
         CIBGUserinfoService,
-        jwt_service_factory=encryption_services.jwt_service_factory,
+        userinfo_jwt_service=encryption_services.jwt_service,
+        cibg_jwt_service=cibg_jwt_service,
         environment=config.app.environment,
         clients=pyop_services.clients,
-        userinfo_request_signing_priv_key_path=config.jwe.jwe_sign_priv_key_path,
-        userinfo_request_signing_crt_path=config.jwe.jwe_sign_crt_path,
         ssl_client_key_path=config.cibg.ssl_client_key,
         ssl_client_crt_path=config.cibg.ssl_client_crt,
         ssl_client_verify=config.cibg.ssl_client_verify.as_(as_bool),
         cibg_exchange_token_endpoint=config.cibg.cibg_exchange_token_endpoint,
         cibg_saml_endpoint=config.cibg.cibg_saml_endpoint,
-        cibg_userinfo_issuer=config.cibg.userinfo_issuer,
         cibg_userinfo_audience=config.cibg.userinfo_audience,
         req_issuer=config.oidc.issuer,
-        jwt_expiration_duration=config.oidc.jwt_expiration_duration.as_int(),
-        jwt_nbf_lag=config.oidc.jwt_nbf_lag.as_int(),
         external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
         external_base_url=config.app.external_base_url,
     )
 
     cc_userinfo_service = providers.Singleton(
         CCUserinfoService,
-        jwe_service=encryption_services.jwe_service,
+        userinfo_jwt_service=encryption_services.jwt_service,
         clients=pyop_services.clients,
-        req_issuer=config.oidc.issuer,
-        jwt_expiration_duration=config.oidc.jwt_expiration_duration.as_int(),
-        jwt_nbf_lag=config.oidc.jwt_nbf_lag.as_int(),
     )
 
     eherkenning_userinfo_service = providers.Singleton(
         EherkenningUserinfoService,
-        jwt_service_factory=encryption_services.jwt_service_factory,
+        userinfo_jwt_service=encryption_services.jwt_service,
         clients=pyop_services.clients,
-        userinfo_request_signing_priv_key_path=config.jwe.jwe_sign_priv_key_path,
-        userinfo_request_signing_crt_path=config.jwe.jwe_sign_crt_path,
-        req_issuer=config.oidc.issuer,
-        jwt_expiration_duration=config.oidc.jwt_expiration_duration.as_int(),
-        jwt_nbf_lag=config.oidc.jwt_nbf_lag.as_int(),
         external_base_url=config.app.external_base_url,
     )
 
@@ -159,9 +198,18 @@ class Services(containers.DeclarativeContainer):
         eherkenning=eherkenning_userinfo_service,
     )
 
+    external_session_service = providers.Singleton(
+        _external_session_service_factory,
+        session_server_url=config.app.session_url,
+        session_jwt_sign_priv_key_path=config.jwt.session_jwt_sign_priv_key_path,
+        session_jwt_sign_crt_path=config.jwt.session_jwt_sign_crt_path,
+        session_jwt_issuer=config.jwt.session_jwt_issuer,
+        session_jwt_audience=config.jwt.session_jwt_audience,
+        external_http_requests_timeout_seconds=config.app.external_http_requests_timeout_seconds.as_int(),
+    )
+
     login_handler_factory = providers.Singleton(
         AuthenticationHandlerFactory,
-        jwt_service_factory=encryption_services.jwt_service_factory,
         rate_limiter=rate_limiter,
         saml_identity_provider_service=saml_identity_provider_service,
         authentication_cache=storage.authentication_cache,
@@ -170,6 +218,7 @@ class Services(containers.DeclarativeContainer):
         response_factory=response_factory,
         clients=pyop_services.clients,
         config=config,
+        external_session_service=external_session_service,
     )
 
     oidc_provider = providers.Singleton(

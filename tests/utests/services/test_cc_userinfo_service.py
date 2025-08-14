@@ -3,42 +3,23 @@ from app.services.userinfo.cc_userinfo_service import CCUserinfoService
 from unittest.mock import MagicMock
 
 
-def test_request_userinfo_for_saml_artifact(tmp_path_factory, mocker):
-    example_cert = """
------BEGIN CERTIFICATE-----
-MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
------END CERTIFICATE-----"""
-
-    tmp_path = tmp_path_factory.mktemp("client_pubkey_path")
-    mocker.patch(
-        "app.services.userinfo.cc_userinfo_service.file_content_raise_if_none",
-        return_value=example_cert,
-    )
-
-    jwe_service_mock = MagicMock()
+def test_request_userinfo_for_saml_artifact(
+    tmp_path_factory, test_clients, test_client_id, test_client
+):
+    jwt_service_mock = MagicMock()
     authentication_context_mock = MagicMock()
     artifact_response_mock = MagicMock()
 
-    authentication_context_mock.authorization_request = {"client_id": "client_id"}
+    authentication_context_mock.authorization_request = {"client_id": test_client_id}
     authentication_context_mock.session_id = "session_id"
-
-    clients = {
-        "client_id": {
-            "client_public_key_path": tmp_path / "client_pubkey",
-            "pubkey_type": "pubkey_type",
-        }
-    }
 
     artifact_response_mock.get_bsn.return_value = "bsn"
     artifact_response_mock.loa_authn = "http://eidas.europa.eu/LoA/substantial"
-    jwe_service_mock.to_jwe.return_value = "encrypted_jwt"
+    jwt_service_mock.create_jwe.return_value = "encrypted_jwt"
 
     service_to_test = CCUserinfoService(
-        jwe_service=jwe_service_mock,
-        clients=clients,
-        req_issuer="req_issuer",
-        jwt_expiration_duration=60,
-        jwt_nbf_lag=10,
+        userinfo_jwt_service=jwt_service_mock,
+        clients=test_clients,
     )
 
     expected_result = "encrypted_jwt"
@@ -50,17 +31,13 @@ MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL
 
     assert actual_result == expected_result
 
-    jwe_service_mock.to_jwe.assert_called_once_with(
-        {
+    jwt_service_mock.create_jwe.assert_called_once_with(
+        encryption_certificate=test_client["certificate"],
+        payload={
             "bsn": "bsn",
             "session_id": "session_id",
             "loa_authn": "http://eidas.europa.eu/LoA/substantial",
-            "iss": "req_issuer",
             "sub": "123456",
-            "aud": "client_id",
-            "nbf": mocker.ANY,
-            "exp": mocker.ANY,
-            "x5c": "MIICUTCCAfugAwIBAgIBADANBgkqhkiG9w0BAQQFADBXMQswCQYDVQQGEwJDTjEL",
+            "aud": test_client_id,
         },
-        example_cert,
     )

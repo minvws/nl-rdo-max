@@ -1,7 +1,6 @@
 import nacl
 import pytest
 import random
-import uuid
 
 from dependency_injector import providers, containers
 from fastapi.testclient import TestClient
@@ -30,30 +29,16 @@ def config_with_cc_userinfo_service(config):
 
 
 @pytest.fixture
-def client():
-    return str(uuid.uuid4()), {
-        "name": "Test Client",
-        "external_id": "87654321",
-        "token_endpoint_auth_method": "none",
-        "redirect_uris": ["http://localhost:3000/login"],
-        "response_types": ["code"],
-        "pubkey_type": "RSA",
-        "client_public_key_path": "secrets/clients/test_client/test_client.crt",
-        "client_authentication_method": "none",
-    }
-
-
-@pytest.fixture
 def container_overrides():
     return []
 
 
 @pytest.fixture
-def pyop_override(config, client, container_overrides):
+def pyop_override(config, test_clients, container_overrides):
     def override_pyop(container):
         pyop = PyopOverridingContainer()
         pyop.clients.override(
-            providers.Object(dict([client]))
+            providers.Object(test_clients)
         )  # pylint:disable=c-extension-no-member
         container.pyop_services.override(pyop)
 
@@ -61,8 +46,7 @@ def pyop_override(config, client, container_overrides):
 
 
 @pytest.fixture
-# pylint:disable=redefined-outer-name
-def lazy_container(config, client, container_overrides, pyop_override):
+def lazy_container(config, container_overrides, pyop_override):
     def _container() -> Container:
         cont = Container()
         pyop = PyopOverridingContainer()

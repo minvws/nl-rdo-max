@@ -81,8 +81,8 @@ class ArtifactResponse:
         self._sp_metadata = sp_metadata
         self._idp_metadata = idp_metadata
         self._expected_entity_id = expected_entity_id
-        self._priv_key = priv_key
-        self._cluster_priv_key = cluster_priv_key
+        self.__priv_key = priv_key
+        self.__cluster_priv_key = cluster_priv_key
         self._saml_specification_version = saml_specification_version
         self._expected_response_destination = expected_response_destination
         self._expected_service_uuid = expected_service_uuid
@@ -451,7 +451,9 @@ class ArtifactResponse:
                 raise ValidationError("Audience verification errors.")
 
     def _decrypt_enc_key(self, enc_key_elem) -> bytes:
-        priv_key = self._cluster_priv_key if self._cluster_priv_key else self._priv_key
+        priv_key = (
+            self.__cluster_priv_key if self.__cluster_priv_key else self.__priv_key
+        )
         aes_key = OneLogin_Saml2_Utils.decrypt_element(
             enc_key_elem, priv_key, debug=True
         )

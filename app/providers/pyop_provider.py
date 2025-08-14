@@ -1,13 +1,54 @@
 import os
 
-from cryptography.hazmat.backends import default_backend
-from cryptography.x509 import load_pem_x509_certificate
+from cryptography.x509 import Certificate
 from jwcrypto.jwk import JWK
 from jwkest.jwk import RSAKey
 from pyop.provider import Provider as PyopProvider
 from pyop.authz_state import AuthorizationState
 
-from app.misc.utils import kid_from_certificate
+from app.services.encryption.jwt_service import JWT_ALG
+from app.misc.utils import (
+    jwk_from_certificate,
+    read_cert_as_x509_certificate,
+)
+
+
+def _load_certificates_of_directory_as_jwk_for_pyop_provider(
+    directory_path: str | None,
+) -> list[JWK]:
+    if directory_path is None:
+        return []
+
+    if not os.path.isdir(directory_path):
+        raise ValueError(f"Provided path '{directory_path}' is not a directory.")
+
+    jwks = []
+
+    for filename in os.listdir(directory_path):
+        if not filename.endswith(".crt"):
+            continue
+
+        file_path = os.path.join(directory_path, filename)
+        certificate = read_cert_as_x509_certificate(file_path)
+        jwk = _cert_to_jwk_for_pyop(certificate)
+        jwks.append(jwk)
+
+    return jwks
+
+
+def _cert_to_jwk_for_pyop(certificate: Certificate) -> JWK:
+    jwk = jwk_from_certificate(certificate)
+
+    if jwk.get("kty") == "RSA" and "alg" not in jwk:
+        # The alg parameter is an optional parameter in JWKs, it could be removed in the future.
+        # For now, we set it to our default JWT algorithm.
+        jwk.update(
+            {
+                "alg": JWT_ALG,
+            }
+        )
+
+    return jwk
 
 
 class MaxPyopProvider(PyopProvider):
@@ -33,28 +74,11 @@ class MaxPyopProvider(PyopProvider):
             extra_scopes=extra_scopes,
         )
         self._jwks_certs = super().jwks  # type:ignore
-        if trusted_certificates_directory is not None:
-            self._keys = {}
-            for filename in os.listdir(trusted_certificates_directory):
-                if filename.endswith(".crt"):
-                    with open(
-                        os.path.join(trusted_certificates_directory, filename),
-                        "r",
-                        encoding="utf-8",
-                    ) as file:
-                        cert_str = file.read()
-                        if cert_str.startswith("-----BEGIN CERTIFICATE-----"):
-                            cert_obj = load_pem_x509_certificate(
-                                str.encode(cert_str), default_backend()
-                            )
-                            crt = JWK.from_pem(str.encode(cert_str))
-                            kid = kid_from_certificate(cert_str)
-                            crt.kid = kid  # type: ignore[attr-defined]
-                            if "alg" not in crt:
-                                crt.alg = "RS256"  # type: ignore[attr-defined]
 
-                            self._jwks_certs["keys"].append(crt)
-                            self._keys[kid] = cert_obj.public_key()
+        additional_jwks = _load_certificates_of_directory_as_jwk_for_pyop_provider(
+            trusted_certificates_directory
+        )
+        self._jwks_certs["keys"].extend(additional_jwks)
 
     @property
     def jwks(self):

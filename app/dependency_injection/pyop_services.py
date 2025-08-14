@@ -8,11 +8,13 @@ from pyop.authz_state import AuthorizationState
 from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
 from pyop.userinfo import Userinfo
 
+from app.services.encryption.jwt_service import JWT_ALG
 from app.misc.utils import (
     as_list,
-    clients_from_json,
-    kid_from_certificate,
     file_content_raise_if_none,
+    read_cert_as_x509_certificate,
+    kid_from_certificate,
+    clients_from_json,
 )
 from app.providers.pyop_provider import MaxPyopProvider
 from app.providers.saml_provider import SAMLProvider
@@ -20,9 +22,9 @@ from app.providers.saml_provider import SAMLProvider
 
 def pyop_rsa_signing_key_callable(signing_key_path: str, signing_key_crt_path: str):
     signing_key = file_content_raise_if_none(signing_key_path)
-    signing_key_crt = file_content_raise_if_none(signing_key_crt_path)
+    signing_key_crt = read_cert_as_x509_certificate(signing_key_crt_path)
     kid = kid_from_certificate(signing_key_crt)
-    key = RSAKey(key=import_rsa_key(signing_key), alg="RS256")
+    key = RSAKey(key=import_rsa_key(signing_key), alg=JWT_ALG)
     key.kid = kid
     return key
 

@@ -9,7 +9,7 @@ import xmlsec
 from lxml import etree
 
 from app.misc.saml_utils import compute_keyname, to_soap_envelope
-from app.misc.utils import read_cert, strip_cert
+from app.misc.utils import file_content_raise_if_none, strip_cert
 
 
 def get_issue_instant():
@@ -27,7 +27,7 @@ class SAMLRequest:
         self._id_hash = "_" + secrets.token_hex(41)  # total length 42.
         self.keypair_sign = keypair_sign
 
-        sign_cert = read_cert(self.signing_cert_path)
+        sign_cert = file_content_raise_if_none(self.signing_cert_path)
         self.sign_keyname = compute_keyname(sign_cert)
         self.sign_cert = strip_cert(sign_cert)
 

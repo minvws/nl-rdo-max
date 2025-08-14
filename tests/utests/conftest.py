@@ -3,7 +3,6 @@ from typing import Dict, Any
 
 import pytest
 
-from cryptography.hazmat.primitives import hashes
 from jwcrypto.jwt import JWT
 
 from app.validators.token_authentication_validator import TokenAuthenticationValidator
@@ -36,12 +35,12 @@ def invalid_client(test_client) -> Dict[str, Any]:
 
 @pytest.fixture
 def valid_client_jwt(
-    test_client, token_authentication_validator, test_client_id
+    test_client, test_client_id, token_authentication_validator
 ) -> JWT:
     return JWT(
         header={
             "alg": "RS256",
-            "x5t": test_client["public_key"].thumbprint(hashes.SHA256()),
+            "x5t": test_client["certificate"].x5t,
         },
         claims={
             "iss": test_client_id,
@@ -59,7 +58,7 @@ def invalid_client_jwt(test_client) -> JWT:
     return JWT(
         header={
             "alg": "RS256",
-            "x5t": test_client["public_key"].thumbprint(hashes.SHA256()),
+            "x5t": test_client["certificate"].x5t,
         },
         claims={
             "iss": "37692967-0a74-4e91-85ec-a4250e7ad5e8",

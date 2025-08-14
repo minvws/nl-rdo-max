@@ -3,14 +3,14 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
-from cryptography.hazmat.primitives import hashes
 from jwcrypto.jwe import JWE
 from jwcrypto.jwk import JWK
 from jwcrypto.jwt import JWT
 from jwcrypto.common import JWException
 
-JWT_EXP_MARGIN = 60
+from app.models.certificate_with_jwk import CertificateWithJWK
 
+JWT_EXP_MARGIN = 60
 JWT_NBF_MARGIN = 10
 
 JWE_ENC = "A128CBC-HS256"
@@ -23,23 +23,48 @@ logger = logging.getLogger(__name__)
 
 
 class JWTService:
-    def __init__(self, jwt_priv_key: JWK, crt_kid: str) -> None:
-        self._jwt_priv_key = jwt_priv_key
-        self._crt_kid = crt_kid
+    def __init__(
+        self,
+        issuer: str,
+        signing_private_key: JWK,
+        signing_certificate: CertificateWithJWK,
+        exp_margin: int = JWT_EXP_MARGIN,
+        nbf_margin: int = JWT_NBF_MARGIN,
+    ) -> None:
+        self.__signing_private_key = signing_private_key
+        self._signing_certificate = signing_certificate
+        self.issuer = issuer
+        self.exp_margin = exp_margin
+        self.nbf_margin = nbf_margin
+
+    def get_signing_certificate(self) -> CertificateWithJWK:
+        return self._signing_certificate
 
     def create_jwt(self, payload: Dict[str, Any]) -> str:
-        return create_jwt(self._jwt_priv_key, self._crt_kid, payload)
+        return create_jwt(
+            issuer=self.issuer,
+            signing_private_key=self.__signing_private_key,
+            signing_certificate=self._signing_certificate,
+            payload=payload,
+            exp_margin=self.exp_margin,
+            nbf_margin=self.nbf_margin,
+        )
 
-    def create_jwe(self, jwe_enc_pub_key: JWK, payload: Dict[str, Any]) -> str:
-        return create_jwe(self._jwt_priv_key, self._crt_kid, jwe_enc_pub_key, payload)
-
-    def from_jwt(
-        self, jwt_pub_key: JWK, jwt: str, check_claims: Optional[Dict[str, Any]] = None
-    ) -> Optional[Dict[str, Any]]:
-        return from_jwt(jwt_pub_key, jwt, check_claims)
+    def create_jwe(
+        self, encryption_certificate: CertificateWithJWK, payload: Dict[str, Any]
+    ) -> str:
+        return create_jwe(
+            issuer=self.issuer,
+            private_key=self.__signing_private_key,
+            signing_certificate=self._signing_certificate,
+            encryption_certificate=encryption_certificate,
+            payload=payload,
+            exp_margin=self.exp_margin,
+            nbf_margin=self.nbf_margin,
+        )
 
     def from_jwe(self, jwt_pub_key: JWK, jwe: str) -> Optional[Dict[str, Any]]:
-        return from_jwe(self._jwt_priv_key, jwt_pub_key, jwe)
+        return from_jwe(self.__signing_private_key, jwt_pub_key, jwe)
 
 
 def from_jwt(
@@ -59,27 +84,32 @@ def from_jwt(
 
 
 def from_jwe(
-    jwt_priv_key: JWK, jwt_pub_key: JWK, jwe_str: str
+    private_key: JWK, jwt_pub_key: JWK, jwe_str: str
 ) -> Optional[Dict[str, Any]]:
     jwe = JWE.from_jose_token(jwe_str)
-    jwe.decrypt(jwt_priv_key)
+    jwe.decrypt(private_key)
     return from_jwt(jwt_pub_key, jwe.payload.decode("utf-8"))
 
 
 def create_jwt(
-    jwt_priv_key: JWK,
-    crt_kid: str,
+    issuer: str,
+    signing_private_key: JWK,
+    signing_certificate: CertificateWithJWK,
     payload: Dict[str, Any],
+    nbf_margin: int = JWT_NBF_MARGIN,
+    exp_margin: int = JWT_EXP_MARGIN,
 ) -> str:
     jwt_header = {
         "alg": JWT_ALG,
-        "x5t": jwt_priv_key.thumbprint(hashes.SHA256()),
-        "kid": crt_kid,
+        "x5t": signing_certificate.x5t,
+        "kid": signing_certificate.kid,
     }
+    now = int(time.time())
     jwt_payload = {
         **{
-            "nbf": int(time.time()) - JWT_NBF_MARGIN,
-            "exp": int(time.time()) + JWT_EXP_MARGIN,
+            "iss": issuer,
+            "nbf": now - nbf_margin,
+            "exp": now + exp_margin,
         },
         **payload,
     }
@@ -87,25 +117,34 @@ def create_jwt(
         header=jwt_header,
         claims=jwt_payload,
     )
-    jwt_token.make_signed_token(jwt_priv_key)
+    jwt_token.make_signed_token(signing_private_key)
     return jwt_token.serialize()
 
 
 def create_jwe(
-    jwt_priv_key: JWK,
-    crt_kid: str,
-    jwe_enc_pub_key: JWK,
+    issuer: str,
+    private_key: JWK,
+    signing_certificate: CertificateWithJWK,
+    encryption_certificate: CertificateWithJWK,
     payload: Dict[str, Any],
+    nbf_margin: int = JWT_NBF_MARGIN,
+    exp_margin: int = JWT_EXP_MARGIN,
 ) -> str:
-    jwt_token = create_jwt(jwt_priv_key, crt_kid, payload)
+    jwt_token = create_jwt(
+        issuer=issuer,
+        signing_private_key=private_key,
+        signing_certificate=signing_certificate,
+        payload=payload,
+        nbf_margin=nbf_margin,
+        exp_margin=exp_margin,
+    )
     jwe_header = {
         "typ": JWE_TYP,
         "cty": JWE_CTY,
         "alg": JWE_ALG,
         "enc": JWE_ENC,
-        "x5t": jwt_priv_key.thumbprint(hashes.SHA256()),
+        "x5t": encryption_certificate.x5t,
     }
-
     jwe_token = JWT(header=jwe_header, claims=jwt_token)
-    jwe_token.make_encrypted_token(jwe_enc_pub_key)
+    jwe_token.make_encrypted_token(encryption_certificate.jwk)
     return jwe_token.serialize()

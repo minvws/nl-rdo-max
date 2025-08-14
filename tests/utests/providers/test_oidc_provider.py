@@ -3,7 +3,6 @@ import time
 from unittest.mock import MagicMock, patch
 
 import pytest
-from cryptography.hazmat.primitives import hashes
 from fastapi.exceptions import HTTPException
 from jwcrypto.jwt import JWT
 
@@ -652,7 +651,7 @@ def test_token_with_client_authentication_method(test_client, test_client_privat
     clients = {
         "client_id": {
             "name": "name",
-            "client_public_key_path": "secrets/clients/test_client/test_client.crt",
+            "client_certificate_path": "secrets/clients/test_client/test_client.crt",
             "client_authentication_method": "private_key_jwt",
         }
     }
@@ -670,7 +669,7 @@ def test_token_with_client_authentication_method(test_client, test_client_privat
     client_assertion_jwt = JWT(
         header={
             "alg": "RS256",
-            "x5t": test_client["public_key"].thumbprint(hashes.SHA256()),
+            "x5t": test_client["certificate"].x5t,
         },
         claims={
             "iss": "37692967-0a74-4e91-85ec-a4250e7ad5e8",

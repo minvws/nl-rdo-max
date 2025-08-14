@@ -9,9 +9,20 @@
             "http://localhost:8000/oidc/login"
         ],
         "response_types": ["code"],
-        "pubkey_type": "RSA",
-        "client_public_key_path": "secrets/clients/test_client/test_client.crt",
+        "client_certificate_path": "secrets/clients/test_client/test_client.crt",
         "exclude_login_methods": ["yivi"],
         "client_authentication_method": "private_key_jwt"
+    },
+    "0bf92f43-f2c4-4e44-ba52-cb0fcfb8f453": {
+        "name": "Test Client without authentication",
+        "external_id": "87654321",
+        "token_endpoint_auth_method": "none",
+        "redirect_uris": [
+            "http://localhost:3000/login"
+        ],
+        "response_types": ["code"],
+        "client_certificate_path": "secrets/clients/test_client/test_client.crt",
+        "exclude_login_methods": ["yivi"],
+        "client_authentication_method": "none"
     }
 }

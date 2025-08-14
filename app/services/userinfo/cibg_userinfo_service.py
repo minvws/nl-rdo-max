@@ -1,20 +1,16 @@
 import logging
-import time
 from typing import Dict, Any, Optional, List, Union
 
 from requests import request
 from fastapi.security.utils import get_authorization_scheme_param
 
-from app.exceptions.max_exceptions import InvalidClientException, UnauthorizedError
-from app.misc.utils import (
-    file_content_raise_if_none,
-    strip_cert,
-    mocked_bsn_to_uzi_data,
-)
+from app.exceptions.max_exceptions import UnauthorizedError
+from app.misc.utils import mocked_bsn_to_uzi_data
 from app.models.authentication_context import AuthenticationContext
 from app.models.authentication_meta import AuthenticationMeta
+from app.models.certificate_with_jwk import CertificateWithJWK
 from app.models.saml.artifact_response import ArtifactResponse
-from app.services.encryption.jwt_service_factory import JWTServiceFactory
+from app.services.encryption.jwt_service import JWTService
 from app.services.userinfo.userinfo_service import UserinfoService
 
 log = logging.getLogger(__name__)
@@ -24,21 +20,17 @@ log = logging.getLogger(__name__)
 class CIBGUserinfoService(UserinfoService):
     def __init__(
         self,
-        jwt_service_factory: JWTServiceFactory,
+        userinfo_jwt_service: JWTService,
+        cibg_jwt_service: JWTService,
         environment: str,
         clients: dict,
-        userinfo_request_signing_priv_key_path: str,
-        userinfo_request_signing_crt_path: str,
         ssl_client_key_path: str | None,
         ssl_client_crt_path: str | None,
         ssl_client_verify: bool,
         cibg_exchange_token_endpoint: str,
         cibg_saml_endpoint: str,
-        cibg_userinfo_issuer: str,
         cibg_userinfo_audience: str,
         req_issuer: str,
-        jwt_expiration_duration: int,
-        jwt_nbf_lag: int,
         external_http_requests_timeout_seconds: int,
         external_base_url: str,
     ):
@@ -48,17 +40,13 @@ class CIBGUserinfoService(UserinfoService):
             self._ssl_client_cert = (ssl_client_crt_path, ssl_client_key_path)
 
         self._ssl_client_verify = ssl_client_verify
-        self.jwt_service = jwt_service_factory.create(
-            userinfo_request_signing_priv_key_path, userinfo_request_signing_crt_path
-        )
+        self.userinfo_jwt_service = userinfo_jwt_service
+        self.cibg_jwt_service = cibg_jwt_service
         self._clients = clients
         self._cibg_exchange_token_endpoint = cibg_exchange_token_endpoint
         self._cibg_saml_endpoint = cibg_saml_endpoint
-        self._cibg_userinfo_issuer = cibg_userinfo_issuer
         self._cibg_userinfo_audience = cibg_userinfo_audience
         self._req_issuer = req_issuer
-        self._jwt_expiration_duration = jwt_expiration_duration
-        self._jwt_nbf_lag = jwt_nbf_lag
         self._external_http_requests_timeout_seconds = (
             external_http_requests_timeout_seconds
         )
@@ -67,7 +55,7 @@ class CIBGUserinfoService(UserinfoService):
     def _create_jwt_payload(
         self,
         *,
-        ura_pubkey_path: str,
+        client_certificate: CertificateWithJWK,
         external_id: str,
         client_id: str,
         auth_type: str,
@@ -79,8 +67,6 @@ class CIBGUserinfoService(UserinfoService):
         exchange_token: Optional[str] = None,
         req_acme_tokens: Optional[List[str]] = None,
     ):
-        ura_pubkey = file_content_raise_if_none(ura_pubkey_path)
-
         req_claims: Dict[str, Union[str, List[str]]] = {
             "iss": self._req_issuer,
             "aud": client_id,
@@ -91,13 +77,10 @@ class CIBGUserinfoService(UserinfoService):
             req_claims["req_acme_tokens"] = req_acme_tokens
 
         jwt_payload = {
-            "iss": self._cibg_userinfo_issuer,
             "aud": self._cibg_userinfo_audience,
-            # still needs to be configurable?
-            "nbf": int(time.time()) - self._jwt_nbf_lag,
-            "exp": int(time.time()) + self._jwt_expiration_duration,
             "ura": external_id,
-            "x5c": strip_cert(ura_pubkey),
+            # Specific parameter for CIBG to encrypt the userinfo for the client
+            "x5c": client_certificate.pem,
             "auth_type": auth_type,
             "req_claims": {
                 **req_claims,
@@ -131,14 +114,10 @@ class CIBGUserinfoService(UserinfoService):
         external_id = "*"
         if "external_id" in client:
             external_id = client["external_id"]
-            if "pubkey_type" not in client or client["pubkey_type"] != "RSA":
-                raise InvalidClientException(
-                    error_description="client pubkey_type should be RSA"
-                )
 
         jwt_payload = self._create_jwt_payload(
             json_schema=json_schema,
-            ura_pubkey_path=client["client_public_key_path"],
+            client_certificate=client["certificate"],
             external_id=external_id,
             client_id=client_id,
             auth_type=auth_type,
@@ -150,7 +129,7 @@ class CIBGUserinfoService(UserinfoService):
             authentication_meta=authentication_meta,
         )
 
-        jwt_token = self.jwt_service.create_jwt(jwt_payload)
+        jwt_token = self.cibg_jwt_service.create_jwt(jwt_payload)
         headers = {"Authorization": f"Bearer {jwt_token}"}
         if data is not None:
             headers["Content-Type"] = "application/xml"
@@ -237,7 +216,6 @@ class CIBGUserinfoService(UserinfoService):
         subject_identifier: str,
     ) -> str:
         bsn = artifact_response.get_bsn(False)
-        ura_pubkey = file_content_raise_if_none(client["client_public_key_path"])
 
         if client["external_id"] == "*":
             uzi_data = mocked_bsn_to_uzi_data(bsn)
@@ -248,17 +226,13 @@ class CIBGUserinfoService(UserinfoService):
 
         data = {
             **uzi_data.model_dump(),
-            "iss": self._req_issuer,
             "aud": client_id,
             "sub": subject_identifier,
             "json_schema": self._external_base_url + "/json_schema.json",
-            "nbf": int(time.time()) - self._jwt_nbf_lag,
-            "exp": int(time.time()) + self._jwt_expiration_duration,
-            "x5c": strip_cert(ura_pubkey),
         }
         if req_acme_tokens:
             data["acme_tokens"] = req_acme_tokens
 
-        jwe_token = self.jwt_service.create_jwe(client["public_key"], data)
+        jwe_token = self.userinfo_jwt_service.create_jwe(client["certificate"], data)
 
         return jwe_token

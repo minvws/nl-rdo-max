@@ -31,25 +31,24 @@ def test_external_application(test_client_id):
 def test_flow(
     lazy_app,
     config_with_cc_userinfo_service,
-    client,
+    test_client_without_client_auth_id,
     lazy_container,
     redis,
-    test_client_private_key,
+    test_client_without_client_auth_private_key,
 ):
     base_uri = config_with_cc_userinfo_service["oidc"]["issuer"]
     app = lazy_app.value
-    client_id = client[0]
     redis.set("max:primary_identity_provider", "tvs")
 
     openid_configuration, access_token_response, jwk_set = base_flow(
-        app, base_uri, client_id
+        app, base_uri, test_client_without_client_auth_id
     )
     validate_userinfo(
         app,
         openid_configuration,
         access_token_response,
         jwk_set,
-        test_client_private_key,
+        test_client_without_client_auth_private_key,
     )
 
 

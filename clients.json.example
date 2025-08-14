@@ -10,8 +10,7 @@
             "http://localhost:9000/oidc/login"
         ],
         "response_types": ["code"],
-        "pubkey_type": "RSA",
-        "client_public_key_path": "secrets/clients/laravel-demo/nl-uzipoc-php-laravel-demo.crt",
+        "client_certificate_path": "secrets/clients/laravel-demo/nl-uzipoc-php-laravel-demo.crt",
         "exclude_login_methods": ["yivi"],
         "client_authentication_method": "none"
     },
@@ -23,8 +22,7 @@
             "http://localhost:8000/oidc/login"
         ],
         "response_types": ["code"],
-        "pubkey_type": "RSA",
-        "client_public_key_path": "secrets/clients/dusi/client.cert",
+        "client_certificate_path": "secrets/clients/dusi/client.cert",
         "login_methods": ["digid_mock"],
         "client_authentication_method": "none"
     },
@@ -38,8 +36,7 @@
             "http://localhost:8000/oidc/login"
         ],
         "response_types": ["code"],
-        "pubkey_type": "RSA",
-        "client_public_key_path": "secrets/clients/test_client/test_client.crt",
+        "client_certificate_path": "secrets/clients/test_client/test_client.crt",
         "client_authentication_method": "none"
     }
 }

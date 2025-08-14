@@ -5,13 +5,11 @@ from app.misc.rate_limiter import RateLimiter
 from app.models.login_method import LoginMethod
 from app.models.login_method_type import LoginMethodType
 
-from app.services.encryption.jwt_service_factory import JWTServiceFactory
 from app.services.external_session_service import ExternalSessionService
 from app.services.loginhandler.authentication_handler import AuthenticationHandler
 from app.services.loginhandler.exchange_based_authentication_handler import (
     ExchangeBasedAuthenticationHandler,
 )
-
 from app.services.loginhandler.mock_saml_authentication_handler import (
     MockSamlAuthenticationHandler,
 )
@@ -38,7 +36,6 @@ class AuthenticationHandlerFactory:
     # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
-        jwt_service_factory: JWTServiceFactory,
         rate_limiter: RateLimiter,
         saml_identity_provider_service: SamlIdentityProviderService,
         authentication_cache: AuthenticationCache,
@@ -47,6 +44,7 @@ class AuthenticationHandlerFactory:
         response_factory: ResponseFactory,
         clients: Dict[str, Any],
         config: Any,
+        external_session_service: ExternalSessionService | None = None,
     ):
         self._rate_limiter = rate_limiter
         self._saml_identity_provider_service = saml_identity_provider_service
@@ -56,14 +54,16 @@ class AuthenticationHandlerFactory:
         self._response_factory = response_factory
         self._clients = clients
         self._config = config
-        self._jwt_service_factory = jwt_service_factory
-        self._saml_authentication_handler: Union[SamlAuthenticationHandler, None] = None
-        self._mock_saml_authentication_handler: Union[
-            MockSamlAuthenticationHandler, None
-        ] = None
-        self._yivi_authentication_handler: Union[YiviAuthenticationHandler, None] = None
-        self._uzi_authentication_handler: Union[UziAuthenticationHandler, None] = None
-        self._oidc_authentication_handler: Union[OidcAuthenticationHandler, None] = None
+        self._saml_authentication_handler: SamlAuthenticationHandler | None = None
+        self._mock_saml_authentication_handler: MockSamlAuthenticationHandler | None = (
+            None
+        )
+        self._yivi_authentication_handler: YiviAuthenticationHandler | None = None
+        self._uzi_authentication_handler: UziAuthenticationHandler | None = None
+        self._oidc_authentication_handler: OidcAuthenticationHandler | None = None
+        self._external_session_service: ExternalSessionService | None = (
+            external_session_service
+        )
 
     def create(
         self, login_method: LoginMethod
@@ -105,40 +105,21 @@ class AuthenticationHandlerFactory:
             )
         return self._mock_saml_authentication_handler
 
-    def create_external_session_service(self) -> ExternalSessionService:
-        jwt_service = self._jwt_service_factory.create(
-            jwt_private_key_path=self._config["jwt"]["session_jwt_sign_priv_key_path"],
-            jwt_signing_certificate_path=self._config["jwt"][
-                "session_jwt_sign_crt_path"
-            ],
-        )
-        return ExternalSessionService(
-            session_url=self._config["app"]["session_url"],
-            external_http_requests_timeout_seconds=int(
-                self._config["app"]["external_http_requests_timeout_seconds"]
-            ),
-            session_jwt_issuer=self._config["jwt"]["session_jwt_issuer"],
-            session_jwt_audience=self._config["jwt"]["session_jwt_audience"],
-            jwt_service=jwt_service,
-        )
-
     def create_yivi_authentication_handler(self) -> YiviAuthenticationHandler:
         if self._yivi_authentication_handler is None:
-            external_session_service = self.create_external_session_service()
             self._yivi_authentication_handler = YiviAuthenticationHandler(
                 response_factory=self._response_factory,
                 yivi_login_redirect_url=self._config["yivi"]["yivi_login_redirect_url"],
                 clients=self._clients,
-                external_session_service=external_session_service,
+                external_session_service=self._get_external_session_service(),
             )
         return self._yivi_authentication_handler
 
     def create_uzi_authentication_handler(self) -> UziAuthenticationHandler:
         if self._uzi_authentication_handler is None:
-            external_session_service = self.create_external_session_service()
             self._uzi_authentication_handler = UziAuthenticationHandler(
                 response_factory=self._response_factory,
-                external_session_service=external_session_service,
+                external_session_service=self._get_external_session_service(),
                 uzi_login_redirect_url=self._config["uzi"]["uzi_login_redirect_url"],
                 clients=self._clients,
             )
@@ -146,13 +127,21 @@ class AuthenticationHandlerFactory:
 
     def create_oidc_authentication_handler(self) -> OidcAuthenticationHandler:
         if self._oidc_authentication_handler is None:
-            external_session_service = self.create_external_session_service()
             self._oidc_authentication_handler = OidcAuthenticationHandler(
                 response_factory=self._response_factory,
                 oidc_login_redirect_url=self._config["oidc_client"][
                     "oidc_login_redirect_url"
                 ],
                 clients=self._clients,
-                external_session_service=external_session_service,
+                external_session_service=self._get_external_session_service(),
             )
         return self._oidc_authentication_handler
+
+    def _get_external_session_service(
+        self,
+    ) -> ExternalSessionService:
+        if self._external_session_service is None:
+            raise RuntimeError(
+                "External session service is not configured but login method is enabled."
+            )
+        return self._external_session_service

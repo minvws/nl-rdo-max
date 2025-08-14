@@ -5,20 +5,16 @@ import requests
 from app.exceptions.max_exceptions import UnauthorizedError
 from app.services.encryption.jwt_service import JWTService
 
-ALG = "RS256"
-
 
 class ExternalSessionService:
     def __init__(
         self,
         session_url: str,
-        session_jwt_issuer: str,
         session_jwt_audience: str,
         external_http_requests_timeout_seconds: int,
         jwt_service: JWTService,
     ) -> None:
         self._session_url = session_url
-        self._session_jwt_issuer = session_jwt_issuer
         self._session_jwt_audience = session_jwt_audience
         self._external_http_requests_timeout_seconds = (
             external_http_requests_timeout_seconds
@@ -31,7 +27,6 @@ class ExternalSessionService:
         jwt = self._jwt_service.create_jwt(
             {
                 **claims,
-                "iss": self._session_jwt_issuer,
                 "aud": self._session_jwt_audience,
             }
         )
@@ -52,7 +47,6 @@ class ExternalSessionService:
     def get_session_status(self, exchange_token: str) -> str:
         jwt = self._jwt_service.create_jwt(
             {
-                "iss": self._session_jwt_issuer,
                 "aud": self._session_jwt_audience,
                 "exchange_token": exchange_token,
             }

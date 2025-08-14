@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from app.exceptions.max_exceptions import UnauthorizedError
 from app.models.login_method import LoginMethod
@@ -26,13 +26,13 @@ from app.services.loginhandler.yivi_authentication_handler import (
 
 class TestAuthenticationHandlerFactory(unittest.TestCase):
     def setUp(self):
-        self.jwt_service_factory = MagicMock()
         self.rate_limiter = MagicMock()
         self.saml_identity_provider_service = MagicMock()
         self.authentication_cache = MagicMock()
         self.saml_response_factory = MagicMock()
         self.userinfo_service = MagicMock()
         self.response_factory = MagicMock()
+        self.external_session_service = MagicMock()
         self.clients = {}
         self.config = {
             "jwt": {
@@ -50,7 +50,6 @@ class TestAuthenticationHandlerFactory(unittest.TestCase):
             "oidc_client": {"oidc_login_redirect_url": "http://oidc.redirect.url"},
         }
         self.factory = AuthenticationHandlerFactory(
-            jwt_service_factory=self.jwt_service_factory,
             rate_limiter=self.rate_limiter,
             saml_identity_provider_service=self.saml_identity_provider_service,
             authentication_cache=self.authentication_cache,
@@ -59,6 +58,7 @@ class TestAuthenticationHandlerFactory(unittest.TestCase):
             response_factory=self.response_factory,
             clients=self.clients,
             config=self.config,
+            external_session_service=self.external_session_service,
         )
 
     def test_create_saml_authentication_handler(self):
@@ -90,3 +90,29 @@ class TestAuthenticationHandlerFactory(unittest.TestCase):
         login_method = LoginMethod(name="unknown", type=LoginMethodType.SPECIFIC)
         with self.assertRaises(UnauthorizedError, msg="unknown authentication method"):
             self.factory.create(login_method)
+
+    def test_external_session_service_none(self):
+        # Simulate config without external session service
+        config = {
+            "app": {
+                "external_http_requests_timeout_seconds": 30,
+            },
+            "oidc_client": {"oidc_login_redirect_url": "http://oidc.redirect.url"},
+        }
+        factory = AuthenticationHandlerFactory(
+            rate_limiter=self.rate_limiter,
+            saml_identity_provider_service=self.saml_identity_provider_service,
+            authentication_cache=self.authentication_cache,
+            saml_response_factory=self.saml_response_factory,
+            userinfo_service=self.userinfo_service,
+            response_factory=self.response_factory,
+            clients=self.clients,
+            config=config,
+            external_session_service=None,
+        )
+        login_method = LoginMethod(name="oidc_provider_a", type=LoginMethodType.OIDC)
+        with self.assertRaises(
+            RuntimeError,
+            msg="External session service is not configured but login method is enabled.",
+        ):
+            factory.create(login_method)
