@@ -178,6 +178,9 @@ class ArtifactResponse:
                     recipient = encrypted_id.find(
                         "./xenc:EncryptedKey", NAMESPACES
                     ).attrib.get("Recipient")
+                    # TODO: It is possible that there are multiple recipients
+                    # We should filter out other recipients if multiple are present
+                    # Then we should check the keyname with the key we have
                     if self.strict and recipient != self._sp_metadata.entity_id:
                         self.log.debug(
                             "Recipients did not match. Was %s, expected %s",
@@ -191,19 +194,27 @@ class ArtifactResponse:
 
         return attributes
 
-    def decrypt_id(self, encrypted_id):
-        enc_key_elem = encrypted_id.find("./xenc:EncryptedKey", NAMESPACES)
-        enc_data_elem = encrypted_id.find("./xenc:EncryptedData", NAMESPACES)
-
-        keyname = enc_key_elem.find(".//ds:KeyName", NAMESPACES).text
+    def decrypt_id(self, encrypted_id: etree._Element):
         possible_keynames = self._sp_metadata.dv_keynames
-        if keyname not in possible_keynames:
-            raise ValueError(f"KeyName {keyname} is unknown, cannot decrypt")
 
-        aes_key = self._decrypt_enc_key(enc_key_elem)
-        raw_id_element = self._decrypt_enc_data(enc_data_elem, aes_key)
-        decrypted_id_element = etree.fromstring(raw_id_element.decode())
-        return decrypted_id_element
+        encrypted_data_element = encrypted_id.find("./xenc:EncryptedData", NAMESPACES)
+        encrypted_key_elements = encrypted_id.findall("./xenc:EncryptedKey", NAMESPACES)
+
+        if len(encrypted_key_elements) == 0:
+            raise ValueError("No EncryptedKey element found, cannot decrypt")
+
+        for encrypted_key_element in encrypted_key_elements:
+            keyname = encrypted_key_element.find(".//ds:KeyName", NAMESPACES).text
+            if keyname not in possible_keynames:
+                # TODO: Log this
+                continue
+
+            aes_key = self._decrypt_enc_key(encrypted_key_element)
+            raw_id_element = self._decrypt_enc_data(encrypted_data_element, aes_key)
+            decrypted_id_element = etree.fromstring(raw_id_element.decode())
+            return decrypted_id_element
+
+        raise ValueError(f"No matching EncryptedKey keynames, cannot decrypt")
 
     @cached_property
     def issuer(self):
