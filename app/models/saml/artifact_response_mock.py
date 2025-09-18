@@ -12,7 +12,6 @@ class ArtifactResponseMock(ArtifactResponse):
             self,
             artifact_response_str=artifact_response_str,
             artifact_tree=None,
-            cluster_priv_key=None,
             priv_key="mock",
             expected_entity_id="mock",
             expected_service_uuid="mock",

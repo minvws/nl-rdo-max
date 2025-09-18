@@ -48,7 +48,6 @@ class ArtifactResponse:
         self,
         artifact_response_str,
         artifact_tree: etree._Element | None,
-        cluster_priv_key: str | None,
         priv_key: str,
         expected_entity_id: str,
         expected_service_uuid: str,
@@ -82,7 +81,6 @@ class ArtifactResponse:
         self._idp_metadata = idp_metadata
         self._expected_entity_id = expected_entity_id
         self.__priv_key = priv_key
-        self.__cluster_priv_key = cluster_priv_key
         self._saml_specification_version = saml_specification_version
         self._expected_response_destination = expected_response_destination
         self._expected_service_uuid = expected_service_uuid
@@ -175,20 +173,10 @@ class ArtifactResponse:
             if len(value) == 1:
                 encrypted_id = value.find("./saml2:EncryptedID", NAMESPACES)
                 if encrypted_id is not None:
-                    recipient = encrypted_id.find(
-                        "./xenc:EncryptedKey", NAMESPACES
-                    ).attrib.get("Recipient")
-                    # TODO: It is possible that there are multiple recipients
-                    # We should filter out other recipients if multiple are present
-                    # Then we should check the keyname with the key we have
-                    if self.strict and recipient != self._sp_metadata.entity_id:
-                        self.log.debug(
-                            "Recipients did not match. Was %s, expected %s",
-                            recipient,
-                            self._sp_metadata.entity_id,
-                        )
-                    else:
+                    try:
                         value = self.decrypt_id(encrypted_id)
+                    except ValueError as e:
+                        self.log.debug("Failed to decrypt EncryptedID: %s", str(e))
 
             attributes[elem.attrib.get("Name")] = value
 
@@ -196,25 +184,53 @@ class ArtifactResponse:
 
     def decrypt_id(self, encrypted_id: etree._Element):
         possible_keynames = self._sp_metadata.dv_keynames
+        allowed_recipients = self.allowed_recipients
 
         encrypted_data_element = encrypted_id.find("./xenc:EncryptedData", NAMESPACES)
-        encrypted_key_elements = encrypted_id.findall("./xenc:EncryptedKey", NAMESPACES)
+        if encrypted_data_element is None:
+            raise ValueError("No EncryptedData element found, cannot decrypt")
 
-        if len(encrypted_key_elements) == 0:
-            raise ValueError("No EncryptedKey element found, cannot decrypt")
-
-        for encrypted_key_element in encrypted_key_elements:
-            keyname = encrypted_key_element.find(".//ds:KeyName", NAMESPACES).text
-            if keyname not in possible_keynames:
-                # TODO: Log this
+        for encrypted_key_element in encrypted_id.iterfind(
+            "./xenc:EncryptedKey", NAMESPACES
+        ):
+            recipient = encrypted_key_element.get("Recipient")
+            if not isinstance(recipient, str):
                 continue
 
-            aes_key = self._decrypt_enc_key(encrypted_key_element)
-            raw_id_element = self._decrypt_enc_data(encrypted_data_element, aes_key)
-            decrypted_id_element = etree.fromstring(raw_id_element.decode())
-            return decrypted_id_element
+            if self.strict and recipient not in allowed_recipients:
+                self.log.debug(
+                    "Recipient did not match in strict mode. Was %s, expected one of %s",
+                    recipient,
+                    allowed_recipients,
+                )
+                continue
 
-        raise ValueError(f"No matching EncryptedKey keynames, cannot decrypt")
+            keyname = find_element_text_if_not_none(
+                encrypted_key_element, ".//ds:KeyName"
+            )
+            if keyname is None:
+                continue
+
+            if keyname not in possible_keynames:
+                self.log.debug(
+                    "Keyname did not match. Was %s, expected one of %s",
+                    keyname,
+                    possible_keynames,
+                )
+                continue
+
+            try:
+                aes_key = self._decrypt_enc_key(encrypted_key_element)
+                raw_id_element = self._decrypt_enc_data(encrypted_data_element, aes_key)
+                decrypted_id_element = etree.fromstring(raw_id_element.decode())
+                return decrypted_id_element
+            except Exception as e:  # pylint: disable=broad-except
+                self.log.debug("Failed to decrypt with key %s: %s", keyname, str(e))
+                continue
+
+        raise ValueError(
+            "No matching decryption key found and all decryption attempts failed"
+        )
 
     @cached_property
     def issuer(self):
@@ -462,11 +478,8 @@ class ArtifactResponse:
                 raise ValidationError("Audience verification errors.")
 
     def _decrypt_enc_key(self, enc_key_elem) -> bytes:
-        priv_key = (
-            self.__cluster_priv_key if self.__cluster_priv_key else self.__priv_key
-        )
         aes_key = OneLogin_Saml2_Utils.decrypt_element(
-            enc_key_elem, priv_key, debug=True
+            enc_key_elem, self.__priv_key, debug=self.log.isEnabledFor(logging.DEBUG)
         )
         return aes_key
 
