@@ -108,9 +108,11 @@ def load_certificate_with_jwk(certificate: Certificate) -> CertificateWithJWK:
 def kid_from_certificate(certificate: Certificate) -> str:
     """
     The "kid" (Key ID) is a unique identifier for the key. There is no standard way to generate a kid.
+    This implementation uses the base64-encoded SHA-256 fingerprint of the certificate, it needs
+    to match the implementation of the external userinfo service.
     """
     sha256_fingerprint = certificate.fingerprint(hashes.SHA256())
-    return base64.urlsafe_b64encode(sha256_fingerprint).decode("utf-8")
+    return base64.b64encode(sha256_fingerprint).decode("utf-8")
 
 
 def x5t_from_certificate(certificate: Certificate) -> str:
