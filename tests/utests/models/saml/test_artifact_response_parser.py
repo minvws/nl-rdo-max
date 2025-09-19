@@ -51,7 +51,6 @@ def create_artifact_response(
     return ArtifactResponse(
         artifact_response_str=artifact_response_str,
         artifact_tree=artifact_tree,
-        cluster_priv_key=None,
         priv_key=priv_key,
         expected_entity_id=expected_entity_id,
         expected_service_uuid=expected_service_uuid,

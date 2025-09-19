@@ -136,3 +136,18 @@ def status_from_element(element: etree._Element) -> str:
         if inner_status_code_element is not None:
             status = status_from_value(inner_status_code_element)
     return status
+
+
+def get_available_keys(
+    encrypted_id: etree._Element,
+) -> List[Tuple[str | None, str | None]]:
+    """
+    Parses an EncryptedID element and returns a list of tuples containing
+    the KeyName and Recipient of each EncryptedKey found.
+    """
+    available_keys = []
+    for key_element in encrypted_id.iterfind("./xenc:EncryptedKey", NAMESPACES):
+        key_name = find_element_text_if_not_none(key_element, ".//ds:KeyName")
+        recipient = key_element.get("Recipient")
+        available_keys.append((key_name, recipient))
+    return available_keys

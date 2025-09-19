@@ -45,7 +45,6 @@ class SamlIdentityProvider:  # pylint: disable=too-many-instance-attributes
         ]
 
         self._artifact_response_factory = ArtifactResponseFactory(
-            cluster_key=None,
             priv_key=file_content_raise_if_none(sp_settings.get("key_path", None)),
             expected_service_uuid=sp_settings["attributeConsumingService"][
                 "requestedAttributes"

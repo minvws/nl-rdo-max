@@ -1,4 +1,3 @@
-from typing import Optional
 from lxml import etree
 from packaging.version import Version
 
@@ -11,7 +10,6 @@ from ...misc.saml_utils import has_valid_signatures
 class ArtifactResponseFactory:
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
-        cluster_key: Optional[str],  # todo: Remove this key
         priv_key: str,
         expected_entity_id: str,
         expected_service_uuid: str,
@@ -22,7 +20,6 @@ class ArtifactResponseFactory:
         strict: bool,
         insecure: bool,
     ):
-        self._cluster_key = cluster_key
         self._priv_key = priv_key
         self._expected_entity_id = expected_entity_id
         self._expected_service_uuid = expected_service_uuid
@@ -74,7 +71,6 @@ class ArtifactResponseFactory:
         return ArtifactResponse(
             artifact_response_str=xml_response,
             artifact_tree=artifact_tree,
-            cluster_priv_key=self._cluster_key,
             priv_key=self._priv_key,
             expected_entity_id=self._expected_entity_id,
             expected_service_uuid=self._expected_service_uuid,

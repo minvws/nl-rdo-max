@@ -28,6 +28,7 @@ from ...misc.saml_utils import (
     find_element_text_if_not_none,
     find_element_if_not_none,
     status_from_element,
+    get_available_keys,
 )
 
 CAMEL_TO_SNAKE_RE = re.compile(r"(?<!^)(?=[A-Z])")
@@ -48,7 +49,6 @@ class ArtifactResponse:
         self,
         artifact_response_str,
         artifact_tree: etree._Element | None,
-        cluster_priv_key: str | None,
         priv_key: str,
         expected_entity_id: str,
         expected_service_uuid: str,
@@ -81,8 +81,8 @@ class ArtifactResponse:
         self._sp_metadata = sp_metadata
         self._idp_metadata = idp_metadata
         self._expected_entity_id = expected_entity_id
+        # Same key as in SPMetadata.signing_key_path
         self.__priv_key = priv_key
-        self.__cluster_priv_key = cluster_priv_key
         self._saml_specification_version = saml_specification_version
         self._expected_response_destination = expected_response_destination
         self._expected_service_uuid = expected_service_uuid
@@ -175,33 +175,41 @@ class ArtifactResponse:
             if len(value) == 1:
                 encrypted_id = value.find("./saml2:EncryptedID", NAMESPACES)
                 if encrypted_id is not None:
-                    recipient = encrypted_id.find(
-                        "./xenc:EncryptedKey", NAMESPACES
-                    ).attrib.get("Recipient")
-                    if self.strict and recipient != self._sp_metadata.entity_id:
-                        self.log.debug(
-                            "Recipients did not match. Was %s, expected %s",
-                            recipient,
-                            self._sp_metadata.entity_id,
-                        )
-                    else:
+                    try:
                         value = self.decrypt_id(encrypted_id)
+                    except ValueError as e:
+                        self.log.debug("Failed to decrypt EncryptedID: %s", str(e))
 
             attributes[elem.attrib.get("Name")] = value
 
         return attributes
 
-    def decrypt_id(self, encrypted_id):
-        enc_key_elem = encrypted_id.find("./xenc:EncryptedKey", NAMESPACES)
-        enc_data_elem = encrypted_id.find("./xenc:EncryptedData", NAMESPACES)
+    def decrypt_id(self, encrypted_id: etree._Element):
+        sign_keyname = self._sp_metadata.sign_keyname
+        entity_id = self._sp_metadata.entity_id
 
-        keyname = enc_key_elem.find(".//ds:KeyName", NAMESPACES).text
-        possible_keynames = self._sp_metadata.dv_keynames
-        if keyname not in possible_keynames:
-            raise ValueError(f"KeyName {keyname} is unknown, cannot decrypt")
+        encrypted_data_element = encrypted_id.find("./xenc:EncryptedData", NAMESPACES)
+        if encrypted_data_element is None:
+            raise ValueError("No EncryptedData element found, cannot decrypt")
 
-        aes_key = self._decrypt_enc_key(enc_key_elem)
-        raw_id_element = self._decrypt_enc_data(enc_data_elem, aes_key)
+        # Get the EncryptedKey for our recipient and keyname
+        encrypted_key_elements = encrypted_id.xpath(
+            f"./xenc:EncryptedKey[.//ds:KeyName/text()='{sign_keyname}' and @Recipient='{entity_id}']",
+            namespaces=NAMESPACES,
+        )
+        encrypted_key_element = (
+            encrypted_key_elements[0] if len(encrypted_key_elements) > 0 else None
+        )
+        if not isinstance(
+            encrypted_key_element, etree._Element  # pylint: disable=protected-access
+        ):
+            available_keys = get_available_keys(encrypted_id)
+            raise ValueError(
+                f"No EncryptedKey found for recipient '{entity_id}' and keyname '{sign_keyname}'. Available keys: {available_keys}"
+            )
+
+        aes_key = self._decrypt_enc_key(encrypted_key_element)
+        raw_id_element = self._decrypt_enc_data(encrypted_data_element, aes_key)
         decrypted_id_element = etree.fromstring(raw_id_element.decode())
         return decrypted_id_element
 
@@ -451,11 +459,8 @@ class ArtifactResponse:
                 raise ValidationError("Audience verification errors.")
 
     def _decrypt_enc_key(self, enc_key_elem) -> bytes:
-        priv_key = (
-            self.__cluster_priv_key if self.__cluster_priv_key else self.__priv_key
-        )
         aes_key = OneLogin_Saml2_Utils.decrypt_element(
-            enc_key_elem, priv_key, debug=True
+            enc_key_elem, self.__priv_key, debug=self.log.isEnabledFor(logging.DEBUG)
         )
         return aes_key
 
