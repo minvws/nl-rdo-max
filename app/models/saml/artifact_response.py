@@ -28,6 +28,7 @@ from ...misc.saml_utils import (
     find_element_text_if_not_none,
     find_element_if_not_none,
     status_from_element,
+    get_available_keys,
 )
 
 CAMEL_TO_SNAKE_RE = re.compile(r"(?<!^)(?=[A-Z])")
@@ -80,6 +81,7 @@ class ArtifactResponse:
         self._sp_metadata = sp_metadata
         self._idp_metadata = idp_metadata
         self._expected_entity_id = expected_entity_id
+        # Same key as in SPMetadata.signing_key_path
         self.__priv_key = priv_key
         self._saml_specification_version = saml_specification_version
         self._expected_response_destination = expected_response_destination
@@ -183,54 +185,33 @@ class ArtifactResponse:
         return attributes
 
     def decrypt_id(self, encrypted_id: etree._Element):
-        possible_keynames = self._sp_metadata.dv_keynames
-        allowed_recipients = self.allowed_recipients
+        sign_keyname = self._sp_metadata.sign_keyname
+        entity_id = self._sp_metadata.entity_id
 
         encrypted_data_element = encrypted_id.find("./xenc:EncryptedData", NAMESPACES)
         if encrypted_data_element is None:
             raise ValueError("No EncryptedData element found, cannot decrypt")
 
-        for encrypted_key_element in encrypted_id.iterfind(
-            "./xenc:EncryptedKey", NAMESPACES
-        ):
-            recipient = encrypted_key_element.get("Recipient")
-            if not isinstance(recipient, str):
-                continue
-
-            if self.strict and recipient not in allowed_recipients:
-                self.log.debug(
-                    "Recipient did not match in strict mode. Was %s, expected one of %s",
-                    recipient,
-                    allowed_recipients,
-                )
-                continue
-
-            keyname = find_element_text_if_not_none(
-                encrypted_key_element, ".//ds:KeyName"
-            )
-            if keyname is None:
-                continue
-
-            if keyname not in possible_keynames:
-                self.log.debug(
-                    "Keyname did not match. Was %s, expected one of %s",
-                    keyname,
-                    possible_keynames,
-                )
-                continue
-
-            try:
-                aes_key = self._decrypt_enc_key(encrypted_key_element)
-                raw_id_element = self._decrypt_enc_data(encrypted_data_element, aes_key)
-                decrypted_id_element = etree.fromstring(raw_id_element.decode())
-                return decrypted_id_element
-            except Exception as e:  # pylint: disable=broad-except
-                self.log.debug("Failed to decrypt with key %s: %s", keyname, str(e))
-                continue
-
-        raise ValueError(
-            "No matching decryption key found and all decryption attempts failed"
+        # Get the EncryptedKey for our recipient and keyname
+        encrypted_key_elements = encrypted_id.xpath(
+            f"./xenc:EncryptedKey[.//ds:KeyName/text()='{sign_keyname}' and @Recipient='{entity_id}']",
+            namespaces=NAMESPACES,
         )
+        encrypted_key_element = (
+            encrypted_key_elements[0] if len(encrypted_key_elements) > 0 else None
+        )
+        if not isinstance(
+            encrypted_key_element, etree._Element  # pylint: disable=protected-access
+        ):
+            available_keys = get_available_keys(encrypted_id)
+            raise ValueError(
+                f"No EncryptedKey found for recipient '{entity_id}' and keyname '{sign_keyname}'. Available keys: {available_keys}"
+            )
+
+        aes_key = self._decrypt_enc_key(encrypted_key_element)
+        raw_id_element = self._decrypt_enc_data(encrypted_data_element, aes_key)
+        decrypted_id_element = etree.fromstring(raw_id_element.decode())
+        return decrypted_id_element
 
     @cached_property
     def issuer(self):

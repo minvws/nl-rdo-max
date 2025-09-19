@@ -1,7 +1,7 @@
 # pylint: disable=c-extension-no-member,too-many-lines
 import datetime
 import secrets
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 
 import xmlsec
 from lxml import etree
@@ -45,22 +45,15 @@ class SPMetadata(SAMLRequest):
         self.jinja_env = jinja_env
         self.settings = settings
 
-        self.dv_keynames: List[str] = []
-
         self.clustered = "cluster_settings" in settings
         self._root = etree.fromstring(self.render_template())
 
-        with open(self.signing_cert_path, "r", encoding="utf-8") as cert_file:
-            cert_data = cert_file.read()
-
         self.root.find(
             ".//ds:Signature/ds:KeyInfo//ds:X509Certificate", NAMESPACES
-        ).text = strip_cert(cert_data)
-
+        ).text = self.sign_cert
         self.root.find(".//ds:Signature/ds:KeyInfo//ds:KeyName", NAMESPACES).text = (
-            compute_keyname(cert_data)
+            self.sign_keyname
         )
-
         self.sign(self.root, self._id_hash)
 
     @property
@@ -153,7 +146,6 @@ class SPMetadata(SAMLRequest):
     def get_spsso(self, cluster_name: Optional[str]):
         cert = self.get_cert_data(cluster_name)
         keyname = compute_keyname(cert)
-        self.dv_keynames.append(keyname)
         return {
             "cert": strip_cert(cert),
             "keyname": keyname,
