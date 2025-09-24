@@ -123,7 +123,7 @@ def x5t_from_certificate(certificate: Certificate) -> str:
     See: https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.7
     """
     sha1_fingerprint = certificate.fingerprint(hashes.SHA1())  # nosec B303
-    return base64.urlsafe_b64encode(sha1_fingerprint).decode("utf-8")
+    return base64.urlsafe_b64encode(sha1_fingerprint).decode("utf-8").rstrip("=")
 
 
 def jwk_from_certificate(certificate: Certificate) -> JWK:
