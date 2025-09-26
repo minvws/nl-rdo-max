@@ -25,8 +25,7 @@ jobs:
           sudo apt-get install libxmlsec1-dev pkg-config
 
       - name: Build venv package
-        uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/python-venv-package@main
+        uses: minvws/action-python-venv-package@v1
         with:
           python_version: ${{ matrix.python_version }}
-          checkout_repository: false
           package_file_name: "max"
