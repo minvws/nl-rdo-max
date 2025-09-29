@@ -33,3 +33,5 @@ tests/secrets
 *.key
 settings.json
 idp_metadata.xml
+
+**/*.orig

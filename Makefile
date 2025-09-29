@@ -20,8 +20,9 @@ setup-config:
 setup-npm:
 	scripts/setup-npm.sh
 
-setup-remote: setup-config setup-saml setup-secrets
-	docker compose build --build-arg="NEW_UID=${UID}" --build-arg="NEW_GID=${GID}" --build-arg="PYTHON_VERSION=${PYTHON_VERSION}"
+setup-remote: setup-config setup-saml setup-secrets setup-npm
+	docker compose build --build-arg="NEW_UID=${UID}" --build-arg="NEW_GID=${GID}" --build-arg="PYTHON_VERSION=${PYTHON_VERSION}" --build-arg="GITHUB_TOKEN=${GITHUB_TOKEN}"
+
 setup-local: venv setup-config setup-saml setup-secrets setup-npm
 
 run-remote:
@@ -52,7 +53,7 @@ test:
 	poetry run pytest --cov --cov-report=term --cov-report=xml
 
 setup-remote-test:
-	docker compose -p max-test -f docker-compose.testing.yml build --build-arg="NEW_UID=${UID}" --build-arg="NEW_GID=${GID}" --build-arg="PYTHON_VERSION=${PYTHON_VERSION}"
+	docker compose -p max-test -f docker-compose.testing.yml build --build-arg="NEW_UID=${UID}" --build-arg="NEW_GID=${GID}" --build-arg="PYTHON_VERSION=${PYTHON_VERSION}" --build-arg="GITHUB_TOKEN=${GITHUB_TOKEN}"
 
 test-remote:
 	docker compose -p max-test -f docker-compose.testing.yml up

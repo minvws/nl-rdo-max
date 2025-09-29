@@ -10,8 +10,9 @@ ARG PROJECT_DIR="/src" \
     APP_GROUP="app" \
     NEW_UID=1000 \
     NEW_GID=1000 \
-    INSTALL_NPM_ASSETS=true
-    
+    INSTALL_NPM_ASSETS=true \
+    GITHUB_TOKEN
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     POETRY_CACHE_DIR=/tmp/poetry-cache \
@@ -53,7 +54,7 @@ COPY scripts/setup-npm.sh vite.config.js package.json package-lock.json ./
 COPY resources ./resources
 RUN --mount=type=secret,id=npmrc,target=${PROJECT_DIR}/.npmrc \
     if [ "$INSTALL_NPM_ASSETS" = "true" ]; then \
-        chmod +x setup-npm.sh && ./setup-npm.sh; \
+        bash ./setup-npm.sh; \
         npm run build; \
     fi
 
