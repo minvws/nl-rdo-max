@@ -8,12 +8,12 @@
   },
   "dependencies": {
     "@minvws/nl-rdo-rijksoverheid-ui-theme": "^0.0.18",
-    "redoc": "^2.5.1",
-    "swagger-ui-dist": "^5.29.1"
+    "redoc": "^2.5.2",
+    "swagger-ui-dist": "^5.29.5"
   },
   "devDependencies": {
     "sass": "^1.93.2",
-    "vite": "^7.1.7",
-    "vite-plugin-static-copy": "^3.1.2"
+    "vite": "^7.1.11",
+    "vite-plugin-static-copy": "^3.1.4"
   }
 }
