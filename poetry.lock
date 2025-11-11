@@ -1899,14 +1899,14 @@ tests = ["hypothesis (>=3.27.0)", "pytest (>=7.4.0)", "pytest-cov (>=2.10.1)", "
 
 [[package]]
 name = "pyop"
-version = "3.4.1"
+version = "3.4.2"
 description = "OpenID Connect Provider (OP) library in Python."
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "pyop-3.4.1-py3-none-any.whl", hash = "sha256:e9e7d5fee851c2f212fe97270f06daef14537a1af2d1d2b7a98ba8dc8174fff3"},
-    {file = "pyop-3.4.1.tar.gz", hash = "sha256:ebe0c8310efb2253220e09283d1f66e6eb9df1cf106ec1b6a5f1fba685f52fe2"},
+    {file = "pyop-3.4.2-py3-none-any.whl", hash = "sha256:b938373287d329bbeca27b58806655e4af54fa5eb5a4e9dea87a5c95b75482db"},
+    {file = "pyop-3.4.2.tar.gz", hash = "sha256:742bd59cb1bbcb33d7d7e32f97a45eb81d66ca2e06ec6c9a7dada202d3e85e56"},
 ]
 
 [package.dependencies]
