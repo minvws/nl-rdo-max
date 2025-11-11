@@ -3,8 +3,22 @@ from typing import Any
 
 from app.models.swagger_config import SwaggerConfig
 
-_PATH = "max.conf"
-_CONFIG = None
+
+class CurrentConfig:
+    config: configparser.ConfigParser
+    path: str
+
+    def __init__(self, path):
+        if path is None:
+            path = _DEFAULT_CONFIG_NAME
+        self.path = path
+
+        self.config = configparser.ConfigParser()
+        self.config.read(path)
+
+
+_DEFAULT_CONFIG_NAME = "max.conf"
+_current_config: CurrentConfig | None = None
 
 
 # pylint:disable=global-statement
@@ -12,15 +26,10 @@ def get_config(path=None) -> configparser.ConfigParser:
     """
     Use this method only when it's not possible to inject config variables
     """
-    global _CONFIG
-    global _PATH
-    if path is None:
-        path = _PATH
-    if _CONFIG is None or _PATH != path:
-        _PATH = path
-        _CONFIG = configparser.ConfigParser()
-        _CONFIG.read(_PATH)
-    return _CONFIG
+    global _current_config
+    if _current_config is None or _current_config.path != path:
+        _current_config = CurrentConfig(path)
+    return _current_config.config
 
 
 def get_config_value(section: str, name: str, default: Any = None) -> Any:

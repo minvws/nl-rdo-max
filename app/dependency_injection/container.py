@@ -31,9 +31,9 @@ class Container(containers.DeclarativeContainer):
     )
 
 
-_container: Union[Container, None] = None
+_CONTAINER: Union[Container, None] = None
 
 
 def container():
-    if _container is None:
+    if _CONTAINER is None:
         raise RuntimeError("Application should first be instantiated")

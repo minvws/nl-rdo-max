@@ -126,7 +126,7 @@ def create_fastapi_app(
     fastapi.mount("/static", StaticFiles(directory="static"), name="static")
     container.wire(modules=modules)
     fastapi.container = container  # type: ignore
-    app.dependency_injection.container._container = (  # pylint: disable=protected-access
+    app.dependency_injection.container._CONTAINER = (  # pylint: disable=protected-access
         container
     )
     fastapi.add_middleware(CORSMiddleware, allow_origins=_parse_origins(container))
