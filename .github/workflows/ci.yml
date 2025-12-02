@@ -79,3 +79,63 @@ jobs:
         uses: minvws/action-sonarqube@v1
         with:
           sonar-token: ${{ secrets.SONAR_TOKEN }}
+  
+  detect_modified_files:
+    name: Modified files
+    runs-on: ubuntu-latest
+    outputs:
+      dockerfiles_changed: ${{ steps.changed-files.outputs.any_changed }}
+      all_modified_files: ${{ steps.changed-files.outputs.all_modified_files }}
+    steps:
+        - name: Checkout repository
+          uses: actions/checkout@v5
+        - name: Get changed files
+          id: changed-files
+          uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
+          with:
+            files: |
+              docker/**
+              .github/workflows/ci.yml
+  push_container:
+    if: |
+        github.ref == 'refs/heads/main' ||
+        startsWith(github.ref, 'refs/tags/v') ||
+        needs.detect_modified_files.outputs.dockerfiles_changed == 'true'
+    name: Create and publish Docker image to the Github Package Registry
+    runs-on: ubuntu-latest
+    needs: [validate, detect_modified_files]
+    steps:
+        - name: Checkout repository
+          uses: actions/checkout@v5
+
+        - name: Add version file
+          run: 'echo "{ \"version\": \"${{ env.RELEASE_VERSION }}\", \"git_ref\": \"$GITHUB_SHA\"}" > static/version.json'
+
+        - name: Log in to the Container registry
+          uses: docker/login-action@v3
+          with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+
+        - name: Extract metadata (tags, labels) for Docker
+          id: meta
+          uses: docker/metadata-action@v5
+          with:
+            images: ghcr.io/${{ github.repository }}
+
+        - name: Build and push Docker image
+          uses: docker/build-push-action@v6
+          env:
+            NEW_UID: 1000
+            NEW_GID: 1000
+          with:
+            context: .
+            file: docker/Dockerfile
+            push: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
+            tags: ${{ steps.meta.outputs.tags }}
+            labels: ${{ steps.meta.outputs.labels }}
+            build-args: |
+              NEW_UID=${{ env.NEW_UID }}
+              NEW_GID=${{ env.NEW_GID }}
+              GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
